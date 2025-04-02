@@ -24,7 +24,7 @@ interface PropertyCardProps {
 
 const PropertyCard = ({ propertyDetails, renovationAreas }: PropertyCardProps) => {
   return (
-    <Card>
+    <Card className="shadow-sm">
       <CardHeader className="pb-2">
         <CardTitle className="text-xl">Family Home</CardTitle>
         <p className="text-sm text-gray-600">
@@ -40,23 +40,29 @@ const PropertyCard = ({ propertyDetails, renovationAreas }: PropertyCardProps) =
           />
         </div>
         
-        <div>
-          <h3 className="font-medium mb-2">RENOVATION AREAS</h3>
+        <div className="mb-4">
+          <h3 className="font-medium mb-2 uppercase text-xs text-gray-600">RENOVATION AREAS</h3>
           <div className="space-y-2">
-            {renovationAreas.map((area, index) => (
-              <div key={index} className="flex items-center text-sm">
-                <span className="text-orange-500 mr-2">★</span> {area.area} ({area.location})
+            {renovationAreas && renovationAreas.length > 0 ? (
+              renovationAreas.map((area, index) => (
+                <div key={index} className="flex items-center text-sm">
+                  <span className="text-orange-500 mr-2">★</span> {area.area} ({area.location})
+                </div>
+              ))
+            ) : (
+              <div className="flex items-center text-sm">
+                <span className="text-orange-500 mr-2">★</span> Kitchen
               </div>
-            ))}
+            )}
           </div>
         </div>
         
         <div className="mt-4">
           <Button 
             variant="outline" 
-            className="w-full justify-between text-[#174c65] border-[#174c65]"
+            className="w-full justify-between text-[#1e5c78] border-[#1e5c78] hover:bg-[#1e5c78]/5"
           >
-            PROPERTY DETAILS <ArrowRight className="ml-2 h-4 w-4" />
+            PROPERTY DETAILS <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
       </CardContent>

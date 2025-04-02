@@ -6,23 +6,26 @@ import { Button } from "@/components/ui/button";
 
 const TasksCard = () => {
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-xl">Your Tasks</CardTitle>
-          <Button variant="link" className="text-[#174c65] p-0">See All</Button>
-        </div>
+    <Card className="shadow-sm">
+      <CardHeader className="pb-2 flex justify-between items-center">
+        <CardTitle className="text-xl">Your Tasks</CardTitle>
+        <Button variant="link" className="text-[#1e5c78] p-0 font-normal">See All</Button>
       </CardHeader>
       <CardContent>
-        <div className="bg-gray-50 p-4 rounded-md">
-          <h3 className="font-medium mb-2">Add your design inspiration</h3>
+        <div className="bg-blue-50 p-4 rounded-md">
+          <h3 className="font-medium mb-2">Approve milestone 1 completion</h3>
           <p className="text-sm text-gray-600 mb-4">
-            While you're waiting on your project coach to reach out, you can get a head
-            start by adding your renovation inspiration to the 'Design' section.
+            Joe has marked milestone 1 for the tile job as complete. Please confirm for the
+            work to continue.
           </p>
-          <Button className="w-full md:w-auto bg-[#174c65] hover:bg-[#174c65]/90 justify-between">
-            ADD DESIGN INSPO <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
+          <div className="flex justify-end">
+            <Button 
+              className="bg-[#1e5c78] hover:bg-[#1e5c78]/90 text-xs"
+              size="sm"
+            >
+              VIEW MILESTONE <ArrowRight className="ml-1 h-3 w-3" />
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

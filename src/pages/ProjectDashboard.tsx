@@ -8,6 +8,7 @@ import PropertyCard from "@/components/project/PropertyCard";
 import TasksCard from "@/components/project/TasksCard";
 import MessagesCard from "@/components/project/MessagesCard";
 import EventsCard from "@/components/project/EventsCard";
+import { ArrowRight } from "lucide-react";
 
 const ProjectDashboard = () => {
   const location = useLocation();
@@ -38,7 +39,7 @@ const ProjectDashboard = () => {
       <DashboardNavbar />
       
       <div className="flex flex-col md:flex-row flex-1">
-        <ProjectSidebar projectId={projectId} />
+        <ProjectSidebar projectId={projectId} projectTitle={projectData?.title || "Kitchen Remodel"} />
         
         <div className="flex-1 p-6">
           <div className="mb-8">
@@ -46,7 +47,7 @@ const ProjectDashboard = () => {
               {projectData?.title || "Kitchen Remodel"}
             </h1>
             <p className="text-gray-600">
-              {propertyDetails.property_name || "Family Home"} {projectId}
+              {propertyDetails.property_name || "Family Home"} #{projectId.slice(-6)}
             </p>
           </div>
           
