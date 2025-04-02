@@ -3,72 +3,40 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import NavItem from "./NavItem";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-  SidebarTrigger,
-  SidebarRail,
-  useSidebar
-} from "@/components/ui/sidebar";
-
+import { Sidebar, SidebarContent, SidebarHeader, SidebarTrigger, SidebarRail, useSidebar } from "@/components/ui/sidebar";
 interface ProjectSidebarProps {
   projectId: string;
   projectTitle?: string;
   activePage?: string;
 }
-
 const ProjectSidebar = ({
   projectId,
   projectTitle = "Kitchen Project",
   activePage = ""
 }: ProjectSidebarProps) => {
   const navigate = useNavigate();
-  const { open, toggleSidebar } = useSidebar();
-
-  return (
-    <>
+  const {
+    open,
+    toggleSidebar
+  } = useSidebar();
+  return <>
       <Sidebar variant="sidebar" className="border-r border-gray-200">
         <SidebarRail />
         <SidebarHeader>
           <div className="p-4 border-b border-gray-200">
-            <Button 
-              variant="ghost" 
-              className="flex items-center text-gray-700 w-full pl-0 hover:bg-transparent hover:text-[#174c65]" 
-              onClick={() => navigate("/projects")}
-            >
+            <Button variant="ghost" className="flex items-center text-gray-700 w-full pl-0 hover:bg-transparent hover:text-[#174c65]" onClick={() => navigate("/projects")}>
               <ArrowLeft className="mr-2 h-4 w-4" /> Back to Properties
             </Button>
             
-            <div className="flex justify-between items-center mt-4">
-              <h2 className="text-xl font-semibold text-gray-900 truncate">{projectTitle}</h2>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="ml-2 text-gray-500 hover:text-gray-700"
-                onClick={toggleSidebar}
-              >
-                {open ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-              </Button>
-            </div>
+            
           </div>
         </SidebarHeader>
         
         <SidebarContent>
           <nav className="p-3">
             <ul className="space-y-1">
-              <NavItem 
-                icon="overview" 
-                label="Overview" 
-                active={activePage === "overview"} 
-                to={`/project-dashboard/${projectId}`} 
-              />
-              <NavItem 
-                icon="manage" 
-                label="Management" 
-                active={activePage === "manage"} 
-                to={`/project-manage/${projectId}`} 
-              />
+              <NavItem icon="overview" label="Overview" active={activePage === "overview"} to={`/project-dashboard/${projectId}`} />
+              <NavItem icon="manage" label="Management" active={activePage === "manage"} to={`/project-manage/${projectId}`} />
               <NavItem icon="design" label="Design" active={activePage === "design"} />
               <NavItem icon="team" label="Team" active={activePage === "team"} />
               <NavItem icon="message" label="Messages" active={activePage === "message"} />
@@ -82,13 +50,10 @@ const ProjectSidebar = ({
         </SidebarContent>
       </Sidebar>
       
-      <div className="hidden md:block fixed left-[16.5rem] top-20 z-40 transition-all duration-300" style={{ left: open ? '16.5rem' : '3.5rem' }}>
-        <Button 
-          variant="outline" 
-          size="icon" 
-          onClick={toggleSidebar}
-          className="rounded-full shadow-md bg-white h-8 w-8"
-        >
+      <div className="hidden md:block fixed left-[16.5rem] top-20 z-40 transition-all duration-300" style={{
+      left: open ? '16.5rem' : '3.5rem'
+    }}>
+        <Button variant="outline" size="icon" onClick={toggleSidebar} className="rounded-full shadow-md bg-white h-8 w-8">
           {open ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
         </Button>
       </div>
@@ -96,8 +61,6 @@ const ProjectSidebar = ({
       <div className="md:hidden fixed bottom-4 right-4 z-50">
         <SidebarTrigger className="bg-[#0f566c] text-white h-12 w-12 rounded-full shadow-lg" />
       </div>
-    </>
-  );
+    </>;
 };
-
 export default ProjectSidebar;
