@@ -22,11 +22,19 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
             </Link>
           </div>
         </header>
-        <main className="flex-1 flex">
+        <main className="flex-1 flex flex-col md:flex-row">
           <div className="w-full md:w-1/2 px-6 py-12 md:px-12 lg:px-24">
             {children}
           </div>
-          <div className="hidden md:block md:w-1/2 bg-cover bg-center" style={{ backgroundImage: "url('public/lovable-uploads/e74e4469-7e07-4047-8809-dc56b07fbf77.png')" }}>
+          <div 
+            className="hidden md:block md:w-1/2 bg-cover bg-center h-full" 
+            style={{ 
+              backgroundImage: "url('public/lovable-uploads/da248e2e-0ad1-4097-b05e-2cd9261ec2ad.png')",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              minHeight: "calc(100vh - 65px)" // Subtract header height
+            }}
+          >
           </div>
         </main>
       </div>
