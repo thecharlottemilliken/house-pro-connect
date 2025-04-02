@@ -1,123 +1,40 @@
-
 import React from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, Home, Pencil, Users, MessageSquare, FileText, File, Scissors, CreditCard, History } from "lucide-react";
-
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import NavItem from "./NavItem";
 interface ProjectSidebarProps {
   projectId: string;
-  projectTitle?: string;
-  activePage?: string;
 }
-
-const ProjectSidebar = ({ projectId, projectTitle = "Kitchen Project", activePage = "overview" }: ProjectSidebarProps) => {
+const ProjectSidebar = ({
+  projectId
+}: ProjectSidebarProps) => {
   const navigate = useNavigate();
-  const location = useLocation();
-  
-  // Icon for the project tool
-  const ProjectToolIcon = () => (
-    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 stroke-[#0f3a4d]">
-      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  );
-  
-  return (
-    <div className="w-64 bg-[#dce6ea] h-[calc(100vh-64px)] sticky top-16 flex flex-col">
-      <div className="border-b border-[#c7d3d9]">
-        <button 
-          className="flex items-center text-[#0f3a4d] font-medium p-4 text-base w-full hover:bg-[#c7d3d9] transition-colors"
-          onClick={() => navigate("/projects")}
-        >
-          <ArrowLeft className="mr-3 h-5 w-5" /> All Projects
-        </button>
-      </div>
-      
-      <div className="border-b border-[#c7d3d9] p-4">
-        <div className="flex items-center text-[#0f3a4d] font-medium">
-          <span className="w-6 h-6">
-            <ProjectToolIcon />
-          </span>
-          <span className="ml-3">{projectTitle}</span>
+  return <div className="w-64 bg-[#EFF3F7] border-r border-gray-200">
+      <div className="p-4 border-b border-gray-200">
+        <Button variant="ghost" className="flex items-center text-gray-700 mb-4 pl-0 hover:bg-transparent hover:text-[#174c65]" onClick={() => navigate("/projects")}>
+          <ArrowLeft className="mr-2 h-4 w-4" /> All Projects
+        </Button>
+        
+        <div className="flex items-center gap-2 text-[#174c65] font-medium mb-3 pl-1">
+          <span className="w-5 h-5 text-xs flex items-center justify-center border border-[#174c65] rounded-full">✓</span>
+          Kitchen Project
         </div>
       </div>
       
-      <nav className="flex-grow">
-        <ul className="w-full">
-          <li>
-            <button 
-              className={`flex items-center text-[#0f3a4d] w-full p-4 transition-colors ${
-                activePage === "overview" ? "bg-[#c7d3d9]" : "hover:bg-[#c7d3d9]"
-              }`}
-              onClick={() => navigate(`/project-dashboard/${projectId}`)}
-            >
-              <Home className="h-5 w-5 mr-3" />
-              Overview
-            </button>
-          </li>
-          <li>
-            <button 
-              className={`flex items-center text-[#0f3a4d] w-full p-4 transition-colors ${
-                activePage === "manage" ? "bg-[#c7d3d9]" : "hover:bg-[#c7d3d9]"
-              }`}
-              onClick={() => navigate(`/project-manage/${projectId}`)}
-            >
-              <span className="mr-3">
-                <ProjectToolIcon />
-              </span>
-              Manage
-            </button>
-          </li>
-          <li>
-            <button className="flex items-center text-[#0f3a4d] w-full p-4 hover:bg-[#c7d3d9] transition-colors">
-              <Pencil className="h-5 w-5 mr-3" />
-              Design
-            </button>
-          </li>
-          <li>
-            <button className="flex items-center text-[#0f3a4d] w-full p-4 hover:bg-[#c7d3d9] transition-colors">
-              <Users className="h-5 w-5 mr-3" />
-              Team
-            </button>
-          </li>
-          <li>
-            <button className="flex items-center text-[#0f3a4d] w-full p-4 hover:bg-[#c7d3d9] transition-colors">
-              <MessageSquare className="h-5 w-5 mr-3" />
-              Messages
-            </button>
-          </li>
-          <li>
-            <button className="flex items-center text-[#0f3a4d] w-full p-4 hover:bg-[#c7d3d9] transition-colors">
-              <FileText className="h-5 w-5 mr-3" />
-              Bids & Proposals
-            </button>
-          </li>
-          <li>
-            <button className="flex items-center text-[#0f3a4d] w-full p-4 hover:bg-[#c7d3d9] transition-colors">
-              <File className="h-5 w-5 mr-3" />
-              Documents
-            </button>
-          </li>
-          <li>
-            <button className="flex items-center text-[#0f3a4d] w-full p-4 hover:bg-[#c7d3d9] transition-colors">
-              <Scissors className="h-5 w-5 mr-3" />
-              Materials
-            </button>
-          </li>
-          <li>
-            <button className="flex items-center text-[#0f3a4d] w-full p-4 hover:bg-[#c7d3d9] transition-colors">
-              <CreditCard className="h-5 w-5 mr-3" />
-              Accounting
-            </button>
-          </li>
-          <li>
-            <button className="flex items-center text-[#0f3a4d] w-full p-4 hover:bg-[#c7d3d9] transition-colors">
-              <History className="h-5 w-5 mr-3" />
-              Activity History
-            </button>
-          </li>
+      <nav className="p-3">
+        <ul className="space-y-1">
+          
+          <NavItem icon="design" label="Design" active={false} />
+          <NavItem icon="team" label="Team" active={false} />
+          <NavItem icon="message" label="Messages" active={false} />
+          <NavItem icon="document" label="Bids & Proposals" active={false} />
+          <NavItem icon="file" label="Documents" active={false} />
+          <NavItem icon="material" label="Materials" active={false} />
+          <NavItem icon="accounting" label="Accounting" active={false} />
+          <NavItem icon="activity" label="Activity History" active={false} />
         </ul>
       </nav>
-    </div>
-  );
+    </div>;
 };
-
 export default ProjectSidebar;
