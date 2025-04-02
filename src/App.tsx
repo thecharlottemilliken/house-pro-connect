@@ -16,6 +16,7 @@ import DesignPreferences from "./pages/DesignPreferences";
 import ManagementPreferences from "./pages/ManagementPreferences";
 import PriorExperience from "./pages/PriorExperience";
 import ProjectDashboard from "./pages/ProjectDashboard";
+import Projects from "./pages/Projects";
 import AddProperty from "./pages/AddProperty";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
@@ -93,6 +94,20 @@ const App = () => {
               <ProtectedRoute>
                 <TooltipProvider>
                   <ProjectDashboard />
+                </TooltipProvider>
+              </ProtectedRoute>
+            } />
+            <Route path="/project-dashboard/:projectId" element={
+              <ProtectedRoute>
+                <TooltipProvider>
+                  <ProjectDashboard />
+                </TooltipProvider>
+              </ProtectedRoute>
+            } />
+            <Route path="/projects" element={
+              <ProtectedRoute>
+                <TooltipProvider>
+                  <Projects />
                 </TooltipProvider>
               </ProtectedRoute>
             } />

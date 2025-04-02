@@ -1,12 +1,12 @@
-
 import { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 interface PropertyDetails {
   id: string;
@@ -23,27 +23,63 @@ interface RenovationArea {
   location: string;
 }
 
+interface Project {
+  id: string;
+  property_id: string;
+  title: string;
+  renovation_areas: RenovationArea[];
+  created_at: string;
+}
+
 const ProjectDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const params = useParams();
   const isMobile = useIsMobile();
   const [propertyDetails, setPropertyDetails] = useState<PropertyDetails | null>(null);
   const [projectData, setProjectData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Get the project data from the location state
-    if (location.state?.propertyId && location.state?.completed) {
+    if (params.projectId) {
+      fetchProjectById(params.projectId);
+    } 
+    else if (location.state?.propertyId && location.state?.completed) {
       setProjectData(location.state);
       fetchPropertyDetails(location.state.propertyId);
-    } else {
-      // If no project data is available, redirect to dashboard
+    } 
+    else {
       navigate("/dashboard");
     }
-  }, [location.state, navigate]);
+  }, [location.state, navigate, params.projectId]);
+
+  const fetchProjectById = async (projectId: string) => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('id', projectId)
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      setProjectData(data);
+      fetchPropertyDetails(data.property_id);
+    } catch (error: any) {
+      console.error('Error fetching project:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load project details. Please try again.",
+        variant: "destructive"
+      });
+      navigate("/projects");
+    }
+  };
 
   const fetchPropertyDetails = async (propertyId: string) => {
-    setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from('properties')
@@ -58,6 +94,11 @@ const ProjectDashboard = () => {
       setPropertyDetails(data);
     } catch (error) {
       console.error('Error fetching property details:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load property details.",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -74,18 +115,15 @@ const ProjectDashboard = () => {
     );
   }
 
-  // Generate a fake project ID for display purposes
-  const projectId = `#${Math.floor(100000 + Math.random() * 900000)}`;
+  const projectId = projectData.id || `#${Math.floor(100000 + Math.random() * 900000)}`;
 
-  // Extract renovation areas if available and ensure proper formatting
-  const renovationAreas = projectData?.renovationAreas || [];
+  const renovationAreas = projectData?.renovationAreas || projectData?.renovation_areas || [];
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <DashboardNavbar />
       
       <div className="flex flex-col md:flex-row flex-1">
-        {/* Left Sidebar */}
         <div className="w-64 bg-[#EFF3F7] border-r border-gray-200">
           <div className="p-4 border-b border-gray-200">
             <Button 
@@ -117,11 +155,10 @@ const ProjectDashboard = () => {
           </nav>
         </div>
         
-        {/* Main Content */}
         <div className="flex-1 p-6">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">
-              {projectData?.projectTitle || "Kitchen Remodel"}
+              {projectData?.title || "Kitchen Remodel"}
             </h1>
             <p className="text-gray-600">
               {propertyDetails.property_name || "Family Home"} {projectId}
@@ -129,7 +166,6 @@ const ProjectDashboard = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            {/* Property Card */}
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-xl">Family Home</CardTitle>
@@ -168,7 +204,6 @@ const ProjectDashboard = () => {
               </CardContent>
             </Card>
             
-            {/* Tasks Card */}
             <Card>
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-center">
@@ -192,7 +227,6 @@ const ProjectDashboard = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Recent Messages */}
             <Card>
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-center">
@@ -205,7 +239,6 @@ const ProjectDashboard = () => {
               </CardContent>
             </Card>
             
-            {/* Upcoming Events */}
             <Card>
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-center">
@@ -224,7 +257,6 @@ const ProjectDashboard = () => {
   );
 };
 
-// Navigation Item Component
 interface NavItemProps {
   icon: string;
   label: string;
@@ -232,7 +264,6 @@ interface NavItemProps {
 }
 
 const NavItem = ({ icon, label, active }: NavItemProps) => {
-  // Map icon names to JSX icons
   const getIcon = (iconName: string) => {
     switch (iconName) {
       case 'home':
@@ -240,7 +271,7 @@ const NavItem = ({ icon, label, active }: NavItemProps) => {
       case 'design':
         return <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="m2 2 7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>;
       case 'team':
-        return <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="10" r="3"/><path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"/></svg>;
+        return <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="10" r="3"/><path d="M7 20.662V19a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>;
       case 'message':
         return <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>;
       case 'document':
