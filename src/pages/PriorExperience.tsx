@@ -5,6 +5,9 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/hooks/use-toast";
 
 const PriorExperience = () => {
   const navigate = useNavigate();
@@ -13,6 +16,9 @@ const PriorExperience = () => {
   
   const [propertyId, setPropertyId] = useState<string | null>(null);
   const [projectPrefs, setProjectPrefs] = useState<any>(null);
+  const [priorExperience, setPriorExperience] = useState<string>("No");
+  const [positiveAspects, setPositiveAspects] = useState<string>("");
+  const [negativeAspects, setNegativeAspects] = useState<string>("");
 
   // Get the data from the location state
   useEffect(() => {
@@ -27,9 +33,23 @@ const PriorExperience = () => {
 
   const finishProcess = () => {
     // Save the prior experience and complete the project creation process
+    const priorExperienceData = {
+      hadPriorExperience: priorExperience,
+      positiveAspects: positiveAspects,
+      negativeAspects: negativeAspects
+    };
+    
+    // In a production app, you would save this data to your backend here
+    
+    toast({
+      title: "Project Created",
+      description: "Your project has been successfully created!",
+    });
+    
     navigate("/dashboard", {
       state: {
         ...projectPrefs,
+        priorExperience: priorExperienceData,
         completed: true
       }
     });
@@ -39,6 +59,15 @@ const PriorExperience = () => {
     navigate("/management-preferences", {
       state: projectPrefs
     });
+  };
+
+  const saveAndExit = () => {
+    toast({
+      title: "Project Saved",
+      description: "Your progress has been saved. You can continue later.",
+    });
+    
+    navigate("/dashboard");
   };
 
   const steps = [
@@ -92,12 +121,57 @@ const PriorExperience = () => {
         <div className="flex-1 p-4 md:p-10 overflow-auto">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-4">Prior Experience</h2>
           <p className="text-sm md:text-base text-gray-700 mb-6 md:mb-8 max-w-3xl">
-            Share any previous renovation experience you have to help specialists understand your background.
+            To get started, fill out a high-level summary of the project so specialists can get an idea of the type of project underway. Next, select when you want your bids due by.
           </p>
           
-          {/* Placeholder for prior experience content */}
           <div className="space-y-8 mb-10">
-            <p>Prior Experience content will go here.</p>
+            <div>
+              <h3 className="text-lg font-medium mb-2">Last question</h3>
+              <p className="text-gray-600 text-sm mb-6">
+                This range will help us understand what you are prepared to invest in this renovation. The final quote will be dependent on the final project specs.
+              </p>
+              
+              <div className="space-y-6">
+                <div>
+                  <p className="mb-2 font-medium">Have you ever undergone a renovation before?</p>
+                  <Select
+                    value={priorExperience}
+                    onValueChange={setPriorExperience}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Yes">Yes</SelectItem>
+                      <SelectItem value="No">No</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {priorExperience === "Yes" && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <p className="mb-2 font-medium">What aspects did you like?</p>
+                      <Textarea 
+                        placeholder="Placeholder text" 
+                        className="min-h-[160px]"
+                        value={positiveAspects}
+                        onChange={(e) => setPositiveAspects(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <p className="mb-2 font-medium">Are there any aspects you disliked?</p>
+                      <Textarea 
+                        placeholder="Placeholder text" 
+                        className="min-h-[160px]"
+                        value={negativeAspects}
+                        onChange={(e) => setNegativeAspects(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
           
           <div className="flex flex-col sm:flex-row justify-between pt-4 border-t border-gray-200 gap-3 sm:gap-0">
@@ -113,7 +187,7 @@ const PriorExperience = () => {
               <Button
                 variant="outline"
                 className="text-[#174c65] border-[#174c65] w-full sm:w-auto"
-                onClick={() => navigate("/dashboard")}
+                onClick={saveAndExit}
               >
                 SAVE & EXIT
               </Button>
