@@ -12,13 +12,13 @@ const ContentCard = ({ image, title }: ContentCardProps) => {
       <img 
         src={image} 
         alt={title}
-        className="w-full h-48 object-cover" 
+        className="w-full h-32 sm:h-40 md:h-48 object-cover" 
       />
-      <div className="p-4">
-        <p className="text-gray-800 mb-6">{title}</p>
+      <div className="p-3 md:p-4">
+        <p className="text-sm md:text-base text-gray-800 mb-4 md:mb-6">{title}</p>
         <Button 
           variant="outline" 
-          className="w-full bg-[#174c65] text-white hover:bg-[#174c65]/90 border-[#174c65]"
+          className="w-full bg-[#174c65] text-white hover:bg-[#174c65]/90 border-[#174c65] text-xs md:text-sm"
         >
           CHECK IT OUT
         </Button>
@@ -53,8 +53,8 @@ const RecommendedContent = () => {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Recommended Content</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6">Recommended Content</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {contentItems.map((item) => (
           <ContentCard 
             key={item.id}

@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const CreateProject = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [propertyData, setPropertyData] = useState([
     {
       id: 1,
@@ -48,29 +50,29 @@ const CreateProject = () => {
     <div className="min-h-screen flex flex-col bg-white">
       <DashboardNavbar />
       
-      <div className="flex flex-1">
+      <div className="flex flex-col md:flex-row flex-1">
         {/* Left Sidebar */}
-        <div className="w-80 bg-[#EFF3F7] p-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">Create a Project</h1>
-          <p className="text-gray-600 mb-8">
+        <div className={`${isMobile ? 'w-full' : 'w-80'} bg-[#EFF3F7] p-4 md:p-8`}>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">Create a Project</h1>
+          <p className="text-sm md:text-base text-gray-600 mb-6 md:mb-8">
             Lorem ipsum dolor sit amet consectetur.
           </p>
           
-          <div className="space-y-6">
+          <div className="space-y-4 md:space-y-6">
             {steps.map((step) => (
               <div key={step.number} className="flex items-start">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
+                <div className={`w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center mr-2 md:mr-3 ${
                   step.current ? "bg-[#174c65] text-white" : "bg-gray-200 text-gray-500"
                 }`}>
                   {step.number}
                 </div>
                 <div>
-                  <h3 className={`font-medium ${
+                  <h3 className={`text-sm md:text-base font-medium ${
                     step.current ? "text-[#174c65]" : "text-gray-500"
                   }`}>
                     Step {step.number}
                   </h3>
-                  <p className={`${
+                  <p className={`text-xs md:text-sm ${
                     step.current ? "text-black" : "text-gray-500"
                   }`}>
                     {step.title}
@@ -82,24 +84,24 @@ const CreateProject = () => {
         </div>
         
         {/* Main Content */}
-        <div className="flex-1 p-10">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Select a Property</h2>
-          <p className="text-gray-700 mb-8 max-w-3xl">
+        <div className="flex-1 p-4 md:p-10">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-4">Select a Property</h2>
+          <p className="text-sm md:text-base text-gray-700 mb-6 md:mb-8 max-w-3xl">
             To get started, fill out a high-level summary of the project so specialists can get an idea of the type of project underway. Next, select when you want your bids due by.
           </p>
           
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-bold text-gray-900">Your Properties <span className="text-gray-500">{propertyData.length}</span></h3>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 md:mb-6 gap-3 sm:gap-0">
+            <h3 className="text-lg md:text-xl font-bold text-gray-900">Your Properties <span className="text-gray-500">{propertyData.length}</span></h3>
             <Button 
               variant="outline" 
-              className="border-[#174c65] text-[#174c65] hover:bg-[#174c65] hover:text-white"
+              className="border-[#174c65] text-[#174c65] hover:bg-[#174c65] hover:text-white w-full sm:w-auto"
               onClick={() => navigate("/add-property")}
             >
               <Plus className="mr-2 h-4 w-4" /> ADD PROPERTY
             </Button>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-10">
             {propertyData.map((property) => (
               <div 
                 key={property.id} 
@@ -109,7 +111,7 @@ const CreateProject = () => {
                     : "border-gray-200"
                 }`}
               >
-                <div className="h-52 overflow-hidden">
+                <div className="h-40 md:h-52 overflow-hidden">
                   <img 
                     src={property.image} 
                     alt={property.type} 
@@ -117,8 +119,8 @@ const CreateProject = () => {
                   />
                 </div>
                 <div className="p-4">
-                  <h4 className="text-lg font-semibold mb-2">{property.type}</h4>
-                  <p className="text-gray-600 mb-4">{property.address}</p>
+                  <h4 className="text-base md:text-lg font-semibold mb-2">{property.type}</h4>
+                  <p className="text-sm md:text-base text-gray-600 mb-4">{property.address}</p>
                   <Button 
                     variant={selectedPropertyId === property.id ? "default" : "outline"}
                     className={selectedPropertyId === property.id 
@@ -133,26 +135,26 @@ const CreateProject = () => {
             ))}
           </div>
           
-          <div className="flex justify-between pt-4 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row justify-between pt-4 border-t border-gray-200 gap-3 sm:gap-0">
             <Button 
               variant="outline" 
-              className="flex items-center text-[#174c65]"
+              className="flex items-center text-[#174c65] order-2 sm:order-1 w-full sm:w-auto"
               onClick={() => navigate("/dashboard")}
             >
               <ArrowLeft className="mr-2 h-4 w-4" /> BACK
             </Button>
             
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 order-1 sm:order-2 w-full sm:w-auto">
               <Button
                 variant="outline"
-                className="text-[#174c65] border-[#174c65]"
+                className="text-[#174c65] border-[#174c65] w-full sm:w-auto"
               >
                 SAVE & EXIT
               </Button>
               <Button
                 className={`flex items-center ${
                   selectedPropertyId ? "bg-[#174c65] hover:bg-[#174c65]/90" : "bg-gray-300 hover:bg-gray-400"
-                } text-white`}
+                } text-white w-full sm:w-auto justify-center`}
                 disabled={!selectedPropertyId}
                 onClick={selectedPropertyId ? goToNextStep : undefined}
               >

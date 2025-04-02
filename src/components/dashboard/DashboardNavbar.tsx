@@ -2,23 +2,31 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { Settings, User } from "lucide-react";
+import { Menu, Settings, User, X } from "lucide-react";
+import { useState } from 'react';
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const DashboardNavbar = () => {
   const navigate = useNavigate();
   const { user, profile, signOut } = useAuth();
+  const isMobile = useIsMobile();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(prev => !prev);
+  };
   
   return (
-    <nav className="bg-[#174c65] text-white py-4 px-12 sticky top-0 z-50">
+    <nav className="bg-[#174c65] text-white py-3 px-4 md:py-4 md:px-12 sticky top-0 z-50">
       <div className="flex justify-between items-center">
         {/* Logo */}
         <div className="flex items-center">
-          <span className="self-center text-xl font-bold text-white bg-orange-500 px-5 py-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
+          <span className="self-center text-lg md:text-xl font-bold text-white bg-orange-500 px-3 py-2 md:px-5 md:py-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
             Rehab Squared
           </span>
         </div>
         
-        {/* Navigation Links */}
+        {/* Navigation Links - Desktop */}
         <div className="hidden md:flex space-x-8">
           <NavItem label="DASHBOARD" path="/dashboard" isActive={window.location.pathname === '/dashboard'} />
           <NavItem label="PROJECTS" path="/projects" isActive={false} />
@@ -28,8 +36,20 @@ const DashboardNavbar = () => {
           <NavItem label="MESSAGES" path="/messages" isActive={false} />
         </div>
         
+        {/* Mobile Menu Toggle */}
+        <div className="flex md:hidden">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white hover:bg-[#174c65]/90"
+            onClick={toggleMobileMenu}
+          >
+            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </Button>
+        </div>
+        
         {/* User Actions */}
-        <div className="flex items-center space-x-4">
+        <div className="hidden md:flex items-center space-x-4">
           <Button 
             variant="ghost" 
             size="icon"
@@ -49,6 +69,40 @@ const DashboardNavbar = () => {
           </Button>
         </div>
       </div>
+      
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden mt-3 pb-2 border-t border-[#174c65]/30 pt-2">
+          <div className="flex flex-col space-y-3">
+            <MobileNavItem label="DASHBOARD" path="/dashboard" isActive={window.location.pathname === '/dashboard'} onClick={() => setMobileMenuOpen(false)} />
+            <MobileNavItem label="PROJECTS" path="/projects" isActive={false} onClick={() => setMobileMenuOpen(false)} />
+            <MobileNavItem label="REAL ESTATE" path="/real-estate" isActive={false} onClick={() => setMobileMenuOpen(false)} />
+            <MobileNavItem label="YOUR PROJECTS" path="/your-projects" isActive={false} onClick={() => setMobileMenuOpen(false)} />
+            <MobileNavItem label="YOUR PROPERTIES" path="/your-properties" isActive={false} onClick={() => setMobileMenuOpen(false)} />
+            <MobileNavItem label="MESSAGES" path="/messages" isActive={false} onClick={() => setMobileMenuOpen(false)} />
+            
+            <div className="flex justify-between pt-2 border-t border-[#174c65]/30">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="text-white hover:bg-[#174c65]/90"
+                onClick={() => navigate('/profile')}
+              >
+                <User className="h-4 w-4 mr-2" /> Profile
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="text-white hover:bg-[#174c65]/90"
+                onClick={() => navigate('/settings')}
+              >
+                <Settings className="h-4 w-4 mr-2" /> Settings
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   );
 };
@@ -68,6 +122,32 @@ const NavItem = ({ label, path, isActive }: NavItemProps) => {
       className={`text-sm font-medium pb-2 ${
         isActive 
           ? 'border-b-2 border-orange-500 text-white' 
+          : 'text-white/90 hover:text-white'
+      }`}
+    >
+      {label}
+    </button>
+  );
+};
+
+interface MobileNavItemProps extends NavItemProps {
+  onClick: () => void;
+}
+
+const MobileNavItem = ({ label, path, isActive, onClick }: MobileNavItemProps) => {
+  const navigate = useNavigate();
+  
+  const handleClick = () => {
+    navigate(path);
+    onClick();
+  };
+  
+  return (
+    <button
+      onClick={handleClick}
+      className={`text-sm font-medium py-2 text-left ${
+        isActive 
+          ? 'text-orange-500' 
           : 'text-white/90 hover:text-white'
       }`}
     >
