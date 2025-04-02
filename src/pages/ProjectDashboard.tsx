@@ -1,4 +1,3 @@
-
 import { useLocation, useParams } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -8,6 +7,7 @@ import PropertyCard from "@/components/project/PropertyCard";
 import TasksCard from "@/components/project/TasksCard";
 import MessagesCard from "@/components/project/MessagesCard";
 import EventsCard from "@/components/project/EventsCard";
+import SidebarProvider from "@/components/dashboard/SidebarProvider";
 
 const ProjectDashboard = () => {
   const location = useLocation();
@@ -31,43 +31,49 @@ const ProjectDashboard = () => {
   }
 
   const projectId = projectData.id || `#${Math.floor(100000 + Math.random() * 900000)}`;
+  const projectTitle = projectData?.title || "Kitchen Remodel";
   const renovationAreas = projectData?.renovationAreas || projectData?.renovation_areas || [];
 
   return (
     <div className="flex flex-col bg-white min-h-screen">
       <DashboardNavbar />
       
-      <div className="flex flex-1 h-[calc(100vh-64px)]">
-        <ProjectSidebar 
-          projectId={projectId} 
-          projectTitle={projectData?.title || "Kitchen Remodel"} 
-          activePage="overview"
-        />
-        
-        <div className="flex-1 p-8 bg-[#f3f3f3] overflow-y-auto">
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-gray-900">
-              {projectData?.title || "Kitchen Remodel"}
-            </h1>
-            <p className="text-gray-600 text-lg">
-              Family Home #{projectId.slice(-6)}
-            </p>
-          </div>
+      <SidebarProvider defaultOpen={true}>
+        <div className="flex flex-1 h-[calc(100vh-64px)] w-full">
+          <ProjectSidebar 
+            projectId={projectId} 
+            projectTitle={projectTitle}
+            activePage="overview"
+          />
           
-          <div className="mb-8">
-            <PropertyCard 
-              propertyDetails={propertyDetails} 
-              renovationAreas={renovationAreas} 
-            />
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <TasksCard />
-            <MessagesCard />
-            <EventsCard />
+          <div className="flex-1 p-6 bg-white overflow-y-auto">
+            <div className="mb-6 flex justify-between items-center">
+              <h1 className="text-3xl font-bold text-gray-900">
+                Project Overview
+              </h1>
+            </div>
+            
+            <div className="mb-8">
+              <div className="text-gray-600 text-lg">
+                Family Home #{projectId.slice(-6)}
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6 mb-8">
+              <PropertyCard 
+                propertyDetails={propertyDetails} 
+                renovationAreas={renovationAreas} 
+              />
+              
+              <TasksCard />
+              
+              <MessagesCard />
+              
+              <EventsCard />
+            </div>
           </div>
         </div>
-      </div>
+      </SidebarProvider>
     </div>
   );
 };
