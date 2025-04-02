@@ -39,7 +39,7 @@ const ProjectDashboard = () => {
     <div className="flex flex-col bg-white min-h-screen">
       <DashboardNavbar />
       
-      <SidebarProvider defaultOpen={true}>
+      <SidebarProvider defaultOpen={!isMobile}>
         <div className="flex flex-1 h-[calc(100vh-64px)] w-full">
           <ProjectSidebar 
             projectId={projectId} 
@@ -47,20 +47,20 @@ const ProjectDashboard = () => {
             activePage="overview"
           />
           
-          <div className="flex-1 p-6 bg-white overflow-y-auto">
-            <div className="mb-6 flex justify-between items-center">
-              <h1 className="text-3xl font-bold text-gray-900">
+          <div className="flex-1 p-4 sm:p-6 md:p-8 bg-white overflow-y-auto">
+            <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-0">
                 Project Overview
               </h1>
             </div>
             
-            <div className="mb-8">
-              <div className="text-gray-600 text-lg">
+            <div className="mb-4 sm:mb-8">
+              <div className="text-gray-600 text-base sm:text-lg">
                 Family Home #{projectId.slice(-6)}
               </div>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2 2xl:grid-cols-3">
               <PropertyCard 
                 propertyDetails={propertyDetails} 
                 renovationAreas={renovationAreas} 

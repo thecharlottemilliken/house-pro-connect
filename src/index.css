@@ -81,4 +81,34 @@
   .grid-cols-16 {
     grid-template-columns: repeat(16, minmax(0, 1fr));
   }
+  
+  /* Responsive utilities */
+  .responsive-container {
+    @apply w-full px-4 sm:px-6 md:px-8 mx-auto;
+  }
+  
+  .responsive-padding {
+    @apply p-4 sm:p-6 md:p-8;
+  }
+  
+  /* Better mobile touch targets */
+  .mobile-touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+}
+
+/* Fix for mobile overflows */
+html, body {
+  @apply overflow-x-hidden;
+}
+
+/* Improved mobile content layout */
+@media (max-width: 640px) {
+  .mobile-stack > * {
+    @apply w-full mb-4;
+  }
+  
+  .mobile-stack > *:last-child {
+    @apply mb-0;
+  }
 }

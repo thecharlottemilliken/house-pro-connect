@@ -8,17 +8,17 @@ interface ContentCardProps {
 
 const ContentCard = ({ image, title }: ContentCardProps) => {
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 h-full flex flex-col">
       <img 
         src={image} 
         alt={title}
         className="w-full h-32 sm:h-40 md:h-48 object-cover" 
       />
-      <div className="p-3 md:p-4">
-        <p className="text-sm md:text-base text-gray-800 mb-4 md:mb-6">{title}</p>
+      <div className="p-3 md:p-4 flex flex-col flex-1">
+        <p className="text-sm md:text-base text-gray-800 mb-4 md:mb-6 flex-1">{title}</p>
         <Button 
           variant="outline" 
-          className="w-full bg-[#174c65] text-white hover:bg-[#174c65]/90 border-[#174c65] text-xs md:text-sm"
+          className="w-full bg-[#174c65] text-white hover:bg-[#174c65]/90 border-[#174c65] text-xs md:text-sm mt-auto"
         >
           CHECK IT OUT
         </Button>

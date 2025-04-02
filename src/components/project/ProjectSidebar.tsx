@@ -5,6 +5,7 @@ import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import NavItem from "./NavItem";
 import { Sidebar, SidebarContent, SidebarHeader, SidebarTrigger, SidebarRail, useSidebar } from "@/components/ui/sidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ProjectSidebarProps {
   projectId: string;
@@ -18,6 +19,7 @@ const ProjectSidebar = ({
   activePage = ""
 }: ProjectSidebarProps) => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const {
     open,
     toggleSidebar
@@ -56,16 +58,19 @@ const ProjectSidebar = ({
         </SidebarContent>
       </Sidebar>
       
-      <div className="hidden md:block fixed left-[16.5rem] top-20 z-40 transition-all duration-300" style={{
-      left: open ? '16.5rem' : '3.5rem'
-    }}>
-        <Button variant="outline" size="icon" onClick={toggleSidebar} className="rounded-full shadow-md bg-white h-8 w-8">
-          {open ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+      {/* Desktop sidebar toggle button with adjusted position */}
+      <div className="hidden md:block fixed z-40 transition-all duration-300" style={{
+        left: open ? 'calc(16.5rem - 12px)' : 'calc(3.5rem - 12px)',
+        top: '20vh'
+      }}>
+        <Button variant="outline" size="icon" onClick={toggleSidebar} className="rounded-full shadow-md bg-white h-10 w-10">
+          {open ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
         </Button>
       </div>
       
-      <div className="md:hidden fixed bottom-4 right-4 z-50">
-        <SidebarTrigger className="bg-[#0f566c] text-white h-12 w-12 rounded-full shadow-lg" />
+      {/* Mobile sidebar trigger - improved visibility and position */}
+      <div className="md:hidden fixed bottom-6 right-6 z-50">
+        <SidebarTrigger className="bg-[#0f566c] text-white h-14 w-14 rounded-full shadow-lg flex items-center justify-center" />
       </div>
     </>;
 };
