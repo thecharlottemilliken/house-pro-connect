@@ -12,6 +12,8 @@ import CreateProject from "./pages/CreateProject";
 import RenovationAreas from "./pages/RenovationAreas";
 import ProjectPreferences from "./pages/ProjectPreferences";
 import ConstructionPreferences from "./pages/ConstructionPreferences";
+import DesignPreferences from "./pages/DesignPreferences";
+import ManagementPreferences from "./pages/ManagementPreferences";
 import AddProperty from "./pages/AddProperty";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
@@ -61,6 +63,20 @@ const App = () => {
               <ProtectedRoute>
                 <TooltipProvider>
                   <ConstructionPreferences />
+                </TooltipProvider>
+              </ProtectedRoute>
+            } />
+            <Route path="/design-preferences" element={
+              <ProtectedRoute>
+                <TooltipProvider>
+                  <DesignPreferences />
+                </TooltipProvider>
+              </ProtectedRoute>
+            } />
+            <Route path="/management-preferences" element={
+              <ProtectedRoute>
+                <TooltipProvider>
+                  <ManagementPreferences />
                 </TooltipProvider>
               </ProtectedRoute>
             } />

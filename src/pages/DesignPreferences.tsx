@@ -1,11 +1,13 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Plus } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Upload } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { 
   Select,
   SelectContent,
@@ -15,19 +17,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const ConstructionPreferences = () => {
+const DesignPreferences = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
+  
   const [propertyId, setPropertyId] = useState<string | null>(null);
   const [renovationAreas, setRenovationAreas] = useState<any[]>([]);
   const [projectPrefs, setProjectPrefs] = useState<any>(null);
-  const [helpLevel, setHelpLevel] = useState<string>("medium"); // "low", "medium", "high"
-  const [hasSpecificPros, setHasSpecificPros] = useState<boolean>(false);
+  const [hasDesigns, setHasDesigns] = useState<boolean>(true);
   
-  // Pro information fields
-  const [pros, setPros] = useState([
-    { businessName: "", contactName: "", email: "", phone: "", speciality: "" }
+  // Designer information fields
+  const [designers, setDesigners] = useState([
+    { businessName: "", contactName: "", email: "", phone: "", speciality: "Architecture" }
   ]);
 
   // Get the selected property ID and previous data from the location state
@@ -37,7 +39,7 @@ const ConstructionPreferences = () => {
       if (location.state.renovationAreas) {
         setRenovationAreas(location.state.renovationAreas);
       }
-      // Save all project preferences from previous step
+      // Save all project preferences from previous steps
       setProjectPrefs(location.state);
     } else {
       // If no property was selected, go back to the property selection
@@ -46,39 +48,40 @@ const ConstructionPreferences = () => {
   }, [location.state, navigate]);
 
   const goToNextStep = () => {
-    // Here we would save the construction preferences and go to the next step
-    navigate("/design-preferences", {
+    // Save the design preferences and go to the next step (Management Preferences)
+    navigate("/management-preferences", {
       state: {
         ...projectPrefs,
-        helpLevel,
-        hasSpecificPros,
-        pros: hasSpecificPros ? pros : []
+        designPreferences: {
+          hasDesigns,
+          designers: !hasDesigns ? designers : []
+        }
       }
     });
   };
 
   const goBack = () => {
-    navigate("/project-preferences", {
-      state: { propertyId, renovationAreas }
+    navigate("/construction-preferences", {
+      state: projectPrefs
     });
   };
 
-  const addAnotherPro = () => {
-    setPros([...pros, { businessName: "", contactName: "", email: "", phone: "", speciality: "" }]);
+  const addAnotherDesigner = () => {
+    setDesigners([...designers, { businessName: "", contactName: "", email: "", phone: "", speciality: "Architecture" }]);
   };
 
-  const updatePro = (index: number, field: string, value: string) => {
-    const updatedPros = [...pros];
-    updatedPros[index] = { ...updatedPros[index], [field]: value };
-    setPros(updatedPros);
+  const updateDesigner = (index: number, field: string, value: string) => {
+    const updatedDesigners = [...designers];
+    updatedDesigners[index] = { ...updatedDesigners[index], [field]: value };
+    setDesigners(updatedDesigners);
   };
 
   const steps = [
     { number: 1, title: "Select a Property", current: false },
     { number: 2, title: "Select Renovation Areas", current: false },
     { number: 3, title: "Project Preferences", current: false },
-    { number: 4, title: "Construction Preferences", current: true },
-    { number: 5, title: "Design Preferences", current: false },
+    { number: 4, title: "Construction Preferences", current: false },
+    { number: 5, title: "Design Preferences", current: true },
     { number: 6, title: "Management Preferences", current: false },
     { number: 7, title: "Prior Experience", current: false },
   ];
@@ -122,73 +125,79 @@ const ConstructionPreferences = () => {
         
         {/* Main Content */}
         <div className="flex-1 p-4 md:p-10 overflow-auto">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-4">Construction Preferences</h2>
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-4">Design Preferences</h2>
           <p className="text-sm md:text-base text-gray-700 mb-6 md:mb-8 max-w-3xl">
             To get started, fill out a high-level summary of the project so specialists can get an idea of the type of project underway. Next, select when you want your bids due by.
           </p>
           
-          <div className="space-y-10 mb-10">
-            {/* How much help section */}
+          <div className="space-y-8 mb-10">
+            {/* Designer option section */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">How much help are you looking for?</h3>
-              <p className="text-sm text-gray-600 mb-6">
-                This range will help us understand what you are prepared to invest in this renovation. 
-                The final quote will be dependent on the final project specs.
-              </p>
+              <h3 className="text-lg font-semibold">Have you worked with a designer?</h3>
               
-              <div className="relative py-6">
-                <div className="h-1 bg-gray-200 rounded-full">
-                  <div className="absolute h-1 bg-[#E77C2B] rounded-full" style={{ 
-                    width: helpLevel === "low" ? "33%" : helpLevel === "medium" ? "66%" : "100%" 
-                  }}></div>
+              <RadioGroup 
+                value={hasDesigns ? "has-designs" : "need-designer"} 
+                onValueChange={(value) => setHasDesigns(value === "has-designs")}
+                className="flex flex-col space-y-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="has-designs" id="has-designs" />
+                  <Label htmlFor="has-designs">I have designs</Label>
                 </div>
-                
-                <div className="flex justify-between mt-2">
-                  <div className="w-1/3 text-center">
-                    <button 
-                      className={`w-4 h-4 rounded-full -mt-4 mb-2 mx-auto block ${helpLevel === "low" ? "bg-[#E77C2B] ring-4 ring-[#E77C2B]/20" : "bg-gray-300"}`}
-                      onClick={() => setHelpLevel("low")}
-                    ></button>
-                    <p className="text-xs font-medium">Do it for me</p>
-                  </div>
-                  
-                  <div className="w-1/3 text-center">
-                    <button 
-                      className={`w-4 h-4 rounded-full -mt-4 mb-2 mx-auto block ${helpLevel === "medium" ? "bg-[#E77C2B] ring-4 ring-[#E77C2B]/20" : "bg-gray-300"}`}
-                      onClick={() => setHelpLevel("medium")}
-                    ></button>
-                    <p className="text-xs font-medium">I can do some things</p>
-                  </div>
-                  
-                  <div className="w-1/3 text-center">
-                    <button 
-                      className={`w-4 h-4 rounded-full -mt-4 mb-2 mx-auto block ${helpLevel === "high" ? "bg-[#E77C2B] ring-4 ring-[#E77C2B]/20" : "bg-gray-300"}`}
-                      onClick={() => setHelpLevel("high")}
-                    ></button>
-                    <p className="text-xs font-medium">I can do most of it</p>
-                  </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="need-designer" id="need-designer" />
+                  <Label htmlFor="need-designer">I need a designer</Label>
                 </div>
-              </div>
-              
-              <div className="flex items-start mt-6">
-                <Checkbox 
-                  id="specificPros" 
-                  checked={hasSpecificPros}
-                  onCheckedChange={(checked) => setHasSpecificPros(!!checked)}
-                  className="mt-1 border-gray-400"
-                />
-                <label htmlFor="specificPros" className="ml-2 text-sm">
-                  I have specific pros I want to work with
-                </label>
-              </div>
+              </RadioGroup>
             </div>
             
-            {/* Pro Information section */}
-            {hasSpecificPros && (
-              <div className="space-y-6 bg-gray-50 p-6 rounded-lg">
-                <h3 className="text-lg font-semibold">Pro Information</h3>
+            {/* Upload design information section */}
+            {hasDesigns && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Upload your project's design information.</h3>
                 
-                {pros.map((pro, index) => (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="md:col-span-2">
+                      <p className="text-sm mb-1">Upload Design Plan</p>
+                      <p className="text-xs text-gray-500 mb-2">PNG, JPG, PDF, or DWG</p>
+                    </div>
+                    <div className="flex justify-end">
+                      <Button 
+                        className="bg-[#174c65] hover:bg-[#174c65]/90 text-white"
+                        onClick={() => {}}
+                      >
+                        <Upload className="mr-2 h-4 w-4" /> UPLOAD
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="border-t border-gray-200 pt-4"></div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="md:col-span-2">
+                      <p className="text-sm mb-1">Upload Specs</p>
+                      <p className="text-xs text-gray-500 mb-2">PNG, JPG, or PDF</p>
+                    </div>
+                    <div className="flex justify-end">
+                      <Button 
+                        className="bg-[#174c65] hover:bg-[#174c65]/90 text-white"
+                        onClick={() => {}}
+                      >
+                        <Upload className="mr-2 h-4 w-4" /> UPLOAD
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Designer Information section */}
+            {!hasDesigns && (
+              <div className="space-y-6 bg-gray-50 p-6 rounded-lg">
+                <h3 className="text-lg font-semibold">Designer Information</h3>
+                
+                {designers.map((designer, index) => (
                   <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -197,8 +206,8 @@ const ConstructionPreferences = () => {
                       <Input
                         type="text"
                         placeholder="Name"
-                        value={pro.businessName}
-                        onChange={(e) => updatePro(index, "businessName", e.target.value)}
+                        value={designer.businessName}
+                        onChange={(e) => updateDesigner(index, "businessName", e.target.value)}
                       />
                     </div>
                     
@@ -209,8 +218,8 @@ const ConstructionPreferences = () => {
                       <Input
                         type="text"
                         placeholder="Name"
-                        value={pro.contactName}
-                        onChange={(e) => updatePro(index, "contactName", e.target.value)}
+                        value={designer.contactName}
+                        onChange={(e) => updateDesigner(index, "contactName", e.target.value)}
                       />
                     </div>
                     
@@ -221,8 +230,8 @@ const ConstructionPreferences = () => {
                       <Input
                         type="email"
                         placeholder="email@gmail.com"
-                        value={pro.email}
-                        onChange={(e) => updatePro(index, "email", e.target.value)}
+                        value={designer.email}
+                        onChange={(e) => updateDesigner(index, "email", e.target.value)}
                       />
                     </div>
                     
@@ -233,8 +242,8 @@ const ConstructionPreferences = () => {
                       <Input
                         type="tel"
                         placeholder="000 000 0000"
-                        value={pro.phone}
-                        onChange={(e) => updatePro(index, "phone", e.target.value)}
+                        value={designer.phone}
+                        onChange={(e) => updateDesigner(index, "phone", e.target.value)}
                       />
                     </div>
                     
@@ -243,20 +252,19 @@ const ConstructionPreferences = () => {
                         Speciality
                       </label>
                       <Select 
-                        value={pro.speciality} 
-                        onValueChange={(value) => updatePro(index, "speciality", value)}
+                        value={designer.speciality} 
+                        onValueChange={(value) => updateDesigner(index, "speciality", value)}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select a speciality" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectGroup>
-                            <SelectItem value="tiling">Tiling</SelectItem>
-                            <SelectItem value="plumbing">Plumbing</SelectItem>
-                            <SelectItem value="electrical">Electrical</SelectItem>
-                            <SelectItem value="carpentry">Carpentry</SelectItem>
-                            <SelectItem value="painting">Painting</SelectItem>
-                            <SelectItem value="general">General Contractor</SelectItem>
+                            <SelectItem value="Architecture">Architecture</SelectItem>
+                            <SelectItem value="Interior Design">Interior Design</SelectItem>
+                            <SelectItem value="Landscape Design">Landscape Design</SelectItem>
+                            <SelectItem value="Kitchen Design">Kitchen Design</SelectItem>
+                            <SelectItem value="Bathroom Design">Bathroom Design</SelectItem>
                           </SelectGroup>
                         </SelectContent>
                       </Select>
@@ -267,9 +275,9 @@ const ConstructionPreferences = () => {
                 <Button 
                   variant="outline" 
                   className="flex items-center text-[#174c65] border-[#174c65]"
-                  onClick={addAnotherPro}
+                  onClick={addAnotherDesigner}
                 >
-                  <Plus className="w-4 h-4 mr-2" /> ADD ANOTHER PRO
+                  <Plus className="w-4 h-4 mr-2" /> ADD ANOTHER DESIGNER
                 </Button>
               </div>
             )}
@@ -306,4 +314,4 @@ const ConstructionPreferences = () => {
   );
 };
 
-export default ConstructionPreferences;
+export default DesignPreferences;
