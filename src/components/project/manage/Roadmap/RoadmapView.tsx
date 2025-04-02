@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { format, addDays, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from "date-fns";
 import { cn } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Task {
   id: number;
@@ -41,6 +42,30 @@ const RoadmapView = () => {
       startDate: addDays(new Date(), 8),
       endDate: addDays(new Date(), 15),
       color: "#9b74e9",
+      status: "Pending"
+    },
+    {
+      id: 4,
+      name: "Plumbing",
+      startDate: addDays(new Date(), 10),
+      endDate: addDays(new Date(), 18),
+      color: "#58c97b",
+      status: "Pending"
+    },
+    {
+      id: 5,
+      name: "Drywall",
+      startDate: addDays(new Date(), 19),
+      endDate: addDays(new Date(), 25),
+      color: "#f6a84c",
+      status: "Pending"
+    },
+    {
+      id: 6,
+      name: "Painting",
+      startDate: addDays(new Date(), 26),
+      endDate: addDays(new Date(), 32),
+      color: "#e06767",
       status: "Pending"
     }
   ]);
@@ -127,108 +152,110 @@ const RoadmapView = () => {
   };
 
   return (
-    <div className="bg-white rounded-lg">
-      {/* Task List */}
-      <div className="flex mb-4">
-        {/* Task Names Column */}
-        <div className="w-48 pr-4">
-          {tasks.map(task => (
-            <div key={task.id} className="h-20 flex items-center">
-              <div className="flex items-center">
-                <div className="w-4 h-4 rounded-full mr-3" style={{ backgroundColor: task.color }}></div>
-                <span className="font-medium">{task.name}</span>
-              </div>
-            </div>
-          ))}
+    <div className="bg-white rounded-lg flex flex-col h-[calc(100vh-240px)]">
+      {/* Month Navigation */}
+      <div className="flex justify-between items-center mb-4 px-4 pt-4">
+        <div className="flex items-center">
+          <button className="p-1 rounded hover:bg-gray-100" onClick={navigateToPreviousWeek}>
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <span className="mx-2">{format(currentDate, "MMMM yyyy")}</span>
+          <button className="p-1 rounded hover:bg-gray-100" onClick={navigateToNextWeek}>
+            <ChevronRight className="h-5 w-5" />
+          </button>
         </div>
-        
-        {/* Gantt Chart Grid */}
-        <div className="flex-1">
-          {/* Month Navigation */}
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center">
-              <button className="p-1 rounded hover:bg-gray-100" onClick={navigateToPreviousWeek}>
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              <span className="mx-2">{format(currentDate, "MMMM yyyy")}</span>
-              <button className="p-1 rounded hover:bg-gray-100" onClick={navigateToNextWeek}>
-                <ChevronRight className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="flex items-center bg-gray-100 rounded-md px-3 py-1 text-sm">
-              <CalendarIcon className="h-4 w-4 mr-2" />
-              {dateRange}
-            </div>
-          </div>
-          
-          {/* Calendar Headers */}
-          <div className="grid grid-cols-7 border-b border-gray-200">
-            {days.map(day => (
-              <div 
-                key={day.getTime()} 
-                className={cn(
-                  "text-center py-2",
-                  isToday(day) ? 'bg-blue-100' : ''
-                )}
-              >
-                <div className="font-medium">{format(day, "d")}</div>
-                <div className="text-sm text-gray-500">{format(day, "EEE")}</div>
+        <div className="flex items-center bg-gray-100 rounded-md px-3 py-1 text-sm">
+          <CalendarIcon className="h-4 w-4 mr-2" />
+          {dateRange}
+        </div>
+      </div>
+
+      <ScrollArea className="flex-1 pr-4">
+        <div className="flex h-full">
+          {/* Task Names Column */}
+          <div className="w-48 sticky left-0 bg-white z-10">
+            <div className="h-[60px]"></div> {/* Header space */}
+            {tasks.map(task => (
+              <div key={task.id} className="h-20 flex items-center">
+                <div className="flex items-center">
+                  <div className="w-4 h-4 rounded-full mr-3" style={{ backgroundColor: task.color }}></div>
+                  <span className="font-medium">{task.name}</span>
+                </div>
               </div>
             ))}
           </div>
           
-          {/* Task Timelines */}
-          <div className="relative">
-            {/* Grid Lines */}
-            <div className="absolute top-0 left-0 right-0 bottom-0 grid grid-cols-7 pointer-events-none">
+          {/* Gantt Chart Grid */}
+          <div className="flex-1">
+            {/* Calendar Headers */}
+            <div className="grid grid-cols-7 border-b border-gray-200 sticky top-0 bg-white z-10">
               {days.map(day => (
                 <div 
                   key={day.getTime()} 
                   className={cn(
-                    "border-l border-gray-100 h-full",
+                    "text-center py-2",
                     isToday(day) ? 'bg-blue-100' : ''
                   )}
-                ></div>
+                >
+                  <div className="font-medium">{format(day, "d")}</div>
+                  <div className="text-sm text-gray-500">{format(day, "EEE")}</div>
+                </div>
               ))}
             </div>
             
-            {/* Today Indicator */}
-            {days.findIndex(day => isToday(day)) !== -1 && (
-              <div 
-                className="absolute top-0 bottom-0 w-0.5 bg-blue-500" 
-                style={{
-                  left: `${(days.findIndex(day => isToday(day)) + 0.5) / days.length * 100}%`,
-                  zIndex: 5
-                }}
-              ></div>
-            )}
-            
-            {/* Task Bars */}
-            {tasks.map((task) => (
-              <div key={task.id} className="h-20 relative flex items-center">
-                {isTaskVisible(task) && (
+            {/* Task Timelines */}
+            <div className="relative">
+              {/* Grid Lines */}
+              <div className="absolute top-0 left-0 right-0 bottom-0 grid grid-cols-7 pointer-events-none">
+                {days.map(day => (
                   <div 
-                    className="absolute h-12 rounded-md px-4 flex items-center justify-between"
-                    style={{
-                      backgroundColor: task.color,
-                      ...calculateTaskBarStyles(task),
-                      color: 'white',
-                      minWidth: '100px'
-                    }}
-                  >
-                    <span className="font-medium">
-                      {task.status === "Active" ? "Active" : "Requested Work Block"}
-                    </span>
-                    <button className="bg-[#0f566c] px-3 py-1 rounded text-sm whitespace-nowrap">
-                      {task.status === "Active" ? "MARK COMPLETE" : "SCHEDULE WORK"}
-                    </button>
-                  </div>
-                )}
+                    key={day.getTime()} 
+                    className={cn(
+                      "border-l border-gray-100 h-full",
+                      isToday(day) ? 'bg-blue-100' : ''
+                    )}
+                  ></div>
+                ))}
               </div>
-            ))}
+              
+              {/* Today Indicator */}
+              {days.findIndex(day => isToday(day)) !== -1 && (
+                <div 
+                  className="absolute top-0 bottom-0 w-0.5 bg-blue-500" 
+                  style={{
+                    left: `${(days.findIndex(day => isToday(day)) + 0.5) / days.length * 100}%`,
+                    zIndex: 5
+                  }}
+                ></div>
+              )}
+              
+              {/* Task Bars */}
+              {tasks.map((task) => (
+                <div key={task.id} className="h-20 relative flex items-center">
+                  {isTaskVisible(task) && (
+                    <div 
+                      className="absolute h-12 rounded-md px-4 flex items-center justify-between"
+                      style={{
+                        backgroundColor: task.color,
+                        ...calculateTaskBarStyles(task),
+                        color: 'white',
+                        minWidth: '100px'
+                      }}
+                    >
+                      <span className="font-medium truncate max-w-[150px]">
+                        {task.status === "Active" ? "Active" : "Requested Work Block"}
+                      </span>
+                      <button className="bg-[#0f566c] px-3 py-1 rounded text-sm whitespace-nowrap ml-2">
+                        {task.status === "Active" ? "MARK COMPLETE" : "SCHEDULE WORK"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      </ScrollArea>
     </div>
   );
 };

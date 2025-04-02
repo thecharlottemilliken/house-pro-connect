@@ -14,7 +14,7 @@ const ProjectManageTabs = ({ defaultTab = "calendar" }: ProjectManageTabsProps) 
   const [activeTab, setActiveTab] = useState(defaultTab);
 
   return (
-    <Tabs defaultValue={defaultTab} onValueChange={setActiveTab} value={activeTab} className="w-full">
+    <Tabs defaultValue={defaultTab} onValueChange={setActiveTab} value={activeTab} className="w-full h-full flex flex-col">
       <TabsList className="border-b border-gray-200 mb-6 p-0 bg-transparent w-full flex justify-start space-x-8 h-auto">
         <TabsTrigger 
           value="roadmap" 
@@ -39,18 +39,18 @@ const ProjectManageTabs = ({ defaultTab = "calendar" }: ProjectManageTabsProps) 
         </TabsTrigger>
       </TabsList>
       
-      <TabsContent value="calendar" className="m-0 p-0">
+      <TabsContent value="calendar" className="m-0 p-0 flex-1">
         <CalendarView />
       </TabsContent>
       
-      <TabsContent value="roadmap" className="m-0 p-0">
+      <TabsContent value="roadmap" className="m-0 p-0 flex-1">
         <div className="mb-6">
           <h2 className="text-xl font-bold text-gray-800">Project Phases</h2>
         </div>
         <RoadmapView />
       </TabsContent>
       
-      <TabsContent value="phases" className="m-0 p-0">
+      <TabsContent value="phases" className="m-0 p-0 flex-1">
         <PhasesView />
       </TabsContent>
     </Tabs>
