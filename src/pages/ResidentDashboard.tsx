@@ -4,11 +4,27 @@ import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import RecommendedContent from "@/components/dashboard/RecommendedContent";
+import { useState, useEffect } from "react";
 
 const ResidentDashboard = () => {
   const navigate = useNavigate();
-  // In a real app, this would come from authentication or context
-  const username = "Jarett";
+  // Use state to store the user's first name
+  const [firstName, setFirstName] = useState("Guest");
+
+  // In a real app, this would come from your authentication system
+  // For now, we're simulating fetching the user data
+  useEffect(() => {
+    // Simulating API call to get user data
+    // Replace this with actual authentication logic in a real app
+    const fetchUserData = () => {
+      // For demo purposes - normally this would be an API call
+      setTimeout(() => {
+        setFirstName("Jarett");
+      }, 500);
+    };
+
+    fetchUserData();
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -17,7 +33,7 @@ const ResidentDashboard = () => {
       <main className="flex-1 px-12 py-8">
         <div className="mb-12">
           <h1 className="text-4xl font-bold text-gray-900">Welcome,</h1>
-          <p className="text-3xl text-gray-800">{username}</p>
+          <p className="text-3xl text-gray-800">{firstName}</p>
         </div>
         
         <div className="bg-blue-50 rounded-lg p-8 mb-12">
