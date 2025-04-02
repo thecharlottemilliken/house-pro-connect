@@ -6,9 +6,7 @@ const Index = () => {
   const navigate = useNavigate();
 
   const handleCreateAccount = () => {
-    // In a real app, this would handle the signup process
-    // For now, we'll just navigate to the dashboard
-    navigate("/dashboard");
+    navigate("/signup");
   };
 
   return (
@@ -32,6 +30,7 @@ const Index = () => {
             variant="outline" 
             size="lg" 
             className="w-full border-gray-300"
+            onClick={() => navigate("/")}
           >
             Sign In
           </Button>

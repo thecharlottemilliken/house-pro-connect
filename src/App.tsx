@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import ResidentDashboard from "./pages/ResidentDashboard";
 import CreateProject from "./pages/CreateProject";
+import SignUp from "./pages/SignUp";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +21,7 @@ const App = () => {
           <Sonner />
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/signup" element={<SignUp />} />
             <Route path="/dashboard" element={<ResidentDashboard />} />
             <Route path="/create-project" element={<CreateProject />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
