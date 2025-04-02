@@ -18,7 +18,7 @@ const ContentCard = ({ image, title }: ContentCardProps) => {
         <p className="text-gray-800 mb-6">{title}</p>
         <Button 
           variant="outline" 
-          className="w-full bg-[#174c65] text-white hover:bg-[#1a5978] border-[#174c65]"
+          className="w-full bg-[#174c65] text-white hover:bg-[#174c65]/90 border-[#174c65]"
         >
           CHECK IT OUT
         </Button>
