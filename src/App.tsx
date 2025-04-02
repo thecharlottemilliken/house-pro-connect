@@ -10,6 +10,7 @@ import NotFound from "./pages/NotFound";
 import ResidentDashboard from "./pages/ResidentDashboard";
 import CreateProject from "./pages/CreateProject";
 import RenovationAreas from "./pages/RenovationAreas";
+import ProjectPreferences from "./pages/ProjectPreferences";
 import AddProperty from "./pages/AddProperty";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
@@ -45,6 +46,13 @@ const App = () => {
               <ProtectedRoute>
                 <TooltipProvider>
                   <RenovationAreas />
+                </TooltipProvider>
+              </ProtectedRoute>
+            } />
+            <Route path="/project-preferences" element={
+              <ProtectedRoute>
+                <TooltipProvider>
+                  <ProjectPreferences />
                 </TooltipProvider>
               </ProtectedRoute>
             } />

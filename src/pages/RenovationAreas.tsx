@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -28,12 +27,10 @@ const RenovationAreas = () => {
   const [renovationAreas, setRenovationAreas] = useState<RenovationArea[]>([]);
   const [propertyId, setPropertyId] = useState<string | null>(null);
 
-  // Get the selected property ID from the location state
   useEffect(() => {
     if (location.state?.propertyId) {
       setPropertyId(location.state.propertyId);
     } else {
-      // If no property was selected, go back to the property selection
       navigate("/create-project");
     }
   }, [location.state, navigate]);
@@ -51,11 +48,12 @@ const RenovationAreas = () => {
   };
 
   const goToNextStep = () => {
-    // Here we would save the renovation areas and go to the next step
-    console.log("Selected areas:", renovationAreas);
-    console.log("Selected property ID:", propertyId);
-    // For now, we'll just navigate back to the dashboard
-    navigate("/dashboard");
+    navigate("/project-preferences", {
+      state: {
+        propertyId,
+        renovationAreas
+      }
+    });
   };
 
   const goBack = () => {
@@ -100,7 +98,6 @@ const RenovationAreas = () => {
       <DashboardNavbar />
       
       <div className="flex flex-col md:flex-row flex-1">
-        {/* Left Sidebar */}
         <div className={`${isMobile ? 'w-full' : 'w-80'} bg-[#EFF3F7] p-4 md:p-8`}>
           <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">Create a Project</h1>
           <p className="text-sm md:text-base text-gray-600 mb-6 md:mb-8">
@@ -132,7 +129,6 @@ const RenovationAreas = () => {
           </div>
         </div>
         
-        {/* Main Content */}
         <div className="flex-1 p-4 md:p-10 overflow-auto">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-4">Select Renovation Areas</h2>
           <p className="text-sm md:text-base text-gray-700 mb-6 md:mb-8 max-w-3xl">
