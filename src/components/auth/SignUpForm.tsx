@@ -41,7 +41,7 @@ const SignUpForm = () => {
   const { signup } = useAuth();
   const navigate = useNavigate();
   const [selectedRole, setSelectedRole] = useState<UserRole>("resident");
-  const [step, setStep] = useState<1 | 2>(2);
+  const [step, setStep] = useState<number>(2);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
