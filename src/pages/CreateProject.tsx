@@ -1,13 +1,15 @@
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
+import AddPropertyDialog from "@/components/projects/AddPropertyDialog";
 
 const CreateProject = () => {
   const navigate = useNavigate();
-
-  const propertyData = [
+  const [isAddPropertyDialogOpen, setIsAddPropertyDialogOpen] = useState(false);
+  const [propertyData, setPropertyData] = useState([
     {
       id: 1,
       type: "Family Home",
@@ -20,7 +22,17 @@ const CreateProject = () => {
       image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2558&q=80",
       address: "1143 S 1200 W #W, Salt Lake City, UT 84104",
     }
-  ];
+  ]);
+
+  const [selectedPropertyId, setSelectedPropertyId] = useState<number | null>(null);
+
+  const addProperty = (property: any) => {
+    setPropertyData(prev => [...prev, property]);
+  };
+
+  const selectProperty = (id: number) => {
+    setSelectedPropertyId(id);
+  };
 
   const steps = [
     { number: 1, title: "Select a Property", current: true },
@@ -31,6 +43,12 @@ const CreateProject = () => {
     { number: 6, title: "Management Preferences", current: false },
     { number: 7, title: "Prior Experience", current: false },
   ];
+
+  const goToNextStep = () => {
+    // This would update the current step and navigate to the next page
+    // For now, it just logs the selected property
+    console.log("Selected property:", propertyData.find(p => p.id === selectedPropertyId));
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -77,18 +95,26 @@ const CreateProject = () => {
           </p>
           
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-bold text-gray-900">Your Properties <span className="text-gray-500">2</span></h3>
+            <h3 className="text-xl font-bold text-gray-900">Your Properties <span className="text-gray-500">{propertyData.length}</span></h3>
             <Button 
               variant="outline" 
               className="border-[#174c65] text-[#174c65] hover:bg-[#174c65] hover:text-white"
+              onClick={() => setIsAddPropertyDialogOpen(true)}
             >
-              ADD PROPERTY
+              <Plus className="mr-2 h-4 w-4" /> ADD PROPERTY
             </Button>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
             {propertyData.map((property) => (
-              <div key={property.id} className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
+              <div 
+                key={property.id} 
+                className={`bg-white rounded-lg shadow-md overflow-hidden border ${
+                  selectedPropertyId === property.id 
+                    ? "border-[#174c65] ring-2 ring-[#174c65]/20" 
+                    : "border-gray-200"
+                }`}
+              >
                 <div className="h-52 overflow-hidden">
                   <img 
                     src={property.image} 
@@ -100,10 +126,13 @@ const CreateProject = () => {
                   <h4 className="text-lg font-semibold mb-2">{property.type}</h4>
                   <p className="text-gray-600 mb-4">{property.address}</p>
                   <Button 
-                    variant="outline" 
-                    className="w-full border-[#174c65] text-[#174c65] hover:bg-[#174c65] hover:text-white"
+                    variant={selectedPropertyId === property.id ? "default" : "outline"}
+                    className={selectedPropertyId === property.id 
+                      ? "w-full bg-[#174c65] text-white" 
+                      : "w-full border-[#174c65] text-[#174c65] hover:bg-[#174c65] hover:text-white"}
+                    onClick={() => selectProperty(property.id)}
                   >
-                    SELECT
+                    {selectedPropertyId === property.id ? "SELECTED" : "SELECT"}
                   </Button>
                 </div>
               </div>
@@ -127,12 +156,23 @@ const CreateProject = () => {
                 SAVE & EXIT
               </Button>
               <Button
-                className="bg-gray-300 hover:bg-gray-400 text-gray-800 flex items-center"
+                className={`flex items-center ${
+                  selectedPropertyId ? "bg-[#174c65] hover:bg-[#174c65]/90" : "bg-gray-300 hover:bg-gray-400"
+                } text-white`}
+                disabled={!selectedPropertyId}
+                onClick={selectedPropertyId ? goToNextStep : undefined}
               >
                 NEXT <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           </div>
+          
+          {/* Property Dialog */}
+          <AddPropertyDialog 
+            open={isAddPropertyDialogOpen} 
+            onClose={() => setIsAddPropertyDialogOpen(false)}
+            onAddProperty={addProperty}
+          />
         </div>
       </div>
     </div>
