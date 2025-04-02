@@ -35,6 +35,7 @@ const Projects = () => {
     const fetchProjects = async () => {
       setIsLoading(true);
       try {
+        // Using untyped query to avoid TypeScript errors
         const { data, error } = await supabase
           .from('projects')
           .select(`
@@ -53,7 +54,8 @@ const Projects = () => {
           
         if (error) throw error;
         
-        setProjects(data || []);
+        // Type assertion to match the expected Project[] type
+        setProjects(data as Project[] || []);
       } catch (error: any) {
         console.error('Error fetching projects:', error);
         toast({
