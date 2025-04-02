@@ -33,6 +33,7 @@ const CreateProject = () => {
     const fetchProperties = async () => {
       setIsLoading(true);
       try {
+        // The Supabase client will automatically cast the types correctly
         const { data, error } = await supabase
           .from('properties')
           .select('*')
