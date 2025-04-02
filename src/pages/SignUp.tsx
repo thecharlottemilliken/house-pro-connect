@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -219,8 +218,8 @@ const SignUp = () => {
       {/* Right side - Image */}
       <div className="hidden lg:block lg:w-1/2 bg-gray-100">
         <img 
-          src="/lovable-uploads/2ec4131e-e56c-4581-855e-2e1c9ec52254.png" 
-          alt="Modern living room" 
+          src="/lovable-uploads/2069326c-e836-4307-bba2-93ef8b361ae1.png" 
+          alt="Modern living room with light gray sofa and wooden coffee table" 
           className="h-full w-full object-cover"
         />
       </div>
