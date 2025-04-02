@@ -140,15 +140,15 @@ const RenovationAreas = () => {
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div className="bg-white border border-gray-200 rounded-lg p-4 md:p-6">
-              <h3 className="text-lg font-semibold mb-4">Add Areas</h3>
+            <div className="bg-white border border-gray-200 rounded-lg p-4 md:p-6 shadow-sm">
+              <h3 className="text-xl font-medium mb-6 text-gray-900">Add Areas</h3>
               
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Add Area</label>
+                  <label className="block text-sm font-medium text-gray-500 mb-2">Add Area</label>
                   <Select value={selectedArea} onValueChange={setSelectedArea}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select" />
+                    <SelectTrigger className="w-full border border-gray-300 rounded-md py-3">
+                      <SelectValue placeholder="Select area type" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
@@ -161,10 +161,10 @@ const RenovationAreas = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Select Location</label>
+                  <label className="block text-sm font-medium text-gray-500 mb-2">Select Location</label>
                   <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select" />
+                    <SelectTrigger className="w-full border border-gray-300 rounded-md py-3">
+                      <SelectValue placeholder="Select location" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
@@ -177,7 +177,7 @@ const RenovationAreas = () => {
                 </div>
                 
                 <Button 
-                  className="w-full bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  className="w-full bg-[#174c65] text-white hover:bg-[#174c65]/90 py-6 text-base rounded-md"
                   onClick={addArea}
                   disabled={!selectedArea || !selectedLocation}
                 >
@@ -186,11 +186,11 @@ const RenovationAreas = () => {
               </div>
             </div>
             
-            <div className="bg-white border border-gray-200 rounded-lg p-4 md:p-6">
-              <h3 className="text-lg font-semibold mb-4">Renovation Areas</h3>
+            <div className="bg-[#F8FAFC] border border-gray-200 rounded-lg p-4 md:p-6 shadow-sm">
+              <h3 className="text-xl font-medium mb-6 text-gray-900">Renovation Areas</h3>
               
               {renovationAreas.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">
+                <p className="text-gray-500 text-center py-10">
                   Add areas to renovate using the drop downs to the left.
                 </p>
               ) : (
@@ -198,7 +198,7 @@ const RenovationAreas = () => {
                   {renovationAreas.map((item, index) => (
                     <li key={index} className="py-3 flex justify-between">
                       <div>
-                        <p className="font-medium">{item.area}</p>
+                        <p className="font-medium text-gray-800">{item.area}</p>
                         <p className="text-sm text-gray-500">{item.location}</p>
                       </div>
                       <Button 
