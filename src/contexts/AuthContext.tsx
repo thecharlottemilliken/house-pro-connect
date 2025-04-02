@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
@@ -26,14 +25,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log('Auth state changed:', event);
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Fetch profile after session state is updated
         if (session?.user) {
           setTimeout(() => {
             fetchProfile(session.user.id);
@@ -44,7 +41,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
-    // Then check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -94,10 +90,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) return { error };
       
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (signInError) {
+        console.error("Auto sign in failed after signup:", signInError);
+        toast({
+          title: "Account created successfully",
+          description: "You can now sign in with your credentials",
+        });
+        return { error: null };
+      }
+      
       toast({
         title: "Account created successfully",
-        description: "You can now sign in with your credentials",
+        description: "You have been automatically signed in",
       });
+      
+      navigate('/dashboard');
       
       return { error: null };
     } catch (error: any) {
@@ -146,7 +158,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) return { error };
 
-      // Refresh profile data
       fetchProfile(user.id);
       
       toast({

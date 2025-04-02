@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -114,9 +113,6 @@ const SignUp = () => {
             description: error.message || "Please check your information and try again",
             variant: "destructive",
           });
-        } else {
-          // Navigate to sign in after successful signup
-          navigate("/");
         }
       } catch (error: any) {
         toast({
