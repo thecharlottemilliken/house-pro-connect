@@ -74,9 +74,12 @@ const CreateProject = () => {
   ];
 
   const goToNextStep = () => {
-    // This would update the current step and navigate to the next page
-    // For now, it just logs the selected property
-    console.log("Selected property:", properties.find(p => p.id === selectedPropertyId));
+    if (!selectedPropertyId) return;
+    
+    // Navigate to the renovation areas page with the selected property ID
+    navigate("/renovation-areas", { 
+      state: { propertyId: selectedPropertyId } 
+    });
   };
   
   const formatAddress = (property: Property) => {
