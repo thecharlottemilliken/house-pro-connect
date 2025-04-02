@@ -46,7 +46,8 @@ const PriorExperience = () => {
       description: "Your project has been successfully created!",
     });
     
-    navigate("/dashboard", {
+    // Navigate to the project dashboard with all the project data
+    navigate("/project-dashboard", {
       state: {
         ...projectPrefs,
         priorExperience: priorExperienceData,
