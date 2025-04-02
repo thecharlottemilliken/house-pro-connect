@@ -1,7 +1,7 @@
 
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import NavItem from "./NavItem";
 import {
@@ -9,7 +9,8 @@ import {
   SidebarContent,
   SidebarHeader,
   SidebarTrigger,
-  SidebarRail
+  SidebarRail,
+  useSidebar
 } from "@/components/ui/sidebar";
 
 interface ProjectSidebarProps {
@@ -24,6 +25,7 @@ const ProjectSidebar = ({
   activePage = ""
 }: ProjectSidebarProps) => {
   const navigate = useNavigate();
+  const { open, toggleSidebar } = useSidebar();
 
   return (
     <>
@@ -38,7 +40,17 @@ const ProjectSidebar = ({
             >
               <ArrowLeft className="mr-2 h-4 w-4" /> All Projects
             </Button>
-            <h2 className="text-xl font-semibold text-gray-900 truncate">{projectTitle}</h2>
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-900 truncate">{projectTitle}</h2>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="ml-2 text-gray-500 hover:text-gray-700"
+                onClick={toggleSidebar}
+              >
+                {open ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              </Button>
+            </div>
           </div>
         </SidebarHeader>
         
@@ -69,6 +81,18 @@ const ProjectSidebar = ({
           </nav>
         </SidebarContent>
       </Sidebar>
+      
+      {/* Floating collapse/expand button for better visibility */}
+      <div className="hidden md:block fixed left-[16.5rem] top-20 z-40 transition-all duration-300" style={{ left: open ? '16.5rem' : '3.5rem' }}>
+        <Button 
+          variant="outline" 
+          size="icon" 
+          onClick={toggleSidebar}
+          className="rounded-full shadow-md bg-white h-8 w-8"
+        >
+          {open ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+        </Button>
+      </div>
       
       {/* Mobile Sidebar Trigger - visible only on small screens */}
       <div className="md:hidden fixed bottom-4 right-4 z-50">
