@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Check, Info } from "lucide-react";
@@ -31,7 +30,6 @@ const ProjectPreferences = () => {
   const [eventDate, setEventDate] = useState<string>("");
   const [eventName, setEventName] = useState<string>("");
 
-  // Get the selected property ID and renovation areas from the location state
   useEffect(() => {
     if (location.state?.propertyId) {
       setPropertyId(location.state.propertyId);
@@ -39,24 +37,11 @@ const ProjectPreferences = () => {
         setRenovationAreas(location.state.renovationAreas);
       }
     } else {
-      // If no property was selected, go back to the property selection
       navigate("/create-project");
     }
   }, [location.state, navigate]);
 
   const goToNextStep = () => {
-    // Here we would save the project preferences and go to the next step
-    console.log("Selected property ID:", propertyId);
-    console.log("Renovation areas:", renovationAreas);
-    console.log("Budget:", budget);
-    console.log("Use financing:", useFinancing);
-    console.log("Completion date:", completionDate);
-    console.log("Readiness:", readiness);
-    console.log("Is life event dependent:", isLifeEventDependent);
-    console.log("Event date:", eventDate);
-    console.log("Event name:", eventName);
-    
-    // Navigate to the next step (Construction Preferences)
     navigate("/construction-preferences", {
       state: {
         propertyId,
@@ -93,7 +78,6 @@ const ProjectPreferences = () => {
       <DashboardNavbar />
       
       <div className="flex flex-col md:flex-row flex-1">
-        {/* Left Sidebar */}
         <div className={`${isMobile ? 'w-full' : 'w-80'} bg-[#EFF3F7] p-4 md:p-8`}>
           <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">Create a Project</h1>
           <p className="text-sm md:text-base text-gray-600 mb-6 md:mb-8">
@@ -125,7 +109,6 @@ const ProjectPreferences = () => {
           </div>
         </div>
         
-        {/* Main Content */}
         <div className="flex-1 p-4 md:p-10 overflow-auto">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-4">Project Preferences</h2>
           <p className="text-sm md:text-base text-gray-700 mb-6 md:mb-8 max-w-3xl">
@@ -134,7 +117,6 @@ const ProjectPreferences = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="md:col-span-2 space-y-10">
-              {/* Budget Section */}
               <div className="space-y-4">
                 <h3 className="text-xl font-semibold">Budget</h3>
                 <div>
@@ -186,7 +168,6 @@ const ProjectPreferences = () => {
                 </div>
               </div>
               
-              {/* Timeline Section */}
               <div className="space-y-4">
                 <h3 className="text-xl font-semibold">Timeline</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -274,7 +255,6 @@ const ProjectPreferences = () => {
               </div>
             </div>
             
-            {/* Information Panel */}
             <div className="bg-gray-50 p-6 rounded-lg">
               <h3 className="text-lg font-semibold mb-4">How estimates work</h3>
               <p className="text-sm text-gray-600 mb-4">
