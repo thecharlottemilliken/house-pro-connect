@@ -1,4 +1,3 @@
-
 import { useLocation, useParams } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -54,15 +53,15 @@ const ProjectDashboard = () => {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+          <div className="mb-8">
             <PropertyCard 
               propertyDetails={propertyDetails} 
               renovationAreas={renovationAreas} 
             />
-            <TasksCard />
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <TasksCard />
             <MessagesCard />
             <EventsCard />
           </div>
