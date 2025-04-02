@@ -9,6 +9,7 @@ import NotFound from "./pages/NotFound";
 import ResidentDashboard from "./pages/ResidentDashboard";
 import CreateProject from "./pages/CreateProject";
 import SignUp from "./pages/SignUp";
+import SignIn from "./pages/SignIn";
 
 const queryClient = new QueryClient();
 
@@ -17,7 +18,7 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/dashboard" element={
             <TooltipProvider>
