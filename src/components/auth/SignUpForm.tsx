@@ -16,7 +16,9 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import UserRoleSelect from "./UserRoleSelect";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -32,8 +34,11 @@ type UserRole = "resident" | "servicePro";
 
 const SignUpForm = () => {
   const { toast } = useToast();
+  const { signup } = useAuth();
+  const navigate = useNavigate();
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const [step, setStep] = useState<1 | 2>(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -49,7 +54,7 @@ const SignUpForm = () => {
     setSelectedRole(role);
   };
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!selectedRole) {
       toast({
         title: "Error",
@@ -59,16 +64,16 @@ const SignUpForm = () => {
       return;
     }
 
-    // In a real app, this would connect to your backend/auth service
-    console.log({ ...values, role: selectedRole });
-
-    toast({
-      title: "Account created!",
-      description: "You've successfully created your account.",
-    });
-
-    // Redirect to dashboard based on role or login page
-    // window.location.href = "/dashboard";
+    try {
+      setIsSubmitting(true);
+      await signup(values.name, values.email, values.password, selectedRole);
+      navigate('/dashboard');
+    } catch (error) {
+      console.error("Signup error:", error);
+      // Error toast is already handled in the AuthContext
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleContinue = () => {
@@ -156,7 +161,18 @@ const SignUpForm = () => {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full">Create Account</Button>
+              <Button 
+                type="submit" 
+                className="w-full"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating Account...
+                  </>
+                ) : "Create Account"}
+              </Button>
             </form>
           </Form>
         )}

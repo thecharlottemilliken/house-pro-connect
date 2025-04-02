@@ -1,5 +1,8 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/components/ui/use-toast";
 
 // User types
 export type UserRole = "resident" | "servicePro";
@@ -19,8 +22,8 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (name: string, email: string, password: string, role: UserRole) => Promise<void>;
-  logout: () => void;
-  updateUser: (data: Partial<User>) => void;
+  logout: () => Promise<void>;
+  updateUser: (data: Partial<User>) => Promise<void>;
 }
 
 // Create context with default values
@@ -30,8 +33,8 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   login: async () => {},
   signup: async () => {},
-  logout: () => {},
-  updateUser: () => {},
+  logout: async () => {},
+  updateUser: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -40,15 +43,32 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const { toast } = useToast();
 
-  // Check for existing session on mount
+  // Check for existing session on mount and set up auth state listener
   useEffect(() => {
+    // First check for existing session
     const checkAuth = async () => {
       try {
-        // In a real app, this would verify with your backend
-        const storedUser = localStorage.getItem("rehabUser");
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
+        setIsLoading(true);
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+            
+          if (profile) {
+            setUser({
+              id: profile.id,
+              name: profile.name,
+              email: profile.email,
+              role: profile.role as UserRole,
+              profileComplete: profile.profile_complete,
+            });
+          }
         }
       } catch (error) {
         console.error("Auth check failed:", error);
@@ -57,26 +77,68 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
+    // Call the check auth function
     checkAuth();
+
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session) {
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
+              
+            if (profile) {
+              setUser({
+                id: profile.id,
+                name: profile.name,
+                email: profile.email,
+                role: profile.role as UserRole,
+                profileComplete: profile.profile_complete,
+              });
+            }
+          } catch (error) {
+            console.error("Error fetching user profile:", error);
+          }
+        } else {
+          setUser(null);
+        }
+        setIsLoading(false);
+      }
+    );
+
+    // Cleanup subscription on unmount
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Login function
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // In a real app, this would call your backend/auth service
-      // Simulate successful login with mock data
-      const mockUser: User = {
-        id: "user-" + Date.now(),
-        name: "Test User",
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        role: "resident", // Default role, would come from backend in real app
-        profileComplete: false,
-      };
+        password,
+      });
+
+      if (error) {
+        toast({
+          title: "Login failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        throw error;
+      }
       
-      setUser(mockUser);
-      localStorage.setItem("rehabUser", JSON.stringify(mockUser));
-    } catch (error) {
+      toast({
+        title: "Login successful",
+        description: "Welcome back to RehabSquared!",
+      });
+    } catch (error: any) {
       console.error("Login failed:", error);
       throw error;
     } finally {
@@ -88,19 +150,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signup = async (name: string, email: string, password: string, role: UserRole) => {
     setIsLoading(true);
     try {
-      // In a real app, this would call your backend/auth service
-      // Simulate successful signup with mock data
-      const mockUser: User = {
-        id: "user-" + Date.now(),
-        name,
+      const { data, error } = await supabase.auth.signUp({
         email,
-        role,
-        profileComplete: false,
-      };
+        password,
+        options: {
+          data: {
+            name,
+            role,
+          },
+        }
+      });
+
+      if (error) {
+        toast({
+          title: "Signup failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        throw error;
+      }
       
-      setUser(mockUser);
-      localStorage.setItem("rehabUser", JSON.stringify(mockUser));
-    } catch (error) {
+      toast({
+        title: "Account created!",
+        description: "Your account has been successfully created.",
+      });
+    } catch (error: any) {
       console.error("Signup failed:", error);
       throw error;
     } finally {
@@ -109,17 +183,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Logout function
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("rehabUser");
+  const logout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        throw error;
+      }
+      setUser(null);
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
+    } catch (error: any) {
+      console.error("Logout failed:", error);
+      toast({
+        title: "Logout failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   // Update user data
-  const updateUser = (data: Partial<User>) => {
+  const updateUser = async (data: Partial<User>) => {
     if (user) {
-      const updatedUser = { ...user, ...data };
-      setUser(updatedUser);
-      localStorage.setItem("rehabUser", JSON.stringify(updatedUser));
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .update(data)
+          .eq('id', user.id);
+          
+        if (error) {
+          throw error;
+        }
+        
+        setUser({ ...user, ...data });
+        toast({
+          title: "Profile updated",
+          description: "Your profile has been successfully updated.",
+        });
+      } catch (error: any) {
+        console.error("Profile update failed:", error);
+        toast({
+          title: "Update failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     }
   };
 
