@@ -41,7 +41,7 @@ const SignUpForm = () => {
   const { signup } = useAuth();
   const navigate = useNavigate();
   const [selectedRole, setSelectedRole] = useState<UserRole>("resident");
-  const [step, setStep] = useState<number>(2);
+  const [step, setStep] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -103,7 +103,23 @@ const SignUpForm = () => {
       </div>
 
       {step === 1 ? (
-        <UserRoleSelect selectedRole={selectedRole} onRoleSelect={onRoleSelect} />
+        <>
+          <UserRoleSelect selectedRole={selectedRole} onRoleSelect={onRoleSelect} />
+          <div className="mt-6">
+            <Button 
+              onClick={handleContinue} 
+              className="w-full bg-[#9b87f5] hover:bg-[#7E69AB] text-white font-medium py-2.5"
+            >
+              Continue
+            </Button>
+            <div className="text-sm text-center mt-4 text-gray-600">
+              Already have an account?{" "}
+              <Link to="/login" className="text-[#9b87f5] hover:underline font-medium">
+                Sign in
+              </Link>
+            </div>
+          </div>
+        </>
       ) : (
         <Card className="border-0 shadow-lg rounded-xl">
           <CardHeader className="pb-2">
@@ -260,17 +276,13 @@ const SignUpForm = () => {
             </Form>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4 pb-6">
-            {step === 1 ? (
-              <Button onClick={handleContinue} className="w-full">Continue</Button>
-            ) : (
-              <Button 
-                variant="outline" 
-                onClick={() => setStep(1)} 
-                className="w-full border-gray-300 hover:bg-gray-50"
-              >
-                Back
-              </Button>
-            )}
+            <Button 
+              variant="outline" 
+              onClick={() => setStep(1)} 
+              className="w-full border-gray-300 hover:bg-gray-50"
+            >
+              Back
+            </Button>
             <div className="text-sm text-center text-gray-600">
               Already have an account?{" "}
               <Link to="/login" className="text-[#9b87f5] hover:underline font-medium">
