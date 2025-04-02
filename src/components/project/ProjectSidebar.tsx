@@ -38,7 +38,7 @@ const ProjectSidebar = ({
               className="flex items-center text-gray-700 mb-4 pl-0 hover:bg-transparent hover:text-[#174c65]" 
               onClick={() => navigate("/projects")}
             >
-              <ArrowLeft className="mr-2 h-4 w-4" /> All Projects
+              <ArrowLeft className="mr-2 h-4 w-4" /> &lt;- All Properties
             </Button>
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold text-gray-900 truncate">{projectTitle}</h2>
