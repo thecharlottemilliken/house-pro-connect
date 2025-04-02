@@ -16,29 +16,29 @@ const UserRoleSelect: React.FC<UserRoleSelectProps> = ({
   onRoleSelect,
 }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
       <Card 
-        className={`cursor-pointer border-2 transition-all rounded-xl ${
+        className={`cursor-pointer border transition-all rounded-xl hover:shadow-md ${
           selectedRole === "resident" 
-            ? "border-[#9b87f5] shadow-md" 
-            : "border-border hover:border-[#9b87f5]/50"
+            ? "border-[#9b87f5] shadow-sm" 
+            : "border-gray-200 hover:border-[#9b87f5]/50"
         }`}
         onClick={() => onRoleSelect("resident")}
       >
-        <CardHeader className="space-y-1 items-center text-center">
-          <div className="w-16 h-16 rounded-full bg-[#E5DEFF] flex items-center justify-center">
+        <CardHeader className="space-y-1 items-center text-center pb-4">
+          <div className="w-16 h-16 rounded-full bg-[#F5F0FF] flex items-center justify-center">
             <Home className="w-8 h-8 text-[#9b87f5]" />
           </div>
-          <CardTitle>Resident</CardTitle>
-          <CardDescription>For homeowners and buyers</CardDescription>
+          <CardTitle className="text-lg font-semibold text-gray-900 mt-2">Resident</CardTitle>
+          <CardDescription className="text-gray-600">For homeowners and buyers</CardDescription>
         </CardHeader>
-        <CardContent className="text-center text-sm text-muted-foreground">
+        <CardContent className="text-center text-sm text-gray-500 pb-3">
           <p>Create projects and find qualified professionals</p>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="pt-0">
           <Button 
             variant={selectedRole === "resident" ? "default" : "outline"} 
-            className={`w-full ${selectedRole === "resident" ? "bg-[#9b87f5] hover:bg-[#7E69AB]" : ""}`}
+            className={`w-full h-10 ${selectedRole === "resident" ? "bg-[#9b87f5] hover:bg-[#7E69AB]" : "border-gray-300"}`}
             onClick={() => onRoleSelect("resident")}
           >
             {selectedRole === "resident" ? "Selected" : "Select"}
@@ -47,27 +47,27 @@ const UserRoleSelect: React.FC<UserRoleSelectProps> = ({
       </Card>
       
       <Card 
-        className={`cursor-pointer border-2 transition-all rounded-xl ${
+        className={`cursor-pointer border transition-all rounded-xl hover:shadow-md ${
           selectedRole === "servicePro" 
-            ? "border-[#1EAEDB] shadow-md" 
-            : "border-border hover:border-[#1EAEDB]/50"
+            ? "border-[#1EAEDB] shadow-sm" 
+            : "border-gray-200 hover:border-[#1EAEDB]/50"
         }`}
         onClick={() => onRoleSelect("servicePro")}
       >
-        <CardHeader className="space-y-1 items-center text-center">
+        <CardHeader className="space-y-1 items-center text-center pb-4">
           <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center">
             <Building2 className="w-8 h-8 text-[#1EAEDB]" />
           </div>
-          <CardTitle>Service Pro</CardTitle>
-          <CardDescription>For subcontractors and service providers</CardDescription>
+          <CardTitle className="text-lg font-semibold text-gray-900 mt-2">Service Pro</CardTitle>
+          <CardDescription className="text-gray-600">For subcontractors and service providers</CardDescription>
         </CardHeader>
-        <CardContent className="text-center text-sm text-muted-foreground">
+        <CardContent className="text-center text-sm text-gray-500 pb-3">
           <p>Bid on projects and showcase your expertise</p>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="pt-0">
           <Button 
             variant={selectedRole === "servicePro" ? "default" : "outline"} 
-            className={`w-full ${selectedRole === "servicePro" ? "bg-[#1EAEDB] hover:bg-[#1EAEDB]/90" : ""}`}
+            className={`w-full h-10 ${selectedRole === "servicePro" ? "bg-[#1EAEDB] hover:bg-[#1EAEDB]/90" : "border-gray-300"}`}
             onClick={() => onRoleSelect("servicePro")}
           >
             {selectedRole === "servicePro" ? "Selected" : "Select"}

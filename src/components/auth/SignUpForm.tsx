@@ -18,7 +18,7 @@ import { useToast } from "@/components/ui/use-toast";
 import UserRoleSelect from "./UserRoleSelect";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2, User, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Loader2, User, Mail, Lock, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
 const formSchema = z.object({
@@ -96,9 +96,9 @@ const SignUpForm = () => {
   };
 
   return (
-    <div className="max-w-md w-full mx-auto">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-[#1A1F2C] mb-2">Create your account</h1>
+    <div className="max-w-md w-full mx-auto px-4">
+      <div className="text-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Create your account</h1>
         <p className="text-gray-600">Join thousands of homeowners finding quality contractors</p>
       </div>
 
@@ -108,7 +108,7 @@ const SignUpForm = () => {
           <div className="mt-6">
             <Button 
               onClick={handleContinue} 
-              className="w-full bg-[#9b87f5] hover:bg-[#7E69AB] text-white font-medium py-2.5"
+              className="w-full bg-[#9b87f5] hover:bg-[#7E69AB] text-white font-medium py-2.5 h-12 text-base"
             >
               Continue
             </Button>
@@ -121,16 +121,26 @@ const SignUpForm = () => {
           </div>
         </>
       ) : (
-        <Card className="border-0 shadow-lg rounded-xl">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xl font-semibold text-[#1A1F2C]">
-              Resident Information
-            </CardTitle>
-            <CardDescription>
+        <Card className="border border-gray-200 shadow-md rounded-xl overflow-hidden">
+          <CardHeader className="pb-2 pt-6 px-6">
+            <div className="flex items-center mb-4">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setStep(1)} 
+                className="h-8 w-8 mr-2"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <CardTitle className="text-xl font-semibold text-gray-900">
+                {selectedRole === "resident" ? "Resident Information" : "Service Pro Information"}
+              </CardTitle>
+            </div>
+            <CardDescription className="text-gray-500">
               Fill in your details to get started
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-6 pb-4">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
@@ -138,12 +148,12 @@ const SignUpForm = () => {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Full Name</FormLabel>
+                      <FormLabel className="text-gray-700">Full Name</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input 
                             placeholder="John Doe" 
-                            className="pl-10" 
+                            className="pl-10 h-12 border-gray-300" 
                             {...field} 
                           />
                           <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -158,13 +168,13 @@ const SignUpForm = () => {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel className="text-gray-700">Email</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input 
                             type="email" 
                             placeholder="you@example.com" 
-                            className="pl-10" 
+                            className="pl-10 h-12 border-gray-300" 
                             {...field} 
                           />
                           <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -179,13 +189,13 @@ const SignUpForm = () => {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Password</FormLabel>
+                      <FormLabel className="text-gray-700">Password</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input 
                             type={showPassword ? "text" : "password"} 
                             placeholder="Create a password" 
-                            className="pl-10 pr-10" 
+                            className="pl-10 pr-10 h-12 border-gray-300" 
                             {...field} 
                           />
                           <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -211,13 +221,13 @@ const SignUpForm = () => {
                   name="confirmPassword"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Confirm Password</FormLabel>
+                      <FormLabel className="text-gray-700">Confirm Password</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input 
                             type={showConfirmPassword ? "text" : "password"} 
                             placeholder="Confirm your password" 
-                            className="pl-10 pr-10" 
+                            className="pl-10 pr-10 h-12 border-gray-300" 
                             {...field} 
                           />
                           <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -248,10 +258,11 @@ const SignUpForm = () => {
                         <Checkbox
                           checked={field.value}
                           onCheckedChange={field.onChange}
+                          className="mt-0.5 border-gray-300 data-[state=checked]:bg-[#9b87f5] data-[state=checked]:border-[#9b87f5]"
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel className="font-normal text-sm">
+                        <FormLabel className="font-normal text-sm text-gray-600">
                           I agree to the <Link to="/terms" className="text-[#9b87f5] hover:underline">Terms of Service</Link> and <Link to="/privacy" className="text-[#9b87f5] hover:underline">Privacy Policy</Link>
                         </FormLabel>
                         <FormMessage />
@@ -262,7 +273,7 @@ const SignUpForm = () => {
 
                 <Button 
                   type="submit" 
-                  className="w-full bg-[#9b87f5] hover:bg-[#7E69AB] text-white font-medium py-2.5"
+                  className="w-full bg-[#9b87f5] hover:bg-[#7E69AB] text-white font-medium py-2.5 h-12 text-base mt-2"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (
@@ -275,14 +286,7 @@ const SignUpForm = () => {
               </form>
             </Form>
           </CardContent>
-          <CardFooter className="flex flex-col space-y-4 pb-6">
-            <Button 
-              variant="outline" 
-              onClick={() => setStep(1)} 
-              className="w-full border-gray-300 hover:bg-gray-50"
-            >
-              Back
-            </Button>
+          <CardFooter className="flex flex-col space-y-4 px-6 pb-6 pt-0">
             <div className="text-sm text-center text-gray-600">
               Already have an account?{" "}
               <Link to="/login" className="text-[#9b87f5] hover:underline font-medium">
