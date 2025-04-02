@@ -44,11 +44,9 @@ const ProjectManageTabs = ({ defaultTab = "calendar" }: ProjectManageTabsProps) 
       </TabsContent>
       
       <TabsContent value="roadmap" className="m-0 p-0">
-        {/* Project Phases Title */}
         <div className="mb-6">
-          <h2 className="text-xl font-semibold text-gray-800">Project Phases</h2>
+          <h2 className="text-xl font-bold text-gray-800">Project Phases</h2>
         </div>
-        
         <RoadmapView />
       </TabsContent>
       

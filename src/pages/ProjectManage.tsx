@@ -52,7 +52,7 @@ const ProjectManage = () => {
           </div>
           
           {/* Project Management Tabs */}
-          <ProjectManageTabs defaultTab="calendar" />
+          <ProjectManageTabs defaultTab="phases" />
         </div>
       </div>
     </div>
