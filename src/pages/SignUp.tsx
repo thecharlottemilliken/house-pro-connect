@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -5,9 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Facebook } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const SignUp = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [formData, setFormData] = useState({
     name: "",
     zipCode: "",
@@ -90,18 +93,18 @@ const SignUp = () => {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex overflow-hidden">
       {/* Left side - Form */}
-      <div className="w-full lg:w-1/2 p-8 lg:p-12 flex flex-col">
-        <div className="mb-8">
+      <div className="w-full lg:w-1/2 px-4 py-4 lg:px-8 flex flex-col overflow-y-auto">
+        <div className="mb-4 lg:mb-6">
           <h1 className="text-2xl font-bold text-orange-500">Rehab Squared</h1>
         </div>
         
         <div className="flex-grow flex flex-col justify-center max-w-md mx-auto w-full">
-          <h2 className="text-3xl font-bold mb-8">Create Your Account</h2>
+          <h2 className="text-2xl lg:text-3xl font-bold mb-4 lg:mb-6">Create Your Account</h2>
           
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1 lg:space-y-2">
               <Label htmlFor="name">Name</Label>
               <Input
                 id="name"
@@ -113,7 +116,7 @@ const SignUp = () => {
               {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-1 lg:space-y-2">
               <Label htmlFor="zipCode">Your Zip Code</Label>
               <Input
                 id="zipCode"
@@ -123,12 +126,12 @@ const SignUp = () => {
                 className={errors.zipCode ? "border-red-500" : ""}
               />
               {errors.zipCode && <p className="text-red-500 text-sm">{errors.zipCode}</p>}
-              <p className="text-gray-500 text-sm">
+              <p className="text-gray-500 text-xs lg:text-sm">
                 Do you have multiple homes? Just input the zip code for your primary residence.
               </p>
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-1 lg:space-y-2">
               <Label htmlFor="email">E-Mail</Label>
               <Input
                 id="email"
@@ -141,7 +144,7 @@ const SignUp = () => {
               {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-1 lg:space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
@@ -161,7 +164,7 @@ const SignUp = () => {
                 onCheckedChange={handleCheckboxChange}
                 className={errors.agreeToTerms ? "border-red-500" : ""}
               />
-              <div className="grid gap-1.5 leading-none">
+              <div className="grid gap-1 leading-none">
                 <Label htmlFor="agreeToTerms" className="text-sm font-medium leading-none">
                   Agree to Terms and Conditions
                 </Label>
@@ -176,7 +179,7 @@ const SignUp = () => {
               NEXT
             </Button>
             
-            <div className="relative flex items-center py-4">
+            <div className="relative flex items-center py-2 lg:py-3">
               <div className="flex-grow border-t border-gray-300"></div>
               <span className="flex-shrink mx-4 text-gray-600">Or</span>
               <div className="flex-grow border-t border-gray-300"></div>
@@ -208,7 +211,7 @@ const SignUp = () => {
               SIGN UP WITH FACEBOOK
             </Button>
             
-            <p className="text-center mt-6">
+            <p className="text-center mt-2 lg:mt-4 text-sm lg:text-base">
               Already have an account? <a href="#" onClick={() => navigate("/")} className="text-blue-900 font-semibold">Sign In</a>
             </p>
           </form>
