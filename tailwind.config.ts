@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,14 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Custom colors for RehabSquared
+				rehab: {
+					blue: '#2563eb',
+					teal: '#0d9488',
+					slate: '#475569',
+					neutral: '#f8fafc',
+					dark: '#0f172a'
 				}
 			},
 			borderRadius: {
