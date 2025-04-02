@@ -7,7 +7,9 @@ import {
   FileText,
   ChevronLeft, 
   ChevronRight,
-  Search 
+  Search,
+  Check,
+  XCircle
 } from "lucide-react";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import ProjectSidebar from "@/components/project/ProjectSidebar";
@@ -16,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const weekDays = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const monthDays = Array.from({ length: 31 }, (_, i) => i + 1);
@@ -28,6 +31,24 @@ interface Task {
   endDay: number;
   color: string;
   status: "Active" | "Pending" | "Completed";
+}
+
+// Define the phase interface
+interface Phase {
+  id: number;
+  name: string;
+  status: "Completed" | "In Progress" | "Upcoming";
+  tasks: PhaseTask[];
+  startDate?: string;
+  endDate?: string;
+}
+
+interface PhaseTask {
+  id: number;
+  name: string;
+  status: "Completed" | "In Progress" | "Not Started";
+  assignee?: string;
+  date?: string;
 }
 
 const ProjectManage = () => {
@@ -65,6 +86,58 @@ const ProjectManage = () => {
       endDay: 22,
       color: "#9b74e9",
       status: "Pending"
+    }
+  ];
+
+  // Define phases data
+  const phases: Phase[] = [
+    {
+      id: 1,
+      name: "Planning & Design",
+      status: "Completed",
+      tasks: [
+        { id: 1, name: "Initial Consultation", status: "Completed", date: "Jan 10, 2024" },
+        { id: 2, name: "Site Assessment", status: "Completed", date: "Jan 12, 2024" },
+        { id: 3, name: "Design Concept Approval", status: "Completed", date: "Jan 15, 2024" }
+      ],
+      startDate: "Jan 10, 2024",
+      endDate: "Jan 15, 2024"
+    },
+    {
+      id: 2,
+      name: "Demolition",
+      status: "In Progress",
+      tasks: [
+        { id: 4, name: "Remove Old Fixtures", status: "Completed", date: "Jan 18, 2024" },
+        { id: 5, name: "Wall Demolition", status: "In Progress", date: "Jan 21, 2024" },
+        { id: 6, name: "Floor Removal", status: "Not Started", date: "Jan 23, 2024" }
+      ],
+      startDate: "Jan 18, 2024",
+      endDate: "Jan 25, 2024"
+    },
+    {
+      id: 3,
+      name: "Rough Construction",
+      status: "Upcoming",
+      tasks: [
+        { id: 7, name: "Framing", status: "Not Started", date: "Jan 26, 2024" },
+        { id: 8, name: "Electrical Rough-In", status: "Not Started", date: "Jan 28, 2024" },
+        { id: 9, name: "Plumbing Rough-In", status: "Not Started", date: "Jan 30, 2024" }
+      ],
+      startDate: "Jan 26, 2024",
+      endDate: "Feb 5, 2024"
+    },
+    {
+      id: 4,
+      name: "Finishing",
+      status: "Upcoming",
+      tasks: [
+        { id: 10, name: "Drywall Installation", status: "Not Started", date: "Feb 6, 2024" },
+        { id: 11, name: "Cabinet Installation", status: "Not Started", date: "Feb 10, 2024" },
+        { id: 12, name: "Flooring Installation", status: "Not Started", date: "Feb 14, 2024" }
+      ],
+      startDate: "Feb 6, 2024",
+      endDate: "Feb 20, 2024"
     }
   ];
   
@@ -189,6 +262,22 @@ const ProjectManage = () => {
   // Tomorrow's events
   const tomorrowEvents = events.filter(event => event.day === 22);
 
+  // Get status color and background
+  const getStatusStyles = (status: string) => {
+    switch(status) {
+      case 'Completed':
+        return { color: 'text-green-600', bgColor: 'bg-green-100', icon: <Check className="h-4 w-4 text-green-600" /> };
+      case 'In Progress':
+        return { color: 'text-blue-600', bgColor: 'bg-blue-100', icon: null };
+      case 'Not Started':
+        return { color: 'text-gray-600', bgColor: 'bg-gray-100', icon: null };
+      case 'Upcoming':
+        return { color: 'text-gray-600', bgColor: 'bg-gray-100', icon: null };
+      default:
+        return { color: 'text-gray-600', bgColor: 'bg-gray-100', icon: null };
+    }
+  };
+
   return (
     <div className="flex flex-col bg-white min-h-screen">
       <DashboardNavbar />
@@ -216,34 +305,32 @@ const ProjectManage = () => {
           </div>
           
           {/* Tabs */}
-          <div className="border-b border-gray-200 mb-6">
-            <div className="flex space-x-8">
-              <button 
-                className={`flex items-center pb-3 ${activeTab === "roadmap" ? "border-b-2 border-[#0f566c] text-[#0f566c] font-medium" : "text-gray-500"}`}
-                onClick={() => setActiveTab("roadmap")}
+          <Tabs defaultValue="calendar" onValueChange={setActiveTab} value={activeTab} className="w-full">
+            <TabsList className="border-b border-gray-200 mb-6 p-0 bg-transparent w-full flex justify-start space-x-8 h-auto">
+              <TabsTrigger 
+                value="roadmap" 
+                className={`flex items-center pb-3 px-0 ${activeTab === "roadmap" ? "border-b-2 border-[#0f566c] text-[#0f566c] font-medium" : "text-gray-500"} bg-transparent rounded-none data-[state=active]:bg-transparent data-[state=active]:shadow-none`}
               >
                 <ListTodo className="mr-2 h-5 w-5" /> 
                 Roadmap
-              </button>
-              <button 
-                className={`flex items-center pb-3 ${activeTab === "calendar" ? "border-b-2 border-[#0f566c] text-[#0f566c] font-medium" : "text-gray-500"}`}
-                onClick={() => setActiveTab("calendar")}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="calendar" 
+                className={`flex items-center pb-3 px-0 ${activeTab === "calendar" ? "border-b-2 border-[#0f566c] text-[#0f566c] font-medium" : "text-gray-500"} bg-transparent rounded-none data-[state=active]:bg-transparent data-[state=active]:shadow-none`}
               >
                 <CalendarIcon className="mr-2 h-5 w-5" /> 
                 Calendar
-              </button>
-              <button 
-                className={`flex items-center pb-3 ${activeTab === "phases" ? "border-b-2 border-[#0f566c] text-[#0f566c] font-medium" : "text-gray-500"}`}
-                onClick={() => setActiveTab("phases")}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="phases" 
+                className={`flex items-center pb-3 px-0 ${activeTab === "phases" ? "border-b-2 border-[#0f566c] text-[#0f566c] font-medium" : "text-gray-500"} bg-transparent rounded-none data-[state=active]:bg-transparent data-[state=active]:shadow-none`}
               >
                 <FileText className="mr-2 h-5 w-5" /> 
                 Phases
-              </button>
-            </div>
-          </div>
-          
-          {activeTab === "calendar" && (
-            <div>
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="calendar" className="m-0 p-0">
               {/* Calendar Navigation */}
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
                 <div className="flex items-center mb-4 md:mb-0">
@@ -463,11 +550,9 @@ const ProjectManage = () => {
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-          
-          {activeTab === "roadmap" && (
-            <div>
+            </TabsContent>
+            
+            <TabsContent value="roadmap" className="m-0 p-0">
               {/* Project Phases Title */}
               <div className="mb-6">
                 <h2 className="text-xl font-semibold text-gray-800">Project Phases</h2>
@@ -583,14 +668,90 @@ const ProjectManage = () => {
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-          
-          {activeTab === "phases" && (
-            <div className="text-center py-10 text-gray-500">
-              <p>Phases view is coming soon</p>
-            </div>
-          )}
+            </TabsContent>
+            
+            <TabsContent value="phases" className="m-0 p-0">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold text-gray-800">Project Phases</h2>
+                <Button className="bg-[#0f566c] hover:bg-[#0d4a5d]">
+                  ADD PHASE
+                </Button>
+              </div>
+              
+              <div className="space-y-6">
+                {phases.map((phase) => {
+                  const { color, bgColor, icon } = getStatusStyles(phase.status);
+                  
+                  return (
+                    <div key={phase.id} className="border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+                      {/* Phase Header */}
+                      <div className="bg-gray-50 px-6 py-4 flex justify-between items-center border-b border-gray-200">
+                        <div className="flex items-center space-x-3">
+                          <h3 className="text-lg font-semibold text-gray-800">{phase.name}</h3>
+                          <div className={`${bgColor} ${color} text-xs font-medium px-2.5 py-1 rounded-full flex items-center`}>
+                            {icon && <span className="mr-1">{icon}</span>}
+                            {phase.status}
+                          </div>
+                        </div>
+                        
+                        <div className="text-sm text-gray-500">
+                          {phase.startDate} - {phase.endDate}
+                        </div>
+                      </div>
+                      
+                      {/* Phase Tasks */}
+                      <div className="divide-y divide-gray-200">
+                        {phase.tasks.map((task) => {
+                          const taskStyles = getStatusStyles(task.status);
+                          
+                          return (
+                            <div key={task.id} className="px-6 py-4 flex justify-between items-center">
+                              <div className="flex items-center space-x-3">
+                                {task.status === 'Completed' ? (
+                                  <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+                                    <Check className="h-3 w-3 text-white" />
+                                  </div>
+                                ) : task.status === 'In Progress' ? (
+                                  <div className="w-5 h-5 rounded-full border-2 border-blue-500 flex items-center justify-center">
+                                    <div className="w-2.5 h-2.5 bg-blue-500 rounded-full"></div>
+                                  </div>
+                                ) : (
+                                  <div className="w-5 h-5 rounded-full border-2 border-gray-300"></div>
+                                )}
+                                <span className="font-medium">{task.name}</span>
+                                <div className={`${taskStyles.bgColor} ${taskStyles.color} text-xs px-2 py-0.5 rounded-full`}>
+                                  {task.status}
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center space-x-6">
+                                <div className="text-sm text-gray-500">
+                                  {task.date || 'Not scheduled'}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  {task.assignee || 'Unassigned'}
+                                </div>
+                                <Button variant="outline" size="sm" className="text-xs">
+                                  Edit
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      
+                      {/* Add Task Button */}
+                      <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
+                        <Button variant="outline" size="sm" className="text-[#0f566c] border-[#0f566c]">
+                          + Add Task
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
