@@ -4,27 +4,14 @@ import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import RecommendedContent from "@/components/dashboard/RecommendedContent";
-import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const ResidentDashboard = () => {
   const navigate = useNavigate();
-  // Use state to store the user's first name
-  const [firstName, setFirstName] = useState("Guest");
-
-  // In a real app, this would come from your authentication system
-  // For now, we're simulating fetching the user data
-  useEffect(() => {
-    // Simulating API call to get user data
-    // Replace this with actual authentication logic in a real app
-    const fetchUserData = () => {
-      // For demo purposes - normally this would be an API call
-      setTimeout(() => {
-        setFirstName("Jarett");
-      }, 500);
-    };
-
-    fetchUserData();
-  }, []);
+  const { profile } = useAuth();
+  
+  // Get the user's first name from their profile
+  const firstName = profile?.name?.split(' ')[0] || "Guest";
 
   return (
     <div className="min-h-screen flex flex-col bg-white">

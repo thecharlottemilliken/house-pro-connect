@@ -7,10 +7,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Facebook } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
 
 const SignIn = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { signIn } = useAuth();
+  
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -20,6 +24,7 @@ const SignIn = () => {
     email: "",
     password: "",
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -55,11 +60,28 @@ const SignIn = () => {
     return valid;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      // In a real app, we would handle signin here
-      navigate("/dashboard");
+      setIsLoading(true);
+      try {
+        const { error } = await signIn(formData.email, formData.password);
+        if (error) {
+          toast({
+            title: "Error signing in",
+            description: error.message || "Please check your credentials and try again",
+            variant: "destructive",
+          });
+        }
+      } catch (error: any) {
+        toast({
+          title: "Error signing in",
+          description: error.message || "An unexpected error occurred",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -84,6 +106,7 @@ const SignIn = () => {
                 value={formData.email}
                 onChange={handleChange}
                 className={errors.email ? "border-red-500" : ""}
+                disabled={isLoading}
               />
               {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
             </div>
@@ -97,6 +120,7 @@ const SignIn = () => {
                 value={formData.password}
                 onChange={handleChange}
                 className={errors.password ? "border-red-500" : ""}
+                disabled={isLoading}
               />
               {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
             </div>
@@ -107,6 +131,7 @@ const SignIn = () => {
                   id="rememberMe" 
                   checked={formData.rememberMe}
                   onCheckedChange={handleCheckboxChange}
+                  disabled={isLoading}
                 />
                 <div className="grid gap-1 leading-none">
                   <Label htmlFor="rememberMe" className="text-sm font-medium leading-none">
@@ -122,8 +147,9 @@ const SignIn = () => {
             <Button 
               type="submit" 
               className="w-full bg-blue-900 hover:bg-blue-800 text-white py-2 rounded"
+              disabled={isLoading}
             >
-              SIGN IN
+              {isLoading ? "Signing in..." : "SIGN IN"}
             </Button>
             
             <div className="relative flex items-center py-2 lg:py-3">
@@ -137,6 +163,7 @@ const SignIn = () => {
               variant="outline" 
               className="w-full flex items-center justify-center gap-2"
               onClick={() => navigate("/dashboard")} // For demo purposes, navigates to dashboard
+              disabled={isLoading}
             >
               <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -153,6 +180,7 @@ const SignIn = () => {
               variant="outline" 
               className="w-full flex items-center justify-center gap-2"
               onClick={() => navigate("/dashboard")} // For demo purposes, navigates to dashboard
+              disabled={isLoading}
             >
               <Facebook size={24} />
               SIGN IN WITH FACEBOOK

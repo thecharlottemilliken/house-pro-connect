@@ -7,15 +7,21 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Facebook } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const SignUp = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { signUp } = useAuth();
+  
   const [formData, setFormData] = useState({
     name: "",
     zipCode: "",
     email: "",
     password: "",
+    role: "resident", // Default role
     agreeToTerms: false,
   });
   const [errors, setErrors] = useState({
@@ -25,6 +31,7 @@ const SignUp = () => {
     password: "",
     agreeToTerms: "",
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -33,6 +40,10 @@ const SignUp = () => {
     if (errors[name as keyof typeof errors]) {
       setErrors({ ...errors, [name]: "" });
     }
+  };
+
+  const handleRoleChange = (value: string) => {
+    setFormData({ ...formData, role: value });
   };
 
   const handleCheckboxChange = (checked: boolean) => {
@@ -84,11 +95,38 @@ const SignUp = () => {
     return valid;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      // In a real app, we would handle signup here
-      navigate("/dashboard");
+      setIsLoading(true);
+      try {
+        const userData = {
+          name: formData.name,
+          role: formData.role,
+          zip_code: formData.zipCode,
+        };
+        
+        const { error } = await signUp(formData.email, formData.password, userData);
+        
+        if (error) {
+          toast({
+            title: "Error signing up",
+            description: error.message || "Please check your information and try again",
+            variant: "destructive",
+          });
+        } else {
+          // Navigate to sign in after successful signup
+          navigate("/");
+        }
+      } catch (error: any) {
+        toast({
+          title: "Error signing up",
+          description: error.message || "An unexpected error occurred",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -112,6 +150,7 @@ const SignUp = () => {
                 value={formData.name}
                 onChange={handleChange}
                 className={errors.name ? "border-red-500" : ""}
+                disabled={isLoading}
               />
               {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
             </div>
@@ -124,11 +163,44 @@ const SignUp = () => {
                 value={formData.zipCode}
                 onChange={handleChange}
                 className={errors.zipCode ? "border-red-500" : ""}
+                disabled={isLoading}
               />
               {errors.zipCode && <p className="text-red-500 text-sm">{errors.zipCode}</p>}
               <p className="text-gray-500 text-xs lg:text-sm">
                 Do you have multiple homes? Just input the zip code for your primary residence.
               </p>
+            </div>
+            
+            <div className="space-y-1 lg:space-y-2">
+              <Label>Account Type</Label>
+              <RadioGroup 
+                defaultValue="resident" 
+                value={formData.role}
+                onValueChange={handleRoleChange}
+                className="grid grid-cols-2 gap-4"
+                disabled={isLoading}
+              >
+                <div className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer hover:bg-gray-50">
+                  <RadioGroupItem value="resident" id="resident" />
+                  <Label 
+                    htmlFor="resident" 
+                    className="flex flex-col cursor-pointer"
+                  >
+                    <span className="font-medium">Resident</span>
+                    <span className="text-sm text-gray-500">Create renovation projects</span>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer hover:bg-gray-50">
+                  <RadioGroupItem value="service_pro" id="service_pro" />
+                  <Label 
+                    htmlFor="service_pro" 
+                    className="flex flex-col cursor-pointer"
+                  >
+                    <span className="font-medium">Service Pro</span>
+                    <span className="text-sm text-gray-500">Bid on renovation projects</span>
+                  </Label>
+                </div>
+              </RadioGroup>
             </div>
             
             <div className="space-y-1 lg:space-y-2">
@@ -140,6 +212,7 @@ const SignUp = () => {
                 value={formData.email}
                 onChange={handleChange}
                 className={errors.email ? "border-red-500" : ""}
+                disabled={isLoading}
               />
               {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
             </div>
@@ -153,6 +226,7 @@ const SignUp = () => {
                 value={formData.password}
                 onChange={handleChange}
                 className={errors.password ? "border-red-500" : ""}
+                disabled={isLoading}
               />
               {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
             </div>
@@ -163,6 +237,7 @@ const SignUp = () => {
                 checked={formData.agreeToTerms}
                 onCheckedChange={handleCheckboxChange}
                 className={errors.agreeToTerms ? "border-red-500" : ""}
+                disabled={isLoading}
               />
               <div className="grid gap-1 leading-none">
                 <Label htmlFor="agreeToTerms" className="text-sm font-medium leading-none">
@@ -175,8 +250,9 @@ const SignUp = () => {
             <Button 
               type="submit" 
               className="w-full bg-blue-900 hover:bg-blue-800 text-white py-2 rounded"
+              disabled={isLoading}
             >
-              NEXT
+              {isLoading ? "Creating Account..." : "NEXT"}
             </Button>
             
             <div className="relative flex items-center py-2 lg:py-3">
@@ -190,6 +266,7 @@ const SignUp = () => {
               variant="outline" 
               className="w-full flex items-center justify-center gap-2"
               onClick={() => navigate("/dashboard")} // For demo purposes, navigates to dashboard
+              disabled={isLoading}
             >
               <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -206,13 +283,14 @@ const SignUp = () => {
               variant="outline" 
               className="w-full flex items-center justify-center gap-2"
               onClick={() => navigate("/dashboard")} // For demo purposes, navigates to dashboard
+              disabled={isLoading}
             >
               <Facebook size={24} />
               SIGN UP WITH FACEBOOK
             </Button>
             
             <p className="text-center mt-2 lg:mt-4 text-sm lg:text-base">
-              Already have an account? <a href="#" onClick={() => navigate("/")} className="text-blue-900 font-semibold">Sign In</a>
+              Already have an account? <a href="#" onClick={() => navigate("/signin")} className="text-blue-900 font-semibold">Sign In</a>
             </p>
           </form>
         </div>

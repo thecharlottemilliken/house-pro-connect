@@ -2,9 +2,11 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 const LandingPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
@@ -12,19 +14,33 @@ const LandingPage = () => {
       <header className="container mx-auto px-4 py-6 flex justify-between items-center">
         <h1 className="text-2xl font-bold text-orange-500">Rehab Squared</h1>
         <div className="space-x-4">
-          <Button 
-            variant="ghost" 
-            className="text-blue-900 hover:text-blue-700"
-            onClick={() => navigate("/signin")}
-          >
-            Sign In
-          </Button>
-          <Button 
-            className="bg-blue-900 hover:bg-blue-800 text-white"
-            onClick={() => navigate("/signup")}
-          >
-            Sign Up
-          </Button>
+          {user ? (
+            <>
+              <Button 
+                variant="ghost" 
+                className="text-blue-900 hover:text-blue-700"
+                onClick={() => navigate("/dashboard")}
+              >
+                Dashboard
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button 
+                variant="ghost" 
+                className="text-blue-900 hover:text-blue-700"
+                onClick={() => navigate("/signin")}
+              >
+                Sign In
+              </Button>
+              <Button 
+                className="bg-blue-900 hover:bg-blue-800 text-white"
+                onClick={() => navigate("/signup")}
+              >
+                Sign Up
+              </Button>
+            </>
+          )}
         </div>
       </header>
 
@@ -39,21 +55,33 @@ const LandingPage = () => {
             From simple updates to complete renovations, Rehab Squared helps you every step of the way.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
-            <Button 
-              size="lg" 
-              className="bg-orange-500 hover:bg-orange-600 text-white px-8"
-              onClick={() => navigate("/signup")}
-            >
-              Get Started
-            </Button>
-            <Button 
-              variant="outline" 
-              size="lg" 
-              className="border-blue-900 text-blue-900 hover:bg-blue-50"
-              onClick={() => navigate("/signin")}
-            >
-              Sign In
-            </Button>
+            {user ? (
+              <Button 
+                size="lg" 
+                className="bg-orange-500 hover:bg-orange-600 text-white px-8"
+                onClick={() => navigate("/dashboard")}
+              >
+                Go to Dashboard
+              </Button>
+            ) : (
+              <>
+                <Button 
+                  size="lg" 
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-8"
+                  onClick={() => navigate("/signup")}
+                >
+                  Get Started
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  className="border-blue-900 text-blue-900 hover:bg-blue-50"
+                  onClick={() => navigate("/signin")}
+                >
+                  Sign In
+                </Button>
+              </>
+            )}
           </div>
         </div>
         <div className="lg:w-1/2">
@@ -93,21 +121,33 @@ const LandingPage = () => {
           Join thousands of homeowners who have successfully renovated their homes with Rehab Squared.
         </p>
         <div className="flex flex-col sm:flex-row justify-center gap-4">
-          <Button 
-            size="lg" 
-            className="bg-orange-500 hover:bg-orange-600 text-white px-8"
-            onClick={() => navigate("/signup")}
-          >
-            Create Account
-          </Button>
-          <Button 
-            variant="outline" 
-            size="lg" 
-            className="border-blue-900 text-blue-900 hover:bg-blue-50"
-            onClick={() => navigate("/signin")}
-          >
-            Sign In
-          </Button>
+          {user ? (
+            <Button 
+              size="lg" 
+              className="bg-orange-500 hover:bg-orange-600 text-white px-8"
+              onClick={() => navigate("/dashboard")}
+            >
+              Go to Dashboard
+            </Button>
+          ) : (
+            <>
+              <Button 
+                size="lg" 
+                className="bg-orange-500 hover:bg-orange-600 text-white px-8"
+                onClick={() => navigate("/signup")}
+              >
+                Create Account
+              </Button>
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="border-blue-900 text-blue-900 hover:bg-blue-50"
+                onClick={() => navigate("/signin")}
+              >
+                Sign In
+              </Button>
+            </>
+          )}
         </div>
       </section>
       
