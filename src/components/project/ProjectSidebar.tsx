@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
@@ -35,12 +34,13 @@ const ProjectSidebar = ({
           <div className="p-4 border-b border-gray-200">
             <Button 
               variant="ghost" 
-              className="flex items-center text-gray-700 mb-4 pl-0 hover:bg-transparent hover:text-[#174c65]" 
+              className="flex items-center text-gray-700 w-full pl-0 hover:bg-transparent hover:text-[#174c65]" 
               onClick={() => navigate("/projects")}
             >
-              <ArrowLeft className="mr-2 h-4 w-4" /> &lt;- All Properties
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Properties
             </Button>
-            <div className="flex justify-between items-center">
+            
+            <div className="flex justify-between items-center mt-4">
               <h2 className="text-xl font-semibold text-gray-900 truncate">{projectTitle}</h2>
               <Button 
                 variant="ghost" 
@@ -82,7 +82,6 @@ const ProjectSidebar = ({
         </SidebarContent>
       </Sidebar>
       
-      {/* Floating collapse/expand button for better visibility */}
       <div className="hidden md:block fixed left-[16.5rem] top-20 z-40 transition-all duration-300" style={{ left: open ? '16.5rem' : '3.5rem' }}>
         <Button 
           variant="outline" 
@@ -94,7 +93,6 @@ const ProjectSidebar = ({
         </Button>
       </div>
       
-      {/* Mobile Sidebar Trigger - visible only on small screens */}
       <div className="md:hidden fixed bottom-4 right-4 z-50">
         <SidebarTrigger className="bg-[#0f566c] text-white h-12 w-12 rounded-full shadow-lg" />
       </div>
