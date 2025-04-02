@@ -18,7 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Mail, Lock, Google, Facebook } from "lucide-react";
+import { Mail, Lock, LogIn, Facebook } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -197,7 +197,7 @@ const SignUpForm = () => {
             className="w-full border-gray-300 text-gray-700 font-medium h-12 flex items-center justify-center gap-2 rounded-md"
             onClick={() => handleSocialSignup("Google")}
           >
-            <Google className="h-5 w-5" />
+            <LogIn className="h-5 w-5" />
             SIGN UP WITH GOOGLE
           </Button>
           
