@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
+import { Database } from "@/integrations/supabase/types";
 
 // User types
 export type UserRole = "resident" | "servicePro";
@@ -208,9 +209,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateUser = async (data: Partial<User>) => {
     if (user) {
       try {
+        // Convert our UI model to the database model
+        const profileData: any = {};
+        if (data.name !== undefined) profileData.name = data.name;
+        if (data.email !== undefined) profileData.email = data.email;
+        if (data.role !== undefined) profileData.role = data.role;
+        if (data.profileComplete !== undefined) profileData.profile_complete = data.profileComplete;
+        
         const { error } = await supabase
           .from('profiles')
-          .update(data)
+          .update(profileData)
           .eq('id', user.id);
           
         if (error) {
