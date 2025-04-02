@@ -38,7 +38,11 @@ const ProjectDashboard = () => {
       <DashboardNavbar />
       
       <div className="flex flex-1 h-[calc(100vh-64px)]">
-        <ProjectSidebar projectId={projectId} projectTitle={projectData?.title || "Kitchen Remodel"} />
+        <ProjectSidebar 
+          projectId={projectId} 
+          projectTitle={projectData?.title || "Kitchen Remodel"} 
+          activePage="overview"
+        />
         
         <div className="flex-1 p-8 bg-[#f3f3f3] overflow-y-auto">
           <div className="mb-8">
