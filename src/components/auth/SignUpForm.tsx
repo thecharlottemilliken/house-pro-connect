@@ -25,7 +25,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const SignUpForm = () => {
-  const [selectedRole, setSelectedRole] = useState<UserRole>("resident");
+  const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const [step, setStep] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();

@@ -14,7 +14,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
       <Helmet>
         <title>{title} | RehabSquared</title>
       </Helmet>
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-[#F9F8FF]">
         <header className="border-b py-4 bg-white">
           <div className="container max-w-7xl mx-auto px-4 flex justify-center md:justify-between items-center">
             <Link to="/" className="text-2xl font-bold bg-gradient-to-r from-[#9b87f5] to-[#1EAEDB] bg-clip-text text-transparent">
@@ -33,7 +33,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
             </nav>
           </div>
         </header>
-        <main className="flex-1">
+        <main className="flex-1 flex items-center justify-center py-12">
           {children}
         </main>
         <footer className="border-t py-6 bg-white">

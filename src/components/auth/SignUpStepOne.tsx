@@ -33,12 +33,18 @@ const SignUpStepOne: React.FC<SignUpStepOneProps> = ({
   };
 
   return (
-    <>
+    <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">I want to join as...</h2>
+        <p className="text-sm text-gray-500">Select your account type to get started</p>
+      </div>
+      
       <UserRoleSelect selectedRole={selectedRole} onRoleSelect={onRoleSelect} />
-      <div className="mt-6">
+      
+      <div className="mt-8">
         <Button 
           onClick={handleContinue} 
-          className="w-full bg-[#9b87f5] hover:bg-[#7E69AB] text-white font-medium py-2.5 h-12 text-base"
+          className="w-full bg-[#9b87f5] hover:bg-[#7E69AB] text-white font-medium py-3 h-12 text-base rounded-lg"
         >
           Continue
         </Button>
@@ -49,7 +55,7 @@ const SignUpStepOne: React.FC<SignUpStepOneProps> = ({
           </Link>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
