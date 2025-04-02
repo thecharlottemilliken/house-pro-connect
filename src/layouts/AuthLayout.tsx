@@ -14,37 +14,21 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
       <Helmet>
         <title>{title} | RehabSquared</title>
       </Helmet>
-      <div className="min-h-screen flex flex-col bg-[#F9F8FF]">
+      <div className="min-h-screen flex flex-col bg-white">
         <header className="border-b py-4 bg-white">
-          <div className="container max-w-7xl mx-auto px-4 flex justify-center md:justify-between items-center">
-            <Link to="/" className="text-2xl font-bold bg-gradient-to-r from-[#9b87f5] to-[#1EAEDB] bg-clip-text text-transparent">
-              RehabSquared
+          <div className="container max-w-7xl mx-auto px-4">
+            <Link to="/" className="text-2xl font-bold text-[#F26D21]">
+              Rehab Squared
             </Link>
-            <nav className="hidden md:flex items-center space-x-6">
-              <Link to="/how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground">
-                How it works
-              </Link>
-              <Link to="/pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground">
-                Pricing
-              </Link>
-              <Link to="/contact" className="text-sm font-medium text-muted-foreground hover:text-foreground">
-                Contact
-              </Link>
-            </nav>
           </div>
         </header>
-        <main className="flex-1 flex items-center justify-center py-12">
-          {children}
-        </main>
-        <footer className="border-t py-6 bg-white">
-          <div className="container max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center text-sm text-muted-foreground">
-            <div>&copy; {new Date().getFullYear()} RehabSquared. All rights reserved.</div>
-            <div className="flex space-x-4 mt-4 md:mt-0">
-              <Link to="/terms" className="hover:text-foreground">Terms</Link>
-              <Link to="/privacy" className="hover:text-foreground">Privacy</Link>
-            </div>
+        <main className="flex-1 flex">
+          <div className="w-full md:w-1/2 px-6 py-12 md:px-12 lg:px-24">
+            {children}
           </div>
-        </footer>
+          <div className="hidden md:block md:w-1/2 bg-cover bg-center" style={{ backgroundImage: "url('public/lovable-uploads/e74e4469-7e07-4047-8809-dc56b07fbf77.png')" }}>
+          </div>
+        </main>
       </div>
     </>
   );
