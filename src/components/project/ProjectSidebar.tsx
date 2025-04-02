@@ -1,14 +1,17 @@
+
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import NavItem from "./NavItem";
 import { Sidebar, SidebarContent, SidebarHeader, SidebarTrigger, SidebarRail, useSidebar } from "@/components/ui/sidebar";
+
 interface ProjectSidebarProps {
   projectId: string;
   projectTitle?: string;
   activePage?: string;
 }
+
 const ProjectSidebar = ({
   projectId,
   projectTitle = "Kitchen Project",
@@ -19,6 +22,7 @@ const ProjectSidebar = ({
     open,
     toggleSidebar
   } = useSidebar();
+  
   return <>
       <Sidebar variant="sidebar" className="border-r border-gray-200">
         <SidebarRail />
@@ -28,7 +32,9 @@ const ProjectSidebar = ({
               <ArrowLeft className="mr-2 h-4 w-4" /> Back to Properties
             </Button>
             
-            
+            <Button variant="ghost" className="flex items-center text-gray-700 w-full pl-0 mt-2 hover:bg-transparent hover:text-[#174c65]" onClick={() => navigate("/projects")}>
+              <ArrowLeft className="mr-2 h-4 w-4" /> &lt;- All Projects
+            </Button>
           </div>
         </SidebarHeader>
         
@@ -63,4 +69,5 @@ const ProjectSidebar = ({
       </div>
     </>;
 };
+
 export default ProjectSidebar;
