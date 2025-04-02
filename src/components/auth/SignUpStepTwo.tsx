@@ -129,7 +129,7 @@ const SignUpStepTwo: React.FC<SignUpStepTwoProps> = ({
                 </div>
               </FormItem>} />
 
-          <Button type="submit" disabled={isSubmitting} className="w-full bg-[#9b87f5] hover:bg-[#7E69AB] text-white font-medium py-3 h-12 text-base mt-6 rounded-lg bg-[194D63]">
+          <Button type="submit" disabled={isSubmitting} className="w-full text-white font-medium py-3 h-12 mt-6 rounded-lg bg-[194D63] bg-[#194d63] text-base">
             {isSubmitting ? <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Creating Account...
