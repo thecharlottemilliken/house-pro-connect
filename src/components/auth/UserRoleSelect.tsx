@@ -18,16 +18,16 @@ const UserRoleSelect: React.FC<UserRoleSelectProps> = ({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
       <Card 
-        className={`cursor-pointer border-2 transition-all ${
+        className={`cursor-pointer border-2 transition-all rounded-xl ${
           selectedRole === "resident" 
-            ? "border-rehab-blue shadow-md" 
-            : "border-border hover:border-rehab-blue/50"
+            ? "border-[#9b87f5] shadow-md" 
+            : "border-border hover:border-[#9b87f5]/50"
         }`}
         onClick={() => onRoleSelect("resident")}
       >
         <CardHeader className="space-y-1 items-center text-center">
-          <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center">
-            <Home className="w-8 h-8 text-rehab-blue" />
+          <div className="w-16 h-16 rounded-full bg-[#E5DEFF] flex items-center justify-center">
+            <Home className="w-8 h-8 text-[#9b87f5]" />
           </div>
           <CardTitle>Resident</CardTitle>
           <CardDescription>For homeowners and buyers</CardDescription>
@@ -38,7 +38,7 @@ const UserRoleSelect: React.FC<UserRoleSelectProps> = ({
         <CardFooter>
           <Button 
             variant={selectedRole === "resident" ? "default" : "outline"} 
-            className="w-full"
+            className={`w-full ${selectedRole === "resident" ? "bg-[#9b87f5] hover:bg-[#7E69AB]" : ""}`}
             onClick={() => onRoleSelect("resident")}
           >
             {selectedRole === "resident" ? "Selected" : "Select"}
@@ -47,16 +47,16 @@ const UserRoleSelect: React.FC<UserRoleSelectProps> = ({
       </Card>
       
       <Card 
-        className={`cursor-pointer border-2 transition-all ${
+        className={`cursor-pointer border-2 transition-all rounded-xl ${
           selectedRole === "servicePro" 
-            ? "border-rehab-teal shadow-md" 
-            : "border-border hover:border-rehab-teal/50"
+            ? "border-[#1EAEDB] shadow-md" 
+            : "border-border hover:border-[#1EAEDB]/50"
         }`}
         onClick={() => onRoleSelect("servicePro")}
       >
         <CardHeader className="space-y-1 items-center text-center">
-          <div className="w-16 h-16 rounded-full bg-teal-50 flex items-center justify-center">
-            <Building2 className="w-8 h-8 text-rehab-teal" />
+          <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center">
+            <Building2 className="w-8 h-8 text-[#1EAEDB]" />
           </div>
           <CardTitle>Service Pro</CardTitle>
           <CardDescription>For subcontractors and service providers</CardDescription>
@@ -67,7 +67,7 @@ const UserRoleSelect: React.FC<UserRoleSelectProps> = ({
         <CardFooter>
           <Button 
             variant={selectedRole === "servicePro" ? "default" : "outline"} 
-            className={`w-full ${selectedRole === "servicePro" ? "bg-rehab-teal hover:bg-rehab-teal/90" : ""}`}
+            className={`w-full ${selectedRole === "servicePro" ? "bg-[#1EAEDB] hover:bg-[#1EAEDB]/90" : ""}`}
             onClick={() => onRoleSelect("servicePro")}
           >
             {selectedRole === "servicePro" ? "Selected" : "Select"}

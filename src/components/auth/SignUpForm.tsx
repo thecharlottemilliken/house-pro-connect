@@ -18,13 +18,17 @@ import { useToast } from "@/components/ui/use-toast";
 import UserRoleSelect from "./UserRoleSelect";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2 } from "lucide-react";
+import { Loader2, User, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
-  confirmPassword: z.string()
+  confirmPassword: z.string(),
+  acceptTerms: z.boolean().refine(val => val === true, {
+    message: "You must accept the terms and conditions",
+  })
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -36,9 +40,11 @@ const SignUpForm = () => {
   const { toast } = useToast();
   const { signup } = useAuth();
   const navigate = useNavigate();
-  const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
-  const [step, setStep] = useState<1 | 2>(1);
+  const [selectedRole, setSelectedRole] = useState<UserRole>("resident");
+  const [step, setStep] = useState<1 | 2>(2);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -47,6 +53,7 @@ const SignUpForm = () => {
       email: "",
       password: "",
       confirmPassword: "",
+      acceptTerms: false
     },
   });
 
@@ -89,114 +96,191 @@ const SignUpForm = () => {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle className="text-2xl font-bold text-center">
-          Create your RehabSquared account
-        </CardTitle>
-        <CardDescription className="text-center">
-          {step === 1 
-            ? "Select your account type to get started" 
-            : "Fill in your details to complete registration"}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {step === 1 ? (
-          <UserRoleSelect 
-            selectedRole={selectedRole} 
-            onRoleSelect={onRoleSelect} 
-          />
-        ) : (
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Full Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="John Doe" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="you@example.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="********" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="confirmPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Confirm Password</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="********" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+    <div className="max-w-md w-full mx-auto">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-[#1A1F2C] mb-2">Create your account</h1>
+        <p className="text-gray-600">Join thousands of homeowners finding quality contractors</p>
+      </div>
+
+      {step === 1 ? (
+        <UserRoleSelect selectedRole={selectedRole} onRoleSelect={onRoleSelect} />
+      ) : (
+        <Card className="border-0 shadow-lg rounded-xl">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xl font-semibold text-[#1A1F2C]">
+              Resident Information
+            </CardTitle>
+            <CardDescription>
+              Fill in your details to get started
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input 
+                            placeholder="John Doe" 
+                            className="pl-10" 
+                            {...field} 
+                          />
+                          <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input 
+                            type="email" 
+                            placeholder="you@example.com" 
+                            className="pl-10" 
+                            {...field} 
+                          />
+                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input 
+                            type={showPassword ? "text" : "password"} 
+                            placeholder="Create a password" 
+                            className="pl-10 pr-10" 
+                            {...field} 
+                          />
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                          <button 
+                            type="button"
+                            className="absolute right-3 top-1/2 -translate-y-1/2"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-5 w-5 text-gray-400" />
+                            ) : (
+                              <Eye className="h-5 w-5 text-gray-400" />
+                            )}
+                          </button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm Password</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input 
+                            type={showConfirmPassword ? "text" : "password"} 
+                            placeholder="Confirm your password" 
+                            className="pl-10 pr-10" 
+                            {...field} 
+                          />
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                          <button 
+                            type="button"
+                            className="absolute right-3 top-1/2 -translate-y-1/2"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          >
+                            {showConfirmPassword ? (
+                              <EyeOff className="h-5 w-5 text-gray-400" />
+                            ) : (
+                              <Eye className="h-5 w-5 text-gray-400" />
+                            )}
+                          </button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="acceptTerms"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 pt-2">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="font-normal text-sm">
+                          I agree to the <Link to="/terms" className="text-[#9b87f5] hover:underline">Terms of Service</Link> and <Link to="/privacy" className="text-[#9b87f5] hover:underline">Privacy Policy</Link>
+                        </FormLabel>
+                        <FormMessage />
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                <Button 
+                  type="submit" 
+                  className="w-full bg-[#9b87f5] hover:bg-[#7E69AB] text-white font-medium py-2.5"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating Account...
+                    </>
+                  ) : "Create Account"}
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+          <CardFooter className="flex flex-col space-y-4 pb-6">
+            {step === 1 ? (
+              <Button onClick={handleContinue} className="w-full">Continue</Button>
+            ) : (
               <Button 
-                type="submit" 
-                className="w-full"
-                disabled={isSubmitting}
+                variant="outline" 
+                onClick={() => setStep(1)} 
+                className="w-full border-gray-300 hover:bg-gray-50"
               >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating Account...
-                  </>
-                ) : "Create Account"}
+                Back
               </Button>
-            </form>
-          </Form>
-        )}
-      </CardContent>
-      <CardFooter className="flex flex-col space-y-4">
-        {step === 1 ? (
-          <Button onClick={handleContinue} className="w-full">Continue</Button>
-        ) : (
-          <Button 
-            variant="outline" 
-            onClick={() => setStep(1)} 
-            className="w-full"
-          >
-            Back
-          </Button>
-        )}
-        <div className="text-sm text-center text-muted-foreground">
-          Already have an account?{" "}
-          <Link to="/login" className="text-rehab-blue hover:underline">
-            Sign in
-          </Link>
-        </div>
-      </CardFooter>
-    </Card>
+            )}
+            <div className="text-sm text-center text-gray-600">
+              Already have an account?{" "}
+              <Link to="/login" className="text-[#9b87f5] hover:underline font-medium">
+                Sign in
+              </Link>
+            </div>
+          </CardFooter>
+        </Card>
+      )}
+    </div>
   );
 };
 

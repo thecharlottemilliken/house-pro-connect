@@ -15,9 +15,9 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
         <title>{title} | RehabSquared</title>
       </Helmet>
       <div className="min-h-screen flex flex-col">
-        <header className="border-b py-4">
+        <header className="border-b py-4 bg-white">
           <div className="container max-w-7xl mx-auto px-4 flex justify-center md:justify-between items-center">
-            <Link to="/" className="text-2xl font-bold rehab-gradient bg-clip-text text-transparent">
+            <Link to="/" className="text-2xl font-bold bg-gradient-to-r from-[#9b87f5] to-[#1EAEDB] bg-clip-text text-transparent">
               RehabSquared
             </Link>
             <nav className="hidden md:flex items-center space-x-6">
@@ -33,10 +33,10 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title }) => {
             </nav>
           </div>
         </header>
-        <main className="flex-1 flex items-center justify-center p-4 md:p-8">
-          <div className="w-full max-w-md">{children}</div>
+        <main className="flex-1">
+          {children}
         </main>
-        <footer className="border-t py-6">
+        <footer className="border-t py-6 bg-white">
           <div className="container max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center text-sm text-muted-foreground">
             <div>&copy; {new Date().getFullYear()} RehabSquared. All rights reserved.</div>
             <div className="flex space-x-4 mt-4 md:mt-0">

@@ -6,7 +6,9 @@ import SignUpForm from "@/components/auth/SignUpForm";
 const SignUp = () => {
   return (
     <AuthLayout title="Sign Up">
-      <SignUpForm />
+      <div className="bg-gradient-to-b from-white to-[#E5DEFF] min-h-screen py-8">
+        <SignUpForm />
+      </div>
     </AuthLayout>
   );
 };
