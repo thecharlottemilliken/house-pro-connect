@@ -18,6 +18,11 @@ interface PropertyDetails {
   zip_code: string;
 }
 
+interface RenovationArea {
+  area: string;
+  location: string;
+}
+
 const ProjectDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -72,8 +77,8 @@ const ProjectDashboard = () => {
   // Generate a fake project ID for display purposes
   const projectId = `#${Math.floor(100000 + Math.random() * 900000)}`;
 
-  // Extract renovation areas if available
-  const renovationAreas = projectData?.renovationAreas || ["Kitchen"];
+  // Extract renovation areas if available and ensure proper formatting
+  const renovationAreas = projectData?.renovationAreas || [];
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -144,9 +149,9 @@ const ProjectDashboard = () => {
                 <div>
                   <h3 className="font-medium mb-2">RENOVATION AREAS</h3>
                   <div className="space-y-2">
-                    {renovationAreas.map((area: string, index: number) => (
+                    {renovationAreas.map((area: RenovationArea, index: number) => (
                       <div key={index} className="flex items-center text-sm">
-                        <span className="text-orange-500 mr-2">★</span> {area}
+                        <span className="text-orange-500 mr-2">★</span> {area.area} ({area.location})
                       </div>
                     ))}
                   </div>
