@@ -60,7 +60,7 @@ const SignUpStepTwo: React.FC<SignUpStepTwoProps> = ({
   });
 
   return (
-    <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+    <div>
       <div className="flex items-center mb-6">
         <Button 
           variant="ghost" 

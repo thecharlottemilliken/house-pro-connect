@@ -67,12 +67,7 @@ const SignUpForm = () => {
   };
 
   return (
-    <div className="max-w-md w-full mx-auto px-4">
-      <div className="text-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Create your account</h1>
-        <p className="text-gray-600">Join thousands of homeowners finding quality contractors</p>
-      </div>
-
+    <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-gray-200">
       {step === 1 ? (
         <SignUpStepOne
           selectedRole={selectedRole}

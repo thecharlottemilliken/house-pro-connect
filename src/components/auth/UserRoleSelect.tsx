@@ -24,7 +24,7 @@ const UserRoleSelect: React.FC<UserRoleSelectProps> = ({
         onClick={() => onRoleSelect("resident")}
       >
         <div className="flex flex-col items-center text-center">
-          <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center mb-4">
+          <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center mb-4 shadow-sm">
             <Home className="w-7 h-7 text-[#9b87f5]" />
           </div>
           <h3 className="text-lg font-semibold text-gray-900 mb-1">I am a homeowner</h3>
@@ -41,7 +41,7 @@ const UserRoleSelect: React.FC<UserRoleSelectProps> = ({
         onClick={() => onRoleSelect("servicePro")}
       >
         <div className="flex flex-col items-center text-center">
-          <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center mb-4">
+          <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center mb-4 shadow-sm">
             <Building2 className="w-7 h-7 text-[#1EAEDB]" />
           </div>
           <h3 className="text-lg font-semibold text-gray-900 mb-1">I am a service pro</h3>

@@ -33,7 +33,7 @@ const SignUpStepOne: React.FC<SignUpStepOneProps> = ({
   };
 
   return (
-    <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+    <div>
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-2">I want to join as...</h2>
         <p className="text-sm text-gray-500">Select your account type to get started</p>
