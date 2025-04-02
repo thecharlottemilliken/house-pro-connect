@@ -1,32 +1,64 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
+
+interface Property {
+  id: string;
+  property_name: string;
+  image_url: string;
+  address_line1: string;
+  city: string;
+  state: string;
+  zip_code: string;
+}
 
 const CreateProject = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const [propertyData, setPropertyData] = useState([
-    {
-      id: 1,
-      type: "Family Home",
-      image: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-      address: "1143 S 1200 W #W, Salt Lake City, UT 84104",
-    },
-    {
-      id: 2,
-      type: "Vacation Home",
-      image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2558&q=80",
-      address: "1143 S 1200 W #W, Salt Lake City, UT 84104",
-    }
-  ]);
+  const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
 
-  const [selectedPropertyId, setSelectedPropertyId] = useState<number | null>(null);
+  useEffect(() => {
+    if (!user) return;
+    
+    const fetchProperties = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('properties')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          throw error;
+        }
+        
+        setProperties(data || []);
+      } catch (error: any) {
+        console.error('Error fetching properties:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load your properties. Please try again.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchProperties();
+  }, [user]);
 
-  const selectProperty = (id: number) => {
+  const selectProperty = (id: string) => {
     setSelectedPropertyId(id);
   };
 
@@ -43,7 +75,11 @@ const CreateProject = () => {
   const goToNextStep = () => {
     // This would update the current step and navigate to the next page
     // For now, it just logs the selected property
-    console.log("Selected property:", propertyData.find(p => p.id === selectedPropertyId));
+    console.log("Selected property:", properties.find(p => p.id === selectedPropertyId));
+  };
+  
+  const formatAddress = (property: Property) => {
+    return `${property.address_line1}, ${property.city}, ${property.state} ${property.zip_code}`;
   };
 
   return (
@@ -84,14 +120,14 @@ const CreateProject = () => {
         </div>
         
         {/* Main Content */}
-        <div className="flex-1 p-4 md:p-10">
+        <div className="flex-1 p-4 md:p-10 overflow-auto">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-4">Select a Property</h2>
           <p className="text-sm md:text-base text-gray-700 mb-6 md:mb-8 max-w-3xl">
             To get started, fill out a high-level summary of the project so specialists can get an idea of the type of project underway. Next, select when you want your bids due by.
           </p>
           
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 md:mb-6 gap-3 sm:gap-0">
-            <h3 className="text-lg md:text-xl font-bold text-gray-900">Your Properties <span className="text-gray-500">{propertyData.length}</span></h3>
+            <h3 className="text-lg md:text-xl font-bold text-gray-900">Your Properties <span className="text-gray-500">{properties.length}</span></h3>
             <Button 
               variant="outline" 
               className="border-[#174c65] text-[#174c65] hover:bg-[#174c65] hover:text-white w-full sm:w-auto"
@@ -101,39 +137,53 @@ const CreateProject = () => {
             </Button>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-10">
-            {propertyData.map((property) => (
-              <div 
-                key={property.id} 
-                className={`bg-white rounded-lg shadow-md overflow-hidden border ${
-                  selectedPropertyId === property.id 
-                    ? "border-[#174c65] ring-2 ring-[#174c65]/20" 
-                    : "border-gray-200"
-                }`}
+          {isLoading ? (
+            <div className="py-6 text-center">Loading your properties...</div>
+          ) : properties.length === 0 ? (
+            <div className="bg-gray-50 rounded-lg p-6 text-center mb-6 md:mb-10">
+              <p className="text-gray-600 mb-4">You don't have any properties yet. Add your first property to get started.</p>
+              <Button 
+                className="bg-[#174c65]"
+                onClick={() => navigate("/add-property")}
               >
-                <div className="h-40 md:h-52 overflow-hidden">
-                  <img 
-                    src={property.image} 
-                    alt={property.type} 
-                    className="w-full h-full object-cover" 
-                  />
+                <Plus className="mr-2 h-4 w-4" /> Add Your First Property
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-10">
+              {properties.map((property) => (
+                <div 
+                  key={property.id} 
+                  className={`bg-white rounded-lg shadow-md overflow-hidden border ${
+                    selectedPropertyId === property.id 
+                      ? "border-[#174c65] ring-2 ring-[#174c65]/20" 
+                      : "border-gray-200"
+                  }`}
+                >
+                  <div className="h-40 md:h-52 overflow-hidden">
+                    <img 
+                      src={property.image_url} 
+                      alt={property.property_name} 
+                      className="w-full h-full object-cover" 
+                    />
+                  </div>
+                  <div className="p-4">
+                    <h4 className="text-base md:text-lg font-semibold mb-2">{property.property_name}</h4>
+                    <p className="text-sm md:text-base text-gray-600 mb-4">{formatAddress(property)}</p>
+                    <Button 
+                      variant={selectedPropertyId === property.id ? "default" : "outline"}
+                      className={selectedPropertyId === property.id 
+                        ? "w-full bg-[#174c65] text-white" 
+                        : "w-full border-[#174c65] text-[#174c65] hover:bg-[#174c65] hover:text-white"}
+                      onClick={() => selectProperty(property.id)}
+                    >
+                      {selectedPropertyId === property.id ? "SELECTED" : "SELECT"}
+                    </Button>
+                  </div>
                 </div>
-                <div className="p-4">
-                  <h4 className="text-base md:text-lg font-semibold mb-2">{property.type}</h4>
-                  <p className="text-sm md:text-base text-gray-600 mb-4">{property.address}</p>
-                  <Button 
-                    variant={selectedPropertyId === property.id ? "default" : "outline"}
-                    className={selectedPropertyId === property.id 
-                      ? "w-full bg-[#174c65] text-white" 
-                      : "w-full border-[#174c65] text-[#174c65] hover:bg-[#174c65] hover:text-white"}
-                    onClick={() => selectProperty(property.id)}
-                  >
-                    {selectedPropertyId === property.id ? "SELECTED" : "SELECT"}
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
           
           <div className="flex flex-col sm:flex-row justify-between pt-4 border-t border-gray-200 gap-3 sm:gap-0">
             <Button 

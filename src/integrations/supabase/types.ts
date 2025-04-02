@@ -39,6 +39,72 @@ export type Database = {
         }
         Relationships: []
       }
+      properties: {
+        Row: {
+          address_line1: string
+          address_line2: string | null
+          bathrooms: string | null
+          bedrooms: string | null
+          city: string
+          created_at: string
+          exterior_attributes: string[] | null
+          home_purpose: string | null
+          home_type: string | null
+          id: string
+          image_url: string | null
+          interior_attributes: string[] | null
+          property_name: string
+          sqft: string | null
+          state: string
+          updated_at: string
+          user_id: string
+          working_on_behalf: boolean | null
+          zip_code: string
+        }
+        Insert: {
+          address_line1: string
+          address_line2?: string | null
+          bathrooms?: string | null
+          bedrooms?: string | null
+          city: string
+          created_at?: string
+          exterior_attributes?: string[] | null
+          home_purpose?: string | null
+          home_type?: string | null
+          id?: string
+          image_url?: string | null
+          interior_attributes?: string[] | null
+          property_name: string
+          sqft?: string | null
+          state: string
+          updated_at?: string
+          user_id: string
+          working_on_behalf?: boolean | null
+          zip_code: string
+        }
+        Update: {
+          address_line1?: string
+          address_line2?: string | null
+          bathrooms?: string | null
+          bedrooms?: string | null
+          city?: string
+          created_at?: string
+          exterior_attributes?: string[] | null
+          home_purpose?: string | null
+          home_type?: string | null
+          id?: string
+          image_url?: string | null
+          interior_attributes?: string[] | null
+          property_name?: string
+          sqft?: string | null
+          state?: string
+          updated_at?: string
+          user_id?: string
+          working_on_behalf?: boolean | null
+          zip_code?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
