@@ -1,10 +1,24 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { 
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { format } from "date-fns";
 
 const ManagementPreferences = () => {
   const navigate = useNavigate();
@@ -13,6 +27,14 @@ const ManagementPreferences = () => {
   
   const [propertyId, setPropertyId] = useState<string | null>(null);
   const [projectPrefs, setProjectPrefs] = useState<any>(null);
+  const [wantProjectCoach, setWantProjectCoach] = useState<string>("yes");
+  
+  const form = useForm({
+    defaultValues: {
+      phoneNumber: "",
+      phoneType: "Cell",
+    }
+  });
 
   // Get the data from the location state
   useEffect(() => {
@@ -28,7 +50,15 @@ const ManagementPreferences = () => {
   const goToNextStep = () => {
     // Save the management preferences and go to the next step (Prior Experience)
     navigate("/prior-experience", {
-      state: projectPrefs
+      state: {
+        ...projectPrefs,
+        managementPreferences: {
+          wantProjectCoach,
+          phoneNumber: form.getValues("phoneNumber"),
+          phoneType: form.getValues("phoneType"),
+          // Add other fields as needed
+        }
+      }
     });
   };
 
@@ -89,12 +119,148 @@ const ManagementPreferences = () => {
         <div className="flex-1 p-4 md:p-10 overflow-auto">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-4">Management Preferences</h2>
           <p className="text-sm md:text-base text-gray-700 mb-6 md:mb-8 max-w-3xl">
-            Tell us about how you would like to manage this project.
+            To get started, fill out a high-level summary of the project so specialists can get an idea of the type of project underway. Next, select when you want your bids due by.
           </p>
           
-          {/* Placeholder for content */}
-          <div className="space-y-8 mb-10">
-            <p>Management preferences content will go here.</p>
+          <div className="flex flex-col md:flex-row gap-8 mb-10">
+            <div className="flex-1 space-y-8">
+              {/* Project Coach Selection */}
+              <div>
+                <h3 className="text-lg font-medium mb-4">Do you want to work with a project coach?</h3>
+                <RadioGroup 
+                  value={wantProjectCoach} 
+                  onValueChange={setWantProjectCoach}
+                  className="flex flex-col space-y-3"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="yes" id="yes" />
+                    <Label htmlFor="yes">Yes, manage it for me</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="no" id="no" />
+                    <Label htmlFor="no">No, I'll manage it myself</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="not-sure" id="not-sure" />
+                    <Label htmlFor="not-sure">I'm not sure</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+              
+              {/* Phone Information */}
+              {wantProjectCoach === "yes" && (
+                <div>
+                  <h3 className="text-lg font-medium mb-4">What number should the coach reach you by?</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="md:col-span-2">
+                      <Label htmlFor="phone" className="mb-2 block">Phone</Label>
+                      <Input 
+                        id="phone" 
+                        placeholder="000 000 0000" 
+                        value={form.watch("phoneNumber")}
+                        onChange={(e) => form.setValue("phoneNumber", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="phoneType" className="mb-2 block">Type</Label>
+                      <Select 
+                        value={form.watch("phoneType")} 
+                        onValueChange={(value) => form.setValue("phoneType", value)}
+                      >
+                        <SelectTrigger id="phoneType">
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectItem value="Cell">Cell</SelectItem>
+                            <SelectItem value="Home">Home</SelectItem>
+                            <SelectItem value="Work">Work</SelectItem>
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Availability Section */}
+              {wantProjectCoach === "yes" && (
+                <div>
+                  <h3 className="text-lg font-medium mb-4">Please select a few times you're available to be contacted.</h3>
+                  
+                  {[1, 2, 3].map((index) => (
+                    <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                      <div>
+                        <Label htmlFor={`date-${index}`} className="mb-2 block">Date</Label>
+                        <div className="relative">
+                          <Input 
+                            id={`date-${index}`} 
+                            placeholder="MM / DD / YYYY" 
+                            className="pl-10"
+                          />
+                          <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M13.3333 2.66663H2.66667C1.93029 2.66663 1.33334 3.26358 1.33334 3.99996V13.3333C1.33334 14.0697 1.93029 14.6666 2.66667 14.6666H13.3333C14.0697 14.6666 14.6667 14.0697 14.6667 13.3333V3.99996C14.6667 3.26358 14.0697 2.66663 13.3333 2.66663Z" stroke="#64748B" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round"/>
+                              <path d="M1.33334 6.66663H14.6667" stroke="#64748B" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round"/>
+                              <path d="M5.33334 1.33337V4.00004" stroke="#64748B" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round"/>
+                              <path d="M10.6667 1.33337V4.00004" stroke="#64748B" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <Label htmlFor={`time-${index}`} className="mb-2 block">Time</Label>
+                        <Input id={`time-${index}`} placeholder="0:00" />
+                      </div>
+                      <div>
+                        <Label htmlFor={`ampm-${index}`} className="mb-2 block">AM/PM</Label>
+                        <Select defaultValue="AM">
+                          <SelectTrigger id={`ampm-${index}`}>
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectGroup>
+                              <SelectItem value="AM">AM</SelectItem>
+                              <SelectItem value="PM">PM</SelectItem>
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            {/* Right column - Information */}
+            <div className="w-full md:w-80 bg-gray-50 p-5 rounded-lg">
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-2">How project management works</h3>
+                <p className="text-sm text-gray-600">
+                  Lorem ipsum dolor sit amet consectetur. Pellentesque feugiat augue enim fringilla orci elit tincidunt at. Id fames ut sapien etiam pulvinar. Non posuere vel sit sed morbi sit cursus magna id. Ut blandit cras etiam est amet maecenas.
+                </p>
+              </div>
+              
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Things a project coach will help with</h3>
+                
+                <div className="space-y-4">
+                  {[1, 2, 3].map((index) => (
+                    <div key={index} className="flex items-start">
+                      <div className="mt-1 mr-3 h-5 w-5 flex items-center justify-center rounded-full bg-[#174c65] text-white">
+                        <Check className="h-3 w-3" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium">Step one description here</h4>
+                        <p className="text-xs text-gray-600">
+                          Lorem ipsum dolor sit amet consectetur. Pellentesque feugiat augue enim fringilla orci elit tincidunt at.
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
           
           <div className="flex flex-col sm:flex-row justify-between pt-4 border-t border-gray-200 gap-3 sm:gap-0">

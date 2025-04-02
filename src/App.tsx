@@ -14,6 +14,7 @@ import ProjectPreferences from "./pages/ProjectPreferences";
 import ConstructionPreferences from "./pages/ConstructionPreferences";
 import DesignPreferences from "./pages/DesignPreferences";
 import ManagementPreferences from "./pages/ManagementPreferences";
+import PriorExperience from "./pages/PriorExperience";
 import AddProperty from "./pages/AddProperty";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
@@ -77,6 +78,13 @@ const App = () => {
               <ProtectedRoute>
                 <TooltipProvider>
                   <ManagementPreferences />
+                </TooltipProvider>
+              </ProtectedRoute>
+            } />
+            <Route path="/prior-experience" element={
+              <ProtectedRoute>
+                <TooltipProvider>
+                  <PriorExperience />
                 </TooltipProvider>
               </ProtectedRoute>
             } />
