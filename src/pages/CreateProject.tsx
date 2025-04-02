@@ -4,11 +4,9 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
-import AddPropertyDialog from "@/components/projects/AddPropertyDialog";
 
 const CreateProject = () => {
   const navigate = useNavigate();
-  const [isAddPropertyDialogOpen, setIsAddPropertyDialogOpen] = useState(false);
   const [propertyData, setPropertyData] = useState([
     {
       id: 1,
@@ -25,10 +23,6 @@ const CreateProject = () => {
   ]);
 
   const [selectedPropertyId, setSelectedPropertyId] = useState<number | null>(null);
-
-  const addProperty = (property: any) => {
-    setPropertyData(prev => [...prev, property]);
-  };
 
   const selectProperty = (id: number) => {
     setSelectedPropertyId(id);
@@ -99,7 +93,7 @@ const CreateProject = () => {
             <Button 
               variant="outline" 
               className="border-[#174c65] text-[#174c65] hover:bg-[#174c65] hover:text-white"
-              onClick={() => setIsAddPropertyDialogOpen(true)}
+              onClick={() => navigate("/add-property")}
             >
               <Plus className="mr-2 h-4 w-4" /> ADD PROPERTY
             </Button>
@@ -166,13 +160,6 @@ const CreateProject = () => {
               </Button>
             </div>
           </div>
-          
-          {/* Property Dialog */}
-          <AddPropertyDialog 
-            open={isAddPropertyDialogOpen} 
-            onClose={() => setIsAddPropertyDialogOpen(false)}
-            onAddProperty={addProperty}
-          />
         </div>
       </div>
     </div>

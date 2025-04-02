@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import ResidentDashboard from "./pages/ResidentDashboard";
 import CreateProject from "./pages/CreateProject";
+import AddProperty from "./pages/AddProperty";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
 import LandingPage from "./pages/LandingPage";
@@ -36,6 +37,13 @@ const App = () => {
               <ProtectedRoute>
                 <TooltipProvider>
                   <CreateProject />
+                </TooltipProvider>
+              </ProtectedRoute>
+            } />
+            <Route path="/add-property" element={
+              <ProtectedRoute>
+                <TooltipProvider>
+                  <AddProperty />
                 </TooltipProvider>
               </ProtectedRoute>
             } />
