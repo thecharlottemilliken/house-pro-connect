@@ -1,17 +1,17 @@
 
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 const MessagesCard = () => {
   return (
-    <Card className="shadow-sm">
-      <CardHeader className="pb-2 flex justify-between items-center">
-        <CardTitle className="text-xl">Recent Messages</CardTitle>
-        <Button variant="link" className="text-[#1e5c78] p-0 font-normal">See All</Button>
+    <Card className="overflow-hidden rounded-lg shadow-[0_2px_10px_rgba(0,0,0,0.08)] border-0">
+      <CardHeader className="flex flex-row items-center justify-between pb-3 pt-6 px-6">
+        <h2 className="text-2xl font-semibold">Recent Messages</h2>
+        <Button variant="link" className="text-[#0f3a4d] p-0 font-medium">See All</Button>
       </CardHeader>
-      <CardContent>
-        <p className="text-gray-500">No recent conversations</p>
+      <CardContent className="px-6 pb-6">
+        <p className="text-gray-600">No recent conversations</p>
       </CardContent>
     </Card>
   );

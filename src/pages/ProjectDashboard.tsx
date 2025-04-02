@@ -8,7 +8,6 @@ import PropertyCard from "@/components/project/PropertyCard";
 import TasksCard from "@/components/project/TasksCard";
 import MessagesCard from "@/components/project/MessagesCard";
 import EventsCard from "@/components/project/EventsCard";
-import { ArrowRight } from "lucide-react";
 
 const ProjectDashboard = () => {
   const location = useLocation();
@@ -41,17 +40,17 @@ const ProjectDashboard = () => {
       <div className="flex flex-col md:flex-row flex-1">
         <ProjectSidebar projectId={projectId} projectTitle={projectData?.title || "Kitchen Remodel"} />
         
-        <div className="flex-1 p-6">
+        <div className="flex-1 p-8 bg-[#f3f3f3]">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-4xl font-bold text-gray-900">
               {projectData?.title || "Kitchen Remodel"}
             </h1>
-            <p className="text-gray-600">
-              {propertyDetails.property_name || "Family Home"} #{projectId.slice(-6)}
+            <p className="text-gray-600 text-lg">
+              Family Home #{projectId.slice(-6)}
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
             <PropertyCard 
               propertyDetails={propertyDetails} 
               renovationAreas={renovationAreas} 
@@ -59,7 +58,7 @@ const ProjectDashboard = () => {
             <TasksCard />
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <MessagesCard />
             <EventsCard />
           </div>
