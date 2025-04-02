@@ -1,3 +1,4 @@
+
 import { useLocation, useParams } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -7,7 +8,7 @@ import PropertyCard from "@/components/project/PropertyCard";
 import TasksCard from "@/components/project/TasksCard";
 import MessagesCard from "@/components/project/MessagesCard";
 import EventsCard from "@/components/project/EventsCard";
-import SidebarProvider from "@/components/dashboard/SidebarProvider";
+import { SidebarProvider } from "@/components/ui/sidebar";
 
 const ProjectDashboard = () => {
   const location = useLocation();
