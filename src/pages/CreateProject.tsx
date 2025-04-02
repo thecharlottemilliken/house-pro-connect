@@ -26,6 +26,7 @@ const CreateProject = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [properties, setProperties] = useState<Property[]>([]);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -73,13 +74,56 @@ const CreateProject = () => {
     { number: 7, title: "Prior Experience", current: false },
   ];
 
+  const createInitialProject = async () => {
+    if (!selectedPropertyId || !user) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      // Create a new project in the database
+      const selectedProperty = properties.find(p => p.id === selectedPropertyId);
+      const projectTitle = `${selectedProperty?.property_name || 'Property'} Renovation`;
+      
+      const { data, error } = await supabase
+        .from('projects')
+        .insert({
+          user_id: user.id,
+          property_id: selectedPropertyId,
+          title: projectTitle,
+          renovation_areas: []
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Navigate to the renovation areas page with the new project ID
+      navigate("/renovation-areas", { 
+        state: { 
+          propertyId: selectedPropertyId,
+          projectId: data.id 
+        } 
+      });
+      
+      toast({
+        title: "Project Created",
+        description: "Your project has been created successfully."
+      });
+    } catch (error: any) {
+      console.error('Error creating project:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create your project. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
   const goToNextStep = () => {
     if (!selectedPropertyId) return;
-    
-    // Navigate to the renovation areas page with the selected property ID
-    navigate("/renovation-areas", { 
-      state: { propertyId: selectedPropertyId } 
-    });
+    createInitialProject();
   };
   
   const formatAddress = (property: Property) => {
@@ -209,10 +253,10 @@ const CreateProject = () => {
                 className={`flex items-center ${
                   selectedPropertyId ? "bg-[#174c65] hover:bg-[#174c65]/90" : "bg-gray-300 hover:bg-gray-400"
                 } text-white w-full sm:w-auto justify-center`}
-                disabled={!selectedPropertyId}
+                disabled={!selectedPropertyId || isSubmitting}
                 onClick={selectedPropertyId ? goToNextStep : undefined}
               >
-                NEXT <ArrowRight className="ml-2 h-4 w-4" />
+                {isSubmitting ? "SAVING..." : "NEXT"} {!isSubmitting && <ArrowRight className="ml-2 h-4 w-4" />}
               </Button>
             </div>
           </div>
