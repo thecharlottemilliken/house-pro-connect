@@ -49,7 +49,7 @@ export const useProjectData = (projectId?: string, initialData?: any) => {
   const fetchProjectById = async (id: string) => {
     setIsLoading(true);
     try {
-      // Using from method without any type constraints to avoid TypeScript errors
+      // Using untyped query to avoid TypeScript errors
       const { data, error } = await supabase
         .from('projects')
         .select('*')
@@ -61,7 +61,11 @@ export const useProjectData = (projectId?: string, initialData?: any) => {
       }
       
       setProjectData(data);
-      fetchPropertyDetails(data.property_id);
+      if (data && data.property_id) {
+        fetchPropertyDetails(data.property_id);
+      } else {
+        setIsLoading(false);
+      }
     } catch (error: any) {
       console.error('Error fetching project:', error);
       toast({
@@ -75,7 +79,7 @@ export const useProjectData = (projectId?: string, initialData?: any) => {
 
   const fetchPropertyDetails = async (propertyId: string) => {
     try {
-      // Using from method without any type constraints to avoid TypeScript errors
+      // Using untyped query to avoid TypeScript errors
       const { data, error } = await supabase
         .from('properties')
         .select('*')

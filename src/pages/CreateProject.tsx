@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Plus } from "lucide-react";
@@ -34,7 +33,6 @@ const CreateProject = () => {
     const fetchProperties = async () => {
       setIsLoading(true);
       try {
-        // The Supabase client will automatically cast the types correctly
         const { data, error } = await supabase
           .from('properties')
           .select('*')
@@ -80,7 +78,6 @@ const CreateProject = () => {
     setIsSubmitting(true);
     
     try {
-      // Create a new project in the database
       const selectedProperty = properties.find(p => p.id === selectedPropertyId);
       const projectTitle = `${selectedProperty?.property_name || 'Property'} Renovation`;
       
@@ -91,13 +88,12 @@ const CreateProject = () => {
           property_id: selectedPropertyId,
           title: projectTitle,
           renovation_areas: []
-        })
+        } as any)
         .select()
         .single();
       
       if (error) throw error;
       
-      // Navigate to the renovation areas page with the new project ID
       navigate("/renovation-areas", { 
         state: { 
           propertyId: selectedPropertyId,
@@ -135,7 +131,6 @@ const CreateProject = () => {
       <DashboardNavbar />
       
       <div className="flex flex-col md:flex-row flex-1">
-        {/* Left Sidebar */}
         <div className={`${isMobile ? 'w-full' : 'w-80'} bg-[#EFF3F7] p-4 md:p-8`}>
           <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">Create a Project</h1>
           <p className="text-sm md:text-base text-gray-600 mb-6 md:mb-8">
@@ -167,7 +162,6 @@ const CreateProject = () => {
           </div>
         </div>
         
-        {/* Main Content */}
         <div className="flex-1 p-4 md:p-10 overflow-auto">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-4">Select a Property</h2>
           <p className="text-sm md:text-base text-gray-700 mb-6 md:mb-8 max-w-3xl">
