@@ -1,28 +1,47 @@
 
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 interface CalendarHeaderProps {
   currentMonth: string;
-  viewMode: string;
-  setViewMode: (mode: string) => void;
+  viewMode: "Day" | "Week" | "Month";
+  setViewMode: (mode: "Day" | "Week" | "Month") => void;
+  goToToday: () => void;
+  goToPreviousPeriod: () => void;
+  goToNextPeriod: () => void;
 }
 
-const CalendarHeader = ({ currentMonth, viewMode, setViewMode }: CalendarHeaderProps) => {
+const CalendarHeader = ({ 
+  currentMonth, 
+  viewMode, 
+  setViewMode,
+  goToToday,
+  goToPreviousPeriod,
+  goToNextPeriod
+}: CalendarHeaderProps) => {
   return (
     <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
       <div className="flex items-center mb-4 md:mb-0">
-        <button className="p-2 text-gray-500 hover:text-gray-800">
+        <button 
+          className="p-2 text-gray-500 hover:text-gray-800"
+          onClick={goToPreviousPeriod}
+        >
           <ChevronLeft className="h-5 w-5" />
         </button>
         <span className="text-xl font-medium mx-2">{currentMonth}</span>
-        <button className="p-2 text-gray-500 hover:text-gray-800">
+        <button 
+          className="p-2 text-gray-500 hover:text-gray-800"
+          onClick={goToNextPeriod}
+        >
           <ChevronRight className="h-5 w-5" />
         </button>
       </div>
       
       <div className="flex flex-wrap gap-2">
-        <button className="bg-white text-gray-600 px-4 py-1 rounded-md border border-gray-200">
+        <button 
+          className="bg-white text-gray-600 px-4 py-1 rounded-md border border-gray-200 hover:bg-gray-50"
+          onClick={goToToday}
+        >
           Today
         </button>
         

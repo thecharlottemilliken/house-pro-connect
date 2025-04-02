@@ -1,5 +1,6 @@
 
 import { cn } from "@/lib/utils";
+import { format, isSameDay } from "date-fns";
 
 interface CalendarDay {
   day: number;
@@ -11,10 +12,8 @@ interface CalendarDay {
 interface Event {
   id: number;
   title: string;
-  day: number;
-  time: string;
+  date: Date;
   color: string;
-  fullTime: string;
 }
 
 interface TimeSlot {
@@ -26,17 +25,21 @@ interface CalendarGridProps {
   days: CalendarDay[];
   timeSlots: TimeSlot[];
   events: Event[];
+  viewMode: "Day" | "Week" | "Month";
 }
 
-const CalendarGrid = ({ days, timeSlots, events }: CalendarGridProps) => {
+const CalendarGrid = ({ days, timeSlots, events, viewMode }: CalendarGridProps) => {
   // Get events for a specific day and timeSlot
-  const getEventForTimeSlot = (day: number, time: number) => {
+  const getEventForTimeSlot = (date: Date, time: number) => {
     return events.find(event => {
-      const eventHour = event.time.includes('AM') 
-        ? parseInt(event.time) 
-        : (parseInt(event.time) === 12 ? 12 : parseInt(event.time) + 12);
-      return event.day === day && eventHour === time;
+      const eventHour = event.date.getHours();
+      return isSameDay(event.date, date) && eventHour === time;
     });
+  };
+
+  // Check if a date is today
+  const isToday = (date: Date) => {
+    return isSameDay(date, new Date());
   };
 
   return (
@@ -46,7 +49,9 @@ const CalendarGrid = ({ days, timeSlots, events }: CalendarGridProps) => {
         <div className="grid grid-cols-8 border-b border-gray-200">
           {/* Time column header */}
           <div className="border-r border-gray-200 p-2 flex items-center justify-center">
-            <div className="text-gray-400 text-xs">EST<br/>GMT-5</div>
+            <div className="text-gray-400 text-xs">
+              {format(new Date(), 'zzz')}
+            </div>
           </div>
           
           {/* Day columns headers */}
@@ -56,7 +61,7 @@ const CalendarGrid = ({ days, timeSlots, events }: CalendarGridProps) => {
               className={cn(
                 "p-2 text-center",
                 i < days.length - 1 && "border-r border-gray-200",
-                day.day === 25 && "bg-blue-50"
+                isToday(day.fullDate) && "bg-blue-50"
               )}
             >
               <div className="text-gray-500 font-medium">{day.name}</div>
@@ -87,10 +92,10 @@ const CalendarGrid = ({ days, timeSlots, events }: CalendarGridProps) => {
             <div key={dayIndex} className={cn(
               "relative",
               dayIndex < days.length - 1 && "border-r border-gray-200",
-              day.day === 25 && "bg-blue-50"
+              isToday(day.fullDate) && "bg-blue-50"
             )}>
               {timeSlots.map((timeSlot, timeIndex) => {
-                const event = getEventForTimeSlot(day.day, timeSlot.time);
+                const event = getEventForTimeSlot(day.fullDate, timeSlot.time);
                 return (
                   <div 
                     key={timeIndex} 
@@ -104,7 +109,7 @@ const CalendarGrid = ({ days, timeSlots, events }: CalendarGridProps) => {
                         className="absolute inset-1 rounded-md p-2 text-white flex flex-col"
                         style={{ backgroundColor: event.color }}
                       >
-                        <span className="text-xs">{event.fullTime}</span>
+                        <span className="text-xs">{format(event.date, 'h:mm a')}</span>
                         <span className="font-medium">{event.title}</span>
                       </div>
                     )}

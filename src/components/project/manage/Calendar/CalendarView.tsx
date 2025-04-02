@@ -1,5 +1,6 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { format, addDays, startOfWeek, endOfWeek, addMonths, parseISO, isSameDay } from "date-fns";
 import CalendarHeader from "./CalendarHeader";
 import MiniCalendar from "./MiniCalendar";
 import EventsList from "./EventsList";
@@ -8,28 +9,48 @@ import CalendarGrid from "./CalendarGrid";
 interface Event {
   id: number;
   title: string;
-  day: number;
-  time: string;
+  date: Date;
   color: string;
-  fullTime: string;
 }
 
 const CalendarView = () => {
-  const [currentMonth, setCurrentMonth] = useState("January");
-  const [viewMode, setViewMode] = useState("Week");
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [viewMode, setViewMode] = useState<"Day" | "Week" | "Month">("Week");
   
-  // Calendar grid data
-  const days = [
-    { day: 21, name: "SUN", month: "JAN", fullDate: new Date(2024, 0, 21) },
-    { day: 22, name: "MON", month: "JAN", fullDate: new Date(2024, 0, 22) },
-    { day: 23, name: "TUE", month: "JAN", fullDate: new Date(2024, 0, 23) },
-    { day: 24, name: "WED", month: "JAN", fullDate: new Date(2024, 0, 24) },
-    { day: 25, name: "THU", month: "JAN", fullDate: new Date(2024, 0, 25) },
-    { day: 26, name: "FRI", month: "JAN", fullDate: new Date(2024, 0, 26) },
-    { day: 27, name: "SAT", month: "JAN", fullDate: new Date(2024, 0, 27) }
-  ];
+  // Set up days for the week view
+  const [days, setDays] = useState<Array<{
+    day: number;
+    name: string;
+    month: string;
+    fullDate: Date;
+  }>>([]);
   
-  // Time slots
+  // Update days when current date changes
+  useEffect(() => {
+    const start = startOfWeek(currentDate, { weekStartsOn: 0 });
+    const end = endOfWeek(currentDate, { weekStartsOn: 0 });
+    
+    const daysArray = [];
+    let day = start;
+    
+    while (day <= end) {
+      daysArray.push({
+        day: day.getDate(),
+        name: format(day, 'EEE').toUpperCase(),
+        month: format(day, 'MMM').toUpperCase(),
+        fullDate: new Date(day)
+      });
+      day = addDays(day, 1);
+    }
+    
+    setDays(daysArray);
+  }, [currentDate]);
+  
+  // Get current month for display
+  const currentMonth = format(currentDate, 'MMMM yyyy');
+  
+  // Time slots for the day
   const timeSlots = [
     { label: "7 AM", time: 7 },
     { label: "8 AM", time: 8 },
@@ -42,78 +63,91 @@ const CalendarView = () => {
     { label: "3 PM", time: 15 }
   ];
   
-  // Sample events data
+  // Sample events data with real dates
   const events: Event[] = [
     { 
       id: 1, 
       title: "Tile Delivery", 
-      day: 21, 
-      time: "09:00 AM", 
-      color: "#e84c88",
-      fullTime: "9:00 AM"
+      date: addDays(new Date(), -1), 
+      color: "#e84c88"
     },
     { 
       id: 2, 
       title: "Tile Labor", 
-      day: 26, 
-      time: "10:00 AM", 
-      color: "#4bc8eb",
-      fullTime: "10:00 AM"
+      date: addDays(new Date(), 2), 
+      color: "#4bc8eb"
     },
     { 
       id: 3, 
       title: "Coach Call", 
-      day: 26, 
-      time: "12:00 PM", 
-      color: "#9b74e9",
-      fullTime: "12:00 PM"
+      date: addDays(new Date(), 2), 
+      color: "#9b74e9"
     }
   ];
   
-  // Mini calendar grid data
-  const miniCalendarDays = [
-    { day: 1, isCurrentMonth: true },
-    { day: 2, isCurrentMonth: true },
-    { day: 3, isCurrentMonth: true },
-    { day: 4, isCurrentMonth: true },
-    { day: 5, isCurrentMonth: true },
-    { day: 6, isCurrentMonth: true },
-    { day: 7, isCurrentMonth: true },
-    { day: 8, isCurrentMonth: true },
-    { day: 9, isCurrentMonth: true },
-    { day: 10, isCurrentMonth: true },
-    { day: 11, isCurrentMonth: true },
-    { day: 12, isCurrentMonth: true },
-    { day: 13, isCurrentMonth: true },
-    { day: 14, isCurrentMonth: true },
-    { day: 15, isCurrentMonth: true },
-    { day: 16, isCurrentMonth: true },
-    { day: 17, isCurrentMonth: true },
-    { day: 18, isCurrentMonth: true },
-    { day: 19, isCurrentMonth: true },
-    { day: 20, isCurrentMonth: true },
-    { day: 21, isCurrentMonth: true, selected: true },
-    { day: 22, isCurrentMonth: true },
-    { day: 23, isCurrentMonth: true },
-    { day: 24, isCurrentMonth: true },
-    { day: 25, isCurrentMonth: true, active: true },
-    { day: 26, isCurrentMonth: true },
-    { day: 27, isCurrentMonth: true },
-    { day: 28, isCurrentMonth: true },
-    { day: 29, isCurrentMonth: true },
-    { day: 30, isCurrentMonth: true },
-    { day: 31, isCurrentMonth: true },
-    { day: 1, isCurrentMonth: false },
-    { day: 2, isCurrentMonth: false },
-    { day: 3, isCurrentMonth: false },
-    { day: 4, isCurrentMonth: false }
-  ];
+  // Navigation functions
+  const goToToday = () => {
+    setCurrentDate(new Date());
+    setSelectedDate(new Date());
+  };
   
-  // Today's events
-  const todayEvents = events.filter(event => event.day === 21);
+  const goToPreviousPeriod = () => {
+    if (viewMode === "Day") {
+      setCurrentDate(prev => addDays(prev, -1));
+    } else if (viewMode === "Week") {
+      setCurrentDate(prev => addDays(prev, -7));
+    } else {
+      setCurrentDate(prev => addMonths(prev, -1));
+    }
+  };
   
-  // Tomorrow's events
-  const tomorrowEvents = events.filter(event => event.day === 22);
+  const goToNextPeriod = () => {
+    if (viewMode === "Day") {
+      setCurrentDate(prev => addDays(prev, 1));
+    } else if (viewMode === "Week") {
+      setCurrentDate(prev => addDays(prev, 7));
+    } else {
+      setCurrentDate(prev => addMonths(prev, 1));
+    }
+  };
+  
+  // Mini calendar days generation
+  const generateMiniCalendarDays = () => {
+    const today = new Date();
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const startDay = startOfWeek(firstDayOfMonth, { weekStartsOn: 1 });
+    
+    const miniDays = [];
+    for (let i = 0; i < 35; i++) {
+      const date = addDays(startDay, i);
+      miniDays.push({
+        day: date.getDate(),
+        isCurrentMonth: date.getMonth() === today.getMonth(),
+        selected: isSameDay(date, selectedDate),
+        active: isSameDay(date, today),
+        fullDate: date
+      });
+    }
+    
+    return miniDays;
+  };
+  
+  // Filter events for today and tomorrow
+  const getTodayEvents = () => {
+    const today = new Date();
+    return events.filter(event => isSameDay(event.date, today));
+  };
+  
+  const getTomorrowEvents = () => {
+    const tomorrow = addDays(new Date(), 1);
+    return events.filter(event => isSameDay(event.date, tomorrow));
+  };
+  
+  // Handle date selection in the mini calendar
+  const handleDateSelect = (date: Date) => {
+    setSelectedDate(date);
+    setCurrentDate(date);
+  };
 
   return (
     <>
@@ -122,6 +156,9 @@ const CalendarView = () => {
         currentMonth={currentMonth}
         viewMode={viewMode}
         setViewMode={setViewMode}
+        goToToday={goToToday}
+        goToPreviousPeriod={goToPreviousPeriod}
+        goToNextPeriod={goToNextPeriod}
       />
       
       <div className="flex flex-col lg:flex-row gap-6">
@@ -129,20 +166,35 @@ const CalendarView = () => {
         <div className="w-full lg:w-64 flex flex-col">
           {/* Mini Calendar */}
           <MiniCalendar
-            currentMonth={currentMonth}
-            miniCalendarDays={miniCalendarDays}
+            currentMonth={format(currentDate, 'MMMM')}
+            miniCalendarDays={generateMiniCalendarDays()}
+            onDateSelect={handleDateSelect}
           />
           
           {/* Today's Events */}
           <EventsList 
             title="Today"
-            events={todayEvents}
+            events={getTodayEvents().map(event => ({
+              id: event.id,
+              title: event.title,
+              day: event.date.getDate(),
+              time: format(event.date, 'hh:mm a'),
+              color: event.color,
+              fullTime: format(event.date, 'h:mm a')
+            }))}
           />
           
           {/* Tomorrow's Events */}
           <EventsList 
             title="Tomorrow"
-            events={tomorrowEvents}
+            events={getTomorrowEvents().map(event => ({
+              id: event.id,
+              title: event.title,
+              day: event.date.getDate(),
+              time: format(event.date, 'hh:mm a'),
+              color: event.color,
+              fullTime: format(event.date, 'h:mm a')
+            }))}
           />
         </div>
         
@@ -151,6 +203,7 @@ const CalendarView = () => {
           days={days}
           timeSlots={timeSlots}
           events={events}
+          viewMode={viewMode}
         />
       </div>
     </>
