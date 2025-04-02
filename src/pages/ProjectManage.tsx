@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { 
@@ -19,6 +20,16 @@ import { cn } from "@/lib/utils";
 const weekDays = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const monthDays = Array.from({ length: 31 }, (_, i) => i + 1);
 
+// Define the task interface
+interface Task {
+  id: number;
+  name: string;
+  startDay: number;
+  endDay: number;
+  color: string;
+  status: "Active" | "Pending" | "Completed";
+}
+
 const ProjectManage = () => {
   const location = useLocation();
   const params = useParams();
@@ -27,6 +38,35 @@ const ProjectManage = () => {
   const [currentMonth, setCurrentMonth] = useState("January");
   const [dateRange, setDateRange] = useState("12/05/24 - 12/21/24");
   const [viewMode, setViewMode] = useState("Week");
+  const [highlightedDay, setHighlightedDay] = useState(21); // Define the highlighted day
+  
+  // Define the tasks data
+  const tasks: Task[] = [
+    {
+      id: 1,
+      name: "Demolition",
+      startDay: 6,
+      endDay: 12,
+      color: "#e84c88",
+      status: "Active"
+    },
+    {
+      id: 2,
+      name: "Framing",
+      startDay: 13,
+      endDay: 20,
+      color: "#4bc8eb",
+      status: "Pending"
+    },
+    {
+      id: 3,
+      name: "Electrical",
+      startDay: 15,
+      endDay: 22,
+      color: "#9b74e9",
+      status: "Pending"
+    }
+  ];
   
   const projectId = projectData?.id || params.projectId || "unknown";
   const projectTitle = projectData?.title || "Unknown Project";
