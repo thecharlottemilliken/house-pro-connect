@@ -34,13 +34,13 @@ const ProjectDashboard = () => {
   const renovationAreas = projectData?.renovationAreas || projectData?.renovation_areas || [];
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="flex flex-col bg-white min-h-screen">
       <DashboardNavbar />
       
-      <div className="flex flex-col md:flex-row flex-1">
+      <div className="flex flex-1 h-[calc(100vh-64px)]">
         <ProjectSidebar projectId={projectId} projectTitle={projectData?.title || "Kitchen Remodel"} />
         
-        <div className="flex-1 p-8 bg-[#f3f3f3]">
+        <div className="flex-1 p-8 bg-[#f3f3f3] overflow-y-auto">
           <div className="mb-8">
             <h1 className="text-4xl font-bold text-gray-900">
               {projectData?.title || "Kitchen Remodel"}
