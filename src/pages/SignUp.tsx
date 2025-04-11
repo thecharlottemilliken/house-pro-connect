@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -173,7 +174,7 @@ const SignUp = () => {
                 defaultValue="resident" 
                 value={formData.role}
                 onValueChange={handleRoleChange}
-                className="grid grid-cols-2 gap-4"
+                className="grid grid-cols-3 gap-4"
                 disabled={isLoading}
               >
                 <div className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer hover:bg-gray-50">
@@ -183,7 +184,7 @@ const SignUp = () => {
                     className="flex flex-col cursor-pointer"
                   >
                     <span className="font-medium">Resident</span>
-                    <span className="text-sm text-gray-500">Create renovation projects</span>
+                    <span className="text-sm text-gray-500">Create projects</span>
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer hover:bg-gray-50">
@@ -193,7 +194,17 @@ const SignUp = () => {
                     className="flex flex-col cursor-pointer"
                   >
                     <span className="font-medium">Service Pro</span>
-                    <span className="text-sm text-gray-500">Bid on renovation projects</span>
+                    <span className="text-sm text-gray-500">Bid on projects</span>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer hover:bg-gray-50">
+                  <RadioGroupItem value="coach" id="coach" />
+                  <Label 
+                    htmlFor="coach" 
+                    className="flex flex-col cursor-pointer"
+                  >
+                    <span className="font-medium">Coach</span>
+                    <span className="text-sm text-gray-500">Guide projects</span>
                   </Label>
                 </div>
               </RadioGroup>
