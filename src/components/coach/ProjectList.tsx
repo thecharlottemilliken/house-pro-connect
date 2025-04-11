@@ -1,139 +1,17 @@
 
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { 
-  Table, TableHeader, TableBody, 
-  TableHead, TableRow, TableCell 
-} from "@/components/ui/table";
-import { Search, MessageSquare } from "lucide-react";
+import { useState } from "react";
+import { useCoachProjects, Project } from "@/hooks/useCoachProjects";
+import ProjectSearch from "./ProjectSearch";
+import ProjectTable from "./ProjectTable";
+import EmptyState from "./EmptyState";
+import LoadingState from "./LoadingState";
 import MessageDialog from "./MessageDialog";
 
-interface Project {
-  id: string;
-  title: string;
-  created_at: string;
-  property: {
-    property_name: string;
-    address_line1: string;
-    city: string;
-    state: string;
-  };
-  owner: {
-    id: string;
-    name: string;
-    email: string;
-  };
-}
-
 const ProjectList = () => {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { projects, isLoading } = useCoachProjects();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
-
-  useEffect(() => {
-    fetchProjects();
-  }, []);
-
-  const fetchProjects = async () => {
-    setIsLoading(true);
-    try {
-      console.log("Fetching projects...");
-      
-      // First fetch all projects
-      const { data: projectsData, error: projectsError } = await supabase
-        .from('projects')
-        .select(`
-          id,
-          title,
-          created_at,
-          user_id,
-          property_id
-        `)
-        .order('created_at', { ascending: false });
-      
-      if (projectsError) {
-        console.error("Error fetching projects:", projectsError);
-        throw projectsError;
-      }
-      
-      console.log("Projects data:", projectsData);
-      
-      if (!projectsData || projectsData.length === 0) {
-        setProjects([]);
-        setIsLoading(false);
-        return;
-      }
-      
-      // Fetch property details for each project
-      const projectsWithDetails = await Promise.all(
-        projectsData.map(async (project) => {
-          // Get property details
-          const { data: propertyData, error: propertyError } = await supabase
-            .from('properties')
-            .select(`
-              property_name,
-              address_line1,
-              city,
-              state
-            `)
-            .eq('id', project.property_id)
-            .single();
-          
-          if (propertyError) {
-            console.error("Error fetching property:", propertyError);
-            return null;
-          }
-          
-          // Get owner details
-          const { data: ownerData, error: ownerError } = await supabase
-            .from('profiles')
-            .select('id, name, email')
-            .eq('id', project.user_id)
-            .single();
-          
-          if (ownerError) {
-            console.error("Error fetching owner:", ownerError);
-            return null;
-          }
-          
-          return {
-            id: project.id,
-            title: project.title,
-            created_at: project.created_at,
-            property: propertyData,
-            owner: ownerData
-          };
-        })
-      );
-      
-      // Filter out any null results from failed queries
-      const validProjects = projectsWithDetails.filter(
-        (project): project is Project => 
-          project !== null && 
-          typeof project === 'object' && 
-          project.property !== null &&
-          project.owner !== null
-      );
-      
-      console.log("Valid projects:", validProjects);
-      setProjects(validProjects);
-    } catch (error: any) {
-      console.error("Error fetching projects:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load projects. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleMessageClick = (project: Project) => {
     setSelectedProject(project);
@@ -150,83 +28,21 @@ const ProjectList = () => {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold">All Projects</h2>
-        <div className="relative w-64">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input 
-            placeholder="Search projects..."
-            className="pl-10"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
+        <ProjectSearch 
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+        />
       </div>
 
       {isLoading ? (
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-900"></div>
-            </div>
-          </CardContent>
-        </Card>
+        <LoadingState />
       ) : filteredProjects.length === 0 ? (
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-center text-gray-500">
-              {searchQuery ? "No projects match your search" : "No projects found"}
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState searchQuery={searchQuery} />
       ) : (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Project</TableHead>
-                <TableHead>Property</TableHead>
-                <TableHead>Resident</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredProjects.map((project) => (
-                <TableRow key={project.id}>
-                  <TableCell className="font-medium">{project.title}</TableCell>
-                  <TableCell>
-                    <div className="max-w-[250px]">
-                      <div>{project.property.property_name}</div>
-                      <div className="text-sm text-gray-500 truncate">
-                        {project.property.address_line1}, {project.property.city}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <div>{project.owner.name}</div>
-                      <div className="text-sm text-gray-500">{project.owner.email}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {new Date(project.created_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end space-x-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleMessageClick(project)}
-                      >
-                        <MessageSquare className="h-4 w-4 mr-2" />
-                        Message
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <ProjectTable 
+          projects={filteredProjects}
+          onMessageClick={handleMessageClick}
+        />
       )}
 
       {selectedProject && (
