@@ -61,7 +61,7 @@ export const useCoachProjects = () => {
       }
       
       // Fetch property and owner details for each project
-      const validProjects: Project[] = [];
+      const processedProjects: Project[] = [];
       
       for (const project of projectsData) {
         try {
@@ -77,10 +77,13 @@ export const useCoachProjects = () => {
             .eq('id', project.property_id)
             .maybeSingle();
           
-          if (propertyError || !propertyData) {
-            console.error("Error fetching property:", propertyError || "Property not found");
-            continue;
-          }
+          // Default property data if not found
+          const property = propertyData || {
+            property_name: "Unknown Property",
+            address_line1: "Address not available",
+            city: "Unknown",
+            state: "Unknown"
+          };
           
           // Get owner details
           const { data: ownerData, error: ownerError } = await supabase
@@ -89,27 +92,46 @@ export const useCoachProjects = () => {
             .eq('id', project.user_id)
             .maybeSingle();
           
-          if (ownerError || !ownerData) {
-            console.error("Error fetching owner:", ownerError || "Owner not found");
-            continue;
-          }
+          // Default owner data if not found
+          const owner = ownerData || {
+            id: project.user_id,
+            name: "Unknown User",
+            email: "email@unknown.com"
+          };
           
-          validProjects.push({
+          processedProjects.push({
             id: project.id,
             title: project.title,
             created_at: project.created_at,
             state: project.state,
-            property: propertyData,
-            owner: ownerData
+            property,
+            owner
           });
         } catch (error) {
           console.error("Error processing project:", error);
-          continue;
+          // Still add project with default values
+          processedProjects.push({
+            id: project.id,
+            title: project.title,
+            created_at: project.created_at,
+            state: project.state,
+            property: {
+              property_name: "Unknown Property",
+              address_line1: "Address not available",
+              city: "Unknown",
+              state: "Unknown"
+            },
+            owner: {
+              id: project.user_id,
+              name: "Unknown User",
+              email: "email@unknown.com"
+            }
+          });
         }
       }
       
-      console.log("Valid projects:", validProjects);
-      setProjects(validProjects);
+      console.log("Processed projects:", processedProjects);
+      setProjects(processedProjects);
     } catch (error: any) {
       console.error("Error fetching projects:", error);
       toast({
