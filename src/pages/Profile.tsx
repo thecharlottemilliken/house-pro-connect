@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,11 @@ const Profile = () => {
     }
   };
 
+  // Debug logging to check profile data
+  useEffect(() => {
+    console.log("Current profile data:", profile);
+  }, [profile]);
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <DashboardNavbar />
@@ -70,6 +76,15 @@ const Profile = () => {
               <div>
                 <h3 className="font-medium text-sm text-gray-500">ROLE</h3>
                 <p className="text-lg capitalize">{profile?.role || "Not assigned"}</p>
+                {profile?.role === 'coach' && (
+                  <Button 
+                    variant="link" 
+                    className="p-0 h-auto text-sm text-blue-600"
+                    onClick={() => navigate('/coach-dashboard')}
+                  >
+                    Go to Coach Dashboard
+                  </Button>
+                )}
               </div>
               
               <div>
