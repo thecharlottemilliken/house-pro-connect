@@ -1,13 +1,36 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
-import { Card, CardContent } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProjectList from "@/components/coach/ProjectList";
 import MessageCenter from "@/components/coach/MessageCenter";
 
 const CoachDashboard = () => {
+  const { profile } = useAuth();
   const [activeTab, setActiveTab] = useState("projects");
+  const [isLoading, setIsLoading] = useState(false);
+
+  if (!profile || profile.role !== 'coach') {
+    return (
+      <div className="min-h-screen bg-white">
+        <DashboardNavbar />
+        <main className="p-6 md:p-10">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center py-8">
+                <h3 className="text-lg font-medium">Access Denied</h3>
+                <p className="text-gray-500 mt-2">You don't have permission to access the coach dashboard.</p>
+              </div>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
