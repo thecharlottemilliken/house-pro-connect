@@ -19,11 +19,7 @@ const Profile = () => {
     try {
       setIsSigningOut(true);
       await signOut();
-      toast({
-        title: "Signed out successfully",
-        description: "You have been signed out of your account",
-      });
-      navigate('/');
+      // We'll let the AuthContext handle the toast and navigation
     } catch (error) {
       console.error("Error signing out:", error);
       toast({
@@ -31,7 +27,6 @@ const Profile = () => {
         description: "An error occurred while signing out",
         variant: "destructive",
       });
-    } finally {
       setIsSigningOut(false);
     }
   };

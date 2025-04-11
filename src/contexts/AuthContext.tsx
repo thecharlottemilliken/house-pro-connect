@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
@@ -139,12 +140,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    toast({
-      title: "Signed out",
-      description: "You have been signed out successfully",
-    });
-    navigate('/');
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error("Error signing out:", error);
+        throw error;
+      }
+      
+      // Clear local state immediately after successful signout
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+      
+      // Show toast and navigate
+      toast({
+        title: "Signed out successfully",
+        description: "You have been signed out of your account",
+      });
+      
+      // Navigate to home page
+      navigate('/');
+    } catch (error) {
+      console.error("Sign out failed:", error);
+      throw error;
+    }
   };
 
   const updateProfile = async (data: any) => {
