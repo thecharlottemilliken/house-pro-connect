@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Send } from "lucide-react";
 import MessageList from "../project/messages/MessageList";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Message {
   id: string;
@@ -38,7 +39,8 @@ const MessageCenter = () => {
   const fetchMessages = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      // First fetch the messages without the join to get the resident_id
+      const { data: messagesData, error: messagesError } = await supabase
         .from('coach_messages')
         .select(`
           id,
@@ -46,28 +48,43 @@ const MessageCenter = () => {
           message,
           read_at,
           project_id,
-          resident:resident_id(
-            id,
-            name,
-            email
-          )
+          resident_id
         `)
         .eq('coach_id', user?.id)
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (messagesError) throw messagesError;
       
-      // Type checking to ensure data conforms to Message[] interface
-      if (data && Array.isArray(data)) {
-        const typedMessages = data.filter(msg => 
-          msg && typeof msg === 'object' && 
-          msg.resident && typeof msg.resident === 'object' && 
-          'id' in msg.resident && 
-          'name' in msg.resident && 
-          'email' in msg.resident
-        ) as Message[];
+      // Then fetch resident details for each message
+      if (messagesData && Array.isArray(messagesData)) {
+        const messagesWithResidents = await Promise.all(
+          messagesData.map(async (msg) => {
+            const { data: residentData, error: residentError } = await supabase
+              .from('profiles')
+              .select('id, name, email')
+              .eq('id', msg.resident_id)
+              .single();
+            
+            if (residentError) {
+              console.error("Error fetching resident:", residentError);
+              return {
+                ...msg,
+                resident: {
+                  id: msg.resident_id,
+                  name: 'Unknown User',
+                  email: 'unknown@example.com'
+                }
+              };
+            }
+            
+            return {
+              ...msg,
+              resident: residentData
+            };
+          })
+        );
         
-        setMessages(typedMessages);
+        setMessages(messagesWithResidents as Message[]);
       } else {
         setMessages([]);
       }

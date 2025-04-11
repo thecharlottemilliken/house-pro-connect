@@ -29,6 +29,15 @@ interface Project {
   };
 }
 
+interface ProjectWithUserId extends Omit<Project, 'owner'> {
+  user_id: string;
+  owner?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
 const ProjectList = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -90,19 +99,23 @@ const ProjectList = () => {
           })
         );
         
-        // Type check to ensure data conforms to Project[] interface
-        const typedProjects = projectsWithOwners.filter(
-          (project): project is Project => 
+        // Convert to the Project type
+        const typedProjects: Project[] = projectsWithOwners
+          .filter(project => 
             project !== null && 
             typeof project === 'object' && 
             project.property !== null &&
             typeof project.property === 'object' &&
             project.owner !== null &&
-            typeof project.owner === 'object' &&
-            'id' in project.owner &&
-            'name' in project.owner &&
-            'email' in project.owner
-        );
+            typeof project.owner === 'object'
+          )
+          .map(project => ({
+            id: project.id,
+            title: project.title,
+            created_at: project.created_at,
+            property: project.property,
+            owner: project.owner
+          }));
         
         setProjects(typedProjects);
       } else {
