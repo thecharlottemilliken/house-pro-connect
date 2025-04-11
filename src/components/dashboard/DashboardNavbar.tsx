@@ -1,3 +1,4 @@
+
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -31,7 +32,7 @@ const DashboardNavbar = () => {
         {/* Navigation Links - Desktop */}
         <div className="hidden md:flex space-x-8">
           <NavItem label="DASHBOARD" path="/dashboard" isActive={currentPath === '/dashboard'} />
-          <NavItem label="PROJECTS" path="/projects" isActive={isProjectsActive} />
+          <NavItem label="JOBS" path="/projects" isActive={isProjectsActive} />
           <NavItem label="REAL ESTATE" path="/real-estate" isActive={currentPath === '/real-estate'} />
           <NavItem label="YOUR PROJECTS" path="/your-projects" isActive={currentPath === '/your-projects'} />
           <NavItem label="YOUR PROPERTIES" path="/your-properties" isActive={currentPath === '/your-properties'} />
@@ -77,7 +78,7 @@ const DashboardNavbar = () => {
         <div className="md:hidden mt-3 pb-2 border-t border-[#174c65]/30 pt-2">
           <div className="flex flex-col space-y-3">
             <MobileNavItem label="DASHBOARD" path="/dashboard" isActive={currentPath === '/dashboard'} onClick={() => setMobileMenuOpen(false)} />
-            <MobileNavItem label="PROJECTS" path="/projects" isActive={isProjectsActive} onClick={() => setMobileMenuOpen(false)} />
+            <MobileNavItem label="JOBS" path="/projects" isActive={isProjectsActive} onClick={() => setMobileMenuOpen(false)} />
             <MobileNavItem label="REAL ESTATE" path="/real-estate" isActive={currentPath === '/real-estate'} onClick={() => setMobileMenuOpen(false)} />
             <MobileNavItem label="YOUR PROJECTS" path="/your-projects" isActive={currentPath === '/your-projects'} onClick={() => setMobileMenuOpen(false)} />
             <MobileNavItem label="YOUR PROPERTIES" path="/your-properties" isActive={currentPath === '/your-properties'} onClick={() => setMobileMenuOpen(false)} />
