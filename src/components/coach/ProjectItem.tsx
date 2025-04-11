@@ -2,9 +2,15 @@
 import React from "react";
 import { TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Info } from "lucide-react";
 import { Project } from "@/hooks/useCoachProjects";
 import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ProjectItemProps {
   project: Project;
@@ -17,15 +23,15 @@ const ProjectItem = ({ project, onMessageClick }: ProjectItemProps) => {
       <TableCell className="font-medium">{project.title}</TableCell>
       <TableCell>
         <div className="max-w-[250px]">
-          <div>{project.property.property_name}</div>
+          <div className="font-medium">{project.property.property_name}</div>
           <div className="text-sm text-gray-500 truncate">
-            {project.property.address_line1}, {project.property.city}
+            {project.property.address_line1}, {project.property.city}, {project.property.state}
           </div>
         </div>
       </TableCell>
       <TableCell>
         <div>
-          <div>{project.owner.name}</div>
+          <div className="font-medium">{project.owner.name}</div>
           <div className="text-sm text-gray-500">{project.owner.email}</div>
         </div>
       </TableCell>
