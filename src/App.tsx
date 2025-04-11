@@ -23,6 +23,7 @@ import ProjectTeam from "./pages/ProjectTeam";
 import ProjectMessages from "./pages/ProjectMessages";
 import ProjectBidsProposals from "./pages/ProjectBidsProposals";
 import ProjectDocuments from "./pages/ProjectDocuments";
+import ProjectMaterials from "./pages/ProjectMaterials";
 import Projects from "./pages/Projects";
 import AddProperty from "./pages/AddProperty";
 import SignUp from "./pages/SignUp";
@@ -150,6 +151,13 @@ const App = () => {
               <ProtectedRoute>
                 <TooltipProvider>
                   <ProjectDocuments />
+                </TooltipProvider>
+              </ProtectedRoute>
+            } />
+            <Route path="/project-materials/:projectId" element={
+              <ProtectedRoute>
+                <TooltipProvider>
+                  <ProjectMaterials />
                 </TooltipProvider>
               </ProtectedRoute>
             } />
