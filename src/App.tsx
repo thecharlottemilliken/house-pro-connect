@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -31,6 +30,7 @@ import AddProperty from "./pages/AddProperty";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
 import LandingPage from "./pages/LandingPage";
+import Profile from "./pages/Profile";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -48,6 +48,13 @@ const App = () => {
               <ProtectedRoute>
                 <TooltipProvider>
                   <ResidentDashboard />
+                </TooltipProvider>
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <TooltipProvider>
+                  <Profile />
                 </TooltipProvider>
               </ProtectedRoute>
             } />
@@ -191,7 +198,6 @@ const App = () => {
                 </TooltipProvider>
               </ProtectedRoute>
             } />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster />

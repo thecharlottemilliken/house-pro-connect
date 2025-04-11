@@ -89,7 +89,10 @@ const DashboardNavbar = () => {
                 variant="ghost" 
                 size="sm"
                 className="text-white hover:bg-[#174c65]/90"
-                onClick={() => navigate('/profile')}
+                onClick={() => {
+                  navigate('/profile');
+                  setMobileMenuOpen(false);
+                }}
               >
                 <User className="h-4 w-4 mr-2" /> Profile
               </Button>
@@ -98,7 +101,10 @@ const DashboardNavbar = () => {
                 variant="ghost" 
                 size="sm"
                 className="text-white hover:bg-[#174c65]/90"
-                onClick={() => navigate('/settings')}
+                onClick={() => {
+                  navigate('/settings');
+                  setMobileMenuOpen(false);
+                }}
               >
                 <Settings className="h-4 w-4 mr-2" /> Settings
               </Button>
