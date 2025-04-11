@@ -45,7 +45,7 @@ const ProjectSidebar = ({
             <ul className="space-y-1">
               <NavItem icon="overview" label="Overview" active={activePage === "overview"} to={`/project-dashboard/${projectId}`} />
               <NavItem icon="manage" label="Management" active={activePage === "manage"} to={`/project-manage/${projectId}`} />
-              <NavItem icon="design" label="Design" active={activePage === "design"} />
+              <NavItem icon="design" label="Design" active={activePage === "design"} to={`/project-design/${projectId}`} />
               <NavItem icon="team" label="Team" active={activePage === "team"} />
               <NavItem icon="message" label="Messages" active={activePage === "message"} />
               <NavItem icon="document" label="Bids & Proposals" active={activePage === "document"} />
