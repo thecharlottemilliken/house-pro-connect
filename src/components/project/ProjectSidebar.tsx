@@ -1,6 +1,6 @@
 
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import NavItem from "./NavItem";
@@ -19,11 +19,16 @@ const ProjectSidebar = ({
   activePage = ""
 }: ProjectSidebarProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const isMobile = useIsMobile();
   const {
     open,
     toggleSidebar
   } = useSidebar();
+  
+  // Check if we're on any project-related page
+  const isProjectsActive = location.pathname.includes('/project-') || 
+                          location.pathname.includes('/projects');
   
   return <>
       <Sidebar variant="sidebar" className="border-r border-gray-200">
@@ -53,6 +58,7 @@ const ProjectSidebar = ({
               <NavItem icon="material" label="Materials" active={activePage === "material"} to={`/project-materials/${projectId}`} />
               <NavItem icon="accounting" label="Accounting" active={activePage === "accounting"} to={`/project-accounting/${projectId}`} />
               <NavItem icon="activity" label="Activity History" active={activePage === "activity"} to={`/project-activity-history/${projectId}`} />
+              <NavItem icon="home" label="Projects" active={isProjectsActive} to="/projects" />
             </ul>
           </nav>
         </SidebarContent>
