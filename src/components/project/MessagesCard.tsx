@@ -16,6 +16,12 @@ const MessagesCard = ({ projectId }: MessagesCardProps) => {
       navigate(`/project-messages/${projectId}`);
     }
   };
+
+  const handleViewBidsProposals = () => {
+    if (projectId) {
+      navigate(`/project-bids-proposals/${projectId}`);
+    }
+  };
   
   return (
     <Card className="overflow-hidden rounded-lg shadow-[0_2px_10px_rgba(0,0,0,0.08)] border-0">
@@ -24,7 +30,14 @@ const MessagesCard = ({ projectId }: MessagesCardProps) => {
         <Button variant="link" className="text-[#0f3a4d] p-0 font-medium" onClick={handleViewAll}>See All</Button>
       </CardHeader>
       <CardContent className="px-6 pb-6">
-        <p className="text-gray-600">No recent conversations</p>
+        <p className="text-gray-600 mb-4">No recent conversations</p>
+        <Button 
+          variant="outline" 
+          className="border-gray-300 text-gray-700 hover:bg-gray-50 w-full"
+          onClick={handleViewBidsProposals}
+        >
+          View Bids & Proposals
+        </Button>
       </CardContent>
     </Card>
   );

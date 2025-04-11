@@ -21,6 +21,7 @@ import ProjectManage from "./pages/ProjectManage";
 import ProjectDesign from "./pages/ProjectDesign";
 import ProjectTeam from "./pages/ProjectTeam";
 import ProjectMessages from "./pages/ProjectMessages";
+import ProjectBidsProposals from "./pages/ProjectBidsProposals";
 import Projects from "./pages/Projects";
 import AddProperty from "./pages/AddProperty";
 import SignUp from "./pages/SignUp";
@@ -134,6 +135,13 @@ const App = () => {
               <ProtectedRoute>
                 <TooltipProvider>
                   <ProjectMessages />
+                </TooltipProvider>
+              </ProtectedRoute>
+            } />
+            <Route path="/project-bids-proposals/:projectId" element={
+              <ProtectedRoute>
+                <TooltipProvider>
+                  <ProjectBidsProposals />
                 </TooltipProvider>
               </ProtectedRoute>
             } />
