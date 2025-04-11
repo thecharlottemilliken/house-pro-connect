@@ -7,7 +7,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ChevronDown } from "lucide-react";
 
 interface TagFilterProps {
   selectedTag: string | null;
@@ -20,7 +19,7 @@ const TagFilter: React.FC<TagFilterProps> = ({ selectedTag, onSelectTag }) => {
       value={selectedTag || undefined} 
       onValueChange={(value) => onSelectTag(value)}
     >
-      <SelectTrigger className="w-full md:w-48 border-gray-300">
+      <SelectTrigger className="w-full sm:w-48 border-gray-300">
         <SelectValue placeholder="Select a tag">
           {selectedTag ? `Tag: ${selectedTag}` : "Tag"}
         </SelectValue>

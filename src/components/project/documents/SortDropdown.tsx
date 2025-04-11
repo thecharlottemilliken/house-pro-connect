@@ -11,7 +11,7 @@ import {
 const SortDropdown = () => {
   return (
     <Select defaultValue="recommended">
-      <SelectTrigger className="w-full md:w-48 border-gray-300">
+      <SelectTrigger className="w-full sm:w-48 border-gray-300">
         <SelectValue placeholder="Sort by" />
       </SelectTrigger>
       <SelectContent>
