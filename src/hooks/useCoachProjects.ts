@@ -7,6 +7,7 @@ export interface Project {
   id: string;
   title: string;
   created_at: string;
+  state: string;
   property: {
     property_name: string;
     address_line1: string;
@@ -40,6 +41,7 @@ export const useCoachProjects = () => {
           id,
           title,
           created_at,
+          state,
           user_id,
           property_id
         `)
@@ -96,6 +98,7 @@ export const useCoachProjects = () => {
             id: project.id,
             title: project.title,
             created_at: project.created_at,
+            state: project.state,
             property: propertyData,
             owner: ownerData
           });

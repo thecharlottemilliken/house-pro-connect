@@ -97,6 +97,7 @@ export type Database = {
           id: string
           property_id: string
           renovation_areas: Json | null
+          state: string
           title: string
           updated_at: string
           user_id: string
@@ -106,6 +107,7 @@ export type Database = {
           id?: string
           property_id: string
           renovation_areas?: Json | null
+          state?: string
           title: string
           updated_at?: string
           user_id: string
@@ -115,6 +117,7 @@ export type Database = {
           id?: string
           property_id?: string
           renovation_areas?: Json | null
+          state?: string
           title?: string
           updated_at?: string
           user_id?: string

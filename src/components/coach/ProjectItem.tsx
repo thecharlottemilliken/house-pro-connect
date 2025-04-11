@@ -4,6 +4,7 @@ import { TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { MessageSquare } from "lucide-react";
 import { Project } from "@/hooks/useCoachProjects";
+import { Badge } from "@/components/ui/badge";
 
 interface ProjectItemProps {
   project: Project;
@@ -27,6 +28,11 @@ const ProjectItem = ({ project, onMessageClick }: ProjectItemProps) => {
           <div>{project.owner.name}</div>
           <div className="text-sm text-gray-500">{project.owner.email}</div>
         </div>
+      </TableCell>
+      <TableCell>
+        <Badge variant={project.state === 'active' ? 'success' : 'default'}>
+          {project.state}
+        </Badge>
       </TableCell>
       <TableCell>
         {new Date(project.created_at).toLocaleDateString()}

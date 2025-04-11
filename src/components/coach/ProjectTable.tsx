@@ -21,6 +21,7 @@ const ProjectTable = ({ projects, onMessageClick }: ProjectTableProps) => {
             <TableHead>Project</TableHead>
             <TableHead>Property</TableHead>
             <TableHead>Resident</TableHead>
+            <TableHead>State</TableHead>
             <TableHead>Created</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
