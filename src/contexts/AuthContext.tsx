@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
@@ -141,28 +140,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error("Error signing out:", error);
-        throw error;
+      try {
+        await supabase.auth.signOut();
+      } catch (error: any) {
+        console.log("Backend sign out had an issue:", error.message);
       }
       
-      // Clear local state immediately after successful signout
       setSession(null);
       setUser(null);
       setProfile(null);
       
-      // Show toast and navigate
       toast({
         title: "Signed out successfully",
         description: "You have been signed out of your account",
       });
       
-      // Navigate to home page
       navigate('/');
+      
+      return { error: null };
     } catch (error) {
-      console.error("Sign out failed:", error);
-      throw error;
+      console.error("Sign out failed in catch block:", error);
+      return { error };
     }
   };
 

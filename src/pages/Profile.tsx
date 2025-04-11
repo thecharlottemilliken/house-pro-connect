@@ -18,10 +18,18 @@ const Profile = () => {
   const handleSignOut = async () => {
     try {
       setIsSigningOut(true);
-      await signOut();
-      // We'll let the AuthContext handle the toast and navigation
+      const { error } = await signOut();
+      if (error) {
+        console.error("Error signing out:", error);
+        toast({
+          title: "Sign out failed",
+          description: "An error occurred while signing out",
+          variant: "destructive",
+        });
+        setIsSigningOut(false);
+      }
     } catch (error) {
-      console.error("Error signing out:", error);
+      console.error("Error in handleSignOut:", error);
       toast({
         title: "Sign out failed",
         description: "An error occurred while signing out",
