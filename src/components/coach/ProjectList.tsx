@@ -9,7 +9,7 @@ import {
   Table, TableHeader, TableBody, 
   TableHead, TableRow, TableCell 
 } from "@/components/ui/table";
-import { Search, MessageSquare, Info, Calendar } from "lucide-react";
+import { Search, MessageSquare } from "lucide-react";
 import MessageDialog from "./MessageDialog";
 
 interface Project {
@@ -23,15 +23,6 @@ interface Project {
     state: string;
   };
   owner: {
-    id: string;
-    name: string;
-    email: string;
-  };
-}
-
-interface ProjectWithUserId extends Omit<Project, 'owner'> {
-  user_id: string;
-  owner?: {
     id: string;
     name: string;
     email: string;
@@ -52,75 +43,86 @@ const ProjectList = () => {
   const fetchProjects = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      console.log("Fetching projects...");
+      
+      // First fetch all projects
+      const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
         .select(`
           id,
           title,
           created_at,
-          property:property_id(
-            property_name,
-            address_line1,
-            city,
-            state
-          ),
-          user_id
+          user_id,
+          property_id
         `)
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (projectsError) {
+        console.error("Error fetching projects:", projectsError);
+        throw projectsError;
+      }
       
-      // Fetch owner information for each project
-      if (data && data.length > 0) {
-        const projectsWithOwners = await Promise.all(
-          data.map(async (project) => {
-            const { data: ownerData, error: ownerError } = await supabase
-              .from('profiles')
-              .select('id, name, email')
-              .eq('id', project.user_id)
-              .single();
-            
-            if (ownerError) {
-              console.error("Error fetching project owner:", ownerError);
-              return {
-                ...project,
-                owner: {
-                  id: project.user_id,
-                  name: 'Unknown',
-                  email: 'unknown@example.com'
-                }
-              };
-            }
-            
-            return {
-              ...project,
-              owner: ownerData
-            };
-          })
-        );
-        
-        // Convert to the Project type
-        const typedProjects: Project[] = projectsWithOwners
-          .filter(project => 
-            project !== null && 
-            typeof project === 'object' && 
-            project.property !== null &&
-            typeof project.property === 'object' &&
-            project.owner !== null &&
-            typeof project.owner === 'object'
-          )
-          .map(project => ({
+      console.log("Projects data:", projectsData);
+      
+      if (!projectsData || projectsData.length === 0) {
+        setProjects([]);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Fetch property details for each project
+      const projectsWithDetails = await Promise.all(
+        projectsData.map(async (project) => {
+          // Get property details
+          const { data: propertyData, error: propertyError } = await supabase
+            .from('properties')
+            .select(`
+              property_name,
+              address_line1,
+              city,
+              state
+            `)
+            .eq('id', project.property_id)
+            .single();
+          
+          if (propertyError) {
+            console.error("Error fetching property:", propertyError);
+            return null;
+          }
+          
+          // Get owner details
+          const { data: ownerData, error: ownerError } = await supabase
+            .from('profiles')
+            .select('id, name, email')
+            .eq('id', project.user_id)
+            .single();
+          
+          if (ownerError) {
+            console.error("Error fetching owner:", ownerError);
+            return null;
+          }
+          
+          return {
             id: project.id,
             title: project.title,
             created_at: project.created_at,
-            property: project.property,
-            owner: project.owner
-          }));
-        
-        setProjects(typedProjects);
-      } else {
-        setProjects([]);
-      }
+            property: propertyData,
+            owner: ownerData
+          };
+        })
+      );
+      
+      // Filter out any null results from failed queries
+      const validProjects = projectsWithDetails.filter(
+        (project): project is Project => 
+          project !== null && 
+          typeof project === 'object' && 
+          project.property !== null &&
+          project.owner !== null
+      );
+      
+      console.log("Valid projects:", validProjects);
+      setProjects(validProjects);
     } catch (error: any) {
       console.error("Error fetching projects:", error);
       toast({

@@ -4,11 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Send } from "lucide-react";
-import MessageList from "../project/messages/MessageList";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Message {
@@ -39,6 +37,8 @@ const MessageCenter = () => {
   const fetchMessages = async () => {
     setIsLoading(true);
     try {
+      console.log("Fetching messages for coach:", user?.id);
+      
       // First fetch the messages without the join to get the resident_id
       const { data: messagesData, error: messagesError } = await supabase
         .from('coach_messages')
@@ -53,10 +53,15 @@ const MessageCenter = () => {
         .eq('coach_id', user?.id)
         .order('created_at', { ascending: false });
       
-      if (messagesError) throw messagesError;
+      if (messagesError) {
+        console.error("Messages error:", messagesError);
+        throw messagesError;
+      }
+      
+      console.log("Messages data:", messagesData);
       
       // Then fetch resident details for each message
-      if (messagesData && Array.isArray(messagesData)) {
+      if (messagesData && Array.isArray(messagesData) && messagesData.length > 0) {
         const messagesWithResidents = await Promise.all(
           messagesData.map(async (msg) => {
             const { data: residentData, error: residentError } = await supabase
@@ -84,7 +89,22 @@ const MessageCenter = () => {
           })
         );
         
-        setMessages(messagesWithResidents as Message[]);
+        // Explicitly type the result as Message[]
+        const typedMessages: Message[] = messagesWithResidents.map(msg => ({
+          id: msg.id,
+          created_at: msg.created_at,
+          message: msg.message,
+          read_at: msg.read_at,
+          project_id: msg.project_id,
+          resident: {
+            id: msg.resident?.id || msg.resident_id,
+            name: msg.resident?.name || 'Unknown User',
+            email: msg.resident?.email || 'unknown@example.com'
+          }
+        }));
+        
+        console.log("Final messages:", typedMessages);
+        setMessages(typedMessages);
       } else {
         setMessages([]);
       }
