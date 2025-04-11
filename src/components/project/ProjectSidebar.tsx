@@ -1,6 +1,6 @@
 
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import NavItem from "./NavItem";
@@ -19,22 +19,34 @@ const ProjectSidebar = ({
   activePage = ""
 }: ProjectSidebarProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const isMobile = useIsMobile();
   const {
     open,
     toggleSidebar
   } = useSidebar();
   
+  // Check if the current route is a project-related route
+  const isProjectsActive = location.pathname.includes('/project-');
+  
   return <>
       <Sidebar variant="sidebar" className="border-r border-gray-200">
         <SidebarRail />
         <SidebarHeader>
           <div className="p-4 border-b border-gray-200">
-            <Button variant="ghost" className="flex items-center text-gray-700 w-full pl-0 hover:bg-transparent hover:text-[#174c65]" onClick={() => navigate("/projects")}>
+            <Button 
+              variant="ghost" 
+              className={`flex items-center text-gray-700 w-full pl-0 hover:bg-transparent hover:text-[#174c65] ${isProjectsActive ? 'text-[#174c65] font-medium' : ''}`} 
+              onClick={() => navigate("/projects")}
+            >
               <ArrowLeft className="mr-2 h-4 w-4" /> Back to Properties
             </Button>
             
-            <Button variant="ghost" className="flex items-center text-gray-700 w-full pl-0 mt-2 hover:bg-transparent hover:text-[#174c65]" onClick={() => navigate("/projects")}>
+            <Button 
+              variant="ghost" 
+              className={`flex items-center text-gray-700 w-full pl-0 mt-2 hover:bg-transparent hover:text-[#174c65] ${isProjectsActive ? 'text-[#174c65] font-medium' : ''}`} 
+              onClick={() => navigate("/projects")}
+            >
               <ArrowLeft className="mr-2 h-4 w-4" /> &lt;- All Projects
             </Button>
           </div>
