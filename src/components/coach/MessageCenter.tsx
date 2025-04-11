@@ -57,7 +57,20 @@ const MessageCenter = () => {
       
       if (error) throw error;
       
-      setMessages(data || []);
+      // Type checking to ensure data conforms to Message[] interface
+      if (data && Array.isArray(data)) {
+        const typedMessages = data.filter(msg => 
+          msg && typeof msg === 'object' && 
+          msg.resident && typeof msg.resident === 'object' && 
+          'id' in msg.resident && 
+          'name' in msg.resident && 
+          'email' in msg.resident
+        ) as Message[];
+        
+        setMessages(typedMessages);
+      } else {
+        setMessages([]);
+      }
     } catch (error: any) {
       console.error("Error fetching messages:", error);
       toast({

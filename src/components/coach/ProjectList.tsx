@@ -49,23 +49,65 @@ const ProjectList = () => {
           id,
           title,
           created_at,
-          property:properties(
+          property:property_id(
             property_name,
             address_line1,
             city,
             state
           ),
-          owner:profiles!projects_user_id_fkey(
-            id,
-            name,
-            email
-          )
+          user_id
         `)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
       
-      setProjects(data || []);
+      // Fetch owner information for each project
+      if (data && data.length > 0) {
+        const projectsWithOwners = await Promise.all(
+          data.map(async (project) => {
+            const { data: ownerData, error: ownerError } = await supabase
+              .from('profiles')
+              .select('id, name, email')
+              .eq('id', project.user_id)
+              .single();
+            
+            if (ownerError) {
+              console.error("Error fetching project owner:", ownerError);
+              return {
+                ...project,
+                owner: {
+                  id: project.user_id,
+                  name: 'Unknown',
+                  email: 'unknown@example.com'
+                }
+              };
+            }
+            
+            return {
+              ...project,
+              owner: ownerData
+            };
+          })
+        );
+        
+        // Type check to ensure data conforms to Project[] interface
+        const typedProjects = projectsWithOwners.filter(
+          (project): project is Project => 
+            project !== null && 
+            typeof project === 'object' && 
+            project.property !== null &&
+            typeof project.property === 'object' &&
+            project.owner !== null &&
+            typeof project.owner === 'object' &&
+            'id' in project.owner &&
+            'name' in project.owner &&
+            'email' in project.owner
+        );
+        
+        setProjects(typedProjects);
+      } else {
+        setProjects([]);
+      }
     } catch (error: any) {
       console.error("Error fetching projects:", error);
       toast({
