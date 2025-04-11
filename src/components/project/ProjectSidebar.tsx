@@ -51,7 +51,7 @@ const ProjectSidebar = ({
               <NavItem icon="document" label="Bids & Proposals" active={activePage === "document"} to={`/project-bids-proposals/${projectId}`} />
               <NavItem icon="file" label="Documents" active={activePage === "file"} to={`/project-documents/${projectId}`} />
               <NavItem icon="material" label="Materials" active={activePage === "material"} to={`/project-materials/${projectId}`} />
-              <NavItem icon="accounting" label="Accounting" active={activePage === "accounting"} />
+              <NavItem icon="accounting" label="Accounting" active={activePage === "accounting"} to={`/project-accounting/${projectId}`} />
               <NavItem icon="activity" label="Activity History" active={activePage === "activity"} />
             </ul>
           </nav>
