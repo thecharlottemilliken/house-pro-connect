@@ -16,7 +16,7 @@ interface TeamMemberFilterProps {
 const TeamMemberFilter = ({ value, onChange }: TeamMemberFilterProps) => {
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-[200px]">
+      <SelectTrigger className="w-full md:w-[200px]">
         <SelectValue placeholder="Team Member: All" />
       </SelectTrigger>
       <SelectContent>

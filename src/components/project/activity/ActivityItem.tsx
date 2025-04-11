@@ -26,9 +26,9 @@ const ActivityItem = ({
   };
 
   return (
-    <div className="py-4 border-b border-gray-200">
-      <div className="flex items-start">
-        <Avatar className="h-10 w-10 mr-4">
+    <div className="py-4 border-b border-gray-200 px-4">
+      <div className="flex flex-col sm:flex-row sm:items-start">
+        <Avatar className="h-10 w-10 mr-4 hidden sm:block">
           <AvatarImage src={avatarSrc} alt={personName} />
           <AvatarFallback>{getInitials(personName)}</AvatarFallback>
         </Avatar>
@@ -36,7 +36,7 @@ const ActivityItem = ({
           <h3 className="font-medium text-gray-900">{title}</h3>
           <p className="text-sm text-gray-500">{role}: {personName}</p>
         </div>
-        <div className="text-sm text-gray-500">{date}</div>
+        <div className="text-sm text-gray-500 mt-1 sm:mt-0">{date}</div>
       </div>
     </div>
   );

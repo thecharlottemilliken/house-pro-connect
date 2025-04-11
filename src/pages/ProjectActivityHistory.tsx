@@ -89,33 +89,35 @@ const ProjectActivityHistory = () => {
           <div className="container max-w-5xl mx-auto px-4 py-8">
             <h1 className="text-3xl font-bold mb-6 text-gray-900">Activity History</h1>
             
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-              <div className="flex flex-1 gap-2">
-                <div className="relative flex-1">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+              <div className="flex flex-1 flex-col md:flex-row gap-2 w-full md:w-auto">
+                <div className="relative flex-1 w-full md:w-auto">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
                     placeholder="Search"
-                    className="pl-10"
+                    className="pl-10 w-full"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
                 
-                <TeamMemberFilter 
-                  value={teamMemberFilter} 
-                  onChange={setTeamMemberFilter}
-                />
+                <div className="w-full md:w-auto">
+                  <TeamMemberFilter 
+                    value={teamMemberFilter} 
+                    onChange={setTeamMemberFilter}
+                  />
+                </div>
                 
-                <Button variant="outline" size="icon" className="ml-1">
+                <Button variant="outline" size="icon" className="hidden md:flex">
                   <Filter className="h-4 w-4" />
                   <span className="sr-only">Filter</span>
                 </Button>
               </div>
               
-              <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="flex items-center gap-2 w-full md:w-auto">
                 <span className="text-sm text-gray-500 whitespace-nowrap">Sort by</span>
                 <Select value={sortOrder} onValueChange={setSortOrder}>
-                  <SelectTrigger className="w-[150px]">
+                  <SelectTrigger className="w-full md:w-[150px]">
                     <SelectValue placeholder="Recent" />
                   </SelectTrigger>
                   <SelectContent>
