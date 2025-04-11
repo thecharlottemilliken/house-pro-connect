@@ -11,7 +11,7 @@ interface AuthContextType {
   isLoading: boolean;
   signUp: (email: string, password: string, userData: any) => Promise<{ error: any | null }>;
   signIn: (email: string, password: string) => Promise<{ error: any | null }>;
-  signOut: () => Promise<void>;
+  signOut: () => Promise<{ error: any | null }>;
   updateProfile: (data: any) => Promise<{ error: any | null }>;
 }
 
