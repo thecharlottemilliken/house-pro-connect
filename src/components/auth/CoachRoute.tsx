@@ -9,6 +9,10 @@ interface CoachRouteProps {
   children: React.ReactNode;
 }
 
+interface GetUserRoleParams {
+  user_id: string;
+}
+
 const CoachRoute = ({ children }: CoachRouteProps) => {
   const { user, profile, isLoading, refreshProfile } = useAuth();
   const [isCoach, setIsCoach] = useState<boolean | null>(null);
@@ -44,10 +48,9 @@ const CoachRoute = ({ children }: CoachRouteProps) => {
         
         // Method 3: If above methods don't confirm coach status, query directly with a simple query
         console.log("Querying database directly for role using simplified query");
-        // Fix: Explicitly define function parameter and return types
-        const { data, error } = await supabase.rpc('get_user_role', { 
-          user_id: user.id 
-        } as { user_id: string });
+        const { data, error } = await supabase.rpc<string>('get_user_role', {
+          user_id: user.id
+        } as GetUserRoleParams);
 
         if (error) {
           console.error("Error with RPC, falling back to direct query:", error);
