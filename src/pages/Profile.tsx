@@ -8,12 +8,14 @@ import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useAuth } from "@/contexts/AuthContext";
 import { LogOut, User } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
+import { useProfileRole } from '@/profile/ProfileRole';
 
 const Profile = () => {
   const navigate = useNavigate();
   const { profile, user, signOut } = useAuth();
   const { toast } = useToast();
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const { role } = useProfileRole();
 
   const handleSignOut = async () => {
     try {
@@ -75,8 +77,8 @@ const Profile = () => {
               
               <div>
                 <h3 className="font-medium text-sm text-gray-500">ROLE</h3>
-                <p className="text-lg capitalize">{profile?.role || "Not assigned"}</p>
-                {profile?.role === 'coach' && (
+                <p className="text-lg capitalize">{role}</p>
+                {role === 'coach' && (
                   <Button 
                     variant="link" 
                     className="p-0 h-auto text-sm text-blue-600"

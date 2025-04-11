@@ -10,7 +10,7 @@ interface CoachRouteProps {
 }
 
 const CoachRoute = ({ children }: CoachRouteProps) => {
-  const { user, profile, isLoading } = useAuth();
+  const { user, profile, isLoading, refreshProfile } = useAuth();
   const [isCoach, setIsCoach] = useState<boolean | null>(null);
   const [checking, setChecking] = useState(true);
 
@@ -34,25 +34,48 @@ const CoachRoute = ({ children }: CoachRouteProps) => {
           return;
         }
         
-        // Method 2: If profile context doesn't confirm coach status, query directly
-        console.log("Querying database directly for role");
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
+        // Method 2: Try checking user metadata from auth (if available)
+        if (user.user_metadata && user.user_metadata.role === 'coach') {
+          console.log("User is a coach according to auth metadata");
+          setIsCoach(true);
+          setChecking(false);
+          return;
+        }
+        
+        // Method 3: If above methods don't confirm coach status, query directly with a simple query
+        console.log("Querying database directly for role using simplified query");
+        const { data, error } = await supabase.rpc('get_user_role', { user_id: user.id });
 
         if (error) {
-          console.error("Error fetching coach status:", error);
-          toast({
-            title: "Error",
-            description: "Could not verify coach permissions",
-            variant: "destructive"
-          });
-          setIsCoach(false);
+          console.error("Error with RPC, falling back to direct query:", error);
+          
+          // Final fallback: direct query
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+            
+          if (profileError) {
+            console.error("Error in final fallback query:", profileError);
+            toast({
+              title: "Error",
+              description: "Could not verify coach permissions",
+              variant: "destructive"
+            });
+            setIsCoach(false);
+          } else {
+            console.log("Role from final fallback query:", profileData?.role);
+            setIsCoach(profileData?.role === 'coach');
+            
+            // Update the profile in context if we have new data
+            if (profileData && (!profile || profile.role !== profileData.role)) {
+              refreshProfile();
+            }
+          }
         } else {
-          console.log("Role from database query:", data?.role);
-          setIsCoach(data?.role === 'coach');
+          console.log("Role from RPC:", data);
+          setIsCoach(data === 'coach');
         }
       } catch (error) {
         console.error("Error in coach check:", error);
@@ -65,7 +88,7 @@ const CoachRoute = ({ children }: CoachRouteProps) => {
     if (!isLoading) {
       checkCoachRole();
     }
-  }, [user, isLoading, profile]);
+  }, [user, isLoading, profile, refreshProfile]);
 
   // While checking authentication status or coach role, show loading state
   if (isLoading || checking) {

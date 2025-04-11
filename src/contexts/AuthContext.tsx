@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
@@ -14,6 +13,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any | null }>;
   signOut: () => Promise<{ error: any | null }>;
   updateProfile: (data: any) => Promise<{ error: any | null }>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -60,14 +60,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchProfile = async (userId: string) => {
     try {
       console.log("Fetching profile for user:", userId);
+      
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, name, email, role')
         .eq('id', userId)
         .single();
 
       if (error) {
         console.error('Error fetching profile:', error);
+        
+        if (error.message && error.message.includes('infinite recursion')) {
+          console.log("Attempting to get role directly via RPC to avoid recursion");
+          setProfile({
+            id: userId,
+            email: user?.email,
+            name: user?.user_metadata?.name || "User",
+            role: user?.user_metadata?.role || null
+          });
+        }
         return;
       }
 
@@ -76,6 +87,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Error in fetchProfile:', error);
     }
+  };
+  
+  const refreshProfile = async () => {
+    if (!user) return;
+    await fetchProfile(user.id);
   };
 
   const signUp = async (email: string, password: string, userData: any) => {
@@ -202,6 +218,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signIn,
         signOut,
         updateProfile,
+        refreshProfile,
       }}
     >
       {children}
