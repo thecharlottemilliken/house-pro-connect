@@ -30,6 +30,7 @@ export const useCoachProjects = () => {
   }, []);
 
   const fetchProjects = async () => {
+    console.log("JWT app role:", session?.user?.app_metadata?.app_role);
     setIsLoading(true);
     try {
       console.log("Fetching projects...");
