@@ -16,8 +16,8 @@ const ProjectPreferences = () => {
   const location = useLocation();
   const isMobile = useIsMobile();
   const [propertyId, setPropertyId] = useState<string | null>(null);
+  const [projectId, setProjectId] = useState<string | null>(null);
   const [renovationAreas, setRenovationAreas] = useState<any[]>([]);
-  const [projectPrefs, setProjectPrefs] = useState<any>(null);
   const [budget, setBudget] = useState<number>(50000);
   const [useFinancing, setUseFinancing] = useState<boolean>(false);
   const [completionDate, setCompletionDate] = useState<string>("");
@@ -27,18 +27,56 @@ const ProjectPreferences = () => {
   const [eventName, setEventName] = useState<string>("");
 
   useEffect(() => {
-    if (location.state?.propertyId) {
-      setPropertyId(location.state.propertyId);
+    if (location.state) {
+      if (location.state.propertyId) {
+        setPropertyId(location.state.propertyId);
+      }
+      
+      if (location.state.projectId) {
+        setProjectId(location.state.projectId);
+        loadExistingPreferences(location.state.projectId);
+      }
+      
       if (location.state.renovationAreas) {
         setRenovationAreas(location.state.renovationAreas);
       }
-      setProjectPrefs(location.state);
     } else {
       navigate("/create-project");
     }
   }, [location.state, navigate]);
 
+  const loadExistingPreferences = async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('project_preferences')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      
+      if (data && data.project_preferences) {
+        const prefs = data.project_preferences;
+        
+        if (prefs.budget) setBudget(prefs.budget);
+        if (prefs.useFinancing !== undefined) setUseFinancing(prefs.useFinancing);
+        if (prefs.completionDate) setCompletionDate(prefs.completionDate);
+        if (prefs.readiness) setReadiness(prefs.readiness);
+        if (prefs.isLifeEventDependent !== undefined) setIsLifeEventDependent(prefs.isLifeEventDependent);
+        if (prefs.eventDate) setEventDate(prefs.eventDate);
+        if (prefs.eventName) setEventName(prefs.eventName);
+      }
+    } catch (error) {
+      console.error('Error loading project preferences:', error);
+    }
+  };
+
   const savePreferences = async () => {
+    if (!projectId) {
+      console.error('No project ID available to save preferences');
+      return;
+    }
+    
     try {
       const { error } = await supabase
         .from('projects')
@@ -53,9 +91,14 @@ const ProjectPreferences = () => {
             eventName
           }
         })
-        .eq('id', projectPrefs.id);
+        .eq('id', projectId);
 
       if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Project preferences saved successfully.",
+      });
     } catch (error) {
       console.error('Error saving project preferences:', error);
       toast({
@@ -70,7 +113,8 @@ const ProjectPreferences = () => {
     await savePreferences();
     navigate("/construction-preferences", {
       state: {
-        ...projectPrefs,
+        propertyId,
+        projectId,
         budget,
         useFinancing,
         completionDate,
@@ -84,7 +128,10 @@ const ProjectPreferences = () => {
 
   const goBack = () => {
     navigate("/renovation-areas", {
-      state: { propertyId }
+      state: { 
+        propertyId,
+        projectId 
+      }
     });
   };
 
