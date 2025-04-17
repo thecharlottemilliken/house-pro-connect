@@ -11,9 +11,11 @@ import ProjectSidebar from "@/components/project/ProjectSidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
-// Updated interfaces to match Supabase query structure
+// Updated interfaces to match the new query structure
 interface ProfileData {
+  id?: string;
   name?: string;
   email?: string;
 }
@@ -21,9 +23,10 @@ interface ProfileData {
 interface TeamMemberData {
   id: string;
   role: string;
-  email: string;
-  name: string;
-  user?: ProfileData;
+  email: string | null;
+  name: string | null;
+  user_id: string;
+  profiles?: ProfileData;
 }
 
 interface TeamMember {
@@ -34,7 +37,7 @@ interface TeamMember {
   avatarUrl: string;
 }
 
-// Fetches real team members from Supabase
+// Fetches team members from Supabase with the correct join
 const useTeamMembers = (projectId: string | undefined) => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,6 +48,7 @@ const useTeamMembers = (projectId: string | undefined) => {
     const fetchTeamMembers = async () => {
       setLoading(true);
 
+      // Use a direct join query instead of the nested select
       const { data, error } = await supabase
         .from("project_team_members")
         .select(`
@@ -52,21 +56,35 @@ const useTeamMembers = (projectId: string | undefined) => {
           role,
           email,
           name,
-          user:profiles!project_team_members_user_id_fkey(name, email)
+          user_id,
+          profiles:profiles(id, name, email)
         `)
         .eq("project_id", projectId);
 
       if (error) {
         console.error("Failed to load team members:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load team members. Please try again.",
+          variant: "destructive"
+        });
         setTeamMembers([]);
       } else {
-        const formatted: TeamMember[] = (data as TeamMemberData[]).map((member) => ({
-          id: member.id,
-          role: member.role,
-          name: member.user?.name || member.name || "Unnamed",
-          email: member.user?.email || member.email || "No email",
-          avatarUrl: `https://i.pravatar.cc/150?u=${member.user?.email || member.email}`,
-        }));
+        console.log("Team members data:", data);
+        const formatted: TeamMember[] = (data as TeamMemberData[]).map((member) => {
+          // Attempt to get name and email from profile first, fall back to direct fields
+          const profile = member.profiles;
+          const name = profile?.name || member.name || "Unnamed";
+          const email = profile?.email || member.email || "No email";
+          
+          return {
+            id: member.id,
+            role: member.role,
+            name: name,
+            email: email,
+            avatarUrl: `https://i.pravatar.cc/150?u=${email}`,
+          };
+        });
         setTeamMembers(formatted);
       }
 
@@ -79,6 +97,36 @@ const useTeamMembers = (projectId: string | undefined) => {
   return { teamMembers, loading };
 };
 
+// Function to add a team member
+const addTeamMember = async (projectId: string, email: string, role: string, name?: string) => {
+  try {
+    // First check if user exists in profiles
+    const { data: userData, error: userError } = await supabase
+      .from("profiles")
+      .select("id, email")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (userError) throw userError;
+
+    // Add the team member
+    const { error } = await supabase.from("project_team_members").insert({
+      project_id: projectId,
+      user_id: userData?.id || '00000000-0000-0000-0000-000000000000', // If user doesn't exist, use placeholder
+      role: role,
+      email: email,
+      name: name || email.split('@')[0] // Use first part of email as default name
+    });
+
+    if (error) throw error;
+    
+    return { success: true };
+  } catch (err: any) {
+    console.error("Error adding team member:", err);
+    return { success: false, error: err.message };
+  }
+};
+
 const ProjectTeam = () => {
   const location = useLocation();
   const params = useParams();
@@ -89,6 +137,47 @@ const ProjectTeam = () => {
   const projectTitle = projectData?.title || "Unknown Project";
 
   const { teamMembers, loading: isTeamLoading } = useTeamMembers(projectId);
+  const [isInviting, setIsInviting] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState("team_member");
+
+  const handleInvite = async () => {
+    if (!inviteEmail) {
+      toast({
+        title: "Error",
+        description: "Email is required",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsInviting(true);
+    try {
+      const result = await addTeamMember(projectId, inviteEmail, inviteRole);
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: "Team member invited successfully",
+        });
+        setInviteEmail("");
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to invite team member",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Error inviting team member:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive"
+      });
+    } finally {
+      setIsInviting(false);
+    }
+  };
 
   if (isProjectLoading || isTeamLoading) {
     return (
@@ -112,7 +201,33 @@ const ProjectTeam = () => {
           <div className="flex-1 p-4 sm:p-6 md:p-8 bg-white overflow-y-auto">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-8">
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-0">Project Team</h1>
-              <Button className="bg-[#0f566c] hover:bg-[#0d4a5d] w-full sm:w-auto">
+              <Button 
+                className="bg-[#0f566c] hover:bg-[#0d4a5d] w-full sm:w-auto"
+                onClick={() => {
+                  // Simple dialog here, in a real app use a proper dialog component
+                  const email = prompt("Enter team member's email:");
+                  if (email) {
+                    const role = prompt("Enter role (team_member, contractor, designer):", "team_member");
+                    addTeamMember(projectId, email, role || "team_member")
+                      .then(result => {
+                        if (result.success) {
+                          toast({
+                            title: "Success",
+                            description: "Team member added successfully",
+                          });
+                          // Refresh the page to show the new team member
+                          window.location.reload();
+                        } else {
+                          toast({
+                            title: "Error",
+                            description: result.error || "Failed to add team member",
+                            variant: "destructive"
+                          });
+                        }
+                      });
+                  }
+                }}
+              >
                 <UserPlus className="mr-2 h-4 w-4" />
                 INVITE A TEAM MEMBER
               </Button>
