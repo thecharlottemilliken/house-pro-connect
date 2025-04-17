@@ -1,4 +1,5 @@
 import { useParams, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useProjectData } from "@/hooks/useProjectData";
@@ -8,148 +9,74 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import ProjectSidebar from "@/components/project/ProjectSidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
-import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { useProfileRole } from "@/profile/ProfileRole";
-import { toast } from "@/hooks/use-toast";
 
+// Team member interface
 interface TeamMember {
   id: string;
   role: string;
   name: string;
   email: string;
-  phone?: string;
-  added_at: string;
+  avatarUrl?: string;
 }
 
-interface ProjectOwner {
-  user_id: string;
-  created_at: string;
-  owner_profile: {
-    id: string;
-    name: string;
-    email: string;
-  };
-}
+// Fetches real team members from Supabase
+const useTeamMembers = (projectId: string | undefined) => {
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [loading, setLoading] = useState(true);
 
-interface TeamMemberData {
-  id: string;
-  role: string;
-  added_at: string;
-  user_profile: {
-    id: string;
-    name: string;
-    email: string;
-  } | null;
-}
+  useEffect(() => {
+    if (!projectId) return;
+
+    const fetchTeamMembers = async () => {
+      setLoading(true);
+
+      const { data, error } = await supabase
+        .from("project_team_members")
+        .select(`
+          id,
+          role,
+          email,
+          name,
+          user:profiles(name, email)
+        `)
+        .eq("project_id", projectId);
+
+      if (error) {
+        console.error("Failed to load team members:", error);
+        setTeamMembers([]);
+      } else {
+        const formatted = data.map((member) => ({
+          id: member.id,
+          role: member.role,
+          name: member.user?.name || member.name || "Unnamed",
+          email: member.user?.email || member.email || "No email",
+          avatarUrl: `https://i.pravatar.cc/150?u=${member.user?.email || member.email}`,
+        }));
+        setTeamMembers(formatted);
+      }
+
+      setLoading(false);
+    };
+
+    fetchTeamMembers();
+  }, [projectId]);
+
+  return { teamMembers, loading };
+};
 
 const ProjectTeam = () => {
   const location = useLocation();
   const params = useParams();
   const isMobile = useIsMobile();
   const { projectData, isLoading } = useProjectData(params.projectId, location.state);
-  const { user } = useAuth();
-  const { role: userRole } = useProfileRole();
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [loading, setLoading] = useState(true);
-  
+
   const projectId = projectData?.id || params.projectId || "unknown";
   const projectTitle = projectData?.title || "Unknown Project";
 
-  useEffect(() => {
-    const fetchTeamMembers = async () => {
-      if (!projectId || !user) return;
-      
-      try {
-        console.log("Fetching team members for project:", projectId);
-        
-        const { data: teamData, error: teamError } = await supabase
-          .from('project_team_members')
-          .select(`
-            id,
-            role,
-            added_at,
-            user_profile:profiles!user_id(
-              id,
-              name,
-              email
-            )
-          `)
-          .eq('project_id', projectId);
+  const { teamMembers, loading: teamLoading } = useTeamMembers(projectId);
 
-        if (teamError) {
-          console.error("Error fetching team members:", teamError);
-          setLoading(false);
-          return;
-        }
-
-        const { data: projectDetails, error: projectError } = await supabase
-          .from('projects')
-          .select(`
-            user_id,
-            created_at,
-            owner_profile:profiles!user_id(
-              id,
-              name,
-              email
-            )
-          `)
-          .eq('id', projectId)
-          .single();
-
-        if (projectError) {
-          console.error("Error fetching project owner:", projectError);
-          setLoading(false);
-          return;
-        }
-
-        const processedTeamMembers: TeamMember[] = [];
-        
-        if (projectDetails && projectDetails.owner_profile) {
-          processedTeamMembers.push({
-            id: projectDetails.owner_profile.id,
-            name: projectDetails.owner_profile.name || 'Unknown',
-            email: projectDetails.owner_profile.email || '',
-            role: 'owner',
-            added_at: projectDetails.created_at,
-            phone: "(555) 123-4567" // Placeholder
-          });
-        }
-
-        if (teamData) {
-          teamData.forEach((member: TeamMemberData) => {
-            if (member.user_profile) {
-              processedTeamMembers.push({
-                id: member.user_profile.id,
-                name: member.user_profile.name || 'Unknown',
-                email: member.user_profile.email || '',
-                role: member.role,
-                added_at: member.added_at,
-                phone: "(555) 123-4567" // Placeholder
-              });
-            }
-          });
-        }
-
-        console.log("Team members found:", processedTeamMembers);
-        setTeamMembers(processedTeamMembers);
-      } catch (error) {
-        console.error('Error fetching team members:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load team members",
-          variant: "destructive"
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTeamMembers();
-  }, [projectId, user]);
-
-  if (isLoading || loading) {
+  if (isLoading || teamLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-white">
         <DashboardNavbar />
@@ -163,7 +90,7 @@ const ProjectTeam = () => {
   return (
     <div className="flex flex-col bg-white min-h-screen">
       <DashboardNavbar />
-      
+
       <SidebarProvider defaultOpen={!isMobile}>
         <div className="flex flex-1 h-[calc(100vh-64px)] w-full">
           <ProjectSidebar 
@@ -171,74 +98,24 @@ const ProjectTeam = () => {
             projectTitle={projectTitle}
             activePage="team"
           />
-          
+
           <div className="flex-1 p-4 sm:p-6 md:p-8 bg-white overflow-y-auto">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-8">
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-0">
                 Project Team
               </h1>
-              {userRole === 'owner' && (
-                <Button className="bg-[#0f566c] hover:bg-[#0d4a5d] w-full sm:w-auto">
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  INVITE A TEAM MEMBER
-                </Button>
-              )}
+              <Button className="bg-[#0f566c] hover:bg-[#0d4a5d] w-full sm:w-auto">
+                <UserPlus className="mr-2 h-4 w-4" />
+                INVITE A TEAM MEMBER
+              </Button>
             </div>
-            
-            {teamMembers.length === 0 ? (
-              <div className="text-center text-gray-500 py-8">
-                No team members found for this project.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {teamMembers.map((member) => (
-                  <Card key={member.id} className="border border-gray-200 rounded-lg overflow-hidden">
-                    <CardContent className="p-0">
-                      <div className="p-4 border-b border-gray-200">
-                        <div className="flex items-center mb-2">
-                          <Avatar className="h-12 w-12 mr-3">
-                            <AvatarImage src="/placeholder.svg" alt={member.name} />
-                            <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <h3 className="font-medium text-gray-700 capitalize">{member.role}</h3>
-                            <h2 className="font-medium text-lg text-gray-900">{member.name}</h2>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="p-4">
-                        <div className="text-sm text-gray-700 mb-2">{member.phone}</div>
-                        <div className="text-sm text-gray-700">{member.email}</div>
-                      </div>
-                      
-                      <div className="flex border-t border-gray-200">
-                        <button className="flex-1 py-3 flex justify-center items-center text-gray-600 hover:bg-gray-50">
-                          <MessageSquare className="h-5 w-5" />
-                        </button>
-                        <div className="border-r border-gray-200"></div>
-                        <button className="flex-1 py-3 flex justify-center items-center text-gray-600 hover:bg-gray-50">
-                          <Phone className="h-5 w-5" />
-                        </button>
-                        <div className="border-r border-gray-200"></div>
-                        <button className="flex-1 py-3 flex justify-center items-center text-gray-600 hover:bg-gray-50">
-                          <CreditCard className="h-5 w-5" />
-                        </button>
-                        <div className="border-r border-gray-200"></div>
-                        <button className="flex-1 py-3 flex justify-center items-center text-gray-600 hover:bg-gray-50">
-                          <ExternalLink className="h-5 w-5" />
-                        </button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </SidebarProvider>
-    </div>
-  );
-};
 
-export default ProjectTeam;
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {teamMembers.map((member, index) => (
+                <Card key={index} className="border border-gray-200 rounded-lg overflow-hidden">
+                  <CardContent className="p-0">
+                    <div className="p-4 border-b border-gray-200">
+                      <div className="flex items-center mb-2">
+                        <Avatar className="h-12 w-12 mr-3">
+                          <AvatarImage src={member.avatarUrl} alt={member.name} />
+                          <AvatarFallback>{member.name.charAt(
