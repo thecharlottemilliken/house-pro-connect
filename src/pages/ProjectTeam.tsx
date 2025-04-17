@@ -1,4 +1,3 @@
-
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
@@ -72,12 +71,7 @@ const useTeamMembers = (projectId: string | undefined) => {
             email,
             name,
             user_id,
-            profiles!project_team_members_user_id_fkey (
-              id,
-              name,
-              email,
-              role
-            )
+            profiles(id, name, email)
           `)
           .eq("project_id", projectId);
 
@@ -96,9 +90,12 @@ const useTeamMembers = (projectId: string | undefined) => {
           const formatted: TeamMember[] = (teamData || [])
             .filter(member => member.user_id !== user?.id || member.user_id === projectOwnerId)
             .map((member) => {
+              // Get profile info either from the profiles join or from the member data
               const profile = member.profiles;
               const name = profile?.name || member.name || "Unnamed";
               const email = profile?.email || member.email || "No email";
+              
+              // Ensure project owner is always labeled correctly
               const role = member.user_id === projectOwnerId ? "owner" : member.role;
               
               return {
