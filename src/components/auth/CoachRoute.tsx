@@ -52,11 +52,10 @@ const CoachRoute = ({ children }: CoachRouteProps) => {
         // Method 3: If above methods don't confirm coach status, query directly with a simple query
         console.log("Querying database directly for role using simplified query");
         
-        // Modify the RPC call to use both type parameters
-        const { data, error } = await supabase.rpc<GetUserRoleResponse, GetUserRoleParams>(
-          'get_user_role', 
-          { user_id: user.id }
-        );
+        // Fix the RPC type parameters to match Supabase's expected types
+        const { data, error } = await supabase.rpc('get_user_role', { 
+          user_id: user.id 
+        }) as { data: GetUserRoleResponse, error: any };
 
         if (error) {
           console.error("Error with RPC, falling back to direct query:", error);
