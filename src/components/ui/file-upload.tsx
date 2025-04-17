@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "./button";
-import { ArrowUpFromLine } from "lucide-react";
+import { ArrowUpFromLine, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -11,6 +11,7 @@ interface FileUploadProps {
   onUploadComplete: (urls: string[]) => void;
   label: string;
   description: string;
+  uploadedFiles?: string[];
 }
 
 export function FileUpload({ 
@@ -18,7 +19,8 @@ export function FileUpload({
   multiple = false,
   onUploadComplete,
   label,
-  description
+  description,
+  uploadedFiles = []
 }: FileUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
 
@@ -62,7 +64,7 @@ export function FileUpload({
         variant: "destructive"
       });
     } finally {
-      setIsUploading(false);
+      setIsSubmitting(false);
       // Reset the input
       event.target.value = '';
     }
@@ -74,6 +76,12 @@ export function FileUpload({
         <div>
           <p className="font-medium">{label}</p>
           <p className="text-gray-500 text-sm">{description}</p>
+          {uploadedFiles.length > 0 && (
+            <p className="text-green-600 text-sm mt-1 flex items-center">
+              <CheckCircle2 className="w-4 h-4 mr-1" />
+              {uploadedFiles.length} file{uploadedFiles.length !== 1 ? 's' : ''} uploaded
+            </p>
+          )}
         </div>
         <div className="relative">
           <input
@@ -93,3 +101,4 @@ export function FileUpload({
     </div>
   );
 }
+

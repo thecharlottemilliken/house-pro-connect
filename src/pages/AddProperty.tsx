@@ -10,6 +10,7 @@ import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { FileUpload } from "@/components/ui/file-upload";
+import { PropertyImageCarousel } from "@/components/property/PropertyImageCarousel";
 
 const AddProperty = () => {
   const navigate = useNavigate();
@@ -458,6 +459,13 @@ const AddProperty = () => {
                   />
                 </div>
               </div>
+              
+              {homePhotos.length > 0 && (
+                <div className="my-6">
+                  <h3 className="font-semibold text-gray-800 mb-3">Property Photos</h3>
+                  <PropertyImageCarousel images={homePhotos} />
+                </div>
+              )}
               
               <div className="flex flex-col sm:flex-row justify-between pt-6 border-t border-gray-200 gap-4">
                 <Button 
