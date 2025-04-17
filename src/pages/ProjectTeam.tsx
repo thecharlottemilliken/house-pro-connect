@@ -106,12 +106,11 @@ const ProjectTeam = () => {
 
         const processedTeamMembers: TeamMember[] = [];
         
-        if (projectDetails?.owner_profile) {
-          const ownerProfile = projectDetails.owner_profile;
+        if (projectDetails && projectDetails.owner_profile) {
           processedTeamMembers.push({
-            id: ownerProfile.id,
-            name: ownerProfile.name || 'Unknown',
-            email: ownerProfile.email || '',
+            id: projectDetails.owner_profile.id,
+            name: projectDetails.owner_profile.name || 'Unknown',
+            email: projectDetails.owner_profile.email || '',
             role: 'owner',
             added_at: projectDetails.created_at,
             phone: "(555) 123-4567" // Placeholder

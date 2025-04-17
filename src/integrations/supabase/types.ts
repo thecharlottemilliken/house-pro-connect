@@ -95,7 +95,9 @@ export type Database = {
         Row: {
           added_at: string
           added_by: string | null
+          email: string | null
           id: string
+          name: string | null
           project_id: string
           role: string
           user_id: string
@@ -103,7 +105,9 @@ export type Database = {
         Insert: {
           added_at?: string
           added_by?: string | null
+          email?: string | null
           id?: string
+          name?: string | null
           project_id: string
           role: string
           user_id: string
@@ -111,7 +115,9 @@ export type Database = {
         Update: {
           added_at?: string
           added_by?: string | null
+          email?: string | null
           id?: string
+          name?: string | null
           project_id?: string
           role?: string
           user_id?: string
