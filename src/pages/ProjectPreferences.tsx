@@ -11,7 +11,9 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { Json } from "@/integrations/supabase/types";
 
+// Define the interface as a type that's compatible with Json
 interface ProjectPreferences {
   budget: number;
   useFinancing: boolean;
@@ -20,6 +22,7 @@ interface ProjectPreferences {
   isLifeEventDependent: boolean;
   eventDate: string;
   eventName: string;
+  [key: string]: Json; // Add index signature to make it compatible with Json type
 }
 
 const ProjectPreferences = () => {
@@ -67,8 +70,8 @@ const ProjectPreferences = () => {
       if (error) throw error;
       
       if (data && data.project_preferences) {
-        // Type cast the preferences to our interface to ensure type safety
-        const prefs = data.project_preferences as ProjectPreferences;
+        // First cast to unknown, then to our interface to avoid TypeScript errors
+        const prefs = data.project_preferences as unknown as ProjectPreferences;
         
         if (prefs.budget !== undefined) setBudget(prefs.budget);
         if (prefs.useFinancing !== undefined) setUseFinancing(prefs.useFinancing);
@@ -90,7 +93,8 @@ const ProjectPreferences = () => {
     }
     
     try {
-      const preferences: ProjectPreferences = {
+      // Create preferences object
+      const preferences: Record<string, Json> = {
         budget,
         useFinancing,
         completionDate,
