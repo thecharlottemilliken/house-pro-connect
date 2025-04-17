@@ -30,7 +30,7 @@ interface Project {
 export const useProjectData = (projectId?: string, initialData?: any) => {
   const navigate = useNavigate();
   const [propertyDetails, setPropertyDetails] = useState<PropertyDetails | null>(null);
-  const [projectData, setProjectData] = useState<any>(null);
+  const [projectData, setProjectData] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -49,7 +49,6 @@ export const useProjectData = (projectId?: string, initialData?: any) => {
   const fetchProjectById = async (id: string) => {
     setIsLoading(true);
     try {
-      // Using untyped query to avoid TypeScript errors
       const { data, error } = await supabase
         .from('projects')
         .select('*')
@@ -79,7 +78,6 @@ export const useProjectData = (projectId?: string, initialData?: any) => {
 
   const fetchPropertyDetails = async (propertyId: string) => {
     try {
-      // Using untyped query to avoid TypeScript errors
       const { data, error } = await supabase
         .from('properties')
         .select('*')

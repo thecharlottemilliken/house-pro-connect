@@ -22,7 +22,7 @@ interface PropertyCardProps {
   renovationAreas: RenovationArea[];
 }
 
-const PropertyCard = ({ propertyDetails, renovationAreas }: PropertyCardProps) => {
+const PropertyCard = ({ propertyDetails, renovationAreas = [] }: PropertyCardProps) => {
   return (
     <Card className="overflow-hidden rounded-lg shadow-[0_2px_10px_rgba(0,0,0,0.08)] border-0 flex flex-col sm:flex-row h-auto">
       {/* Left side - Property Image */}
@@ -44,7 +44,7 @@ const PropertyCard = ({ propertyDetails, renovationAreas }: PropertyCardProps) =
           
           <h3 className="font-bold text-base sm:text-lg md:text-xl mb-2 sm:mb-3 md:mb-4 uppercase">RENOVATION AREAS</h3>
           <div className="space-y-1.5 sm:space-y-2 md:space-y-3 mb-4 sm:mb-6 md:mb-8">
-            {renovationAreas && renovationAreas.length > 0 ? (
+            {Array.isArray(renovationAreas) && renovationAreas.length > 0 ? (
               renovationAreas.map((area, index) => (
                 <div key={index} className="flex items-center text-sm sm:text-base md:text-lg">
                   <span className="text-orange-500 mr-2 sm:mr-3 text-lg sm:text-xl md:text-2xl">★</span> {area.area}
@@ -69,3 +69,4 @@ const PropertyCard = ({ propertyDetails, renovationAreas }: PropertyCardProps) =
 };
 
 export default PropertyCard;
+
