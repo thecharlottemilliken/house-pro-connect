@@ -1,4 +1,3 @@
-
 import { useParams, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -31,7 +30,7 @@ interface ProjectOwner {
     id: string;
     name: string;
     email: string;
-  } | null;
+  };
 }
 
 interface TeamMemberData {
@@ -65,7 +64,6 @@ const ProjectTeam = () => {
       try {
         console.log("Fetching team members for project:", projectId);
         
-        // Fetch team members from the project_team_members table with properly named aliases
         const { data: teamData, error: teamError } = await supabase
           .from('project_team_members')
           .select(`
@@ -86,7 +84,6 @@ const ProjectTeam = () => {
           return;
         }
 
-        // Fetch the project owner's details with properly named alias
         const { data: projectDetails, error: projectError } = await supabase
           .from('projects')
           .select(`
@@ -107,10 +104,8 @@ const ProjectTeam = () => {
           return;
         }
 
-        // Combine project owner and team members
         const processedTeamMembers: TeamMember[] = [];
         
-        // Add the project owner if available
         if (projectDetails?.owner_profile) {
           const ownerProfile = projectDetails.owner_profile;
           processedTeamMembers.push({
@@ -123,7 +118,6 @@ const ProjectTeam = () => {
           });
         }
 
-        // Add team members
         if (teamData) {
           teamData.forEach((member: TeamMemberData) => {
             if (member.user_profile) {
