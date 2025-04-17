@@ -9,10 +9,12 @@ interface CoachRouteProps {
   children: React.ReactNode;
 }
 
-// Define a specific type for the RPC function parameters and return type
+// Define specific types for the RPC function
 type GetUserRoleParams = {
   user_id: string;
 }
+
+type GetUserRoleResponse = string | null;
 
 const CoachRoute = ({ children }: CoachRouteProps) => {
   const { user, profile, isLoading, refreshProfile } = useAuth();
@@ -50,11 +52,11 @@ const CoachRoute = ({ children }: CoachRouteProps) => {
         // Method 3: If above methods don't confirm coach status, query directly with a simple query
         console.log("Querying database directly for role using simplified query");
         
-        // Use the any type to bypass the TypeScript error
-        // This works because we expect a string return type from the RPC function
-        const { data, error } = await supabase.rpc('get_user_role', {
-          user_id: user.id
-        } as GetUserRoleParams) as { data: string | null, error: any };
+        // Use a type assertion to handle the typing issue
+        const { data, error } = await supabase.rpc<GetUserRoleResponse>(
+          'get_user_role', 
+          { user_id: user.id }
+        );
 
         if (error) {
           console.error("Error with RPC, falling back to direct query:", error);
