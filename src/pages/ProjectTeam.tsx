@@ -38,6 +38,8 @@ const ProjectTeam = () => {
       if (!projectId || !user) return;
       
       try {
+        console.log("Fetching team members for project:", projectId);
+        
         // First, get the project details to get the owner's ID
         const { data: projectData, error: projectError } = await supabase
           .from('projects')
@@ -46,36 +48,68 @@ const ProjectTeam = () => {
           .single();
           
         if (projectError) throw projectError;
-
-        // Get all profiles that could be part of this project
-        // For coaches: we need to see the project owner (resident)
-        // For residents: we need to see coaches
-        let profilesQuery = supabase.from('profiles').select('id, name, email, role');
         
-        if (user.id === projectData.user_id) {
-          // User is the project owner (resident), show them coaches
-          profilesQuery = profilesQuery.eq('role', 'coach');
-        } else {
-          // User is likely a coach, show them the project owner
-          profilesQuery = profilesQuery.eq('id', projectData.user_id);
+        console.log("Project data:", projectData);
+        
+        if (!projectData || !projectData.user_id) {
+          console.error("No project owner found");
+          setLoading(false);
+          return;
         }
         
-        const { data: profiles, error: profilesError } = await profilesQuery;
-
-        if (profilesError) throw profilesError;
-
-        // Filter out the current user and format the team members
-        const filteredTeamMembers = profiles
-          .filter(profile => profile.id !== user.id)
-          .map(profile => ({
-            id: profile.id,
-            name: profile.name || 'Unknown User',
-            email: profile.email || '',
-            role: profile.role,
-            phone: "(555) 123-4567" // Placeholder phone number
-          }));
-
-        setTeamMembers(filteredTeamMembers);
+        // Array to collect team members
+        let teamMembersList: TeamMember[] = [];
+        
+        // If current user is the project owner (resident)
+        if (user.id === projectData.user_id) {
+          console.log("Current user is the project owner, fetching coaches");
+          // Fetch coaches to show to the resident
+          const { data: coaches, error: coachesError } = await supabase
+            .from('profiles')
+            .select('id, name, email, role')
+            .eq('role', 'coach');
+            
+          if (coachesError) throw coachesError;
+          
+          if (coaches && coaches.length > 0) {
+            teamMembersList = [
+              ...teamMembersList,
+              ...coaches.map(coach => ({
+                id: coach.id,
+                name: coach.name || 'Unknown Coach',
+                email: coach.email || '',
+                role: coach.role,
+                phone: "(555) 123-4567" // Placeholder phone number
+              }))
+            ];
+          }
+        } else {
+          // User is likely a coach or other role, show them the project owner
+          console.log("Current user is not the project owner, fetching project owner");
+          const { data: owner, error: ownerError } = await supabase
+            .from('profiles')
+            .select('id, name, email, role')
+            .eq('id', projectData.user_id)
+            .single();
+            
+          if (ownerError) throw ownerError;
+          
+          if (owner) {
+            teamMembersList.push({
+              id: owner.id,
+              name: owner.name || 'Project Owner',
+              email: owner.email || '',
+              role: owner.role,
+              phone: "(555) 123-4567" // Placeholder phone number
+            });
+          }
+        }
+        
+        // Filter out the current user from the team members list
+        teamMembersList = teamMembersList.filter(member => member.id !== user.id);
+        
+        console.log("Team members found:", teamMembersList);
+        setTeamMembers(teamMembersList);
       } catch (error) {
         console.error('Error fetching team members:', error);
       } finally {
