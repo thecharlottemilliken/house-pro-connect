@@ -64,6 +64,8 @@ export const useCoachProjects = () => {
       const propertyIds = projectsData.map(project => project.property_id);
       const userIds = projectsData.map(project => project.user_id);
       
+      console.log("User IDs to fetch:", userIds);
+      
       // Fetch all properties in one call
       const { data: propertiesData, error: propertiesError } = await supabase
         .from('properties')
@@ -81,7 +83,9 @@ export const useCoachProjects = () => {
         // Continue execution, we'll use default values for missing properties
       }
       
-      // Fetch all profiles in one call
+      // Fetch all profiles in one call - debug verbose
+      console.log("Fetching profiles with user IDs:", userIds);
+      
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('id, name, email')
@@ -103,10 +107,33 @@ export const useCoachProjects = () => {
       }
       
       const profilesMap = new Map();
-      if (profilesData) {
+      if (profilesData && profilesData.length > 0) {
         profilesData.forEach(profile => {
+          console.log(`Adding profile to map: ${profile.id} -> ${profile.name}`);
           profilesMap.set(profile.id, profile);
         });
+      } else {
+        console.log("No profiles found - will use default values");
+      }
+      
+      // Fallback - if profiles are still empty, try fetching each individually
+      if ((!profilesData || profilesData.length === 0) && userIds.length > 0) {
+        console.log("Attempting individual profile fetches as fallback");
+        
+        for (const userId of userIds) {
+          const { data: singleProfile, error: singleProfileError } = await supabase
+            .from('profiles')
+            .select('id, name, email')
+            .eq('id', userId)
+            .single();
+          
+          if (!singleProfileError && singleProfile) {
+            console.log(`Found profile for user ${userId}:`, singleProfile);
+            profilesMap.set(userId, singleProfile);
+          } else {
+            console.log(`No profile found for user ${userId}`);
+          }
+        }
       }
       
       // Process projects with the property and owner data
