@@ -39,6 +39,9 @@ export const useCoachProjects = () => {
   }, []);
 
   const fetchProjects = async () => {
+    const session = await supabase.auth.getSession();
+    console.log("JWT access token:", session.data.session?.access_token);
+    console.log("Current user ID:", session.data.session?.user?.id);
     setIsLoading(true);
     try {
       console.log("Fetching projects...");
