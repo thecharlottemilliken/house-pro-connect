@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -9,6 +9,7 @@ import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { FileUpload } from "@/components/ui/file-upload";
 
 const AddProperty = () => {
   const navigate = useNavigate();
@@ -32,6 +33,8 @@ const AddProperty = () => {
   // Exterior and Interior Attributes
   const [exteriorAttributes, setExteriorAttributes] = useState<string[]>([]);
   const [interiorAttributes, setInteriorAttributes] = useState<string[]>([]);
+  const [blueprintUrl, setBlueprintUrl] = useState<string | null>(null);
+  const [homePhotos, setHomePhotos] = useState<string[]>([]);
 
   const toggleExteriorAttribute = (attribute: string) => {
     setExteriorAttributes(prev => 
@@ -88,7 +91,9 @@ const AddProperty = () => {
           bedrooms: bedrooms || null,
           bathrooms: bathrooms || null,
           exterior_attributes: exteriorAttributes,
-          interior_attributes: interiorAttributes
+          interior_attributes: interiorAttributes,
+          blueprint_url: blueprintUrl,
+          home_photos: homePhotos
         })
         .select();
 
@@ -126,7 +131,7 @@ const AddProperty = () => {
     <div className="min-h-screen flex flex-col bg-white">
       <DashboardNavbar />
       
-      <div className="flex flex-1 flex-col md:flex-row">
+      <div className="flex flex-col md:flex-row">
         {/* Left Sidebar */}
         <div className="w-full md:w-80 bg-[#EFF3F7] p-4 md:p-8">
           <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">Create a Project</h1>
@@ -431,6 +436,26 @@ const AddProperty = () => {
                       Finished Basement
                     </AttributeToggleButton>
                   </div>
+                </div>
+              </div>
+              
+              {/* Upload Files */}
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-3">Upload Files</h3>
+                <div className="space-y-4">
+                  <FileUpload
+                    accept=".pdf,.dwg"
+                    onUploadComplete={(urls) => setBlueprintUrl(urls[0])}
+                    label="Upload specs and/or blueprints"
+                    description="PDF or DWG"
+                  />
+                  <FileUpload
+                    accept="image/*,.pdf"
+                    multiple
+                    onUploadComplete={(urls) => setHomePhotos(urls)}
+                    label="Upload home photos"
+                    description="PNG, JPG, or PDF"
+                  />
                 </div>
               </div>
               

@@ -153,9 +153,11 @@ export type Database = {
           address_line2: string | null
           bathrooms: string | null
           bedrooms: string | null
+          blueprint_url: string | null
           city: string
           created_at: string
           exterior_attributes: string[] | null
+          home_photos: string[] | null
           home_purpose: string | null
           home_type: string | null
           id: string
@@ -174,9 +176,11 @@ export type Database = {
           address_line2?: string | null
           bathrooms?: string | null
           bedrooms?: string | null
+          blueprint_url?: string | null
           city: string
           created_at?: string
           exterior_attributes?: string[] | null
+          home_photos?: string[] | null
           home_purpose?: string | null
           home_type?: string | null
           id?: string
@@ -195,9 +199,11 @@ export type Database = {
           address_line2?: string | null
           bathrooms?: string | null
           bedrooms?: string | null
+          blueprint_url?: string | null
           city?: string
           created_at?: string
           exterior_attributes?: string[] | null
+          home_photos?: string[] | null
           home_purpose?: string | null
           home_type?: string | null
           id?: string
