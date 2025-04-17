@@ -12,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useProfileRole } from "@/profile/ProfileRole";
 
 interface TeamMember {
   id: string;
@@ -26,7 +27,8 @@ const ProjectTeam = () => {
   const params = useParams();
   const isMobile = useIsMobile();
   const { projectData, isLoading } = useProjectData(params.projectId, location.state);
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const { role: userRole } = useProfileRole();
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -50,7 +52,7 @@ const ProjectTeam = () => {
         if (projectError) {
           console.error("Error fetching project data:", projectError);
           // Instead of throwing, we'll try to continue with an alternate approach
-          if (user.role === 'coach') {
+          if (userRole === 'coach') {
             // If user is a coach, try to find residents with projects
             const { data: projects } = await supabase
               .from('projects')
@@ -166,7 +168,7 @@ const ProjectTeam = () => {
           console.log("No team members found with standard approach, looking for anyone related to this project");
           
           // First check if the logged in user is a coach
-          if (user.profile?.role === 'coach') {
+          if (userRole === 'coach') {
             // Find the project owner
             const { data: projectOwners } = await supabase
               .from('projects')
@@ -227,7 +229,7 @@ const ProjectTeam = () => {
     };
 
     fetchTeamMembers();
-  }, [projectId, user]);
+  }, [projectId, user, userRole]);
   
   if (isLoading || loading) {
     return (
