@@ -53,9 +53,10 @@ const CoachRoute = ({ children }: CoachRouteProps) => {
         console.log("Querying database directly for role using simplified query");
         
         // Fix the RPC type parameters to match Supabase's expected types
-        const { data, error } = await supabase.rpc('get_user_role', { 
-          user_id: user.id 
-        }) as { data: GetUserRoleResponse, error: any };
+       const { data, error } = await supabase.rpc<GetUserRoleResponse>(
+  'get_user_role',
+  { user_id: user.id } as GetUserRoleParams
+);
 
         if (error) {
           console.error("Error with RPC, falling back to direct query:", error);
