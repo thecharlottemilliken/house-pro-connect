@@ -62,6 +62,8 @@ export const useCoachProjects = () => {
       const propertyIds = projectsData.map((project) => project.property_id);
       const userIds = projectsData.map((project) => project.user_id);
 
+      console.log("Project user IDs:", userIds);
+
       const { data: propertiesData } = await supabase
         .from("properties")
         .select(`
@@ -80,7 +82,7 @@ export const useCoachProjects = () => {
         });
       }
 
-      // Get all profiles at once using the modified RLS policy for coaches
+      // Get all profiles at once using the coach role permissions
       const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
         .select("id, name, email")
@@ -88,6 +90,8 @@ export const useCoachProjects = () => {
 
       if (profilesError) {
         console.error("Error fetching profiles:", profilesError);
+        // Try getting the user email from auth.users if available as a fallback
+        await tryGetUserEmails(userIds, profilesData || []);
       }
 
       const profilesMap = new Map<string, ProfileInfo>();
@@ -97,6 +101,8 @@ export const useCoachProjects = () => {
         profilesData.forEach((profile) => {
           profilesMap.set(profile.id, profile);
         });
+      } else {
+        console.warn("No profiles found. This may indicate an RLS policy issue.");
       }
 
       const processedProjects: Project[] = projectsData.map((project) => {
@@ -143,6 +149,34 @@ export const useCoachProjects = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Helper function to try getting user emails directly if profiles fail
+  const tryGetUserEmails = async (userIds: string[], existingProfiles: ProfileInfo[]) => {
+    try {
+      console.log("Attempting to get user emails using get_user_email function...");
+      
+      // Create a set of user IDs that already have profile data
+      const existingProfileIds = new Set(existingProfiles.map(p => p.id));
+      
+      // Only fetch emails for users without profile data
+      const userIdsToFetch = userIds.filter(id => !existingProfileIds.has(id));
+      
+      if (userIdsToFetch.length === 0) return;
+      
+      // Try to get user emails through the custom function
+      for (const userId of userIdsToFetch) {
+        const { data, error } = await supabase.rpc('get_user_email', { user_id: userId });
+        
+        if (error) {
+          console.error(`Error fetching email for user ${userId}:`, error);
+        } else if (data) {
+          console.log(`Got email for user ${userId}:`, data);
+        }
+      }
+    } catch (err) {
+      console.error("Error in tryGetUserEmails:", err);
     }
   };
 
