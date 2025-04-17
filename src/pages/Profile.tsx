@@ -8,43 +8,33 @@ import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useAuth } from "@/contexts/AuthContext";
 import { LogOut, User } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
-import { useProfileRole } from '@/profile/ProfileRole';
 
 const Profile = () => {
   const navigate = useNavigate();
   const { profile, user, signOut } = useAuth();
   const { toast } = useToast();
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const { role } = useProfileRole();
 
   const handleSignOut = async () => {
     try {
       setIsSigningOut(true);
-      const { error } = await signOut();
-      if (error) {
-        console.error("Error signing out:", error);
-        toast({
-          title: "Sign out failed",
-          description: "An error occurred while signing out",
-          variant: "destructive",
-        });
-        setIsSigningOut(false);
-      }
+      await signOut();
+      toast({
+        title: "Signed out successfully",
+        description: "You have been signed out of your account",
+      });
+      navigate('/');
     } catch (error) {
-      console.error("Error in handleSignOut:", error);
+      console.error("Error signing out:", error);
       toast({
         title: "Sign out failed",
         description: "An error occurred while signing out",
         variant: "destructive",
       });
+    } finally {
       setIsSigningOut(false);
     }
   };
-
-  // Debug logging to check profile data
-  useEffect(() => {
-    console.log("Current profile data:", profile);
-  }, [profile]);
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -77,16 +67,7 @@ const Profile = () => {
               
               <div>
                 <h3 className="font-medium text-sm text-gray-500">ROLE</h3>
-                <p className="text-lg capitalize">{role}</p>
-                {role === 'coach' && (
-                  <Button 
-                    variant="link" 
-                    className="p-0 h-auto text-sm text-blue-600"
-                    onClick={() => navigate('/coach-dashboard')}
-                  >
-                    Go to Coach Dashboard
-                  </Button>
-                )}
+                <p className="text-lg capitalize">{profile?.role || "Not assigned"}</p>
               </div>
               
               <div>
