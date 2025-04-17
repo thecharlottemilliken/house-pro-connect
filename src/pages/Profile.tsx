@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +16,7 @@ const Profile = () => {
   const { profile, user, signOut } = useAuth();
   const { toast } = useToast();
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const { displayRole, isLoading } = useProfileRole();
+  const { displayRole, isLoading: isRoleLoading } = useProfileRole();
 
   const handleSignOut = async () => {
     try {
@@ -42,12 +42,7 @@ const Profile = () => {
     }
   };
 
-  // Debug logging to check profile data
-  useEffect(() => {
-    console.log("Current profile data:", profile);
-  }, [profile]);
-
-  if (isLoading) {
+  if (isRoleLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-white">
         <DashboardNavbar />

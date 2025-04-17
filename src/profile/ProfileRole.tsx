@@ -6,10 +6,17 @@ import { supabase } from '@/integrations/supabase/client';
 export function useProfileRole() {
   const { user, profile, refreshProfile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [roleData, setRoleData] = useState<string | null>(null);
   
   useEffect(() => {
+    // First check if the role is already in the profile
+    if (profile?.role) {
+      setRoleData(profile.role);
+      return;
+    }
+    
     const checkRoleDirectly = async () => {
-      if (!user || (profile && profile.role)) return;
+      if (!user) return;
       
       setIsLoading(true);
       try {
@@ -22,6 +29,7 @@ export function useProfileRole() {
           
         if (!error && data && data.role) {
           console.log("Retrieved role directly:", data.role);
+          setRoleData(data.role);
           refreshProfile();
         } else if (error) {
           console.error("Error fetching role:", error);
@@ -39,12 +47,12 @@ export function useProfileRole() {
   }, [user, profile, refreshProfile]);
   
   // Format the role for display (capitalize first letter)
-  const formattedRole = profile?.role 
-    ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1)
+  const formattedRole = roleData 
+    ? roleData.charAt(0).toUpperCase() + roleData.slice(1)
     : "Not assigned";
     
   return { 
-    role: profile?.role || null,
+    role: roleData || profile?.role || null,
     displayRole: formattedRole,
     isLoading 
   };
