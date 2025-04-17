@@ -1,10 +1,9 @@
-
 import { Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { jwtDecode } from "jwt-decode";
+import jwtDecode from "jwt-decode";
 
 interface CoachRouteProps {
   children: React.ReactNode;
@@ -33,6 +32,25 @@ const CoachRoute = ({ children }: CoachRouteProps) => {
           setIsCoach(true);
           setChecking(false);
           return;
+        }
+        
+        // Optional: Decode JWT to check for custom claims if needed
+        if (session?.access_token) {
+          try {
+            const decodedToken = jwtDecode(session.access_token);
+            console.log("Decoded token:", decodedToken);
+            
+            // Check for coach role in JWT claims
+            // @ts-ignore - allow flexible token type
+            if (decodedToken.app_role === 'coach') {
+              console.log("User is a coach according to JWT token");
+              setIsCoach(true);
+              setChecking(false);
+              return;
+            }
+          } catch (decodeError) {
+            console.error("Error decoding JWT:", decodeError);
+          }
         }
         
         // Method 2: Try checking user metadata from auth (if available)
@@ -74,7 +92,7 @@ const CoachRoute = ({ children }: CoachRouteProps) => {
     if (!isLoading) {
       checkCoachRole();
     }
-  }, [user, isLoading, profile, refreshProfile]);
+  }, [user, isLoading, profile, refreshProfile, session]);
 
   // While checking authentication status or coach role, show loading state
   if (isLoading || checking) {
