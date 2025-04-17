@@ -3,6 +3,7 @@ import React from "react";
 import { ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { PropertyImageCarousel } from "@/components/property/PropertyImageCarousel";
 
 interface RenovationArea {
   area: string;
@@ -14,6 +15,7 @@ interface PropertyCardProps {
     id: string;
     property_name: string;
     image_url: string;
+    home_photos?: string[];
     address_line1: string;
     city: string;
     state: string;
@@ -23,15 +25,18 @@ interface PropertyCardProps {
 }
 
 const PropertyCard = ({ propertyDetails, renovationAreas = [] }: PropertyCardProps) => {
+  // Get all available images, including home_photos if they exist
+  const images = propertyDetails.home_photos?.length 
+    ? propertyDetails.home_photos 
+    : propertyDetails.image_url 
+      ? [propertyDetails.image_url]
+      : [];
+
   return (
     <Card className="overflow-hidden rounded-lg shadow-[0_2px_10px_rgba(0,0,0,0.08)] border-0 flex flex-col sm:flex-row h-auto">
-      {/* Left side - Property Image */}
-      <div className="w-full sm:w-1/2 h-48 sm:h-auto">
-        <img 
-          src={propertyDetails.image_url || 'https://images.unsplash.com/photo-1493809842364-78817add7ffb'} 
-          alt={propertyDetails.property_name}
-          className="w-full h-full object-cover" 
-        />
+      {/* Left side - Property Images Carousel */}
+      <div className="w-full sm:w-1/2">
+        <PropertyImageCarousel images={images} />
       </div>
       
       {/* Right side - Property Details */}
@@ -69,4 +74,3 @@ const PropertyCard = ({ propertyDetails, renovationAreas = [] }: PropertyCardPro
 };
 
 export default PropertyCard;
-
