@@ -10,6 +10,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { jwtDecode } from "jwt-decode";
+import { supabase } from "@/integrations/supabase/client";
 
 const SignIn = () => {
   const navigate = useNavigate();
