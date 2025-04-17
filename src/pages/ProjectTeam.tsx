@@ -1,5 +1,5 @@
 
-import { useParams, useLocation } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -43,7 +43,10 @@ const useTeamMembers = (projectId: string | undefined) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!projectId) return;
+    if (!projectId) {
+      setLoading(false);
+      return;
+    }
 
     const fetchTeamMembers = async () => {
       setLoading(true);
@@ -57,7 +60,7 @@ const useTeamMembers = (projectId: string | undefined) => {
           email,
           name,
           user_id,
-          profiles:profiles(id, name, email)
+          profiles!project_team_members_user_id_fkey(id, name, email)
         `)
         .eq("project_id", projectId);
 
@@ -130,10 +133,23 @@ const addTeamMember = async (projectId: string, email: string, role: string, nam
 const ProjectTeam = () => {
   const location = useLocation();
   const params = useParams();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { projectData, isLoading: isProjectLoading } = useProjectData(params.projectId, location.state);
 
-  const projectId = projectData?.id || params.projectId || "unknown";
+  // Redirect to projects page if no projectId is provided
+  useEffect(() => {
+    if (!params.projectId) {
+      toast({
+        title: "Missing Project",
+        description: "Please select a project from the projects list.",
+        variant: "destructive"
+      });
+      navigate("/projects");
+    }
+  }, [params.projectId, navigate]);
+
+  const projectId = projectData?.id || params.projectId || "";
   const projectTitle = projectData?.title || "Unknown Project";
 
   const { teamMembers, loading: isTeamLoading } = useTeamMembers(projectId);
@@ -178,6 +194,18 @@ const ProjectTeam = () => {
       setIsInviting(false);
     }
   };
+
+  // If there's no projectId, we'll redirect with the useEffect above
+  if (!projectId) {
+    return (
+      <div className="min-h-screen flex flex-col bg-white">
+        <DashboardNavbar />
+        <div className="flex-1 p-4 md:p-10">
+          <div className="text-center py-10">Redirecting to projects...</div>
+        </div>
+      </div>
+    );
+  }
 
   if (isProjectLoading || isTeamLoading) {
     return (
