@@ -8,17 +8,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const PriorExperience = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
-  
+  const { user } = useAuth();
   const [propertyId, setPropertyId] = useState<string | null>(null);
   const [projectPrefs, setProjectPrefs] = useState<any>(null);
   const [priorExperience, setPriorExperience] = useState<string>("No");
   const [positiveAspects, setPositiveAspects] = useState<string>("");
   const [negativeAspects, setNegativeAspects] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (location.state?.propertyId) {
@@ -53,26 +55,72 @@ const PriorExperience = () => {
     }
   };
 
+  const createProject = async () => {
+    if (!user || !propertyId) {
+      toast({
+        title: "Error",
+        description: "Missing required information to create project",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      const { data: project, error: projectError } = await supabase
+        .from('projects')
+        .insert({
+          property_id: propertyId,
+          user_id: user.id,
+          title: `${projectPrefs?.propertyName || 'New'} Renovation`,
+          renovation_areas: projectPrefs?.renovationAreas || [],
+          project_preferences: projectPrefs?.projectPreferences || null,
+          construction_preferences: projectPrefs?.constructionPreferences || null,
+          design_preferences: projectPrefs?.designPreferences || null,
+          management_preferences: projectPrefs?.managementPreferences || null,
+          prior_experience: {
+            hadPriorExperience: priorExperience,
+            positiveAspects,
+            negativeAspects
+          }
+        })
+        .select()
+        .single();
+
+      if (projectError) throw projectError;
+
+      toast({
+        title: "Success",
+        description: "Your project has been created successfully!",
+      });
+
+      navigate("/project-dashboard", {
+        state: {
+          ...projectPrefs,
+          priorExperience: {
+            hadPriorExperience: priorExperience,
+            positiveAspects,
+            negativeAspects
+          },
+          completed: true,
+          projectId: project.id
+        }
+      });
+    } catch (error) {
+      console.error('Error creating project:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create your project. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const finishProcess = async () => {
-    await savePreferences();
-    const priorExperienceData = {
-      hadPriorExperience: priorExperience,
-      positiveAspects,
-      negativeAspects
-    };
-    
-    toast({
-      title: "Project Created",
-      description: "Your project has been successfully created!",
-    });
-    
-    navigate("/project-dashboard", {
-      state: {
-        ...projectPrefs,
-        priorExperience: priorExperienceData,
-        completed: true
-      }
-    });
+    await createProject();
   };
 
   const goBack = () => {
@@ -206,14 +254,16 @@ const PriorExperience = () => {
                 variant="outline"
                 className="text-[#174c65] border-[#174c65] w-full sm:w-auto"
                 onClick={saveAndExit}
+                disabled={isSubmitting}
               >
                 SAVE & EXIT
               </Button>
               <Button
                 className="flex items-center bg-[#174c65] hover:bg-[#174c65]/90 text-white w-full sm:w-auto justify-center"
                 onClick={finishProcess}
+                disabled={isSubmitting}
               >
-                FINISH <ArrowRight className="ml-2 h-4 w-4" />
+                {isSubmitting ? "Creating Project..." : "FINISH"} <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           </div>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Check, Info } from "lucide-react";
@@ -13,7 +12,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Json } from "@/integrations/supabase/types";
 
-// Define the interface as a type that's compatible with Json
 interface ProjectPreferences {
   budget: number;
   useFinancing: boolean;
@@ -22,7 +20,7 @@ interface ProjectPreferences {
   isLifeEventDependent: boolean;
   eventDate: string;
   eventName: string;
-  [key: string]: Json; // Add index signature to make it compatible with Json type
+  [key: string]: Json;
 }
 
 const ProjectPreferences = () => {
@@ -70,7 +68,6 @@ const ProjectPreferences = () => {
       if (error) throw error;
       
       if (data && data.project_preferences) {
-        // First cast to unknown, then to our interface to avoid TypeScript errors
         const prefs = data.project_preferences as unknown as ProjectPreferences;
         
         if (prefs.budget !== undefined) setBudget(prefs.budget);
@@ -87,61 +84,25 @@ const ProjectPreferences = () => {
   };
 
   const savePreferences = async () => {
-    if (!projectId) {
-      console.error('No project ID available to save preferences');
-      return;
-    }
-    
-    try {
-      // Create preferences object
-      const preferences: Record<string, Json> = {
-        budget,
-        useFinancing,
-        completionDate,
-        readiness,
-        isLifeEventDependent,
-        eventDate,
-        eventName
-      };
-      
-      const { error } = await supabase
-        .from('projects')
-        .update({
-          project_preferences: preferences
-        })
-        .eq('id', projectId);
-
-      if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Project preferences saved successfully.",
-      });
-    } catch (error) {
-      console.error('Error saving project preferences:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save project preferences",
-        variant: "destructive"
-      });
-    }
+    navigate("/construction-preferences", {
+      state: {
+        ...projectPrefs,
+        propertyId,
+        projectPreferences: {
+          budget,
+          useFinancing,
+          completionDate,
+          readiness,
+          isLifeEventDependent,
+          eventDate,
+          eventName
+        }
+      }
+    });
   };
 
   const goToNextStep = async () => {
     await savePreferences();
-    navigate("/construction-preferences", {
-      state: {
-        propertyId,
-        projectId,
-        budget,
-        useFinancing,
-        completionDate,
-        readiness,
-        isLifeEventDependent,
-        eventDate,
-        eventName
-      }
-    });
   };
 
   const goBack = () => {
