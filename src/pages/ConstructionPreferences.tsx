@@ -87,44 +87,40 @@ const ConstructionPreferences = () => {
   };
 
   const savePreferences = async () => {
-    if (!projectId) {
-      console.error('No project ID available to save preferences');
-      toast({
-        title: "Error",
-        description: "Missing project ID. Unable to save preferences.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    try {
-      // Create preferences object as Record<string, Json>
-      const preferences: Record<string, Json> = {
-        helpLevel,
-        hasSpecificPros,
-        pros: hasSpecificPros ? pros : []
-      };
-      
-      const { error } = await supabase
-        .from('projects')
-        .update({
-          construction_preferences: preferences
-        })
-        .eq('id', projectId);
+    // If we already have a project ID, update it
+    if (projectId) {
+      try {
+        // Create preferences object as Record<string, Json>
+        const preferences: Record<string, Json> = {
+          helpLevel,
+          hasSpecificPros,
+          pros: hasSpecificPros ? pros : []
+        };
+        
+        const { error } = await supabase
+          .from('projects')
+          .update({
+            construction_preferences: preferences
+          })
+          .eq('id', projectId);
 
-      if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Construction preferences saved successfully.",
-      });
-    } catch (error) {
-      console.error('Error saving construction preferences:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save construction preferences",
-        variant: "destructive"
-      });
+        if (error) throw error;
+        
+        toast({
+          title: "Success",
+          description: "Construction preferences saved successfully.",
+        });
+      } catch (error) {
+        console.error('Error saving construction preferences:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save construction preferences",
+          variant: "destructive"
+        });
+      }
+    } else {
+      // Just log and continue if no project ID (project will be created at the end in PriorExperience)
+      console.log("No project ID available, storing preferences in state only");
     }
   };
 
@@ -133,9 +129,13 @@ const ConstructionPreferences = () => {
     navigate("/design-preferences", {
       state: {
         ...projectPrefs,
-        helpLevel,
-        hasSpecificPros,
-        pros: hasSpecificPros ? pros : []
+        propertyId,
+        projectId,
+        constructionPreferences: {
+          helpLevel,
+          hasSpecificPros,
+          pros: hasSpecificPros ? pros : []
+        }
       }
     });
   };
@@ -143,6 +143,7 @@ const ConstructionPreferences = () => {
   const goBack = () => {
     navigate("/project-preferences", {
       state: { 
+        ...projectPrefs,
         propertyId,
         projectId 
       }
