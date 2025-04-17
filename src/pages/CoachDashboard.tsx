@@ -6,6 +6,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProjectList from "@/components/coach/ProjectList";
 import MessageCenter from "@/components/coach/MessageCenter";
 
+useEffect(() => {
+  const checkSession = async () => {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      console.error("Error getting session:", error);
+    } else {
+      console.log("✅ Decoded JWT app_metadata:", data?.session?.user?.app_metadata);
+    }
+  };
+
+  checkSession();
+}, []);
+
 const CoachDashboard = () => {
   const [activeTab, setActiveTab] = useState("projects");
 
