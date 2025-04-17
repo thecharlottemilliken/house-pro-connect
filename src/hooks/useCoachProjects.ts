@@ -101,25 +101,11 @@ export const useCoachProjects = () => {
           if (singleProfile) {
             profilesMap.set(userId, singleProfile);
           } else {
-            try {
-              const { data: authUser, error: authError } = await supabase
-                .from("users")
-                .select("email")
-                .eq("id", userId)
-                .maybeSingle();
-
-              profilesMap.set(userId, {
-                id: userId,
-                name: `User ${userId.substring(0, 6)}`,
-                email: authUser?.email ?? "email@unknown.com",
-              });
-            } catch (authErr) {
-              profilesMap.set(userId, {
-                id: userId,
-                name: "Unknown User",
-                email: "email@unknown.com",
-              });
-            }
+            profilesMap.set(userId, {
+              id: userId,
+              name: `User ${userId.substring(0, 6)}`,
+              email: "email@unknown.com",
+            });
           }
         }
       }
@@ -135,7 +121,7 @@ export const useCoachProjects = () => {
         const owner = profilesMap.get(project.user_id);
         const ownerData: ProfileInfo = owner || {
           id: project.user_id,
-          name: "Unknown User",
+          name: `User ${project.user_id.substring(0, 6)}`,
           email: "email@unknown.com",
         };
 
