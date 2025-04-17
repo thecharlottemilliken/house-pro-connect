@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
@@ -48,23 +47,54 @@ const ManagementPreferences = () => {
         setProjectId(location.state.projectId);
       }
       setProjectPrefs(location.state);
+      
+      // Load existing management preferences if available
+      if (location.state.projectId) {
+        loadExistingPreferences(location.state.projectId);
+      }
     } else {
       navigate("/create-project");
     }
   }, [location.state, navigate]);
+  
+  // Function to load existing management preferences
+  const loadExistingPreferences = async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('management_preferences')
+        .eq('id', id)
+        .single();
+        
+      if (error) throw error;
+      
+      if (data && data.management_preferences) {
+        const prefs = data.management_preferences as any;
+        
+        if (prefs.wantProjectCoach) setWantProjectCoach(prefs.wantProjectCoach);
+        if (prefs.phoneNumber) form.setValue("phoneNumber", prefs.phoneNumber);
+        if (prefs.phoneType) form.setValue("phoneType", prefs.phoneType);
+      }
+    } catch (error) {
+      console.error('Error loading management preferences:', error);
+    }
+  };
 
   const savePreferences = async () => {
+    // Create management preferences object
+    const managementPreferences = {
+      wantProjectCoach,
+      phoneNumber: form.getValues("phoneNumber"),
+      phoneType: form.getValues("phoneType")
+    };
+    
     // If we already have a project ID, update it
     if (projectId) {
       try {
         const { error } = await supabase
           .from('projects')
           .update({
-            management_preferences: {
-              wantProjectCoach,
-              phoneNumber: form.getValues("phoneNumber"),
-              phoneType: form.getValues("phoneType")
-            }
+            management_preferences: managementPreferences
           })
           .eq('id', projectId);
 
@@ -81,31 +111,31 @@ const ManagementPreferences = () => {
           description: "Failed to save management preferences",
           variant: "destructive"
         });
+        return;
       }
     } else {
-      // Just log and continue if no project ID (project will be created at the end in PriorExperience)
+      // Just log and continue if no project ID (project should have been created in Project Preferences)
       console.log("No project ID available, storing preferences in state only");
     }
-  };
-
-  const goToNextStep = async () => {
-    await savePreferences();
     
-    // Prepare updated project preferences
+    // Update the project preferences state
     const updatedProjectPrefs = {
       ...projectPrefs,
       projectId,
       propertyId,
-      managementPreferences: {
-        wantProjectCoach,
-        phoneNumber: form.getValues("phoneNumber"),
-        phoneType: form.getValues("phoneType")
-      }
+      managementPreferences
     };
     
+    setProjectPrefs(updatedProjectPrefs);
+    
+    // Navigate to next step
     navigate("/prior-experience", {
       state: updatedProjectPrefs
     });
+  };
+
+  const goToNextStep = async () => {
+    await savePreferences();
   };
 
   const goBack = () => {

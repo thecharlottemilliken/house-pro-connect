@@ -96,25 +96,91 @@ const ProjectPreferences = () => {
   };
 
   const savePreferences = async () => {
-    // Update project preferences before navigating
+    // Create project preferences object
+    const projectPreferences = {
+      budget,
+      useFinancing,
+      completionDate,
+      readiness,
+      isLifeEventDependent,
+      eventDate,
+      eventName
+    };
+    
+    let newProjectId = projectId;
+    
+    // If we don't have a project ID yet, create a new project
+    if (!projectId && propertyId) {
+      try {
+        const { data, error } = await supabase
+          .from('projects')
+          .insert({
+            property_id: propertyId,
+            title: `${propertyName || 'New'} Renovation Project`,
+            project_preferences: projectPreferences,
+            renovation_areas: renovationAreas
+          })
+          .select('id')
+          .single();
+
+        if (error) throw error;
+        
+        newProjectId = data.id;
+        setProjectId(newProjectId);
+        
+        toast({
+          title: "Success",
+          description: "Project created successfully",
+        });
+      } catch (error) {
+        console.error('Error creating project:', error);
+        toast({
+          title: "Error",
+          description: "Failed to create project",
+          variant: "destructive"
+        });
+        return;
+      }
+    } 
+    // If we already have a project ID, update it
+    else if (projectId) {
+      try {
+        const { error } = await supabase
+          .from('projects')
+          .update({
+            project_preferences: projectPreferences
+          })
+          .eq('id', projectId);
+
+        if (error) throw error;
+        
+        toast({
+          title: "Success",
+          description: "Project preferences saved successfully",
+        });
+      } catch (error) {
+        console.error('Error saving project preferences:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save project preferences",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+    
+    // Update the state with the new preferences
     const updatedProjectPrefs = {
       ...projectPrefs,
       propertyId,
       propertyName,
-      projectPreferences: {
-        budget,
-        useFinancing,
-        completionDate,
-        readiness,
-        isLifeEventDependent,
-        eventDate,
-        eventName
-      }
+      projectId: newProjectId,
+      projectPreferences
     };
     
-    // Update the state with the new preferences
     setProjectPrefs(updatedProjectPrefs);
     
+    // Navigate to the next step
     navigate("/construction-preferences", {
       state: updatedProjectPrefs
     });

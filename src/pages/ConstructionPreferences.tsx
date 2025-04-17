@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Plus } from "lucide-react";
@@ -24,18 +23,16 @@ const ConstructionPreferences = () => {
   const location = useLocation();
   const isMobile = useIsMobile();
   const [propertyId, setPropertyId] = useState<string | null>(null);
-  const [projectId, setProjectId] = useState<string | null>(null); // Ensure we have projectId state
+  const [projectId, setProjectId] = useState<string | null>(null);
   const [renovationAreas, setRenovationAreas] = useState<any[]>([]);
   const [projectPrefs, setProjectPrefs] = useState<any>(null);
-  const [helpLevel, setHelpLevel] = useState<string>("medium"); // "low", "medium", "high"
+  const [helpLevel, setHelpLevel] = useState<string>("medium");
   const [hasSpecificPros, setHasSpecificPros] = useState<boolean>(false);
   
-  // Pro information fields
   const [pros, setPros] = useState([
     { businessName: "", contactName: "", email: "", phone: "", speciality: "" }
   ]);
 
-  // Get the selected property ID and previous data from the location state
   useEffect(() => {
     if (location.state) {
       if (location.state.propertyId) {
@@ -43,27 +40,23 @@ const ConstructionPreferences = () => {
       }
       
       if (location.state.projectId) {
-        setProjectId(location.state.projectId); // Make sure to set projectId
+        setProjectId(location.state.projectId);
       }
       
       if (location.state.renovationAreas) {
         setRenovationAreas(location.state.renovationAreas);
       }
       
-      // Save all project preferences from previous step
       setProjectPrefs(location.state);
       
-      // Load existing construction preferences if available
       if (location.state.projectId) {
         loadExistingPreferences(location.state.projectId);
       }
     } else {
-      // If no property was selected, go back to the property selection
       navigate("/create-project");
     }
   }, [location.state, navigate]);
   
-  // Function to load existing construction preferences
   const loadExistingPreferences = async (id: string) => {
     try {
       const { data, error } = await supabase
@@ -87,20 +80,18 @@ const ConstructionPreferences = () => {
   };
 
   const savePreferences = async () => {
-    // If we already have a project ID, update it
+    const constructionPreferences: Record<string, Json> = {
+      helpLevel,
+      hasSpecificPros,
+      pros: hasSpecificPros ? pros : []
+    };
+
     if (projectId) {
       try {
-        // Create preferences object as Record<string, Json>
-        const preferences: Record<string, Json> = {
-          helpLevel,
-          hasSpecificPros,
-          pros: hasSpecificPros ? pros : []
-        };
-        
         const { error } = await supabase
           .from('projects')
           .update({
-            construction_preferences: preferences
+            construction_preferences: constructionPreferences
           })
           .eq('id', projectId);
 
@@ -117,27 +108,35 @@ const ConstructionPreferences = () => {
           description: "Failed to save construction preferences",
           variant: "destructive"
         });
+        return;
       }
+    } else if (!projectId && !propertyId) {
+      toast({
+        title: "Error",
+        description: "Missing property ID. Please go back and select a property.",
+        variant: "destructive"
+      });
+      return;
     } else {
-      // Just log and continue if no project ID (project will be created at the end in PriorExperience)
       console.log("No project ID available, storing preferences in state only");
     }
+    
+    const updatedProjectPrefs = {
+      ...projectPrefs,
+      propertyId,
+      projectId,
+      constructionPreferences
+    };
+    
+    setProjectPrefs(updatedProjectPrefs);
+    
+    navigate("/design-preferences", {
+      state: updatedProjectPrefs
+    });
   };
 
   const goToNextStep = async () => {
     await savePreferences();
-    navigate("/design-preferences", {
-      state: {
-        ...projectPrefs,
-        propertyId,
-        projectId,
-        constructionPreferences: {
-          helpLevel,
-          hasSpecificPros,
-          pros: hasSpecificPros ? pros : []
-        }
-      }
-    });
   };
 
   const goBack = () => {
@@ -175,7 +174,6 @@ const ConstructionPreferences = () => {
       <DashboardNavbar />
       
       <div className="flex flex-col md:flex-row flex-1">
-        {/* Left Sidebar */}
         <div className={`${isMobile ? 'w-full' : 'w-80'} bg-[#EFF3F7] p-4 md:p-8`}>
           <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">Create a Project</h1>
           <p className="text-sm md:text-base text-gray-600 mb-6 md:mb-8">
@@ -207,7 +205,6 @@ const ConstructionPreferences = () => {
           </div>
         </div>
         
-        {/* Main Content */}
         <div className="flex-1 p-4 md:p-10 overflow-auto">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-4">Construction Preferences</h2>
           <p className="text-sm md:text-base text-gray-700 mb-6 md:mb-8 max-w-3xl">
@@ -215,7 +212,6 @@ const ConstructionPreferences = () => {
           </p>
           
           <div className="space-y-10 mb-10">
-            {/* How much help section */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">How much help are you looking for?</h3>
               <p className="text-sm text-gray-600 mb-6">
@@ -270,7 +266,6 @@ const ConstructionPreferences = () => {
               </div>
             </div>
             
-            {/* Pro Information section */}
             {hasSpecificPros && (
               <div className="space-y-6 bg-gray-50 p-6 rounded-lg">
                 <h3 className="text-lg font-semibold">Pro Information</h3>

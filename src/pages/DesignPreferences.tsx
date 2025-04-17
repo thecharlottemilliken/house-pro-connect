@@ -46,22 +46,54 @@ const DesignPreferences = () => {
         setRenovationAreas(location.state.renovationAreas);
       }
       setProjectPrefs(location.state);
+      
+      // Load existing design preferences if available
+      if (location.state.projectId) {
+        loadExistingPreferences(location.state.projectId);
+      }
     } else {
       navigate("/create-project");
     }
   }, [location.state, navigate]);
+  
+  // Function to load existing design preferences
+  const loadExistingPreferences = async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('design_preferences')
+        .eq('id', id)
+        .single();
+        
+      if (error) throw error;
+      
+      if (data && data.design_preferences) {
+        const prefs = data.design_preferences as any;
+        
+        if (prefs.hasDesigns !== undefined) setHasDesigns(prefs.hasDesigns);
+        if (prefs.designers && Array.isArray(prefs.designers) && prefs.designers.length > 0) {
+          setDesigners(prefs.designers);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading design preferences:', error);
+    }
+  };
 
   const savePreferences = async () => {
+    // Create design preferences object
+    const designPreferences = {
+      hasDesigns,
+      designers: !hasDesigns ? designers : []
+    };
+    
     // If we already have a project ID, update it
     if (projectId) {
       try {
         const { error } = await supabase
           .from('projects')
           .update({
-            design_preferences: {
-              hasDesigns,
-              designers: !hasDesigns ? designers : []
-            }
+            design_preferences: designPreferences
           })
           .eq('id', projectId);
 
@@ -78,30 +110,31 @@ const DesignPreferences = () => {
           description: "Failed to save design preferences",
           variant: "destructive"
         });
+        return;
       }
     } else {
-      // Just log and continue if no project ID (project will be created at the end in PriorExperience)
+      // Just log and continue if no project ID (project should have been created in Project Preferences)
       console.log("No project ID available, storing preferences in state only");
     }
-  };
-
-  const goToNextStep = async () => {
-    await savePreferences();
     
-    // Prepare updated project preferences
+    // Update the project preferences state
     const updatedProjectPrefs = {
       ...projectPrefs,
       projectId,
       propertyId,
-      designPreferences: {
-        hasDesigns,
-        designers: !hasDesigns ? designers : []
-      }
+      designPreferences
     };
     
+    setProjectPrefs(updatedProjectPrefs);
+    
+    // Navigate to next step
     navigate("/management-preferences", {
       state: updatedProjectPrefs
     });
+  };
+
+  const goToNextStep = async () => {
+    await savePreferences();
   };
 
   const goBack = () => {
