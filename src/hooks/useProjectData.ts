@@ -58,8 +58,25 @@ export const useProjectData = (projectId?: string, initialData?: any) => {
       if (error) {
         throw error;
       }
+
+      // Parse renovation_areas from JSON to ensure it's an array
+      const renovationAreas = Array.isArray(data.renovation_areas) 
+        ? data.renovation_areas 
+        : (typeof data.renovation_areas === 'string' 
+            ? JSON.parse(data.renovation_areas) 
+            : []);
       
-      setProjectData(data);
+      // Create a properly typed Project object
+      const typedProject: Project = {
+        id: data.id,
+        property_id: data.property_id,
+        title: data.title,
+        renovation_areas: renovationAreas,
+        created_at: data.created_at
+      };
+      
+      setProjectData(typedProject);
+      
       if (data && data.property_id) {
         fetchPropertyDetails(data.property_id);
       } else {
