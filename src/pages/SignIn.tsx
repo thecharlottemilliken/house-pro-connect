@@ -1,4 +1,4 @@
-
+import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -60,50 +60,56 @@ const SignIn = () => {
     return valid;
   };
 
- const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
-  if (validateForm()) {
-    setIsLoading(true);
-    try {
-      const { data, error } = await signIn(formData.email, formData.password);
+  if (!validateForm()) return;
 
-      if (error || !data?.user) {
-        toast({
-          title: "Error signing in",
-          description: error?.message || "Please check your credentials and try again",
-          variant: "destructive",
-        });
-        return;
-      }
+  setIsLoading(true);
+  try {
+    // ✅ Sign in with Supabase directly
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: formData.email,
+      password: formData.password,
+    });
 
-      const user_id = data.user.id;
-
-      // ✅ Call the Edge Function to set app_role
-      const response = await fetch("/functions/v1/set-claims", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id }),
-      });
-
-      if (!response.ok) {
-        const { error } = await response.json();
-        console.warn("❌ Failed to set claim:", error);
-      }
-
-      // ✅ Refresh the session to load the new app_role
-      await supabase.auth.refreshSession();
-
-      // ✅ Navigate to your post-login page
-      navigate("/dashboard");
-    } catch (error: any) {
+    if (error || !data?.user) {
       toast({
         title: "Error signing in",
-        description: error.message || "An unexpected error occurred",
+        description: error?.message || "Please check your credentials and try again",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
+      return;
     }
+
+    const user_id = data.user.id;
+
+    // ✅ Call Edge Function to set app_role
+    const response = await fetch("/functions/v1/set-claims", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id }),
+    });
+
+    const result = await response.json();
+    if (!response.ok) {
+      console.warn("❌ Failed to set app_role:", result.error || result);
+    } else {
+      console.log("✅ Role claim set:", result);
+    }
+
+    // ✅ Refresh session to update JWT with role
+    await supabase.auth.refreshSession();
+
+    // ✅ Redirect after successful login + role update
+    navigate("/dashboard");
+  } catch (err: any) {
+    toast({
+      title: "Unexpected error",
+      description: err.message || "Something went wrong.",
+      variant: "destructive",
+    });
+  } finally {
+    setIsLoading(false);
   }
 };
 
