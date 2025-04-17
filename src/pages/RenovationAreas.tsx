@@ -4,6 +4,8 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 import { 
   Select,
   SelectContent,
@@ -18,6 +20,15 @@ interface RenovationArea {
   location: string;
 }
 
+interface Property {
+  id: string;
+  property_name: string;
+  bedrooms: number;
+  bathrooms: number;
+  living_rooms: number;
+  dining_rooms: number;
+}
+
 const RenovationAreas = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -26,14 +37,71 @@ const RenovationAreas = () => {
   const [selectedLocation, setSelectedLocation] = useState<string>("");
   const [renovationAreas, setRenovationAreas] = useState<RenovationArea[]>([]);
   const [propertyId, setPropertyId] = useState<string | null>(null);
+  const [propertyDetails, setPropertyDetails] = useState<Property | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (location.state?.propertyId) {
       setPropertyId(location.state.propertyId);
+      fetchPropertyDetails(location.state.propertyId);
     } else {
       navigate("/create-project");
     }
   }, [location.state, navigate]);
+
+  const fetchPropertyDetails = async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      setPropertyDetails(data);
+    } catch (error) {
+      console.error('Error fetching property details:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load property details.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const generateAreaOptions = () => {
+    const options: string[] = [
+      "Kitchen",
+      "Garage",
+      "Yard/Landscape",
+      "Exterior",
+      "Attic",
+      "Basement",
+      "Other"
+    ];
+
+    if (propertyDetails) {
+      for (let i = 1; i <= (propertyDetails.bedrooms || 0); i++) {
+        options.push(`Bedroom ${i}`);
+      }
+
+      for (let i = 1; i <= (propertyDetails.bathrooms || 0); i++) {
+        options.push(`Bathroom ${i}`);
+      }
+
+      for (let i = 1; i <= (propertyDetails.living_rooms || 0); i++) {
+        options.push(i === 1 ? "Living Room" : `Living Room ${i}`);
+      }
+
+      for (let i = 1; i <= (propertyDetails.dining_rooms || 0); i++) {
+        options.push(i === 1 ? "Dining Room" : `Dining Room ${i}`);
+      }
+    }
+
+    return options.sort();
+  };
 
   const addArea = () => {
     if (selectedArea && selectedLocation) {
@@ -68,20 +136,6 @@ const RenovationAreas = () => {
     { number: 5, title: "Design Preferences", current: false },
     { number: 6, title: "Management Preferences", current: false },
     { number: 7, title: "Prior Experience", current: false },
-  ];
-
-  const areaOptions = [
-    "Kitchen",
-    "Bathroom",
-    "Living Room",
-    "Bedroom",
-    "Dining Room",
-    "Basement",
-    "Attic",
-    "Garage",
-    "Yard/Landscape",
-    "Exterior",
-    "Other"
   ];
 
   const locationOptions = [
@@ -148,7 +202,7 @@ const RenovationAreas = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
-                        {areaOptions.map((area) => (
+                        {generateAreaOptions().map((area) => (
                           <SelectItem key={area} value={area}>{area}</SelectItem>
                         ))}
                       </SelectGroup>
