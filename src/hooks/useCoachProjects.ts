@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -82,7 +81,6 @@ export const useCoachProjects = () => {
         });
       }
 
-      // Fetch user profile data - try multiple approaches
       const profilesMap = await fetchUserProfiles(userIds);
       
       const processedProjects: Project[] = projectsData.map((project) => {
@@ -132,15 +130,12 @@ export const useCoachProjects = () => {
     }
   };
 
-  // Comprehensive function to fetch user profiles using multiple strategies
   const fetchUserProfiles = async (userIds: string[]): Promise<Map<string, ProfileInfo>> => {
     const profilesMap = new Map<string, ProfileInfo>();
     
-    // Try strategy 1: Direct profiles table query with role-based access
     try {
       console.log("Strategy 1: Fetching profiles with coach role access...");
       
-      // This query should work if the coach RLS policy is correctly set up
       const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
         .select("id, name, email")
@@ -161,7 +156,6 @@ export const useCoachProjects = () => {
       console.error("❌ Exception in strategy 1:", err);
     }
     
-    // Try strategy 2: Get emails using direct RPC function
     try {
       console.log("Strategy 2: Using RPC get_user_email function...");
       
@@ -169,10 +163,9 @@ export const useCoachProjects = () => {
         if (!profilesMap.has(userId)) {
           const { data, error } = await supabase.rpc('get_user_email', { user_id: userId });
           
-          if (!error && data) {
+          if (!error && data && data.length > 0) {
             console.log(`✅ Got email for user ${userId}:`, data);
-            // Fix the type issue: Extract the email string from the result
-            const emailString = data[0]?.email || "unknown@email.com";
+            const emailString = data[0].email || "unknown@email.com";
             profilesMap.set(userId, {
               id: userId,
               name: `User ${userId.substring(0, 6)}`,
@@ -187,19 +180,16 @@ export const useCoachProjects = () => {
       console.error("❌ Exception in strategy 2:", err);
     }
 
-    // Try strategy 3: Last resort - use direct auth admin function if available in edge function
     if (profilesMap.size < userIds.length) {
       try {
         console.log("Strategy 3: Calling edge function to get user data...");
         
-        // Using a fetch call to edge function as last resort (Note: you'd need to implement this edge function)
         const session = await supabase.auth.getSession();
         if (session?.data?.session?.access_token) {
           const missingUserIds = userIds.filter(id => !profilesMap.has(id));
           
           console.log("Attempting to fetch data for missing users:", missingUserIds);
           
-          // This is a placeholder - you would need to implement this edge function
           const functionUrl = "https://gluggyghzalabvlvwqqk.supabase.co/functions/v1/get-user-data";
           const response = await fetch(functionUrl, {
             method: "POST",
