@@ -1,3 +1,4 @@
+
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
@@ -50,52 +51,77 @@ const useTeamMembers = (projectId: string | undefined) => {
     const fetchTeamMembers = async () => {
       setLoading(true);
 
-      const { data: teamData, error } = await supabase
-        .from("project_team_members")
-        .select(`
-          id,
-          role,
-          email,
-          name,
-          user_id,
-          profiles!project_team_members_user_id_fkey (
-            id,
-            name,
-            email,
-            role
-          )
-        `)
-        .eq("project_id", projectId);
+      try {
+        // First get project owner information
+        const { data: projectData, error: projectError } = await supabase
+          .from("projects")
+          .select("user_id")
+          .eq("id", projectId)
+          .single();
 
-      if (error) {
-        console.error("Failed to load team members:", error);
+        if (projectError) throw projectError;
+
+        const projectOwnerId = projectData?.user_id;
+
+        // Get team members including the project owner
+        const { data: teamData, error } = await supabase
+          .from("project_team_members")
+          .select(`
+            id,
+            role,
+            email,
+            name,
+            user_id,
+            profiles!project_team_members_user_id_fkey (
+              id,
+              name,
+              email,
+              role
+            )
+          `)
+          .eq("project_id", projectId);
+
+        if (error) {
+          console.error("Failed to load team members:", error);
+          toast({
+            title: "Error",
+            description: "Failed to load team members. Please try again.",
+            variant: "destructive"
+          });
+          setTeamMembers([]);
+        } else {
+          console.log("Team members data:", teamData);
+          
+          // Format team members, excluding the current user but always including the project owner
+          const formatted: TeamMember[] = (teamData || [])
+            .filter(member => member.user_id !== user?.id || member.user_id === projectOwnerId)
+            .map((member) => {
+              const profile = member.profiles;
+              const name = profile?.name || member.name || "Unnamed";
+              const email = profile?.email || member.email || "No email";
+              const role = member.user_id === projectOwnerId ? "owner" : member.role;
+              
+              return {
+                id: member.id,
+                role: role,
+                name: name,
+                email: email,
+                avatarUrl: `https://i.pravatar.cc/150?u=${email}`,
+              };
+            });
+            
+          setTeamMembers(formatted);
+        }
+      } catch (err) {
+        console.error("Error in fetching team data:", err);
         toast({
           title: "Error",
-          description: "Failed to load team members. Please try again.",
+          description: "Failed to load team data. Please try again.",
           variant: "destructive"
         });
-        setTeamMembers([]);
-      } else {
-        console.log("Team members data:", teamData);
-        const formatted: TeamMember[] = (teamData || [])
-          .filter(member => member.user_id !== user?.id)
-          .map((member) => {
-            const profile = member.profiles;
-            const name = profile?.name || member.name || "Unnamed";
-            const email = profile?.email || member.email || "No email";
-            
-            return {
-              id: member.id,
-              role: member.role,
-              name: name,
-              email: email,
-              avatarUrl: `https://i.pravatar.cc/150?u=${email}`,
-            };
-          });
-        setTeamMembers(formatted);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     };
 
     fetchTeamMembers();
@@ -258,48 +284,54 @@ const ProjectTeam = () => {
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {teamMembers.map((member, index) => (
-                <Card key={index} className="border border-gray-200 rounded-lg overflow-hidden">
-                  <CardContent className="p-0">
-                    <div className="p-4 border-b border-gray-200">
-                      <div className="flex items-center mb-2">
-                        <Avatar className="h-12 w-12 mr-3">
-                          <AvatarImage src={member.avatarUrl} alt={member.name} />
-                          <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <h3 className="font-medium text-gray-700">{member.role}</h3>
-                          <h2 className="font-medium text-lg text-gray-900">{member.name}</h2>
+            {teamMembers.length === 0 && !isTeamLoading ? (
+              <div className="text-center p-8 bg-gray-50 rounded-lg border border-gray-200">
+                <p className="text-gray-600 mb-4">No team members found for this project.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {teamMembers.map((member, index) => (
+                  <Card key={index} className="border border-gray-200 rounded-lg overflow-hidden">
+                    <CardContent className="p-0">
+                      <div className="p-4 border-b border-gray-200">
+                        <div className="flex items-center mb-2">
+                          <Avatar className="h-12 w-12 mr-3">
+                            <AvatarImage src={member.avatarUrl} alt={member.name} />
+                            <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <h3 className="font-medium text-gray-700">{member.role}</h3>
+                            <h2 className="font-medium text-lg text-gray-900">{member.name}</h2>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="p-4">
-                      <div className="text-sm text-gray-700">{member.email}</div>
-                    </div>
+                      <div className="p-4">
+                        <div className="text-sm text-gray-700">{member.email}</div>
+                      </div>
 
-                    <div className="flex border-t border-gray-200">
-                      <button className="flex-1 py-3 flex justify-center items-center text-gray-600 hover:bg-gray-50">
-                        <MessageSquare className="h-5 w-5" />
-                      </button>
-                      <div className="border-r border-gray-200"></div>
-                      <button className="flex-1 py-3 flex justify-center items-center text-gray-600 hover:bg-gray-50">
-                        <Phone className="h-5 w-5" />
-                      </button>
-                      <div className="border-r border-gray-200"></div>
-                      <button className="flex-1 py-3 flex justify-center items-center text-gray-600 hover:bg-gray-50">
-                        <CreditCard className="h-5 w-5" />
-                      </button>
-                      <div className="border-r border-gray-200"></div>
-                      <button className="flex-1 py-3 flex justify-center items-center text-gray-600 hover:bg-gray-50">
-                        <ExternalLink className="h-5 w-5" />
-                      </button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                      <div className="flex border-t border-gray-200">
+                        <button className="flex-1 py-3 flex justify-center items-center text-gray-600 hover:bg-gray-50">
+                          <MessageSquare className="h-5 w-5" />
+                        </button>
+                        <div className="border-r border-gray-200"></div>
+                        <button className="flex-1 py-3 flex justify-center items-center text-gray-600 hover:bg-gray-50">
+                          <Phone className="h-5 w-5" />
+                        </button>
+                        <div className="border-r border-gray-200"></div>
+                        <button className="flex-1 py-3 flex justify-center items-center text-gray-600 hover:bg-gray-50">
+                          <CreditCard className="h-5 w-5" />
+                        </button>
+                        <div className="border-r border-gray-200"></div>
+                        <button className="flex-1 py-3 flex justify-center items-center text-gray-600 hover:bg-gray-50">
+                          <ExternalLink className="h-5 w-5" />
+                        </button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </SidebarProvider>
