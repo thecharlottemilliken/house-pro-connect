@@ -19,6 +19,7 @@ interface TeamMember {
   name: string;
   email: string;
   phone?: string;
+  added_at: string;
 }
 
 const ProjectTeam = () => {
@@ -41,41 +42,74 @@ const ProjectTeam = () => {
       try {
         console.log("Fetching team members for project:", projectId);
         
-        // Fetch the project to get the owner's ID
+        // Fetch team members from the project_team_members table
+        const { data: teamData, error: teamError } = await supabase
+          .from('project_team_members')
+          .select(`
+            id,
+            role,
+            added_at,
+            profiles:user_id (
+              id,
+              name,
+              email
+            )
+          `)
+          .eq('project_id', projectId);
+
+        if (teamError) {
+          console.error("Error fetching team members:", teamError);
+          setLoading(false);
+          return;
+        }
+
+        // Also fetch the project owner's details
         const { data: projectDetails, error: projectError } = await supabase
           .from('projects')
-          .select('user_id')
+          .select(`
+            user_id,
+            profiles:user_id (
+              id,
+              name,
+              email,
+              role
+            )
+          `)
           .eq('id', projectId)
           .single();
-          
+
         if (projectError) {
-          console.error("Error fetching project data:", projectError);
+          console.error("Error fetching project owner:", projectError);
           setLoading(false);
           return;
         }
 
-        // Fetch both the project owner and coaches
-        const { data: teamProfiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select('id, name, email, role')
-          .or(`id.eq.${projectDetails.user_id},role.eq.coach`);
+        // Combine project owner and team members
+        const owner = projectDetails.profiles;
+        const processedTeamMembers: TeamMember[] = [
+          {
+            id: owner.id,
+            name: owner.name || 'Unknown',
+            email: owner.email || '',
+            role: 'owner',
+            added_at: projectDetails.created_at,
+            phone: "(555) 123-4567" // Placeholder
+          }
+        ];
 
-        if (profilesError) {
-          console.error("Error fetching team profiles:", profilesError);
-          setLoading(false);
-          return;
-        }
-
-        // Process team members
-        const processedTeamMembers: TeamMember[] = teamProfiles
-          .filter(profile => profile.id !== user.id) // Exclude current user
-          .map(profile => ({
-            id: profile.id,
-            name: profile.name || 'Unknown',
-            email: profile.email || '',
-            role: profile.role,
-            phone: "(555) 123-4567" // Placeholder phone number
-          }));
+        // Add team members
+        teamData?.forEach(member => {
+          if (member.profiles && member.profiles.id !== user.id) {
+            processedTeamMembers.push({
+              id: member.profiles.id,
+              name: member.profiles.name || 'Unknown',
+              email: member.profiles.email || '',
+              role: member.role,
+              added_at: member.added_at,
+              phone: "(555) 123-4567" // Placeholder
+            });
+          }
+        });
 
         console.log("Team members found:", processedTeamMembers);
         setTeamMembers(processedTeamMembers);
@@ -87,8 +121,8 @@ const ProjectTeam = () => {
     };
 
     fetchTeamMembers();
-  }, [projectId, user, userRole]);
-  
+  }, [projectId, user]);
+
   if (isLoading || loading) {
     return (
       <div className="min-h-screen flex flex-col bg-white">
@@ -117,10 +151,12 @@ const ProjectTeam = () => {
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-0">
                 Project Team
               </h1>
-              <Button className="bg-[#0f566c] hover:bg-[#0d4a5d] w-full sm:w-auto">
-                <UserPlus className="mr-2 h-4 w-4" />
-                INVITE A TEAM MEMBER
-              </Button>
+              {userRole === 'owner' && (
+                <Button className="bg-[#0f566c] hover:bg-[#0d4a5d] w-full sm:w-auto">
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  INVITE A TEAM MEMBER
+                </Button>
+              )}
             </div>
             
             {teamMembers.length === 0 ? (
