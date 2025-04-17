@@ -26,10 +26,6 @@ interface ProfileInfo {
   email: string;
 }
 
-interface UserEmailResult {
-  email: string;
-}
-
 export const useCoachProjects = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -39,9 +35,6 @@ export const useCoachProjects = () => {
   }, []);
 
   const fetchProjects = async () => {
-    const session = await supabase.auth.getSession();
-    console.log("JWT access token:", session.data.session?.access_token);
-    console.log("Current user ID:", session.data.session?.user?.id);
     setIsLoading(true);
     try {
       console.log("Fetching projects...");
@@ -68,7 +61,7 @@ export const useCoachProjects = () => {
       const propertyIds = projectsData.map((project) => project.property_id);
       const userIds = projectsData.map((project) => project.user_id);
 
-      const { data: propertiesData, error: propertiesError } = await supabase
+      const { data: propertiesData } = await supabase
         .from("properties")
         .select(`
           id, 
@@ -86,7 +79,7 @@ export const useCoachProjects = () => {
         });
       }
 
-      const { data: profilesData, error: profilesError } = await supabase
+      const { data: profilesData } = await supabase
         .from("profiles")
         .select("id, name, email")
         .in("id", userIds);
@@ -99,7 +92,7 @@ export const useCoachProjects = () => {
         });
       } else {
         for (const userId of userIds) {
-          const { data: singleProfile, error: singleProfileError } = await supabase
+          const { data: singleProfile } = await supabase
             .from("profiles")
             .select("id, name, email")
             .eq("id", userId)
@@ -109,13 +102,16 @@ export const useCoachProjects = () => {
             profilesMap.set(userId, singleProfile);
           } else {
             try {
-              const { data: authData, error: authError } = await supabase
-                .rpc<UserEmailResult[], { user_id: string }>("get_user_email", { user_id: userId });
+              const { data: authUser, error: authError } = await supabase
+                .from("users")
+                .select("email")
+                .eq("id", userId)
+                .maybeSingle();
 
               profilesMap.set(userId, {
                 id: userId,
                 name: `User ${userId.substring(0, 6)}`,
-                email: authData?.[0]?.email ?? "email@unknown.com",
+                email: authUser?.email ?? "email@unknown.com",
               });
             } catch (authErr) {
               profilesMap.set(userId, {
