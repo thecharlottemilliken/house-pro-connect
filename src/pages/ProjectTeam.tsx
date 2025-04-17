@@ -63,21 +63,11 @@ const useTeamMembers = (projectId: string | undefined) => {
 
         const projectOwnerId = projectData?.user_id;
 
-        // Get team members including the project owner
+        // Get team members using a direct query without the recursive join
+        // that was causing the "infinite recursion" error
         const { data: teamData, error } = await supabase
           .from("project_team_members")
-          .select(`
-            id,
-            role,
-            email,
-            name,
-            user_id,
-            profiles(
-              id,
-              name,
-              email
-            )
-          `)
+          .select("id, role, email, name, user_id")
           .eq("project_id", projectId);
 
         if (error) {
@@ -89,9 +79,30 @@ const useTeamMembers = (projectId: string | undefined) => {
           });
           setTeamMembers([]);
         } else {
+          // Once we have the team members, get their profile information separately
+          const userIds = teamData.map(member => member.user_id).filter(Boolean);
+          
+          // Get profiles for all user IDs
+          const { data: profilesData, error: profilesError } = await supabase
+            .from("profiles")
+            .select("id, name, email")
+            .in("id", userIds);
+            
+          if (profilesError) {
+            console.error("Failed to load profiles:", profilesError);
+          }
+          
+          // Create a map of user_id to profile data for quick lookup
+          const profileMap = new Map();
+          if (profilesData) {
+            profilesData.forEach(profile => {
+              profileMap.set(profile.id, profile);
+            });
+          }
+          
           // Format all team members with their roles and profile information
           const formatted: TeamMember[] = (teamData || []).map((member) => {
-            const profile = member.profiles;
+            const profile = profileMap.get(member.user_id);
             const name = profile?.name || member.name || "Unnamed";
             const email = profile?.email || member.email || "No email";
             const role = member.user_id === projectOwnerId ? "owner" : member.role;
