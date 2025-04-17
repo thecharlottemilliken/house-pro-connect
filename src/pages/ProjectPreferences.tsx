@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Check, Info } from "lucide-react";
@@ -37,6 +38,10 @@ const ProjectPreferences = () => {
   const [isLifeEventDependent, setIsLifeEventDependent] = useState<boolean>(false);
   const [eventDate, setEventDate] = useState<string>("");
   const [eventName, setEventName] = useState<string>("");
+  const [propertyName, setPropertyName] = useState<string>("");
+  
+  // Create an object to store all project preferences data that will be passed to next steps
+  const [projectPrefs, setProjectPrefs] = useState<any>({});
 
   useEffect(() => {
     if (location.state) {
@@ -52,6 +57,13 @@ const ProjectPreferences = () => {
       if (location.state.renovationAreas) {
         setRenovationAreas(location.state.renovationAreas);
       }
+
+      if (location.state.propertyName) {
+        setPropertyName(location.state.propertyName);
+      }
+      
+      // Set project preferences from location state
+      setProjectPrefs(location.state);
     } else {
       navigate("/create-project");
     }
@@ -84,20 +96,27 @@ const ProjectPreferences = () => {
   };
 
   const savePreferences = async () => {
-    navigate("/construction-preferences", {
-      state: {
-        ...projectPrefs,
-        propertyId,
-        projectPreferences: {
-          budget,
-          useFinancing,
-          completionDate,
-          readiness,
-          isLifeEventDependent,
-          eventDate,
-          eventName
-        }
+    // Update project preferences before navigating
+    const updatedProjectPrefs = {
+      ...projectPrefs,
+      propertyId,
+      propertyName,
+      projectPreferences: {
+        budget,
+        useFinancing,
+        completionDate,
+        readiness,
+        isLifeEventDependent,
+        eventDate,
+        eventName
       }
+    };
+    
+    // Update the state with the new preferences
+    setProjectPrefs(updatedProjectPrefs);
+    
+    navigate("/construction-preferences", {
+      state: updatedProjectPrefs
     });
   };
 
