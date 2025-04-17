@@ -122,8 +122,8 @@ export const useCoachProjects = () => {
         // Get owner data from the map or use default
         const owner = profilesMap.get(project.user_id) || {
           id: project.user_id,
-          name: "Unknown User",
-          email: "email@unknown.com"
+name: profile.name || "Unknown User",
+      email: profile.email || "email@unknown.com"
         };
         
         return {
