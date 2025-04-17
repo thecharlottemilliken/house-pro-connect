@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Json } from "@/integrations/supabase/types";
 
 interface RenovationArea {
   area: string;
@@ -117,12 +118,15 @@ const RenovationAreas = () => {
   const saveRenovationAreas = async (): Promise<string> => {
     try {
       let id = projectId;
+
+      // Convert to a format compatible with Supabase's Json type
+      const renovationAreasJson = JSON.parse(JSON.stringify(renovationAreas)) as Json;
       
       if (id) {
         // Update existing project
         const { error } = await supabase
           .from('projects')
-          .update({ renovation_areas: renovationAreas })
+          .update({ renovation_areas: renovationAreasJson })
           .eq('id', id);
           
         if (error) throw error;
@@ -133,7 +137,7 @@ const RenovationAreas = () => {
           .insert({
             property_id: propertyId,
             title: propertyDetails?.property_name + " Renovation",
-            renovation_areas: renovationAreas,
+            renovation_areas: renovationAreasJson,
             user_id: (await supabase.auth.getUser()).data.user?.id
           })
           .select('id')

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Check, Info } from "lucide-react";
@@ -10,6 +11,16 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+
+interface ProjectPreferences {
+  budget: number;
+  useFinancing: boolean;
+  completionDate: string;
+  readiness: string;
+  isLifeEventDependent: boolean;
+  eventDate: string;
+  eventName: string;
+}
 
 const ProjectPreferences = () => {
   const navigate = useNavigate();
@@ -56,9 +67,10 @@ const ProjectPreferences = () => {
       if (error) throw error;
       
       if (data && data.project_preferences) {
-        const prefs = data.project_preferences;
+        // Type cast the preferences to our interface to ensure type safety
+        const prefs = data.project_preferences as ProjectPreferences;
         
-        if (prefs.budget) setBudget(prefs.budget);
+        if (prefs.budget !== undefined) setBudget(prefs.budget);
         if (prefs.useFinancing !== undefined) setUseFinancing(prefs.useFinancing);
         if (prefs.completionDate) setCompletionDate(prefs.completionDate);
         if (prefs.readiness) setReadiness(prefs.readiness);
@@ -78,18 +90,20 @@ const ProjectPreferences = () => {
     }
     
     try {
+      const preferences: ProjectPreferences = {
+        budget,
+        useFinancing,
+        completionDate,
+        readiness,
+        isLifeEventDependent,
+        eventDate,
+        eventName
+      };
+      
       const { error } = await supabase
         .from('projects')
         .update({
-          project_preferences: {
-            budget,
-            useFinancing,
-            completionDate,
-            readiness,
-            isLifeEventDependent,
-            eventDate,
-            eventName
-          }
+          project_preferences: preferences
         })
         .eq('id', projectId);
 
