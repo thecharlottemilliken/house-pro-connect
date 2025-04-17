@@ -224,6 +224,12 @@ export const useCoachProjects = () => {
       setIsLoading(false);
     }
   };
+  
+console.table(processedProjects.map(p => ({
+  title: p.title,
+  ownerName: p.owner.name,
+  ownerEmail: p.owner.email
+});
 
   return { projects, isLoading, fetchProjects };
 };
