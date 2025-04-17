@@ -83,21 +83,6 @@ export const useCoachProjects = () => {
         // Continue execution, we'll use default values for missing properties
       }
       
-      // Fetch all profiles in one call - debug verbose
-      console.log("Fetching profiles with user IDs:", userIds);
-      
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, name, email')
-        .in('id', userIds);
-      
-      if (profilesError) {
-        console.error("Error fetching profiles:", profilesError);
-        // Continue execution, we'll use default values for missing profiles
-      }
-      
-      console.log("Profiles data:", profilesData);
-      
       // Create maps for faster lookups
       const propertiesMap = new Map();
       if (propertiesData) {
@@ -106,35 +91,83 @@ export const useCoachProjects = () => {
         });
       }
       
+      // First approach: Try to fetch all profiles at once
+      console.log("Fetching all profiles with user IDs:", userIds);
+      
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .in('id', userIds);
+      
+      console.log("Profiles data from batch fetch:", profilesData);
+      
+      // Initialize the profiles map
       const profilesMap = new Map();
+      
+      // If batch fetch worked, use that data
       if (profilesData && profilesData.length > 0) {
+        console.log("Using batch fetched profiles");
         profilesData.forEach(profile => {
           console.log(`Adding profile to map: ${profile.id} -> ${profile.name}`);
           profilesMap.set(profile.id, profile);
         });
       } else {
-        console.log("No profiles found - will use default values");
-      }
-      
-      // Fallback - if profiles are still empty, try fetching each individually
-      if ((!profilesData || profilesData.length === 0) && userIds.length > 0) {
-        console.log("Attempting individual profile fetches as fallback");
+        console.log("Batch fetch returned no profiles, trying individual fetches");
         
+        // If batch fetch failed, try individual fetches
         for (const userId of userIds) {
+          console.log(`Fetching individual profile for user ID: ${userId}`);
+          
           const { data: singleProfile, error: singleProfileError } = await supabase
             .from('profiles')
             .select('id, name, email')
             .eq('id', userId)
             .single();
           
-          if (!singleProfileError && singleProfile) {
+          if (singleProfileError) {
+            console.error(`Error fetching profile for user ${userId}:`, singleProfileError);
+          }
+          
+          if (singleProfile) {
             console.log(`Found profile for user ${userId}:`, singleProfile);
             profilesMap.set(userId, singleProfile);
           } else {
-            console.log(`No profile found for user ${userId}`);
+            console.log(`No profile found for user ${userId}, checking auth.users`);
+            
+            // Try to get at least email from auth.users as fallback
+            // Note: This may not work due to RLS policies, just a best effort
+            try {
+              const { data: authData, error: authError } = await supabase
+                .rpc('get_user_email', { user_id: userId });
+                
+              if (authData && !authError) {
+                console.log(`Found auth data for user ${userId}:`, authData);
+                profilesMap.set(userId, {
+                  id: userId,
+                  name: "User " + userId.substring(0, 6),
+                  email: authData.email || "email@unknown.com"
+                });
+              } else {
+                console.log(`No auth data found for user ${userId}, using default`);
+                profilesMap.set(userId, {
+                  id: userId,
+                  name: "Unknown User",
+                  email: "email@unknown.com"
+                });
+              }
+            } catch (authErr) {
+              console.error("Error fetching auth data:", authErr);
+              profilesMap.set(userId, {
+                id: userId,
+                name: "Unknown User",
+                email: "email@unknown.com"
+              });
+            }
           }
         }
       }
+      
+      console.log("Final profiles map:", Array.from(profilesMap.entries()));
       
       // Process projects with the property and owner data
       const processedProjects: Project[] = projectsData.map(project => {
@@ -147,7 +180,10 @@ export const useCoachProjects = () => {
         };
         
         // Get owner data from the map or use default
-        const owner = profilesMap.get(project.user_id) || {
+        const owner = profilesMap.get(project.user_id);
+        console.log(`Looking up owner for user_id ${project.user_id}:`, owner);
+        
+        const ownerData = owner || {
           id: project.user_id,
           name: "Unknown User",
           email: "email@unknown.com"
@@ -159,7 +195,7 @@ export const useCoachProjects = () => {
           created_at: project.created_at,
           state: project.state,
           property,
-          owner
+          owner: ownerData
         };
       });
       
