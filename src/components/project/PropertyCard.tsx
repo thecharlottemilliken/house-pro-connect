@@ -28,8 +28,8 @@ const PropertyCard = ({ propertyDetails, renovationAreas }: PropertyCardProps) =
       {/* Left side - Property Image */}
       <div className="w-full md:w-1/2">
         <img 
-          src={propertyDetails.image_url} 
-          alt="Property"
+          src={propertyDetails.image_url || 'https://images.unsplash.com/photo-1493809842364-78817add7ffb'} 
+          alt={propertyDetails.property_name}
           className="w-full h-64 md:h-full object-cover" 
         />
       </div>
@@ -37,7 +37,7 @@ const PropertyCard = ({ propertyDetails, renovationAreas }: PropertyCardProps) =
       {/* Right side - Property Details */}
       <div className="w-full md:w-1/2 p-4 sm:p-6 md:p-8 flex flex-col justify-between">
         <div>
-          <h2 className="text-3xl md:text-4xl font-bold mb-2">Family Home</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-2">{propertyDetails.property_name}</h2>
           <p className="text-base sm:text-lg text-gray-700 mb-6 sm:mb-8 break-words">
             {propertyDetails.address_line1}, {propertyDetails.city}, {propertyDetails.state} {propertyDetails.zip_code}
           </p>
@@ -48,12 +48,11 @@ const PropertyCard = ({ propertyDetails, renovationAreas }: PropertyCardProps) =
               renovationAreas.map((area, index) => (
                 <div key={index} className="flex items-center text-base sm:text-lg">
                   <span className="text-orange-500 mr-2 sm:mr-3 text-xl sm:text-2xl">★</span> {area.area}
+                  {area.location && <span className="text-gray-500 ml-2">({area.location})</span>}
                 </div>
               ))
             ) : (
-              <div className="flex items-center text-base sm:text-lg">
-                <span className="text-orange-500 mr-2 sm:mr-3 text-xl sm:text-2xl">★</span> Kitchen
-              </div>
+              <div className="text-gray-500">No renovation areas specified</div>
             )}
           </div>
         </div>

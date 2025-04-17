@@ -31,9 +31,9 @@ const ProjectDashboard = () => {
     );
   }
 
-  const projectId = projectData.id || `#${Math.floor(100000 + Math.random() * 900000)}`;
-  const projectTitle = projectData?.title || "Kitchen Remodel";
-  const renovationAreas = projectData?.renovationAreas || projectData?.renovation_areas || [];
+  const projectId = projectData?.id || params.projectId || "";
+  const projectTitle = projectData?.title || "Project Overview";
+  const renovationAreas = projectData?.renovation_areas || [];
 
   return (
     <div className="flex flex-col bg-white min-h-screen">
@@ -56,14 +56,14 @@ const ProjectDashboard = () => {
             
             <div className="mb-4 sm:mb-8">
               <div className="text-gray-600 text-base sm:text-lg">
-                Family Home #{projectId.slice(-6)}
+                {propertyDetails.property_name} #{projectId.slice(-6)}
               </div>
             </div>
             
             <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2 2xl:grid-cols-3">
               <PropertyCard 
                 propertyDetails={propertyDetails} 
-                renovationAreas={renovationAreas} 
+                renovationAreas={renovationAreas}
               />
               
               <TasksCard />
