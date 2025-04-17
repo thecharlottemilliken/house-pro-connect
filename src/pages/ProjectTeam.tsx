@@ -47,7 +47,43 @@ const ProjectTeam = () => {
           .eq('id', projectId)
           .single();
           
-        if (projectError) throw projectError;
+        if (projectError) {
+          console.error("Error fetching project data:", projectError);
+          // Instead of throwing, we'll try to continue with an alternate approach
+          if (user.role === 'coach') {
+            // If user is a coach, try to find residents with projects
+            const { data: projects } = await supabase
+              .from('projects')
+              .select('user_id')
+              .eq('id', projectId);
+              
+            if (projects && projects.length > 0) {
+              // Get the first project's owner
+              const projectOwnerId = projects[0].user_id;
+              
+              // Fetch the owner's profile
+              const { data: ownerProfile } = await supabase
+                .from('profiles')
+                .select('id, name, email, role')
+                .eq('id', projectOwnerId);
+                
+              if (ownerProfile && ownerProfile.length > 0) {
+                const teamMember = {
+                  id: ownerProfile[0].id,
+                  name: ownerProfile[0].name || 'Project Owner',
+                  email: ownerProfile[0].email || '',
+                  role: ownerProfile[0].role || 'resident',
+                  phone: "(555) 123-4567" // Placeholder
+                };
+                
+                setTeamMembers([teamMember]);
+                console.log("Found project owner as team member:", teamMember);
+              }
+            }
+          }
+          setLoading(false);
+          return;
+        }
         
         console.log("Project data:", projectData);
         
@@ -69,11 +105,10 @@ const ProjectTeam = () => {
             .select('id, name, email, role')
             .eq('role', 'coach');
             
-          if (coachesError) throw coachesError;
-          
-          if (coaches && coaches.length > 0) {
+          if (coachesError) {
+            console.error("Error fetching coaches:", coachesError);
+          } else if (coaches && coaches.length > 0) {
             teamMembersList = [
-              ...teamMembersList,
               ...coaches.map(coach => ({
                 id: coach.id,
                 name: coach.name || 'Unknown Coach',
@@ -86,22 +121,96 @@ const ProjectTeam = () => {
         } else {
           // User is likely a coach or other role, show them the project owner
           console.log("Current user is not the project owner, fetching project owner");
+          
+          // Using maybeSingle() instead of single() to avoid errors when no rows are found
           const { data: owner, error: ownerError } = await supabase
             .from('profiles')
             .select('id, name, email, role')
             .eq('id', projectData.user_id)
-            .single();
+            .maybeSingle();
             
-          if (ownerError) throw ownerError;
-          
-          if (owner) {
+          if (ownerError) {
+            console.error("Error fetching owner profile:", ownerError);
+          } else if (owner) {
             teamMembersList.push({
               id: owner.id,
               name: owner.name || 'Project Owner',
               email: owner.email || '',
-              role: owner.role,
+              role: owner.role || 'resident',
               phone: "(555) 123-4567" // Placeholder phone number
             });
+          } else {
+            // If we couldn't find the owner profile, try a different approach
+            // This is a fallback in case the user_id in projects doesn't match any profile
+            console.log("Owner profile not found, attempting to find project owner another way");
+            
+            const { data: ownerProfiles } = await supabase
+              .from('profiles')
+              .select('id, name, email, role')
+              .eq('id', projectData.user_id);
+              
+            if (ownerProfiles && ownerProfiles.length > 0) {
+              teamMembersList.push({
+                id: ownerProfiles[0].id,
+                name: ownerProfiles[0].name || 'Project Owner',
+                email: ownerProfiles[0].email || '',
+                role: ownerProfiles[0].role || 'resident',
+                phone: "(555) 123-4567" // Placeholder phone number
+              });
+            }
+          }
+        }
+        
+        // If we still don't have any team members, try to get anyone associated with this project
+        if (teamMembersList.length === 0) {
+          console.log("No team members found with standard approach, looking for anyone related to this project");
+          
+          // First check if the logged in user is a coach
+          if (user.profile?.role === 'coach') {
+            // Find the project owner
+            const { data: projectOwners } = await supabase
+              .from('projects')
+              .select('user_id')
+              .eq('id', projectId);
+              
+            if (projectOwners && projectOwners.length > 0) {
+              const ownerId = projectOwners[0].user_id;
+              
+              // Get the owner's profile
+              const { data: ownerInfo } = await supabase
+                .from('profiles')
+                .select('id, name, email, role')
+                .eq('id', ownerId);
+                
+              if (ownerInfo && ownerInfo.length > 0) {
+                teamMembersList.push({
+                  id: ownerInfo[0].id,
+                  name: ownerInfo[0].name || 'Project Owner',
+                  email: ownerInfo[0].email || '',
+                  role: ownerInfo[0].role || 'resident',
+                  phone: "(555) 123-4567" // Placeholder
+                });
+              }
+            }
+          } else {
+            // If user is a resident, get all coaches
+            const { data: coaches } = await supabase
+              .from('profiles')
+              .select('id, name, email, role')
+              .eq('role', 'coach');
+              
+            if (coaches) {
+              teamMembersList = [
+                ...teamMembersList,
+                ...coaches.map(coach => ({
+                  id: coach.id,
+                  name: coach.name || 'Unknown Coach',
+                  email: coach.email || '',
+                  role: coach.role,
+                  phone: "(555) 123-4567" // Placeholder
+                }))
+              ];
+            }
           }
         }
         
