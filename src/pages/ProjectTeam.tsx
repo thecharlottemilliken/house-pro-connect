@@ -1,3 +1,4 @@
+
 import { useParams, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
@@ -18,6 +19,20 @@ interface TeamMember {
   name: string;
   email: string;
   avatarUrl?: string;
+  phone?: string;
+}
+
+interface ProfileData {
+  name: string;
+  email: string;
+}
+
+interface TeamMemberData {
+  id: string;
+  role: string;
+  email: string | null;
+  name: string | null;
+  user: ProfileData | null;
 }
 
 // Fetches real team members from Supabase
@@ -46,7 +61,7 @@ const useTeamMembers = (projectId: string | undefined) => {
         console.error("Failed to load team members:", error);
         setTeamMembers([]);
       } else {
-        const formatted = data.map((member) => ({
+        const formatted = data.map((member: TeamMemberData) => ({
           id: member.id,
           role: member.role,
           name: member.user?.name || member.name || "Unnamed",

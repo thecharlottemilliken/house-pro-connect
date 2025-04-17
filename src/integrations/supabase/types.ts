@@ -124,6 +124,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_project_team_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "project_team_members_added_by_fkey"
             columns: ["added_by"]
             isOneToOne: false
