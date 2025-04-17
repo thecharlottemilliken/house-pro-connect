@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -79,35 +80,23 @@ export const useCoachProjects = () => {
         });
       }
 
-      const { data: profilesData } = await supabase
+      // Get all profiles at once using the modified RLS policy for coaches
+      const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
         .select("id, name, email")
         .in("id", userIds);
 
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
+      }
+
       const profilesMap = new Map<string, ProfileInfo>();
 
       if (profilesData && profilesData.length > 0) {
+        console.log("Found profile data for users:", profilesData.length);
         profilesData.forEach((profile) => {
           profilesMap.set(profile.id, profile);
         });
-      } else {
-        for (const userId of userIds) {
-          const { data: singleProfile } = await supabase
-            .from("profiles")
-            .select("id, name, email")
-            .eq("id", userId)
-            .maybeSingle();
-
-          if (singleProfile) {
-            profilesMap.set(userId, singleProfile);
-          } else {
-            profilesMap.set(userId, {
-              id: userId,
-              name: `User ${userId.substring(0, 6)}`,
-              email: "email@unknown.com",
-            });
-          }
-        }
       }
 
       const processedProjects: Project[] = projectsData.map((project) => {
@@ -135,6 +124,7 @@ export const useCoachProjects = () => {
         };
       });
 
+      console.log("Processed projects:", processedProjects.length);
       console.table(
         processedProjects.map((p) => ({
           title: p.title,
