@@ -1,3 +1,4 @@
+
 import { useParams, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
@@ -51,7 +52,7 @@ const useTeamMembers = (projectId: string | undefined) => {
           role,
           email,
           name,
-          user:profiles(name, email)
+          user:profiles!project_team_members_user_id_fkey(name, email)
         `)
         .eq("project_id", projectId);
 
