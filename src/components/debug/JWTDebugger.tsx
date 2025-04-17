@@ -11,7 +11,7 @@ const JWTDebugger = () => {
         console.log("✅ JWT app_metadata:", data?.session?.user?.app_metadata);
         console.log("👤 User ID:", data?.session?.user?.id);
         console.log("📧 Email:", data?.session?.user?.email);
-        console.log("📧 App Role:",data?.session?.user?.app_metadata?.app_role));
+        console.log("📧 App Role:", data?.session?.user?.app_metadata?.app_role);
       }
     };
 
