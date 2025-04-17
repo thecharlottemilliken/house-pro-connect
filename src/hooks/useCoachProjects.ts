@@ -21,6 +21,11 @@ export interface Project {
   };
 }
 
+// Define types for the RPC function return
+interface UserEmailResult {
+  email: string;
+}
+
 export const useCoachProjects = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -135,17 +140,18 @@ export const useCoachProjects = () => {
             console.log(`No profile found for user ${userId}, checking auth.users`);
             
             // Try to get at least email from auth.users as fallback
-            // Note: This may not work due to RLS policies, just a best effort
             try {
+              // Fix: Properly type the RPC call response
               const { data: authData, error: authError } = await supabase
-                .rpc('get_user_email', { user_id: userId });
+                .rpc<UserEmailResult>('get_user_email', { user_id: userId });
                 
               if (authData && !authError) {
                 console.log(`Found auth data for user ${userId}:`, authData);
+                // Fix: Use authData[0] to access the first row from RPC result
                 profilesMap.set(userId, {
                   id: userId,
                   name: "User " + userId.substring(0, 6),
-                  email: authData.email || "email@unknown.com"
+                  email: authData[0]?.email || "email@unknown.com"
                 });
               } else {
                 console.log(`No auth data found for user ${userId}, using default`);
