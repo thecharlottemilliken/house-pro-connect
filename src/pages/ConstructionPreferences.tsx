@@ -14,6 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 const ConstructionPreferences = () => {
   const navigate = useNavigate();
@@ -45,8 +47,32 @@ const ConstructionPreferences = () => {
     }
   }, [location.state, navigate]);
 
-  const goToNextStep = () => {
-    // Here we would save the construction preferences and go to the next step
+  const savePreferences = async () => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({
+          construction_preferences: {
+            helpLevel,
+            hasSpecificPros,
+            pros: hasSpecificPros ? pros : []
+          }
+        })
+        .eq('id', projectPrefs.id);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error saving construction preferences:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save construction preferences",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const goToNextStep = async () => {
+    await savePreferences();
     navigate("/design-preferences", {
       state: {
         ...projectPrefs,

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -8,6 +7,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const PriorExperience = () => {
   const navigate = useNavigate();
@@ -20,33 +20,52 @@ const PriorExperience = () => {
   const [positiveAspects, setPositiveAspects] = useState<string>("");
   const [negativeAspects, setNegativeAspects] = useState<string>("");
 
-  // Get the data from the location state
   useEffect(() => {
     if (location.state?.propertyId) {
       setPropertyId(location.state.propertyId);
       setProjectPrefs(location.state);
     } else {
-      // If no property was selected, go back to the property selection
       navigate("/create-project");
     }
   }, [location.state, navigate]);
 
-  const finishProcess = () => {
-    // Save the prior experience and complete the project creation process
+  const savePreferences = async () => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({
+          prior_experience: {
+            hadPriorExperience: priorExperience,
+            positiveAspects,
+            negativeAspects
+          }
+        })
+        .eq('id', propertyId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error saving prior experience:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save prior experience",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const finishProcess = async () => {
+    await savePreferences();
     const priorExperienceData = {
       hadPriorExperience: priorExperience,
-      positiveAspects: positiveAspects,
-      negativeAspects: negativeAspects
+      positiveAspects,
+      negativeAspects
     };
-    
-    // In a production app, you would save this data to your backend here
     
     toast({
       title: "Project Created",
       description: "Your project has been successfully created!",
     });
     
-    // Navigate to the project dashboard with all the project data
     navigate("/project-dashboard", {
       state: {
         ...projectPrefs,
@@ -86,7 +105,6 @@ const PriorExperience = () => {
       <DashboardNavbar />
       
       <div className="flex flex-col md:flex-row flex-1">
-        {/* Left Sidebar */}
         <div className={`${isMobile ? 'w-full' : 'w-80'} bg-[#EFF3F7] p-4 md:p-8`}>
           <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">Create a Project</h1>
           <p className="text-sm md:text-base text-gray-600 mb-6 md:mb-8">
@@ -118,7 +136,6 @@ const PriorExperience = () => {
           </div>
         </div>
         
-        {/* Main Content */}
         <div className="flex-1 p-4 md:p-10 overflow-auto">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-4">Prior Experience</h2>
           <p className="text-sm md:text-base text-gray-700 mb-6 md:mb-8 max-w-3xl">

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
@@ -19,6 +18,8 @@ import {
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 const ManagementPreferences = () => {
   const navigate = useNavigate();
@@ -36,28 +37,47 @@ const ManagementPreferences = () => {
     }
   });
 
-  // Get the data from the location state
   useEffect(() => {
     if (location.state?.propertyId) {
       setPropertyId(location.state.propertyId);
       setProjectPrefs(location.state);
     } else {
-      // If no property was selected, go back to the property selection
       navigate("/create-project");
     }
   }, [location.state, navigate]);
 
-  const goToNextStep = () => {
-    // Save the management preferences and go to the next step (Prior Experience)
+  const savePreferences = async () => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({
+          management_preferences: {
+            wantProjectCoach,
+            phoneNumber: form.getValues("phoneNumber"),
+            phoneType: form.getValues("phoneType")
+          }
+        })
+        .eq('id', projectPrefs.id);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error saving management preferences:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save management preferences",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const goToNextStep = async () => {
+    await savePreferences();
     navigate("/prior-experience", {
       state: {
         ...projectPrefs,
-        managementPreferences: {
-          wantProjectCoach,
-          phoneNumber: form.getValues("phoneNumber"),
-          phoneType: form.getValues("phoneType"),
-          // Add other fields as needed
-        }
+        wantProjectCoach,
+        phoneNumber: form.getValues("phoneNumber"),
+        phoneType: form.getValues("phoneType")
       }
     });
   };
@@ -83,7 +103,6 @@ const ManagementPreferences = () => {
       <DashboardNavbar />
       
       <div className="flex flex-col md:flex-row flex-1">
-        {/* Left Sidebar */}
         <div className={`${isMobile ? 'w-full' : 'w-80'} bg-[#EFF3F7] p-4 md:p-8`}>
           <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">Create a Project</h1>
           <p className="text-sm md:text-base text-gray-600 mb-6 md:mb-8">
@@ -115,7 +134,6 @@ const ManagementPreferences = () => {
           </div>
         </div>
         
-        {/* Main Content */}
         <div className="flex-1 p-4 md:p-10 overflow-auto">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-4">Management Preferences</h2>
           <p className="text-sm md:text-base text-gray-700 mb-6 md:mb-8 max-w-3xl">
@@ -124,7 +142,6 @@ const ManagementPreferences = () => {
           
           <div className="flex flex-col md:flex-row gap-8 mb-10">
             <div className="flex-1 space-y-8">
-              {/* Project Coach Selection */}
               <div>
                 <h3 className="text-lg font-medium mb-4">Do you want to work with a project coach?</h3>
                 <RadioGroup 
@@ -147,7 +164,6 @@ const ManagementPreferences = () => {
                 </RadioGroup>
               </div>
               
-              {/* Phone Information */}
               {wantProjectCoach === "yes" && (
                 <div>
                   <h3 className="text-lg font-medium mb-4">What number should the coach reach you by?</h3>
@@ -183,7 +199,6 @@ const ManagementPreferences = () => {
                 </div>
               )}
               
-              {/* Availability Section */}
               {wantProjectCoach === "yes" && (
                 <div>
                   <h3 className="text-lg font-medium mb-4">Please select a few times you're available to be contacted.</h3>
@@ -232,7 +247,6 @@ const ManagementPreferences = () => {
               )}
             </div>
             
-            {/* Right column - Information */}
             <div className="w-full md:w-80 bg-gray-50 p-5 rounded-lg">
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-2">How project management works</h3>

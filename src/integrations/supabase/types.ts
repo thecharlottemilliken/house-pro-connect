@@ -93,8 +93,13 @@ export type Database = {
       }
       projects: {
         Row: {
+          construction_preferences: Json | null
           created_at: string
+          design_preferences: Json | null
           id: string
+          management_preferences: Json | null
+          prior_experience: Json | null
+          project_preferences: Json | null
           property_id: string
           renovation_areas: Json | null
           state: string
@@ -103,8 +108,13 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          construction_preferences?: Json | null
           created_at?: string
+          design_preferences?: Json | null
           id?: string
+          management_preferences?: Json | null
+          prior_experience?: Json | null
+          project_preferences?: Json | null
           property_id: string
           renovation_areas?: Json | null
           state?: string
@@ -113,8 +123,13 @@ export type Database = {
           user_id: string
         }
         Update: {
+          construction_preferences?: Json | null
           created_at?: string
+          design_preferences?: Json | null
           id?: string
+          management_preferences?: Json | null
+          prior_experience?: Json | null
+          project_preferences?: Json | null
           property_id?: string
           renovation_areas?: Json | null
           state?: string

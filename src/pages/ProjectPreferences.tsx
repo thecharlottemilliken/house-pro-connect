@@ -6,15 +6,10 @@ import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
-import { 
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 const ProjectPreferences = () => {
   const navigate = useNavigate();
@@ -22,6 +17,7 @@ const ProjectPreferences = () => {
   const isMobile = useIsMobile();
   const [propertyId, setPropertyId] = useState<string | null>(null);
   const [renovationAreas, setRenovationAreas] = useState<any[]>([]);
+  const [projectPrefs, setProjectPrefs] = useState<any>(null);
   const [budget, setBudget] = useState<number>(50000);
   const [useFinancing, setUseFinancing] = useState<boolean>(false);
   const [completionDate, setCompletionDate] = useState<string>("");
@@ -36,16 +32,45 @@ const ProjectPreferences = () => {
       if (location.state.renovationAreas) {
         setRenovationAreas(location.state.renovationAreas);
       }
+      setProjectPrefs(location.state);
     } else {
       navigate("/create-project");
     }
   }, [location.state, navigate]);
 
-  const goToNextStep = () => {
+  const savePreferences = async () => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({
+          project_preferences: {
+            budget,
+            useFinancing,
+            completionDate,
+            readiness,
+            isLifeEventDependent,
+            eventDate,
+            eventName
+          }
+        })
+        .eq('id', projectPrefs.id);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error saving project preferences:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save project preferences",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const goToNextStep = async () => {
+    await savePreferences();
     navigate("/construction-preferences", {
       state: {
-        propertyId,
-        renovationAreas,
+        ...projectPrefs,
         budget,
         useFinancing,
         completionDate,

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Plus, Upload } from "lucide-react";
@@ -16,6 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 const DesignPreferences = () => {
   const navigate = useNavigate();
@@ -27,35 +28,52 @@ const DesignPreferences = () => {
   const [projectPrefs, setProjectPrefs] = useState<any>(null);
   const [hasDesigns, setHasDesigns] = useState<boolean>(true);
   
-  // Designer information fields
   const [designers, setDesigners] = useState([
     { businessName: "", contactName: "", email: "", phone: "", speciality: "Architecture" }
   ]);
 
-  // Get the selected property ID and previous data from the location state
   useEffect(() => {
     if (location.state?.propertyId) {
       setPropertyId(location.state.propertyId);
       if (location.state.renovationAreas) {
         setRenovationAreas(location.state.renovationAreas);
       }
-      // Save all project preferences from previous steps
       setProjectPrefs(location.state);
     } else {
-      // If no property was selected, go back to the property selection
       navigate("/create-project");
     }
   }, [location.state, navigate]);
 
-  const goToNextStep = () => {
-    // Save the design preferences and go to the next step (Management Preferences)
+  const savePreferences = async () => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({
+          design_preferences: {
+            hasDesigns,
+            designers: !hasDesigns ? designers : []
+          }
+        })
+        .eq('id', projectPrefs.id);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error saving design preferences:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save design preferences",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const goToNextStep = async () => {
+    await savePreferences();
     navigate("/management-preferences", {
       state: {
         ...projectPrefs,
-        designPreferences: {
-          hasDesigns,
-          designers: !hasDesigns ? designers : []
-        }
+        hasDesigns,
+        designers: !hasDesigns ? designers : []
       }
     });
   };
@@ -91,7 +109,6 @@ const DesignPreferences = () => {
       <DashboardNavbar />
       
       <div className="flex flex-col md:flex-row flex-1">
-        {/* Left Sidebar */}
         <div className={`${isMobile ? 'w-full' : 'w-80'} bg-[#EFF3F7] p-4 md:p-8`}>
           <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">Create a Project</h1>
           <p className="text-sm md:text-base text-gray-600 mb-6 md:mb-8">
@@ -123,7 +140,6 @@ const DesignPreferences = () => {
           </div>
         </div>
         
-        {/* Main Content */}
         <div className="flex-1 p-4 md:p-10 overflow-auto">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-4">Design Preferences</h2>
           <p className="text-sm md:text-base text-gray-700 mb-6 md:mb-8 max-w-3xl">
@@ -131,7 +147,6 @@ const DesignPreferences = () => {
           </p>
           
           <div className="space-y-8 mb-10">
-            {/* Designer option section */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Have you worked with a designer?</h3>
               
@@ -151,7 +166,6 @@ const DesignPreferences = () => {
               </RadioGroup>
             </div>
             
-            {/* Upload design information section */}
             {hasDesigns && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Upload your project's design information.</h3>
@@ -192,7 +206,6 @@ const DesignPreferences = () => {
               </div>
             )}
             
-            {/* Designer Information section */}
             {!hasDesigns && (
               <div className="space-y-6 bg-gray-50 p-6 rounded-lg">
                 <h3 className="text-lg font-semibold">Designer Information</h3>
