@@ -60,30 +60,53 @@ const SignIn = () => {
     return valid;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (validateForm()) {
-      setIsLoading(true);
-      try {
-        const { error } = await signIn(formData.email, formData.password);
-        if (error) {
-          toast({
-            title: "Error signing in",
-            description: error.message || "Please check your credentials and try again",
-            variant: "destructive",
-          });
-        }
-      } catch (error: any) {
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (validateForm()) {
+    setIsLoading(true);
+    try {
+      const { data, error } = await signIn(formData.email, formData.password);
+
+      if (error || !data?.user) {
         toast({
           title: "Error signing in",
-          description: error.message || "An unexpected error occurred",
+          description: error?.message || "Please check your credentials and try again",
           variant: "destructive",
         });
-      } finally {
-        setIsLoading(false);
+        return;
       }
+
+      const user_id = data.user.id;
+
+      // ✅ Call the Edge Function to set app_role
+      const response = await fetch("/functions/v1/set-claims", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id }),
+      });
+
+      if (!response.ok) {
+        const { error } = await response.json();
+        console.warn("❌ Failed to set claim:", error);
+      }
+
+      // ✅ Refresh the session to load the new app_role
+      await supabase.auth.refreshSession();
+
+      // ✅ Navigate to your post-login page
+      navigate("/dashboard");
+    } catch (error: any) {
+      toast({
+        title: "Error signing in",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }
+};
+
 
   return (
     <div className="min-h-screen flex overflow-hidden">
