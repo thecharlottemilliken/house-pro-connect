@@ -23,10 +23,10 @@ interface RenovationArea {
 interface Property {
   id: string;
   property_name: string;
-  bedrooms: number;
-  bathrooms: number;
-  living_rooms: number;
-  dining_rooms: number;
+  bedrooms: string | null;
+  bathrooms: string | null;
+  living_rooms?: number;
+  dining_rooms?: number;
 }
 
 const RenovationAreas = () => {
@@ -58,7 +58,17 @@ const RenovationAreas = () => {
         .single();
 
       if (error) throw error;
-      setPropertyDetails(data);
+      
+      const propertyData: Property = {
+        id: data.id,
+        property_name: data.property_name,
+        bedrooms: data.bedrooms,
+        bathrooms: data.bathrooms,
+        living_rooms: data.living_rooms ? parseInt(data.living_rooms) : 1,
+        dining_rooms: data.dining_rooms ? parseInt(data.dining_rooms) : 1
+      };
+      
+      setPropertyDetails(propertyData);
     } catch (error) {
       console.error('Error fetching property details:', error);
       toast({
@@ -83,19 +93,23 @@ const RenovationAreas = () => {
     ];
 
     if (propertyDetails) {
-      for (let i = 1; i <= (propertyDetails.bedrooms || 0); i++) {
+      const bedroomsCount = propertyDetails.bedrooms ? parseInt(propertyDetails.bedrooms) : 0;
+      for (let i = 1; i <= bedroomsCount; i++) {
         options.push(`Bedroom ${i}`);
       }
 
-      for (let i = 1; i <= (propertyDetails.bathrooms || 0); i++) {
+      const bathroomsCount = propertyDetails.bathrooms ? parseInt(propertyDetails.bathrooms) : 0;
+      for (let i = 1; i <= bathroomsCount; i++) {
         options.push(`Bathroom ${i}`);
       }
 
-      for (let i = 1; i <= (propertyDetails.living_rooms || 0); i++) {
+      const livingRoomsCount = propertyDetails.living_rooms || 1;
+      for (let i = 1; i <= livingRoomsCount; i++) {
         options.push(i === 1 ? "Living Room" : `Living Room ${i}`);
       }
 
-      for (let i = 1; i <= (propertyDetails.dining_rooms || 0); i++) {
+      const diningRoomsCount = propertyDetails.dining_rooms || 1;
+      for (let i = 1; i <= diningRoomsCount; i++) {
         options.push(i === 1 ? "Dining Room" : `Dining Room ${i}`);
       }
     }
