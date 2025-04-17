@@ -198,17 +198,32 @@ const CreateProject = () => {
               {properties.map((property) => (
                 <div 
                   key={property.id} 
-                  className={`bg-white rounded-lg shadow-md overflow-hidden border cursor-pointer ${
+                  className={`bg-white rounded-lg shadow-md overflow-hidden border ${
                     selectedPropertyId === property.id 
                       ? "border-[#174c65] ring-2 ring-[#174c65]/20" 
                       : "border-gray-200"
                   }`}
-                  onClick={() => selectProperty(property.id)}
                 >
-                  <PropertyCard 
-                    propertyDetails={property}
-                    renovationAreas={[]}
-                  />
+                  <div className="h-40 md:h-52 overflow-hidden">
+                    <img 
+                      src={property.home_photos?.[0] || property.image_url || "https://images.unsplash.com/photo-1493809842364-78817add7ffb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80"} 
+                      alt={property.property_name} 
+                      className="w-full h-full object-cover" 
+                    />
+                  </div>
+                  <div className="p-4">
+                    <h4 className="text-base md:text-lg font-semibold mb-2">{property.property_name}</h4>
+                    <p className="text-sm md:text-base text-gray-600 mb-4">{formatAddress(property)}</p>
+                    <Button 
+                      variant={selectedPropertyId === property.id ? "default" : "outline"}
+                      className={selectedPropertyId === property.id 
+                        ? "w-full bg-[#174c65] text-white" 
+                        : "w-full border-[#174c65] text-[#174c65] hover:bg-[#174c65] hover:text-white"}
+                      onClick={() => selectProperty(property.id)}
+                    >
+                      {selectedPropertyId === property.id ? "SELECTED" : "SELECT"}
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
