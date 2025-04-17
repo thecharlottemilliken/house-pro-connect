@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
@@ -71,7 +70,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) {
         console.error('Error fetching profile:', error);
         
-        // If we get recursion error, try to construct a basic profile from user metadata
         if (error.message && error.message.includes('infinite recursion')) {
           console.log("Attempting to get role directly via user metadata to avoid recursion");
           const userMeta = user?.user_metadata;

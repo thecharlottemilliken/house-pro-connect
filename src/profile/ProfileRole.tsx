@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from '@/integrations/supabase/client';
@@ -9,12 +8,16 @@ export function useProfileRole() {
   const [roleData, setRoleData] = useState<string | null>(null);
   
   useEffect(() => {
-  const checkRole = async () => {
-    if (!user) return;
+    const checkRole = async () => {
+      if (!user) return;
 
-    if (profile?.role) {
-      setRoleData(profile.role);
-    } else {
+      // If profile already has role information, use that
+      if (profile?.role) {
+        setRoleData(profile.role);
+        return;
+      }
+
+      // Otherwise, fetch from the database
       setIsLoading(true);
       try {
         const { data, error } = await supabase
@@ -25,6 +28,7 @@ export function useProfileRole() {
 
         if (!error && data?.role) {
           setRoleData(data.role);
+          // Update the profile context as well
           refreshProfile();
         } else {
           console.warn("No role found or error:", error);
@@ -34,11 +38,10 @@ export function useProfileRole() {
       } finally {
         setIsLoading(false);
       }
-    }
-  };
+    };
 
-  checkRole();
-}, [user, profile?.role, refreshProfile]);
+    checkRole();
+  }, [user, profile?.role, refreshProfile]);
   
   // Format the role for display (capitalize first letter)
   const formattedRole = roleData 
