@@ -24,6 +24,27 @@ interface TeamMember {
   added_at: string;
 }
 
+interface ProjectOwner {
+  user_id: string;
+  created_at: string;
+  owner_profile: {
+    id: string;
+    name: string;
+    email: string;
+  } | null;
+}
+
+interface TeamMemberData {
+  id: string;
+  role: string;
+  added_at: string;
+  user_profile: {
+    id: string;
+    name: string;
+    email: string;
+  } | null;
+}
+
 const ProjectTeam = () => {
   const location = useLocation();
   const params = useParams();
@@ -44,14 +65,14 @@ const ProjectTeam = () => {
       try {
         console.log("Fetching team members for project:", projectId);
         
-        // Fetch team members from the project_team_members table
+        // Fetch team members from the project_team_members table with properly named aliases
         const { data: teamData, error: teamError } = await supabase
           .from('project_team_members')
           .select(`
             id,
             role,
             added_at,
-            profiles:user_id (
+            user_profile:profiles!user_id(
               id,
               name,
               email
@@ -65,17 +86,17 @@ const ProjectTeam = () => {
           return;
         }
 
-        // Also fetch the project owner's details
+        // Fetch the project owner's details with properly named alias
         const { data: projectDetails, error: projectError } = await supabase
           .from('projects')
           .select(`
             user_id,
-            profiles (
+            created_at,
+            owner_profile:profiles!user_id(
               id,
               name,
               email
-            ),
-            created_at
+            )
           `)
           .eq('id', projectId)
           .single();
@@ -90,11 +111,11 @@ const ProjectTeam = () => {
         const processedTeamMembers: TeamMember[] = [];
         
         // Add the project owner if available
-        if (projectDetails && projectDetails.profiles) {
+        if (projectDetails && projectDetails.owner_profile) {
           processedTeamMembers.push({
-            id: projectDetails.profiles.id,
-            name: projectDetails.profiles.name || 'Unknown',
-            email: projectDetails.profiles.email || '',
+            id: projectDetails.owner_profile.id,
+            name: projectDetails.owner_profile.name || 'Unknown',
+            email: projectDetails.owner_profile.email || '',
             role: 'owner',
             added_at: projectDetails.created_at,
             phone: "(555) 123-4567" // Placeholder
@@ -103,12 +124,12 @@ const ProjectTeam = () => {
 
         // Add team members
         if (teamData) {
-          teamData.forEach(member => {
-            if (member.profiles) {
+          teamData.forEach((member: TeamMemberData) => {
+            if (member.user_profile) {
               processedTeamMembers.push({
-                id: member.profiles.id,
-                name: member.profiles.name || 'Unknown',
-                email: member.profiles.email || '',
+                id: member.user_profile.id,
+                name: member.user_profile.name || 'Unknown',
+                email: member.user_profile.email || '',
                 role: member.role,
                 added_at: member.added_at,
                 phone: "(555) 123-4567" // Placeholder
