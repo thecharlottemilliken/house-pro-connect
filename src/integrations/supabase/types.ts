@@ -209,6 +209,14 @@ export type Database = {
           email: string
         }[]
       }
+      handle_coach_claim: {
+        Args: { uid: string }
+        Returns: undefined
+      }
+      set_coach_claim: {
+        Args: { uid: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

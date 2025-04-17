@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { Facebook } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { jwtDecode } from "jwt-decode";
 
 const SignIn = () => {
   const navigate = useNavigate();
@@ -61,35 +61,52 @@ const SignIn = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (validateForm()) {
-    setIsLoading(true);
-    try {
-      const { data, error } = await signIn(formData.email, formData.password);
+    e.preventDefault();
+    if (validateForm()) {
+      setIsLoading(true);
+      try {
+        const { data, error } = await signIn(formData.email, formData.password);
 
-      if (error) {
-        toast({ title: "Error signing in", description: error.message, variant: "destructive" });
-      } else if (data?.user?.id) {
-        // 🔥 Call the Edge Function to assign the role
-        await fetch(`${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/set-claims`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${data.session.access_token}`
-          },
-          body: JSON.stringify({ user_id: data.user.id })
-        });
+        if (error) {
+          toast({ title: "Error signing in", description: error.message, variant: "destructive" });
+        } else if (data?.user?.id) {
+          // Call the Edge Function to assign the role
+          try {
+            const functionResponse = await fetch(`${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/set-claims`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${data.session.access_token}`
+              },
+              body: JSON.stringify({ user_id: data.user.id })
+            });
+            
+            if (!functionResponse.ok) {
+              console.error("Error in set-claims function:", await functionResponse.text());
+            } else {
+              console.log("Claims set successfully");
+              
+              // Display JWT info for debugging
+              try {
+                const decoded = jwtDecode(data.session.access_token);
+                console.log("JWT decoded:", decoded);
+              } catch (jwtError) {
+                console.error("Error decoding JWT:", jwtError);
+              }
+            }
+          } catch (fnError) {
+            console.error("Failed to call set-claims function:", fnError);
+          }
 
-        navigate("/dashboard");
+          navigate("/dashboard");
+        }
+      } catch (err: any) {
+        toast({ title: "Error signing in", description: err.message, variant: "destructive" });
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err: any) {
-      toast({ title: "Error signing in", description: err.message, variant: "destructive" });
-    } finally {
-      setIsLoading(false);
     }
-  }
-};
-
+  };
 
   return (
     <div className="min-h-screen flex overflow-hidden">
