@@ -171,10 +171,12 @@ export const useCoachProjects = () => {
           
           if (!error && data) {
             console.log(`✅ Got email for user ${userId}:`, data);
+            // Fix the type issue: Extract the email string from the result
+            const emailString = data[0]?.email || "unknown@email.com";
             profilesMap.set(userId, {
               id: userId,
               name: `User ${userId.substring(0, 6)}`,
-              email: data
+              email: emailString
             });
           } else if (error) {
             console.error(`❌ Error getting email for user ${userId}:`, error);
