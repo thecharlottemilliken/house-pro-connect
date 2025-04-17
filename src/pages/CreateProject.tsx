@@ -7,11 +7,13 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import PropertyCard from "@/components/project/PropertyCard";
 
 interface Property {
   id: string;
   property_name: string;
   image_url: string;
+  home_photos?: string[];
   address_line1: string;
   city: string;
   state: string;
@@ -201,27 +203,12 @@ const CreateProject = () => {
                       ? "border-[#174c65] ring-2 ring-[#174c65]/20" 
                       : "border-gray-200"
                   }`}
+                  onClick={() => selectProperty(property.id)}
                 >
-                  <div className="h-40 md:h-52 overflow-hidden">
-                    <img 
-                      src={property.image_url} 
-                      alt={property.property_name} 
-                      className="w-full h-full object-cover" 
-                    />
-                  </div>
-                  <div className="p-4">
-                    <h4 className="text-base md:text-lg font-semibold mb-2">{property.property_name}</h4>
-                    <p className="text-sm md:text-base text-gray-600 mb-4">{formatAddress(property)}</p>
-                    <Button 
-                      variant={selectedPropertyId === property.id ? "default" : "outline"}
-                      className={selectedPropertyId === property.id 
-                        ? "w-full bg-[#174c65] text-white" 
-                        : "w-full border-[#174c65] text-[#174c65] hover:bg-[#174c65] hover:text-white"}
-                      onClick={() => selectProperty(property.id)}
-                    >
-                      {selectedPropertyId === property.id ? "SELECTED" : "SELECT"}
-                    </Button>
-                  </div>
+                  <PropertyCard 
+                    propertyDetails={property}
+                    renovationAreas={[]}
+                  />
                 </div>
               ))}
             </div>

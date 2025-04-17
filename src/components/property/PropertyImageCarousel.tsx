@@ -36,4 +36,3 @@ export function PropertyImageCarousel({ images }: PropertyImageCarouselProps) {
     </Carousel>
   );
 }
-
