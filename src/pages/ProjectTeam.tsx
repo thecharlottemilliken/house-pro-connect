@@ -1,4 +1,3 @@
-
 import { useParams, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -112,10 +111,12 @@ const ProjectTeam = () => {
         
         // Add the project owner if available
         if (projectDetails && projectDetails.owner_profile) {
+          // Access owner_profile as a single object, not an array
+          const ownerProfile = projectDetails.owner_profile;
           processedTeamMembers.push({
-            id: projectDetails.owner_profile.id,
-            name: projectDetails.owner_profile.name || 'Unknown',
-            email: projectDetails.owner_profile.email || '',
+            id: ownerProfile.id,
+            name: ownerProfile.name || 'Unknown',
+            email: ownerProfile.email || '',
             role: 'owner',
             added_at: projectDetails.created_at,
             phone: "(555) 123-4567" // Placeholder
