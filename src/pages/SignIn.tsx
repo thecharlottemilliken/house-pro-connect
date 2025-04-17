@@ -66,7 +66,7 @@ const SignIn = () => {
     if (validateForm()) {
       setIsLoading(true);
       try {
-        const { error } = await signIn(formData.email, formData.password);
+        const { data, error } = await signIn(formData.email, formData.password);
 
         if (error) {
           toast({ title: "Error signing in", description: error.message, variant: "destructive" });
@@ -75,7 +75,11 @@ const SignIn = () => {
           try {
             // Get the current session to access the access token
             if (session?.access_token) {
-              const functionResponse = await fetch(`${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/set-claims`, {
+              console.log("Calling set-claims function with user ID:", user.id);
+              // Use the full URL to the edge function
+              const supabaseFunctionUrl = "https://gluggyghzalabvlvwqqk.supabase.co/functions/v1/set-claims";
+              
+              const functionResponse = await fetch(supabaseFunctionUrl, {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
@@ -85,9 +89,16 @@ const SignIn = () => {
               });
               
               if (!functionResponse.ok) {
-                console.error("Error in set-claims function:", await functionResponse.text());
+                const errorText = await functionResponse.text();
+                console.error(`Error in set-claims function (${functionResponse.status}):`, errorText);
+                toast({ 
+                  title: "Warning", 
+                  description: "Could not set user role claims. Some features may be limited.", 
+                  variant: "warning" 
+                });
               } else {
-                console.log("Claims set successfully");
+                const responseData = await functionResponse.json();
+                console.log("Claims set successfully:", responseData);
                 
                 // Display JWT info for debugging
                 try {

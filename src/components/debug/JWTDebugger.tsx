@@ -53,7 +53,7 @@ const JWTDebugger = () => {
         // Try to call the set-claims function to ensure it works
         try {
           console.log("🔄 Attempting to call set-claims function...");
-          const functionResponse = await fetch(`${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/set-claims`, {
+          const functionResponse = await fetch("https://gluggyghzalabvlvwqqk.supabase.co/functions/v1/set-claims", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -63,10 +63,23 @@ const JWTDebugger = () => {
           });
           
           if (!functionResponse.ok) {
-            console.error("❌ Error in set-claims function:", await functionResponse.text());
+            const errorText = await functionResponse.text();
+            console.error(`❌ Error in set-claims function (${functionResponse.status}):`, errorText);
           } else {
             const responseData = await functionResponse.json();
             console.log("✅ Claims function response:", responseData);
+            
+            // Refresh session to get updated claims
+            const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+            if (refreshError) {
+              console.error("Failed to refresh session:", refreshError);
+            } else {
+              console.log("Session refreshed, new token:", refreshData?.session ? "received" : "not received");
+              if (refreshData?.session) {
+                const refreshedToken = jwtDecode(refreshData.session.access_token);
+                console.log("Refreshed JWT decoded:", refreshedToken);
+              }
+            }
           }
         } catch (fnError) {
           console.error("❌ Failed to call set-claims function:", fnError);
