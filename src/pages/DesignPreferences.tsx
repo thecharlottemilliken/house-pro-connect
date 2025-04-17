@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Plus, Upload } from "lucide-react";
@@ -24,6 +25,7 @@ const DesignPreferences = () => {
   const isMobile = useIsMobile();
   
   const [propertyId, setPropertyId] = useState<string | null>(null);
+  const [projectId, setProjectId] = useState<string | null>(null);
   const [renovationAreas, setRenovationAreas] = useState<any[]>([]);
   const [projectPrefs, setProjectPrefs] = useState<any>(null);
   const [hasDesigns, setHasDesigns] = useState<boolean>(true);
@@ -33,8 +35,13 @@ const DesignPreferences = () => {
   ]);
 
   useEffect(() => {
-    if (location.state?.propertyId) {
-      setPropertyId(location.state.propertyId);
+    if (location.state) {
+      if (location.state.propertyId) {
+        setPropertyId(location.state.propertyId);
+      }
+      if (location.state.projectId) {
+        setProjectId(location.state.projectId);
+      }
       if (location.state.renovationAreas) {
         setRenovationAreas(location.state.renovationAreas);
       }
@@ -45,6 +52,12 @@ const DesignPreferences = () => {
   }, [location.state, navigate]);
 
   const savePreferences = async () => {
+    if (!projectId) {
+      console.log("No project ID available, storing preferences in state only");
+      // Just continue to the next step with preferences in state
+      return;
+    }
+    
     try {
       const { error } = await supabase
         .from('projects')
@@ -54,9 +67,14 @@ const DesignPreferences = () => {
             designers: !hasDesigns ? designers : []
           }
         })
-        .eq('id', projectPrefs.id);
+        .eq('id', projectId);
 
       if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Design preferences saved successfully",
+      });
     } catch (error) {
       console.error('Error saving design preferences:', error);
       toast({
@@ -69,12 +87,20 @@ const DesignPreferences = () => {
 
   const goToNextStep = async () => {
     await savePreferences();
-    navigate("/management-preferences", {
-      state: {
-        ...projectPrefs,
+    
+    // Prepare updated project preferences
+    const updatedProjectPrefs = {
+      ...projectPrefs,
+      projectId,
+      propertyId,
+      designPreferences: {
         hasDesigns,
         designers: !hasDesigns ? designers : []
       }
+    };
+    
+    navigate("/management-preferences", {
+      state: updatedProjectPrefs
     });
   };
 

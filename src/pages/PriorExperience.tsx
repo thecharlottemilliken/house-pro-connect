@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -15,7 +16,9 @@ const PriorExperience = () => {
   const location = useLocation();
   const isMobile = useIsMobile();
   const { user } = useAuth();
+  
   const [propertyId, setPropertyId] = useState<string | null>(null);
+  const [projectId, setProjectId] = useState<string | null>(null);
   const [projectPrefs, setProjectPrefs] = useState<any>(null);
   const [priorExperience, setPriorExperience] = useState<string>("No");
   const [positiveAspects, setPositiveAspects] = useState<string>("");
@@ -23,8 +26,13 @@ const PriorExperience = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (location.state?.propertyId) {
-      setPropertyId(location.state.propertyId);
+    if (location.state) {
+      if (location.state.propertyId) {
+        setPropertyId(location.state.propertyId);
+      }
+      if (location.state.projectId) {
+        setProjectId(location.state.projectId);
+      }
       setProjectPrefs(location.state);
     } else {
       navigate("/create-project");
@@ -32,6 +40,11 @@ const PriorExperience = () => {
   }, [location.state, navigate]);
 
   const savePreferences = async () => {
+    if (!projectId) {
+      console.log("No project ID available, will create project");
+      return;
+    }
+    
     try {
       const { error } = await supabase
         .from('projects')
@@ -42,9 +55,14 @@ const PriorExperience = () => {
             negativeAspects
           }
         })
-        .eq('id', propertyId);
+        .eq('id', projectId);
 
       if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Prior experience saved successfully",
+      });
     } catch (error) {
       console.error('Error saving prior experience:', error);
       toast({
@@ -67,6 +85,42 @@ const PriorExperience = () => {
 
     try {
       setIsSubmitting(true);
+
+      // If we already have a project ID, just update it instead of creating a new one
+      if (projectId) {
+        const { error: updateError } = await supabase
+          .from('projects')
+          .update({
+            prior_experience: {
+              hadPriorExperience: priorExperience,
+              positiveAspects,
+              negativeAspects
+            }
+          })
+          .eq('id', projectId);
+
+        if (updateError) throw updateError;
+        
+        toast({
+          title: "Success",
+          description: "Your project has been updated successfully!",
+        });
+        
+        navigate("/project-dashboard", {
+          state: {
+            ...projectPrefs,
+            priorExperience: {
+              hadPriorExperience: priorExperience,
+              positiveAspects,
+              negativeAspects
+            },
+            completed: true,
+            projectId
+          }
+        });
+        
+        return;
+      }
 
       const { data: project, error: projectError } = await supabase
         .from('projects')

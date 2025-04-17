@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
@@ -27,6 +28,7 @@ const ManagementPreferences = () => {
   const isMobile = useIsMobile();
   
   const [propertyId, setPropertyId] = useState<string | null>(null);
+  const [projectId, setProjectId] = useState<string | null>(null);
   const [projectPrefs, setProjectPrefs] = useState<any>(null);
   const [wantProjectCoach, setWantProjectCoach] = useState<string>("yes");
   
@@ -38,8 +40,13 @@ const ManagementPreferences = () => {
   });
 
   useEffect(() => {
-    if (location.state?.propertyId) {
-      setPropertyId(location.state.propertyId);
+    if (location.state) {
+      if (location.state.propertyId) {
+        setPropertyId(location.state.propertyId);
+      }
+      if (location.state.projectId) {
+        setProjectId(location.state.projectId);
+      }
       setProjectPrefs(location.state);
     } else {
       navigate("/create-project");
@@ -47,6 +54,12 @@ const ManagementPreferences = () => {
   }, [location.state, navigate]);
 
   const savePreferences = async () => {
+    if (!projectId) {
+      console.log("No project ID available, storing preferences in state only");
+      // Just continue to the next step with preferences in state
+      return;
+    }
+    
     try {
       const { error } = await supabase
         .from('projects')
@@ -57,9 +70,14 @@ const ManagementPreferences = () => {
             phoneType: form.getValues("phoneType")
           }
         })
-        .eq('id', projectPrefs.id);
+        .eq('id', projectId);
 
       if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Management preferences saved successfully",
+      });
     } catch (error) {
       console.error('Error saving management preferences:', error);
       toast({
@@ -72,13 +90,21 @@ const ManagementPreferences = () => {
 
   const goToNextStep = async () => {
     await savePreferences();
-    navigate("/prior-experience", {
-      state: {
-        ...projectPrefs,
+    
+    // Prepare updated project preferences
+    const updatedProjectPrefs = {
+      ...projectPrefs,
+      projectId,
+      propertyId,
+      managementPreferences: {
         wantProjectCoach,
         phoneNumber: form.getValues("phoneNumber"),
         phoneType: form.getValues("phoneType")
       }
+    };
+    
+    navigate("/prior-experience", {
+      state: updatedProjectPrefs
     });
   };
 
