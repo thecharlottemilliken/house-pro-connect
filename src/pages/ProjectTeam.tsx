@@ -71,7 +71,11 @@ const useTeamMembers = (projectId: string | undefined) => {
             email,
             name,
             user_id,
-            profiles(id, name, email)
+            profiles(
+              id,
+              name,
+              email
+            )
           `)
           .eq("project_id", projectId);
 
@@ -84,28 +88,20 @@ const useTeamMembers = (projectId: string | undefined) => {
           });
           setTeamMembers([]);
         } else {
-          console.log("Team members data:", teamData);
-          
-          // Format team members, excluding the current user but always including the project owner
-          const formatted: TeamMember[] = (teamData || [])
-            .filter(member => member.user_id !== user?.id || member.user_id === projectOwnerId)
-            .map((member) => {
-              // Get profile info either from the profiles join or from the member data
-              const profile = member.profiles;
-              const name = profile?.name || member.name || "Unnamed";
-              const email = profile?.email || member.email || "No email";
-              
-              // Ensure project owner is always labeled correctly
-              const role = member.user_id === projectOwnerId ? "owner" : member.role;
-              
-              return {
-                id: member.id,
-                role: role,
-                name: name,
-                email: email,
-                avatarUrl: `https://i.pravatar.cc/150?u=${email}`,
-              };
-            });
+          const formatted: TeamMember[] = (teamData || []).map((member) => {
+            const profile = member.profiles;
+            const name = profile?.name || member.name || "Unnamed";
+            const email = profile?.email || member.email || "No email";
+            const role = member.user_id === projectOwnerId ? "owner" : member.role;
+            
+            return {
+              id: member.id,
+              role: role,
+              name: name,
+              email: email,
+              avatarUrl: `https://i.pravatar.cc/150?u=${email}`,
+            };
+          });
             
           setTeamMembers(formatted);
         }
