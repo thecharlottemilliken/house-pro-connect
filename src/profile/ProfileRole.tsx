@@ -13,7 +13,7 @@ export function useProfileRole() {
       
       setIsLoading(true);
       try {
-        // This is a simplified query that's less likely to hit RLS recursion issues
+        // Direct query to profiles table
         const { data, error } = await supabase
           .from('profiles')
           .select('role')
