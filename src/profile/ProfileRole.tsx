@@ -20,9 +20,13 @@ export function useProfileRole() {
           .eq('id', user.id)
           .maybeSingle();
           
-        if (!error && data && !profile?.role) {
+        if (!error && data && data.role) {
           console.log("Retrieved role directly:", data.role);
           refreshProfile();
+        } else if (error) {
+          console.error("Error fetching role:", error);
+        } else {
+          console.log("No role found for user");
         }
       } catch (error) {
         console.error("Error in direct role check:", error);
