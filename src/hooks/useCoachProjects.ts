@@ -82,29 +82,9 @@ export const useCoachProjects = () => {
         });
       }
 
-      // Get all profiles at once using the coach role permissions
-      const { data: profilesData, error: profilesError } = await supabase
-        .from("profiles")
-        .select("id, name, email")
-        .in("id", userIds);
-
-      if (profilesError) {
-        console.error("Error fetching profiles:", profilesError);
-        // Try getting the user email from auth.users if available as a fallback
-        await tryGetUserEmails(userIds, profilesData || []);
-      }
-
-      const profilesMap = new Map<string, ProfileInfo>();
-
-      if (profilesData && profilesData.length > 0) {
-        console.log("Found profile data for users:", profilesData.length);
-        profilesData.forEach((profile) => {
-          profilesMap.set(profile.id, profile);
-        });
-      } else {
-        console.warn("No profiles found. This may indicate an RLS policy issue.");
-      }
-
+      // Fetch user profile data - try multiple approaches
+      const profilesMap = await fetchUserProfiles(userIds);
+      
       const processedProjects: Project[] = projectsData.map((project) => {
         const property = propertiesMap.get(project.property_id) || {
           property_name: "Unknown Property",
@@ -152,32 +132,105 @@ export const useCoachProjects = () => {
     }
   };
 
-  // Helper function to try getting user emails directly if profiles fail
-  const tryGetUserEmails = async (userIds: string[], existingProfiles: ProfileInfo[]) => {
+  // Comprehensive function to fetch user profiles using multiple strategies
+  const fetchUserProfiles = async (userIds: string[]): Promise<Map<string, ProfileInfo>> => {
+    const profilesMap = new Map<string, ProfileInfo>();
+    
+    // Try strategy 1: Direct profiles table query with role-based access
     try {
-      console.log("Attempting to get user emails using get_user_email function...");
+      console.log("Strategy 1: Fetching profiles with coach role access...");
       
-      // Create a set of user IDs that already have profile data
-      const existingProfileIds = new Set(existingProfiles.map(p => p.id));
+      // This query should work if the coach RLS policy is correctly set up
+      const { data: profilesData, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, name, email")
+        .in("id", userIds);
+
+      if (!profilesError && profilesData && profilesData.length > 0) {
+        console.log("✅ Found profile data for users:", profilesData.length);
+        profilesData.forEach((profile) => {
+          profilesMap.set(profile.id, profile);
+        });
+        return profilesMap;
+      } else if (profilesError) {
+        console.error("❌ Error in strategy 1:", profilesError);
+      } else {
+        console.warn("⚠️ No profiles found with strategy 1");
+      }
+    } catch (err) {
+      console.error("❌ Exception in strategy 1:", err);
+    }
+    
+    // Try strategy 2: Get emails using direct RPC function
+    try {
+      console.log("Strategy 2: Using RPC get_user_email function...");
       
-      // Only fetch emails for users without profile data
-      const userIdsToFetch = userIds.filter(id => !existingProfileIds.has(id));
-      
-      if (userIdsToFetch.length === 0) return;
-      
-      // Try to get user emails through the custom function
-      for (const userId of userIdsToFetch) {
-        const { data, error } = await supabase.rpc('get_user_email', { user_id: userId });
-        
-        if (error) {
-          console.error(`Error fetching email for user ${userId}:`, error);
-        } else if (data) {
-          console.log(`Got email for user ${userId}:`, data);
+      for (const userId of userIds) {
+        if (!profilesMap.has(userId)) {
+          const { data, error } = await supabase.rpc('get_user_email', { user_id: userId });
+          
+          if (!error && data) {
+            console.log(`✅ Got email for user ${userId}:`, data);
+            profilesMap.set(userId, {
+              id: userId,
+              name: `User ${userId.substring(0, 6)}`,
+              email: data
+            });
+          } else if (error) {
+            console.error(`❌ Error getting email for user ${userId}:`, error);
+          }
         }
       }
     } catch (err) {
-      console.error("Error in tryGetUserEmails:", err);
+      console.error("❌ Exception in strategy 2:", err);
     }
+
+    // Try strategy 3: Last resort - use direct auth admin function if available in edge function
+    if (profilesMap.size < userIds.length) {
+      try {
+        console.log("Strategy 3: Calling edge function to get user data...");
+        
+        // Using a fetch call to edge function as last resort (Note: you'd need to implement this edge function)
+        const session = await supabase.auth.getSession();
+        if (session?.data?.session?.access_token) {
+          const missingUserIds = userIds.filter(id => !profilesMap.has(id));
+          
+          console.log("Attempting to fetch data for missing users:", missingUserIds);
+          
+          // This is a placeholder - you would need to implement this edge function
+          const functionUrl = "https://gluggyghzalabvlvwqqk.supabase.co/functions/v1/get-user-data";
+          const response = await fetch(functionUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${session.data.session.access_token}`
+            },
+            body: JSON.stringify({ user_ids: missingUserIds })
+          });
+          
+          if (response.ok) {
+            const userData = await response.json();
+            if (userData && userData.users) {
+              console.log("✅ Got user data from edge function:", userData.users.length);
+              userData.users.forEach((user: any) => {
+                profilesMap.set(user.id, {
+                  id: user.id,
+                  name: user.name || `User ${user.id.substring(0, 6)}`,
+                  email: user.email || "unknown@email.com"
+                });
+              });
+            }
+          } else {
+            console.error("❌ Edge function failed:", await response.text());
+          }
+        }
+      } catch (err) {
+        console.error("❌ Exception in strategy 3:", err);
+      }
+    }
+    
+    console.log(`Final profile map has ${profilesMap.size}/${userIds.length} users`);
+    return profilesMap;
   };
 
   return { projects, isLoading, fetchProjects };

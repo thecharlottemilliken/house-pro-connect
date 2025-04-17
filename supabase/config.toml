@@ -3,3 +3,6 @@ project_id = "gluggyghzalabvlvwqqk"
 
 [functions.set-claims]
 verify_jwt = true
+
+[functions.get-user-data]
+verify_jwt = true
