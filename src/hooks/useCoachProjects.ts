@@ -147,17 +147,18 @@ export const useCoachProjects = () => {
             
             // Try to get at least email from auth.users as fallback
             try {
-              // Fix: Properly type the RPC call response with Array generic type
+              // Fix: The rpc method expects a record type and a return type
+              // Fix issue with type arguments - provide both data shape and return type
               const { data: authData, error: authError } = await supabase
-                .rpc<UserEmailResult[]>('get_user_email', { user_id: userId });
+                .rpc<UserEmailResult>('get_user_email', { user_id: userId });
                 
               if (authData && !authError) {
                 console.log(`Found auth data for user ${userId}:`, authData);
-                // Access the email from the first element of the array
                 profilesMap.set(userId, {
                   id: userId,
                   name: "User " + userId.substring(0, 6),
-                  email: authData[0]?.email || "email@unknown.com"
+                  // Fix issue with accessing email property - ensure authData is properly typed
+                  email: Array.isArray(authData) && authData.length > 0 ? authData[0].email : "email@unknown.com"
                 });
               } else {
                 console.log(`No auth data found for user ${userId}, using default`);
