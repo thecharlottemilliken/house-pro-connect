@@ -2,6 +2,19 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
+useEffect(() => {
+  const checkSession = async () => {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      console.error("Error getting session:", error);
+    } else {
+      console.log("✅ Decoded JWT app_metadata:", data?.session?.user?.app_metadata);
+    }
+  };
+
+  checkSession();
+}, []);
+
 export interface Project {
   id: string;
   title: string;
