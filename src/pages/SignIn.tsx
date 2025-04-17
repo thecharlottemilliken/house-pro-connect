@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ import { jwtDecode } from "jwt-decode";
 const SignIn = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { signIn } = useAuth();
+  const { signIn, user, session } = useAuth();
   
   const [formData, setFormData] = useState({
     email: "",
@@ -65,33 +66,36 @@ const SignIn = () => {
     if (validateForm()) {
       setIsLoading(true);
       try {
-        const { data, error } = await signIn(formData.email, formData.password);
+        const { error } = await signIn(formData.email, formData.password);
 
         if (error) {
           toast({ title: "Error signing in", description: error.message, variant: "destructive" });
-        } else if (data?.user?.id) {
+        } else if (user?.id) {
           // Call the Edge Function to assign the role
           try {
-            const functionResponse = await fetch(`${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/set-claims`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${data.session.access_token}`
-              },
-              body: JSON.stringify({ user_id: data.user.id })
-            });
-            
-            if (!functionResponse.ok) {
-              console.error("Error in set-claims function:", await functionResponse.text());
-            } else {
-              console.log("Claims set successfully");
+            // Get the current session to access the access token
+            if (session?.access_token) {
+              const functionResponse = await fetch(`${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/set-claims`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${session.access_token}`
+                },
+                body: JSON.stringify({ user_id: user.id })
+              });
               
-              // Display JWT info for debugging
-              try {
-                const decoded = jwtDecode(data.session.access_token);
-                console.log("JWT decoded:", decoded);
-              } catch (jwtError) {
-                console.error("Error decoding JWT:", jwtError);
+              if (!functionResponse.ok) {
+                console.error("Error in set-claims function:", await functionResponse.text());
+              } else {
+                console.log("Claims set successfully");
+                
+                // Display JWT info for debugging
+                try {
+                  const decoded = jwtDecode(session.access_token);
+                  console.log("JWT decoded:", decoded);
+                } catch (jwtError) {
+                  console.error("Error decoding JWT:", jwtError);
+                }
               }
             }
           } catch (fnError) {

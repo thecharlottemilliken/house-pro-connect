@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
@@ -9,8 +10,8 @@ interface AuthContextType {
   user: User | null;
   profile: any | null;
   isLoading: boolean;
-  signUp: (email: string, password: string, userData: any) => Promise<{ error: any | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: any | null }>;
+  signUp: (email: string, password: string, userData: any) => Promise<{ data?: any, error: any | null }>;
+  signIn: (email: string, password: string) => Promise<{ data?: any, error: any | null }>;
   signOut: () => Promise<{ error: any | null }>;
   updateProfile: (data: any) => Promise<{ error: any | null }>;
   refreshProfile: () => Promise<void>;
@@ -97,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string, userData: any) => {
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -131,7 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       navigate('/dashboard');
       
-      return { error: null };
+      return { data, error: null };
     } catch (error: any) {
       return { error };
     }
@@ -139,7 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -152,7 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       
       navigate('/dashboard');
-      return { error: null };
+      return { data, error: null };
     } catch (error: any) {
       return { error };
     }
