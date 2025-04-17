@@ -33,8 +33,6 @@ export const useCoachProjects = () => {
     setIsLoading(true);
     try {
       console.log("Fetching projects...");
-      console.log("JWT user metadata:", session?.user?.app_metadata);
-
       
       // First fetch all projects
       const { data: projectsData, error: projectsError } = await supabase
