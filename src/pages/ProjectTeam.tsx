@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ProfileData {
   id?: string;
@@ -38,6 +39,7 @@ interface TeamMember {
 const useTeamMembers = (projectId: string | undefined) => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   useEffect(() => {
     if (!projectId) {
@@ -75,19 +77,21 @@ const useTeamMembers = (projectId: string | undefined) => {
         setTeamMembers([]);
       } else {
         console.log("Team members data:", teamData);
-        const formatted: TeamMember[] = (teamData || []).map((member) => {
-          const profile = member.profiles;
-          const name = profile?.name || member.name || "Unnamed";
-          const email = profile?.email || member.email || "No email";
-          
-          return {
-            id: member.id,
-            role: member.role,
-            name: name,
-            email: email,
-            avatarUrl: `https://i.pravatar.cc/150?u=${email}`,
-          };
-        });
+        const formatted: TeamMember[] = (teamData || [])
+          .filter(member => member.user_id !== user?.id)
+          .map((member) => {
+            const profile = member.profiles;
+            const name = profile?.name || member.name || "Unnamed";
+            const email = profile?.email || member.email || "No email";
+            
+            return {
+              id: member.id,
+              role: member.role,
+              name: name,
+              email: email,
+              avatarUrl: `https://i.pravatar.cc/150?u=${email}`,
+            };
+          });
         setTeamMembers(formatted);
       }
 
@@ -95,7 +99,7 @@ const useTeamMembers = (projectId: string | undefined) => {
     };
 
     fetchTeamMembers();
-  }, [projectId]);
+  }, [projectId, user?.id]);
 
   return { teamMembers, loading };
 };
