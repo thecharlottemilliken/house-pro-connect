@@ -217,9 +217,8 @@ export const useCoachProjects = () => {
         ownerName: p.owner.name,
         ownerEmail: p.owner.email
       })));
+      
       setProjects(processedProjects);
-
-
     } catch (error: any) {
       console.error("Error fetching projects:", error);
       toast({
@@ -231,5 +230,6 @@ export const useCoachProjects = () => {
       setIsLoading(false);
     }
   };
+
   return { projects, isLoading, fetchProjects };
 };
