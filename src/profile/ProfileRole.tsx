@@ -9,42 +9,36 @@ export function useProfileRole() {
   const [roleData, setRoleData] = useState<string | null>(null);
   
   useEffect(() => {
-    // First check if the role is already in the profile
+  const checkRole = async () => {
+    if (!user) return;
+
     if (profile?.role) {
       setRoleData(profile.role);
-      return;
-    }
-    
-    const checkRoleDirectly = async () => {
-      if (!user) return;
-      
+    } else {
       setIsLoading(true);
       try {
-        // Direct query to profiles table
         const { data, error } = await supabase
           .from('profiles')
           .select('role')
           .eq('id', user.id)
           .maybeSingle();
-          
-        if (!error && data && data.role) {
-          console.log("Retrieved role directly:", data.role);
+
+        if (!error && data?.role) {
           setRoleData(data.role);
           refreshProfile();
-        } else if (error) {
-          console.error("Error fetching role:", error);
         } else {
-          console.log("No role found for user");
+          console.warn("No role found or error:", error);
         }
-      } catch (error) {
-        console.error("Error in direct role check:", error);
+      } catch (err) {
+        console.error("Error checking role:", err);
       } finally {
         setIsLoading(false);
       }
-    };
-    
-    checkRoleDirectly();
-  }, [user, profile, refreshProfile]);
+    }
+  };
+
+  checkRole();
+}, [user, profile?.role, refreshProfile]);
   
   // Format the role for display (capitalize first letter)
   const formattedRole = roleData 
