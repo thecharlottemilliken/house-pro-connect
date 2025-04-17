@@ -64,8 +64,8 @@ const RenovationAreas = () => {
         property_name: data.property_name,
         bedrooms: data.bedrooms,
         bathrooms: data.bathrooms,
-        living_rooms: data.living_rooms ? parseInt(data.living_rooms) : 1,
-        dining_rooms: data.dining_rooms ? parseInt(data.dining_rooms) : 1
+        living_rooms: 1,
+        dining_rooms: 1
       };
       
       setPropertyDetails(propertyData);
