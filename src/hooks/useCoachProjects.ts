@@ -113,7 +113,7 @@ export const useCoachProjects = () => {
       console.log("Profiles data from batch fetch:", profilesData);
       
       // Initialize the profiles map
-    const profilesMap = new Map<string, ProfileInfo>();
+      const profilesMap = new Map<string, ProfileInfo>();
       
       // If batch fetch worked, use that data
       if (profilesData && profilesData.length > 0) {
@@ -147,13 +147,13 @@ export const useCoachProjects = () => {
             
             // Try to get at least email from auth.users as fallback
             try {
-              // Fix: Properly type the RPC call response
+              // Fix: Properly type the RPC call response with Array generic type
               const { data: authData, error: authError } = await supabase
-                .rpc<UserEmailResult>('get_user_email', { user_id: userId });
+                .rpc<UserEmailResult[]>('get_user_email', { user_id: userId });
                 
               if (authData && !authError) {
                 console.log(`Found auth data for user ${userId}:`, authData);
-                // Fix: Use authData[0] to access the first row from RPC result
+                // Access the email from the first element of the array
                 profilesMap.set(userId, {
                   id: userId,
                   name: "User " + userId.substring(0, 6),
