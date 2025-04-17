@@ -54,37 +54,37 @@ const ManagementPreferences = () => {
   }, [location.state, navigate]);
 
   const savePreferences = async () => {
-    if (!projectId) {
-      console.log("No project ID available, storing preferences in state only");
-      // Just continue to the next step with preferences in state
-      return;
-    }
-    
-    try {
-      const { error } = await supabase
-        .from('projects')
-        .update({
-          management_preferences: {
-            wantProjectCoach,
-            phoneNumber: form.getValues("phoneNumber"),
-            phoneType: form.getValues("phoneType")
-          }
-        })
-        .eq('id', projectId);
+    // If we already have a project ID, update it
+    if (projectId) {
+      try {
+        const { error } = await supabase
+          .from('projects')
+          .update({
+            management_preferences: {
+              wantProjectCoach,
+              phoneNumber: form.getValues("phoneNumber"),
+              phoneType: form.getValues("phoneType")
+            }
+          })
+          .eq('id', projectId);
 
-      if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Management preferences saved successfully",
-      });
-    } catch (error) {
-      console.error('Error saving management preferences:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save management preferences",
-        variant: "destructive"
-      });
+        if (error) throw error;
+        
+        toast({
+          title: "Success",
+          description: "Management preferences saved successfully",
+        });
+      } catch (error) {
+        console.error('Error saving management preferences:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save management preferences",
+          variant: "destructive"
+        });
+      }
+    } else {
+      // Just log and continue if no project ID (project will be created at the end in PriorExperience)
+      console.log("No project ID available, storing preferences in state only");
     }
   };
 
