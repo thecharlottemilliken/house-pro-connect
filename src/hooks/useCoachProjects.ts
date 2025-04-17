@@ -21,6 +21,12 @@ export interface Project {
   };
 }
 
+interface ProfileInfo {
+  id: string;
+  name: string;
+  email: string;
+}
+
 // Define types for the RPC function return
 interface UserEmailResult {
   email: string;
@@ -107,7 +113,7 @@ export const useCoachProjects = () => {
       console.log("Profiles data from batch fetch:", profilesData);
       
       // Initialize the profiles map
-      const profilesMap = new Map();
+    const profilesMap = new Map<string, ProfileInfo>();
       
       // If batch fetch worked, use that data
       if (profilesData && profilesData.length > 0) {
