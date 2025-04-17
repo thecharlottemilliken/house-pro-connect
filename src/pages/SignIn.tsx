@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -30,7 +29,6 @@ const SignIn = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
-    // Clear error when user starts typing
     if (errors[name as keyof typeof errors]) {
       setErrors({ ...errors, [name]: "" });
     }
@@ -71,12 +69,9 @@ const SignIn = () => {
         if (error) {
           toast({ title: "Error signing in", description: error.message, variant: "destructive" });
         } else if (user?.id) {
-          // Call the Edge Function to assign the role
           try {
-            // Get the current session to access the access token
             if (session?.access_token) {
               console.log("Calling set-claims function with user ID:", user.id);
-              // Use the full URL to the edge function
               const supabaseFunctionUrl = "https://gluggyghzalabvlvwqqk.supabase.co/functions/v1/set-claims";
               
               const functionResponse = await fetch(supabaseFunctionUrl, {
@@ -92,15 +87,14 @@ const SignIn = () => {
                 const errorText = await functionResponse.text();
                 console.error(`Error in set-claims function (${functionResponse.status}):`, errorText);
                 toast({ 
-                  title: "Warning", 
+                  title: "Set Claims Warning", 
                   description: "Could not set user role claims. Some features may be limited.", 
-                  variant: "warning" 
+                  variant: "default"
                 });
               } else {
                 const responseData = await functionResponse.json();
                 console.log("Claims set successfully:", responseData);
                 
-                // Display JWT info for debugging
                 try {
                   const decoded = jwtDecode(session.access_token);
                   console.log("JWT decoded:", decoded);
@@ -125,7 +119,6 @@ const SignIn = () => {
 
   return (
     <div className="min-h-screen flex overflow-hidden">
-      {/* Left side - Form */}
       <div className="w-full lg:w-1/2 px-4 py-4 lg:px-8 flex flex-col overflow-y-auto">
         <div className="mb-4 lg:mb-6">
           <h1 className="text-2xl font-bold text-orange-500">Rehab Squared</h1>
@@ -200,7 +193,7 @@ const SignIn = () => {
               type="button" 
               variant="outline" 
               className="w-full flex items-center justify-center gap-2"
-              onClick={() => navigate("/dashboard")} // For demo purposes, navigates to dashboard
+              onClick={() => navigate("/dashboard")}
               disabled={isLoading}
             >
               <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24">
@@ -217,7 +210,7 @@ const SignIn = () => {
               type="button" 
               variant="outline" 
               className="w-full flex items-center justify-center gap-2"
-              onClick={() => navigate("/dashboard")} // For demo purposes, navigates to dashboard
+              onClick={() => navigate("/dashboard")}
               disabled={isLoading}
             >
               <Facebook size={24} />
@@ -231,7 +224,6 @@ const SignIn = () => {
         </div>
       </div>
       
-      {/* Right side - Image */}
       <div className="hidden lg:block lg:w-1/2 bg-gray-100">
         <img 
           src="/lovable-uploads/2069326c-e836-4307-bba2-93ef8b361ae1.png" 
