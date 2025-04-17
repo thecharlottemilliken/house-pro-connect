@@ -1,3 +1,4 @@
+
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
@@ -88,6 +89,7 @@ const useTeamMembers = (projectId: string | undefined) => {
           });
           setTeamMembers([]);
         } else {
+          // Format all team members with their roles and profile information
           const formatted: TeamMember[] = (teamData || []).map((member) => {
             const profile = member.profiles;
             const name = profile?.name || member.name || "Unnamed";
