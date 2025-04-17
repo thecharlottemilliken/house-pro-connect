@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -95,18 +96,23 @@ const SignIn = () => {
                 const responseData = await functionResponse.json();
                 console.log("Claims set successfully:", responseData);
                 
-                try {
-                  const decoded = jwtDecode(session.access_token);
-                  console.log("JWT decoded:", decoded);
-                } catch (jwtError) {
-                  console.error("Error decoding JWT:", jwtError);
+                // Refresh the session to get the updated JWT with new claims
+                const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+                if (refreshError) {
+                  console.error("Failed to refresh session:", refreshError);
+                } else {
+                  console.log("Session refreshed with new claims");
+                  if (refreshData?.session) {
+                    const decoded = jwtDecode(refreshData.session.access_token);
+                    console.log("New JWT with updated claims:", decoded);
+                  }
                 }
               }
             }
           } catch (fnError) {
             console.error("Failed to call set-claims function:", fnError);
           }
-
+          
           navigate("/dashboard");
         }
       } catch (err: any) {
