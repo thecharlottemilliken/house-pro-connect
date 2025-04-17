@@ -35,12 +35,20 @@ const ProjectParticipants = ({ projectId, onSelectParticipant }: ProjectParticip
           
         if (projectError) throw projectError;
 
-        // Then fetch profiles of project participants based on user's role
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select('id, name, email, role')
-          .in('role', ['resident', 'coach'])
-          .or(`id.eq.${projectData.user_id},role.eq.coach`);
+        // Get all profiles that could be part of this project
+        // For coaches: we need to see the project owner (resident)
+        // For residents: we need to see coaches
+        let profilesQuery = supabase.from('profiles').select('id, name, email, role');
+        
+        if (user.id === projectData.user_id) {
+          // User is the project owner (resident), show them coaches
+          profilesQuery = profilesQuery.eq('role', 'coach');
+        } else {
+          // User is likely a coach, show them the project owner
+          profilesQuery = profilesQuery.eq('id', projectData.user_id);
+        }
+        
+        const { data: profiles, error: profilesError } = await profilesQuery;
 
         if (profilesError) throw profilesError;
 
@@ -55,6 +63,7 @@ const ProjectParticipants = ({ projectId, onSelectParticipant }: ProjectParticip
           }));
 
         setParticipants(filteredParticipants);
+        console.log('Participants found:', filteredParticipants);
       } catch (error) {
         console.error('Error fetching participants:', error);
       } finally {
@@ -67,6 +76,14 @@ const ProjectParticipants = ({ projectId, onSelectParticipant }: ProjectParticip
 
   if (loading) {
     return <div className="p-4">Loading participants...</div>;
+  }
+
+  if (participants.length === 0) {
+    return (
+      <div className="p-4 text-center text-gray-500">
+        No participants found for this project.
+      </div>
+    );
   }
 
   return (
