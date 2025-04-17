@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProjectList from "@/components/coach/ProjectList";
 import MessageCenter from "@/components/coach/MessageCenter";
+import JWTDebugger from "@/components/debug/JWTDebugger"; // adjust path if needed
 
 const CoachDashboard = () => {
   const [activeTab, setActiveTab] = useState("projects");
@@ -12,7 +13,7 @@ const CoachDashboard = () => {
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <DashboardNavbar />
-      
+      <JWTDebugger />
       <main className="flex-1 p-4 md:p-10">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Coach Dashboard</h1>
