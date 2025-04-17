@@ -9,13 +9,6 @@ interface CoachRouteProps {
   children: React.ReactNode;
 }
 
-// Define specific types for the RPC function
-type GetUserRoleParams = {
-  user_id: string;
-}
-
-type GetUserRoleResponse = string | null;
-
 const CoachRoute = ({ children }: CoachRouteProps) => {
   const { user, profile, isLoading, refreshProfile } = useAuth();
   const [isCoach, setIsCoach] = useState<boolean | null>(null);
@@ -52,42 +45,29 @@ const CoachRoute = ({ children }: CoachRouteProps) => {
         // Method 3: If above methods don't confirm coach status, query directly with a simple query
         console.log("Querying database directly for role using simplified query");
         
-        // Fix the RPC type parameters to match Supabase's expected types
-       const { data, error } = await supabase.rpc<GetUserRoleResponse>(
-  'get_user_role',
-  { user_id: user.id } as GetUserRoleParams
-);
-
-        if (error) {
-          console.error("Error with RPC, falling back to direct query:", error);
+        // Use a regular query instead of RPC to avoid type issues
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
           
-          // Final fallback: direct query
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single();
-            
-          if (profileError) {
-            console.error("Error in final fallback query:", profileError);
-            toast({
-              title: "Error",
-              description: "Could not verify coach permissions",
-              variant: "destructive"
-            });
-            setIsCoach(false);
-          } else {
-            console.log("Role from final fallback query:", profileData?.role);
-            setIsCoach(profileData?.role === 'coach');
-            
-            // Update the profile in context if we have new data
-            if (profileData && (!profile || profile.role !== profileData.role)) {
-              refreshProfile();
-            }
-          }
+        if (profileError) {
+          console.error("Error in profile query:", profileError);
+          toast({
+            title: "Error",
+            description: "Could not verify coach permissions",
+            variant: "destructive"
+          });
+          setIsCoach(false);
         } else {
-          console.log("Role from RPC:", data);
-          setIsCoach(data === 'coach');
+          console.log("Role from direct query:", profileData?.role);
+          setIsCoach(profileData?.role === 'coach');
+          
+          // Update the profile in context if we have new data
+          if (profileData && (!profile || profile.role !== profileData.role)) {
+            refreshProfile();
+          }
         }
       } catch (error) {
         console.error("Error in coach check:", error);
