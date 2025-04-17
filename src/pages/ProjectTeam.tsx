@@ -1,6 +1,5 @@
-
+import { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
-import { useState, useEffect } from "react";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useProjectData } from "@/hooks/useProjectData";
@@ -12,86 +11,56 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 
-// Team member interface
 interface TeamMember {
-  id: string;
   role: string;
   name: string;
   email: string;
   avatarUrl?: string;
-  phone?: string;
 }
-
-interface ProfileData {
-  name: string;
-  email: string;
-}
-
-interface TeamMemberData {
-  id: string;
-  role: string;
-  email: string | null;
-  name: string | null;
-  user: ProfileData | null;
-}
-
-// Fetches real team members from Supabase
-const useTeamMembers = (projectId: string | undefined) => {
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!projectId) return;
-
-    const fetchTeamMembers = async () => {
-      setLoading(true);
-
-      const { data, error } = await supabase
-        .from("project_team_members")
-        .select(`
-          id,
-          role,
-          email,
-          name,
-          user:profiles(name, email)
-        `)
-        .eq("project_id", projectId);
-
-      if (error) {
-        console.error("Failed to load team members:", error);
-        setTeamMembers([]);
-      } else {
-        const formatted = data.map((member: TeamMemberData) => ({
-          id: member.id,
-          role: member.role,
-          name: member.user?.name || member.name || "Unnamed",
-          email: member.user?.email || member.email || "No email",
-          avatarUrl: `https://i.pravatar.cc/150?u=${member.user?.email || member.email}`,
-        }));
-        setTeamMembers(formatted);
-      }
-
-      setLoading(false);
-    };
-
-    fetchTeamMembers();
-  }, [projectId]);
-
-  return { teamMembers, loading };
-};
 
 const ProjectTeam = () => {
   const location = useLocation();
   const params = useParams();
   const isMobile = useIsMobile();
-  const { projectData, isLoading } = useProjectData(params.projectId, location.state);
+  const { projectData, isLoading: isProjectLoading } = useProjectData(params.projectId, location.state);
+
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [isTeamLoading, setIsTeamLoading] = useState(true);
 
   const projectId = projectData?.id || params.projectId || "unknown";
   const projectTitle = projectData?.title || "Unknown Project";
 
-  const { teamMembers, loading: teamLoading } = useTeamMembers(projectId);
+  useEffect(() => {
+    if (projectId) {
+      fetchTeamMembers(projectId);
+    }
+  }, [projectId]);
 
-  if (isLoading || teamLoading) {
+  const fetchTeamMembers = async (projectId: string) => {
+    setIsTeamLoading(true);
+    const { data, error } = await supabase
+      .from("project_team_members")
+      .select("role, user_id, profiles:profiles!user_id(name,email)") // 👈 hint at FK
+      .eq("project_id", projectId);
+
+    if (error) {
+      console.error("Failed to load team members:", error);
+      setTeamMembers([]);
+    } else {
+      setTeamMembers(
+        data.map((member: any) => ({
+          role: member.role,
+          name: member.profiles?.name ?? "Unknown",
+          email: member.profiles?.email ?? "Unknown",
+          avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${member.profiles?.name ?? "U"}`,
+        }))
+      );
+    }
+
+    setIsTeamLoading(false);
+  };
+
+  if (isProjectLoading || isTeamLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-white">
         <DashboardNavbar />
@@ -108,17 +77,11 @@ const ProjectTeam = () => {
 
       <SidebarProvider defaultOpen={!isMobile}>
         <div className="flex flex-1 h-[calc(100vh-64px)] w-full">
-          <ProjectSidebar 
-            projectId={projectId} 
-            projectTitle={projectTitle}
-            activePage="team"
-          />
+          <ProjectSidebar projectId={projectId} projectTitle={projectTitle} activePage="team" />
 
           <div className="flex-1 p-4 sm:p-6 md:p-8 bg-white overflow-y-auto">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-8">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-0">
-                Project Team
-              </h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-0">Project Team</h1>
               <Button className="bg-[#0f566c] hover:bg-[#0d4a5d] w-full sm:w-auto">
                 <UserPlus className="mr-2 h-4 w-4" />
                 INVITE A TEAM MEMBER
@@ -143,7 +106,6 @@ const ProjectTeam = () => {
                     </div>
 
                     <div className="p-4">
-                      <div className="text-sm text-gray-700 mb-2">{member.phone || "(No phone)"}</div>
                       <div className="text-sm text-gray-700">{member.email}</div>
                     </div>
 
