@@ -9,72 +9,84 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import ProjectSidebar from "@/components/project/ProjectSidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
-// Team member interface
 interface TeamMember {
+  id: string;
   role: string;
   name: string;
-  phone: string;
   email: string;
-  avatarUrl?: string;
+  phone?: string;
 }
-
-// Mock team data
-const teamMembers: TeamMember[] = [
-  {
-    role: "Coach",
-    name: "Don Smith",
-    phone: "(800) 472 2847",
-    email: "donsmith@gmail.com",
-    avatarUrl: "https://i.pravatar.cc/150?img=1"
-  },
-  {
-    role: "Carpenter",
-    name: "Mary Johnson",
-    phone: "(800) 559 2142",
-    email: "maryjohnson@gmail.com",
-    avatarUrl: "https://i.pravatar.cc/150?img=5"
-  },
-  {
-    role: "Electrician",
-    name: "Doug Martin",
-    phone: "(800) 672 1923",
-    email: "dougmartin@gmail.com",
-    avatarUrl: "https://i.pravatar.cc/150?img=3"
-  },
-  {
-    role: "Landscaper",
-    name: "Sarah Lee",
-    phone: "(555) 123 4567",
-    email: "sarahlee@gmail.com",
-    avatarUrl: "https://i.pravatar.cc/150?img=4"
-  },
-  {
-    role: "Plumber",
-    name: "Gary Fisher",
-    phone: "(555) 987 6543",
-    email: "garyfisher@gmail.com",
-    avatarUrl: "https://i.pravatar.cc/150?img=6"
-  },
-  {
-    role: "Designer",
-    name: "Sophia Jackson",
-    phone: "(555) 246 8101",
-    email: "sophiajackson@gmail.com",
-    avatarUrl: "https://i.pravatar.cc/150?img=7"
-  },
-];
 
 const ProjectTeam = () => {
   const location = useLocation();
   const params = useParams();
   const isMobile = useIsMobile();
   const { projectData, isLoading } = useProjectData(params.projectId, location.state);
+  const { user } = useAuth();
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [loading, setLoading] = useState(true);
   
   const projectId = projectData?.id || params.projectId || "unknown";
   const projectTitle = projectData?.title || "Unknown Project";
+
+  useEffect(() => {
+    const fetchTeamMembers = async () => {
+      if (!projectId || !user) return;
+      
+      try {
+        // First, get the project details to get the owner's ID
+        const { data: projectData, error: projectError } = await supabase
+          .from('projects')
+          .select('user_id')
+          .eq('id', projectId)
+          .single();
+          
+        if (projectError) throw projectError;
+
+        // Get all profiles that could be part of this project
+        // For coaches: we need to see the project owner (resident)
+        // For residents: we need to see coaches
+        let profilesQuery = supabase.from('profiles').select('id, name, email, role');
+        
+        if (user.id === projectData.user_id) {
+          // User is the project owner (resident), show them coaches
+          profilesQuery = profilesQuery.eq('role', 'coach');
+        } else {
+          // User is likely a coach, show them the project owner
+          profilesQuery = profilesQuery.eq('id', projectData.user_id);
+        }
+        
+        const { data: profiles, error: profilesError } = await profilesQuery;
+
+        if (profilesError) throw profilesError;
+
+        // Filter out the current user and format the team members
+        const filteredTeamMembers = profiles
+          .filter(profile => profile.id !== user.id)
+          .map(profile => ({
+            id: profile.id,
+            name: profile.name || 'Unknown User',
+            email: profile.email || '',
+            role: profile.role,
+            phone: "(555) 123-4567" // Placeholder phone number
+          }));
+
+        setTeamMembers(filteredTeamMembers);
+      } catch (error) {
+        console.error('Error fetching team members:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTeamMembers();
+  }, [projectId, user]);
   
-  if (isLoading) {
+  if (isLoading || loading) {
     return (
       <div className="min-h-screen flex flex-col bg-white">
         <DashboardNavbar />
@@ -108,50 +120,55 @@ const ProjectTeam = () => {
               </Button>
             </div>
             
-            {/* Team Members Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {teamMembers.map((member, index) => (
-                <Card key={index} className="border border-gray-200 rounded-lg overflow-hidden">
-                  <CardContent className="p-0">
-                    <div className="p-4 border-b border-gray-200">
-                      <div className="flex items-center mb-2">
-                        <Avatar className="h-12 w-12 mr-3">
-                          <AvatarImage src={member.avatarUrl} alt={member.name} />
-                          <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <h3 className="font-medium text-gray-700">{member.role}</h3>
-                          <h2 className="font-medium text-lg text-gray-900">{member.name}</h2>
+            {teamMembers.length === 0 ? (
+              <div className="text-center text-gray-500 py-8">
+                No team members found for this project.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {teamMembers.map((member) => (
+                  <Card key={member.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                    <CardContent className="p-0">
+                      <div className="p-4 border-b border-gray-200">
+                        <div className="flex items-center mb-2">
+                          <Avatar className="h-12 w-12 mr-3">
+                            <AvatarImage src="/placeholder.svg" alt={member.name} />
+                            <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <h3 className="font-medium text-gray-700 capitalize">{member.role}</h3>
+                            <h2 className="font-medium text-lg text-gray-900">{member.name}</h2>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    
-                    <div className="p-4">
-                      <div className="text-sm text-gray-700 mb-2">{member.phone}</div>
-                      <div className="text-sm text-gray-700">{member.email}</div>
-                    </div>
-                    
-                    <div className="flex border-t border-gray-200">
-                      <button className="flex-1 py-3 flex justify-center items-center text-gray-600 hover:bg-gray-50">
-                        <MessageSquare className="h-5 w-5" />
-                      </button>
-                      <div className="border-r border-gray-200"></div>
-                      <button className="flex-1 py-3 flex justify-center items-center text-gray-600 hover:bg-gray-50">
-                        <Phone className="h-5 w-5" />
-                      </button>
-                      <div className="border-r border-gray-200"></div>
-                      <button className="flex-1 py-3 flex justify-center items-center text-gray-600 hover:bg-gray-50">
-                        <CreditCard className="h-5 w-5" />
-                      </button>
-                      <div className="border-r border-gray-200"></div>
-                      <button className="flex-1 py-3 flex justify-center items-center text-gray-600 hover:bg-gray-50">
-                        <ExternalLink className="h-5 w-5" />
-                      </button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                      
+                      <div className="p-4">
+                        <div className="text-sm text-gray-700 mb-2">{member.phone}</div>
+                        <div className="text-sm text-gray-700">{member.email}</div>
+                      </div>
+                      
+                      <div className="flex border-t border-gray-200">
+                        <button className="flex-1 py-3 flex justify-center items-center text-gray-600 hover:bg-gray-50">
+                          <MessageSquare className="h-5 w-5" />
+                        </button>
+                        <div className="border-r border-gray-200"></div>
+                        <button className="flex-1 py-3 flex justify-center items-center text-gray-600 hover:bg-gray-50">
+                          <Phone className="h-5 w-5" />
+                        </button>
+                        <div className="border-r border-gray-200"></div>
+                        <button className="flex-1 py-3 flex justify-center items-center text-gray-600 hover:bg-gray-50">
+                          <CreditCard className="h-5 w-5" />
+                        </button>
+                        <div className="border-r border-gray-200"></div>
+                        <button className="flex-1 py-3 flex justify-center items-center text-gray-600 hover:bg-gray-50">
+                          <ExternalLink className="h-5 w-5" />
+                        </button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </SidebarProvider>
