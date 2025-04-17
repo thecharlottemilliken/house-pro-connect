@@ -64,7 +64,7 @@ export function FileUpload({
         variant: "destructive"
       });
     } finally {
-      setIsSubmitting(false);
+      setIsUploading(false); // Fixed: using setIsUploading instead of setIsSubmitting
       // Reset the input
       event.target.value = '';
     }
@@ -101,4 +101,3 @@ export function FileUpload({
     </div>
   );
 }
-
