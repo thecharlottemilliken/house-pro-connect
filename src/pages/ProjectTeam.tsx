@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useProjectData } from "@/hooks/useProjectData";
@@ -11,12 +11,72 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 
+// Updated interfaces to match Supabase query structure
+interface ProfileData {
+  name?: string;
+  email?: string;
+}
+
+interface TeamMemberData {
+  id: string;
+  role: string;
+  email: string;
+  name: string;
+  user?: ProfileData;
+}
+
 interface TeamMember {
+  id: string;
   role: string;
   name: string;
   email: string;
-  avatarUrl?: string;
+  avatarUrl: string;
 }
+
+// Fetches real team members from Supabase
+const useTeamMembers = (projectId: string | undefined) => {
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!projectId) return;
+
+    const fetchTeamMembers = async () => {
+      setLoading(true);
+
+      const { data, error } = await supabase
+        .from("project_team_members")
+        .select(`
+          id,
+          role,
+          email,
+          name,
+          user:profiles(name, email)
+        `)
+        .eq("project_id", projectId);
+
+      if (error) {
+        console.error("Failed to load team members:", error);
+        setTeamMembers([]);
+      } else {
+        const formatted: TeamMember[] = (data as TeamMemberData[]).map((member) => ({
+          id: member.id,
+          role: member.role,
+          name: member.user?.name || member.name || "Unnamed",
+          email: member.user?.email || member.email || "No email",
+          avatarUrl: `https://i.pravatar.cc/150?u=${member.user?.email || member.email}`,
+        }));
+        setTeamMembers(formatted);
+      }
+
+      setLoading(false);
+    };
+
+    fetchTeamMembers();
+  }, [projectId]);
+
+  return { teamMembers, loading };
+};
 
 const ProjectTeam = () => {
   const location = useLocation();
@@ -24,41 +84,10 @@ const ProjectTeam = () => {
   const isMobile = useIsMobile();
   const { projectData, isLoading: isProjectLoading } = useProjectData(params.projectId, location.state);
 
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [isTeamLoading, setIsTeamLoading] = useState(true);
-
   const projectId = projectData?.id || params.projectId || "unknown";
   const projectTitle = projectData?.title || "Unknown Project";
 
-  useEffect(() => {
-    if (projectId) {
-      fetchTeamMembers(projectId);
-    }
-  }, [projectId]);
-
-  const fetchTeamMembers = async (projectId: string) => {
-    setIsTeamLoading(true);
-    const { data, error } = await supabase
-      .from("project_team_members")
-      .select("role, user_id, profiles:profiles!user_id(name,email)") // 👈 hint at FK
-      .eq("project_id", projectId);
-
-    if (error) {
-      console.error("Failed to load team members:", error);
-      setTeamMembers([]);
-    } else {
-      setTeamMembers(
-        data.map((member: any) => ({
-          role: member.role,
-          name: member.profiles?.name ?? "Unknown",
-          email: member.profiles?.email ?? "Unknown",
-          avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${member.profiles?.name ?? "U"}`,
-        }))
-      );
-    }
-
-    setIsTeamLoading(false);
-  };
+  const { teamMembers, loading: isTeamLoading } = useTeamMembers(projectId);
 
   if (isProjectLoading || isTeamLoading) {
     return (
