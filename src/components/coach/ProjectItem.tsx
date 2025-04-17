@@ -2,15 +2,10 @@
 import React from "react";
 import { TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Info } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import { Project } from "@/hooks/useCoachProjects";
 import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { useNavigate } from "react-router-dom";
 
 interface ProjectItemProps {
   project: Project;
@@ -18,8 +13,23 @@ interface ProjectItemProps {
 }
 
 const ProjectItem = ({ project, onMessageClick }: ProjectItemProps) => {
+  const navigate = useNavigate();
+
+  const handleRowClick = () => {
+    navigate(`/project-dashboard/${project.id}`);
+  };
+
+  const handleMessageClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row click when clicking message button
+    onMessageClick(project);
+  };
+
   return (
-    <TableRow key={project.id}>
+    <TableRow 
+      key={project.id} 
+      className="cursor-pointer hover:bg-gray-50"
+      onClick={handleRowClick}
+    >
       <TableCell className="font-medium">{project.title}</TableCell>
       <TableCell>
         <div className="max-w-[250px]">
@@ -48,7 +58,7 @@ const ProjectItem = ({ project, onMessageClick }: ProjectItemProps) => {
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => onMessageClick(project)}
+            onClick={handleMessageClick}
           >
             <MessageSquare className="h-4 w-4 mr-2" />
             Message
@@ -60,3 +70,4 @@ const ProjectItem = ({ project, onMessageClick }: ProjectItemProps) => {
 };
 
 export default ProjectItem;
+
