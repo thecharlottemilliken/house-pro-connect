@@ -70,7 +70,7 @@ const ProjectTeam = () => {
           .from('projects')
           .select(`
             user_id,
-            owner:user_id (
+            profiles (
               id,
               name,
               email
@@ -90,11 +90,11 @@ const ProjectTeam = () => {
         const processedTeamMembers: TeamMember[] = [];
         
         // Add the project owner if available
-        if (projectDetails && projectDetails.owner) {
+        if (projectDetails && projectDetails.profiles) {
           processedTeamMembers.push({
-            id: projectDetails.owner.id,
-            name: projectDetails.owner.name || 'Unknown',
-            email: projectDetails.owner.email || '',
+            id: projectDetails.profiles.id,
+            name: projectDetails.profiles.name || 'Unknown',
+            email: projectDetails.profiles.email || '',
             role: 'owner',
             added_at: projectDetails.created_at,
             phone: "(555) 123-4567" // Placeholder
@@ -104,7 +104,7 @@ const ProjectTeam = () => {
         // Add team members
         if (teamData) {
           teamData.forEach(member => {
-            if (member.profiles && member.profiles.id !== user.id) {
+            if (member.profiles) {
               processedTeamMembers.push({
                 id: member.profiles.id,
                 name: member.profiles.name || 'Unknown',
