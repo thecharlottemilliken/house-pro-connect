@@ -8,6 +8,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import PropertyCard from "@/components/project/PropertyCard";
+import { 
+  Carousel, 
+  CarouselContent, 
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious 
+} from "@/components/ui/carousel";
 
 interface Property {
   id: string;
@@ -204,12 +211,30 @@ const CreateProject = () => {
                       : "border-gray-200"
                   }`}
                 >
-                  <div className="h-40 md:h-52 overflow-hidden">
-                    <img 
-                      src={property.home_photos?.[0] || property.image_url || "https://images.unsplash.com/photo-1493809842364-78817add7ffb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80"} 
-                      alt={property.property_name} 
-                      className="w-full h-full object-cover" 
-                    />
+                  <div className="h-40 md:h-52 overflow-hidden relative">
+                    {property.home_photos && property.home_photos.length > 0 ? (
+                      <Carousel className="w-full h-full">
+                        <CarouselContent className="h-full">
+                          {property.home_photos.map((photo, index) => (
+                            <CarouselItem key={index} className="h-full">
+                              <img 
+                                src={photo} 
+                                alt={`${property.property_name} photo ${index + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                            </CarouselItem>
+                          ))}
+                        </CarouselContent>
+                        <CarouselPrevious className="left-2" />
+                        <CarouselNext className="right-2" />
+                      </Carousel>
+                    ) : (
+                      <img 
+                        src={property.image_url || "https://images.unsplash.com/photo-1493809842364-78817add7ffb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80"} 
+                        alt={property.property_name} 
+                        className="w-full h-full object-cover" 
+                      />
+                    )}
                   </div>
                   <div className="p-4">
                     <h4 className="text-base md:text-lg font-semibold mb-2">{property.property_name}</h4>
