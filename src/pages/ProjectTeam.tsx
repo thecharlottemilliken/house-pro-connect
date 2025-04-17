@@ -1,3 +1,4 @@
+
 import { useParams, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -12,6 +13,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfileRole } from "@/profile/ProfileRole";
+import { toast } from "@/hooks/use-toast";
 
 interface TeamMember {
   id: string;
@@ -68,12 +70,12 @@ const ProjectTeam = () => {
           .from('projects')
           .select(`
             user_id,
-            profiles:user_id (
+            owner:user_id (
               id,
               name,
-              email,
-              role
-            )
+              email
+            ),
+            created_at
           `)
           .eq('id', projectId)
           .single();
@@ -85,36 +87,45 @@ const ProjectTeam = () => {
         }
 
         // Combine project owner and team members
-        const owner = projectDetails.profiles;
-        const processedTeamMembers: TeamMember[] = [
-          {
-            id: owner.id,
-            name: owner.name || 'Unknown',
-            email: owner.email || '',
+        const processedTeamMembers: TeamMember[] = [];
+        
+        // Add the project owner if available
+        if (projectDetails && projectDetails.owner) {
+          processedTeamMembers.push({
+            id: projectDetails.owner.id,
+            name: projectDetails.owner.name || 'Unknown',
+            email: projectDetails.owner.email || '',
             role: 'owner',
             added_at: projectDetails.created_at,
             phone: "(555) 123-4567" // Placeholder
-          }
-        ];
+          });
+        }
 
         // Add team members
-        teamData?.forEach(member => {
-          if (member.profiles && member.profiles.id !== user.id) {
-            processedTeamMembers.push({
-              id: member.profiles.id,
-              name: member.profiles.name || 'Unknown',
-              email: member.profiles.email || '',
-              role: member.role,
-              added_at: member.added_at,
-              phone: "(555) 123-4567" // Placeholder
-            });
-          }
-        });
+        if (teamData) {
+          teamData.forEach(member => {
+            if (member.profiles && member.profiles.id !== user.id) {
+              processedTeamMembers.push({
+                id: member.profiles.id,
+                name: member.profiles.name || 'Unknown',
+                email: member.profiles.email || '',
+                role: member.role,
+                added_at: member.added_at,
+                phone: "(555) 123-4567" // Placeholder
+              });
+            }
+          });
+        }
 
         console.log("Team members found:", processedTeamMembers);
         setTeamMembers(processedTeamMembers);
       } catch (error) {
         console.error('Error fetching team members:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load team members",
+          variant: "destructive"
+        });
       } finally {
         setLoading(false);
       }
