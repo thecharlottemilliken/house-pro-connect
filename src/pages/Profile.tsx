@@ -9,13 +9,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { LogOut, User } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { useProfileRole } from '@/profile/ProfileRole';
+import LoadingState from '@/components/coach/LoadingState';
 
 const Profile = () => {
   const navigate = useNavigate();
   const { profile, user, signOut } = useAuth();
   const { toast } = useToast();
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const { role } = useProfileRole();
+  const { displayRole, isLoading } = useProfileRole();
 
   const handleSignOut = async () => {
     try {
@@ -45,6 +46,19 @@ const Profile = () => {
   useEffect(() => {
     console.log("Current profile data:", profile);
   }, [profile]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-white">
+        <DashboardNavbar />
+        <main className="flex-1 px-4 sm:px-8 md:px-16 py-6 sm:py-8 md:py-12">
+          <div className="max-w-3xl mx-auto">
+            <LoadingState />
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -77,8 +91,8 @@ const Profile = () => {
               
               <div>
                 <h3 className="font-medium text-sm text-gray-500">ROLE</h3>
-                <p className="text-lg capitalize">{role}</p>
-                {role === 'coach' && (
+                <p className="text-lg capitalize">{displayRole}</p>
+                {profile?.role === 'coach' && (
                   <Button 
                     variant="link" 
                     className="p-0 h-auto text-sm text-blue-600"
