@@ -213,6 +213,12 @@ export const useCoachProjects = () => {
       
       console.log("Processed projects:", processedProjects);
       setProjects(processedProjects);
+      console.table(processedProjects.map(p => ({
+  title: p.title,
+  ownerName: p.owner.name,
+  ownerEmail: p.owner.email
+})));
+
     } catch (error: any) {
       console.error("Error fetching projects:", error);
       toast({
@@ -224,12 +230,5 @@ export const useCoachProjects = () => {
       setIsLoading(false);
     }
   };
-  
-console.table(processedProjects.map(p => ({
-  title: p.title,
-  ownerName: p.owner.name,
-  ownerEmail: p.owner.email
-});
-
   return { projects, isLoading, fetchProjects };
 };
