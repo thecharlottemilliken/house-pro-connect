@@ -118,4 +118,46 @@ const ProjectTeam = () => {
                       <div className="flex items-center mb-2">
                         <Avatar className="h-12 w-12 mr-3">
                           <AvatarImage src={member.avatarUrl} alt={member.name} />
-                          <AvatarFallback>{member.name.charAt(
+                          <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h3 className="font-medium text-gray-700">{member.role}</h3>
+                          <h2 className="font-medium text-lg text-gray-900">{member.name}</h2>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4">
+                      <div className="text-sm text-gray-700 mb-2">{member.phone || "(No phone)"}</div>
+                      <div className="text-sm text-gray-700">{member.email}</div>
+                    </div>
+
+                    <div className="flex border-t border-gray-200">
+                      <button className="flex-1 py-3 flex justify-center items-center text-gray-600 hover:bg-gray-50">
+                        <MessageSquare className="h-5 w-5" />
+                      </button>
+                      <div className="border-r border-gray-200"></div>
+                      <button className="flex-1 py-3 flex justify-center items-center text-gray-600 hover:bg-gray-50">
+                        <Phone className="h-5 w-5" />
+                      </button>
+                      <div className="border-r border-gray-200"></div>
+                      <button className="flex-1 py-3 flex justify-center items-center text-gray-600 hover:bg-gray-50">
+                        <CreditCard className="h-5 w-5" />
+                      </button>
+                      <div className="border-r border-gray-200"></div>
+                      <button className="flex-1 py-3 flex justify-center items-center text-gray-600 hover:bg-gray-50">
+                        <ExternalLink className="h-5 w-5" />
+                      </button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </div>
+      </SidebarProvider>
+    </div>
+  );
+};
+
+export default ProjectTeam;
