@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Plus } from "lucide-react";
@@ -16,12 +17,14 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { Json } from "@/integrations/supabase/types";
 
 const ConstructionPreferences = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
   const [propertyId, setPropertyId] = useState<string | null>(null);
+  const [projectId, setProjectId] = useState<string | null>(null); // Ensure we have projectId state
   const [renovationAreas, setRenovationAreas] = useState<any[]>([]);
   const [projectPrefs, setProjectPrefs] = useState<any>(null);
   const [helpLevel, setHelpLevel] = useState<string>("medium"); // "low", "medium", "high"
@@ -34,33 +37,87 @@ const ConstructionPreferences = () => {
 
   // Get the selected property ID and previous data from the location state
   useEffect(() => {
-    if (location.state?.propertyId) {
-      setPropertyId(location.state.propertyId);
+    if (location.state) {
+      if (location.state.propertyId) {
+        setPropertyId(location.state.propertyId);
+      }
+      
+      if (location.state.projectId) {
+        setProjectId(location.state.projectId); // Make sure to set projectId
+      }
+      
       if (location.state.renovationAreas) {
         setRenovationAreas(location.state.renovationAreas);
       }
+      
       // Save all project preferences from previous step
       setProjectPrefs(location.state);
+      
+      // Load existing construction preferences if available
+      if (location.state.projectId) {
+        loadExistingPreferences(location.state.projectId);
+      }
     } else {
       // If no property was selected, go back to the property selection
       navigate("/create-project");
     }
   }, [location.state, navigate]);
+  
+  // Function to load existing construction preferences
+  const loadExistingPreferences = async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('construction_preferences')
+        .eq('id', id)
+        .single();
+        
+      if (error) throw error;
+      
+      if (data && data.construction_preferences) {
+        const prefs = data.construction_preferences as any;
+        
+        if (prefs.helpLevel) setHelpLevel(prefs.helpLevel);
+        if (prefs.hasSpecificPros !== undefined) setHasSpecificPros(prefs.hasSpecificPros);
+        if (prefs.pros && Array.isArray(prefs.pros) && prefs.pros.length > 0) setPros(prefs.pros);
+      }
+    } catch (error) {
+      console.error('Error loading construction preferences:', error);
+    }
+  };
 
   const savePreferences = async () => {
+    if (!projectId) {
+      console.error('No project ID available to save preferences');
+      toast({
+        title: "Error",
+        description: "Missing project ID. Unable to save preferences.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
+      // Create preferences object as Record<string, Json>
+      const preferences: Record<string, Json> = {
+        helpLevel,
+        hasSpecificPros,
+        pros: hasSpecificPros ? pros : []
+      };
+      
       const { error } = await supabase
         .from('projects')
         .update({
-          construction_preferences: {
-            helpLevel,
-            hasSpecificPros,
-            pros: hasSpecificPros ? pros : []
-          }
+          construction_preferences: preferences
         })
-        .eq('id', projectPrefs.id);
+        .eq('id', projectId);
 
       if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Construction preferences saved successfully.",
+      });
     } catch (error) {
       console.error('Error saving construction preferences:', error);
       toast({
@@ -85,7 +142,10 @@ const ConstructionPreferences = () => {
 
   const goBack = () => {
     navigate("/project-preferences", {
-      state: { propertyId, renovationAreas }
+      state: { 
+        propertyId,
+        projectId 
+      }
     });
   };
 
