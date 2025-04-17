@@ -92,6 +92,8 @@ export const useCoachProjects = () => {
         // Continue execution, we'll use default values for missing profiles
       }
       
+      console.log("Profiles data:", profilesData);
+      
       // Create maps for faster lookups
       const propertiesMap = new Map();
       if (propertiesData) {
