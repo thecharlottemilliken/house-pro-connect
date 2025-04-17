@@ -9,6 +9,58 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      coach_messages: {
+        Row: {
+          coach_id: string
+          created_at: string
+          id: string
+          message: string
+          project_id: string | null
+          read_at: string | null
+          resident_id: string
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string
+          id?: string
+          message: string
+          project_id?: string | null
+          read_at?: string | null
+          resident_id: string
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          project_id?: string | null
+          read_at?: string | null
+          resident_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_messages_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_messages_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_messages_resident_id_fkey"
+            columns: ["resident_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -45,6 +97,7 @@ export type Database = {
           id: string
           property_id: string
           renovation_areas: Json | null
+          state: string
           title: string
           updated_at: string
           user_id: string
@@ -54,6 +107,7 @@ export type Database = {
           id?: string
           property_id: string
           renovation_areas?: Json | null
+          state?: string
           title: string
           updated_at?: string
           user_id: string
@@ -63,6 +117,7 @@ export type Database = {
           id?: string
           property_id?: string
           renovation_areas?: Json | null
+          state?: string
           title?: string
           updated_at?: string
           user_id?: string

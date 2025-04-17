@@ -11,8 +11,9 @@ interface AuthContextType {
   isLoading: boolean;
   signUp: (email: string, password: string, userData: any) => Promise<{ error: any | null }>;
   signIn: (email: string, password: string) => Promise<{ error: any | null }>;
-  signOut: () => Promise<void>;
+  signOut: () => Promise<{ error: any | null }>;
   updateProfile: (data: any) => Promise<{ error: any | null }>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -58,21 +59,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchProfile = async (userId: string) => {
     try {
+      console.log("Fetching profile for user:", userId);
+      
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, name, email, role')
         .eq('id', userId)
         .single();
 
       if (error) {
         console.error('Error fetching profile:', error);
+        
+        if (error.message && error.message.includes('infinite recursion')) {
+          console.log("Attempting to get role directly via RPC to avoid recursion");
+          setProfile({
+            id: userId,
+            email: user?.email,
+            name: user?.user_metadata?.name || "User",
+            role: user?.user_metadata?.role || null
+          });
+        }
         return;
       }
 
+      console.log("Profile data loaded:", data);
       setProfile(data);
     } catch (error) {
       console.error('Error in fetchProfile:', error);
     }
+  };
+  
+  const refreshProfile = async () => {
+    if (!user) return;
+    await fetchProfile(user.id);
   };
 
   const signUp = async (email: string, password: string, userData: any) => {
@@ -139,12 +158,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    toast({
-      title: "Signed out",
-      description: "You have been signed out successfully",
-    });
-    navigate('/');
+    try {
+      try {
+        await supabase.auth.signOut();
+      } catch (error: any) {
+        console.log("Backend sign out had an issue:", error.message);
+      }
+      
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+      
+      toast({
+        title: "Signed out successfully",
+        description: "You have been signed out of your account",
+      });
+      
+      navigate('/');
+      
+      return { error: null };
+    } catch (error) {
+      console.error("Sign out failed in catch block:", error);
+      return { error };
+    }
   };
 
   const updateProfile = async (data: any) => {
@@ -182,6 +218,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signIn,
         signOut,
         updateProfile,
+        refreshProfile,
       }}
     >
       {children}

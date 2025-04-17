@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -31,7 +32,9 @@ import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
 import LandingPage from "./pages/LandingPage";
 import Profile from "./pages/Profile";
+import CoachDashboard from "./pages/CoachDashboard";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import CoachRoute from "./components/auth/CoachRoute";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +53,13 @@ const App = () => {
                   <ResidentDashboard />
                 </TooltipProvider>
               </ProtectedRoute>
+            } />
+            <Route path="/coach-dashboard" element={
+              <CoachRoute>
+                <TooltipProvider>
+                  <CoachDashboard />
+                </TooltipProvider>
+              </CoachRoute>
             } />
             <Route path="/profile" element={
               <ProtectedRoute>
