@@ -1,4 +1,3 @@
-
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
@@ -13,7 +12,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
-// Updated interfaces to match the new query structure
 interface ProfileData {
   id?: string;
   name?: string;
@@ -37,7 +35,6 @@ interface TeamMember {
   avatarUrl: string;
 }
 
-// Fetches team members from Supabase with the correct join
 const useTeamMembers = (projectId: string | undefined) => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,8 +48,7 @@ const useTeamMembers = (projectId: string | undefined) => {
     const fetchTeamMembers = async () => {
       setLoading(true);
 
-      // Use a direct join query instead of the nested select
-      const { data, error } = await supabase
+      const { data: teamData, error } = await supabase
         .from("project_team_members")
         .select(`
           id,
@@ -60,7 +56,12 @@ const useTeamMembers = (projectId: string | undefined) => {
           email,
           name,
           user_id,
-          profiles!project_team_members_user_id_fkey(id, name, email)
+          profiles!project_team_members_user_id_fkey (
+            id,
+            name,
+            email,
+            role
+          )
         `)
         .eq("project_id", projectId);
 
@@ -73,9 +74,8 @@ const useTeamMembers = (projectId: string | undefined) => {
         });
         setTeamMembers([]);
       } else {
-        console.log("Team members data:", data);
-        const formatted: TeamMember[] = (data as TeamMemberData[]).map((member) => {
-          // Attempt to get name and email from profile first, fall back to direct fields
+        console.log("Team members data:", teamData);
+        const formatted: TeamMember[] = (teamData || []).map((member) => {
           const profile = member.profiles;
           const name = profile?.name || member.name || "Unnamed";
           const email = profile?.email || member.email || "No email";
@@ -100,10 +100,8 @@ const useTeamMembers = (projectId: string | undefined) => {
   return { teamMembers, loading };
 };
 
-// Function to add a team member
 const addTeamMember = async (projectId: string, email: string, role: string, name?: string) => {
   try {
-    // First check if user exists in profiles
     const { data: userData, error: userError } = await supabase
       .from("profiles")
       .select("id, email")
@@ -112,13 +110,12 @@ const addTeamMember = async (projectId: string, email: string, role: string, nam
 
     if (userError) throw userError;
 
-    // Add the team member
     const { error } = await supabase.from("project_team_members").insert({
       project_id: projectId,
-      user_id: userData?.id || '00000000-0000-0000-0000-000000000000', // If user doesn't exist, use placeholder
+      user_id: userData?.id || '00000000-0000-0000-0000-000000000000',
       role: role,
       email: email,
-      name: name || email.split('@')[0] // Use first part of email as default name
+      name: name || email.split('@')[0]
     });
 
     if (error) throw error;
@@ -137,7 +134,6 @@ const ProjectTeam = () => {
   const isMobile = useIsMobile();
   const { projectData, isLoading: isProjectLoading } = useProjectData(params.projectId, location.state);
 
-  // Redirect to projects page if no projectId is provided
   useEffect(() => {
     if (!params.projectId) {
       toast({
@@ -195,7 +191,6 @@ const ProjectTeam = () => {
     }
   };
 
-  // If there's no projectId, we'll redirect with the useEffect above
   if (!projectId) {
     return (
       <div className="min-h-screen flex flex-col bg-white">
@@ -232,7 +227,6 @@ const ProjectTeam = () => {
               <Button 
                 className="bg-[#0f566c] hover:bg-[#0d4a5d] w-full sm:w-auto"
                 onClick={() => {
-                  // Simple dialog here, in a real app use a proper dialog component
                   const email = prompt("Enter team member's email:");
                   if (email) {
                     const role = prompt("Enter role (team_member, contractor, designer):", "team_member");
@@ -243,7 +237,6 @@ const ProjectTeam = () => {
                             title: "Success",
                             description: "Team member added successfully",
                           });
-                          // Refresh the page to show the new team member
                           window.location.reload();
                         } else {
                           toast({

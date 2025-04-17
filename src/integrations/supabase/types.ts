@@ -265,6 +265,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_coaches_to_existing_projects: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       get_user_email: {
         Args: { user_id: string }
         Returns: {
