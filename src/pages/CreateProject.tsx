@@ -80,55 +80,31 @@ const CreateProject = () => {
     { number: 6, title: "Management Preferences", current: false },
     { number: 7, title: "Prior Experience", current: false },
   ];
-
-  const createInitialProject = async () => {
-    if (!selectedPropertyId || !user) return;
-    
+  
+  const goToNextStep = () => {
+    if (!selectedPropertyId) return;
     setIsSubmitting(true);
     
     try {
       const selectedProperty = properties.find(p => p.id === selectedPropertyId);
-      const projectTitle = `${selectedProperty?.property_name || 'Property'} Renovation`;
-      
-      const { data, error } = await supabase
-        .from('projects')
-        .insert({
-          user_id: user.id,
-          property_id: selectedPropertyId,
-          title: projectTitle,
-          renovation_areas: []
-        } as any)
-        .select()
-        .single();
-      
-      if (error) throw error;
+      const propertyName = selectedProperty?.property_name || 'Property';
       
       navigate("/renovation-areas", { 
         state: { 
           propertyId: selectedPropertyId,
-          projectId: data.id 
+          propertyName: propertyName
         } 
       });
-      
-      toast({
-        title: "Project Created",
-        description: "Your project has been created successfully."
-      });
     } catch (error: any) {
-      console.error('Error creating project:', error);
+      console.error('Error navigating to next step:', error);
       toast({
         title: "Error",
-        description: "Failed to create your project. Please try again.",
+        description: "Failed to proceed to the next step. Please try again.",
         variant: "destructive"
       });
     } finally {
       setIsSubmitting(false);
     }
-  };
-  
-  const goToNextStep = () => {
-    if (!selectedPropertyId) return;
-    createInitialProject();
   };
   
   const formatAddress = (property: Property) => {
@@ -267,6 +243,7 @@ const CreateProject = () => {
               <Button
                 variant="outline"
                 className="text-[#174c65] border-[#174c65] w-full sm:w-auto"
+                onClick={() => navigate("/dashboard")}
               >
                 SAVE & EXIT
               </Button>

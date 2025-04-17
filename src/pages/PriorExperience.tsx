@@ -18,6 +18,7 @@ const PriorExperience = () => {
   const { user } = useAuth();
   
   const [propertyId, setPropertyId] = useState<string | null>(null);
+  const [propertyName, setPropertyName] = useState<string | null>(null);
   const [projectId, setProjectId] = useState<string | null>(null);
   const [projectPrefs, setProjectPrefs] = useState<any>(null);
   const [priorExperience, setPriorExperience] = useState<string>("No");
@@ -30,6 +31,9 @@ const PriorExperience = () => {
       if (location.state.propertyId) {
         setPropertyId(location.state.propertyId);
       }
+      if (location.state.propertyName) {
+        setPropertyName(location.state.propertyName);
+      }
       if (location.state.projectId) {
         setProjectId(location.state.projectId);
       }
@@ -39,40 +43,6 @@ const PriorExperience = () => {
     }
   }, [location.state, navigate]);
 
-  const savePreferences = async () => {
-    if (!projectId) {
-      console.log("No project ID available, will create project");
-      return;
-    }
-    
-    try {
-      const { error } = await supabase
-        .from('projects')
-        .update({
-          prior_experience: {
-            hadPriorExperience: priorExperience,
-            positiveAspects,
-            negativeAspects
-          }
-        })
-        .eq('id', projectId);
-
-      if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Prior experience saved successfully",
-      });
-    } catch (error) {
-      console.error('Error saving prior experience:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save prior experience",
-        variant: "destructive"
-      });
-    }
-  };
-
   const createProject = async () => {
     if (!user || !propertyId) {
       toast({
@@ -80,7 +50,7 @@ const PriorExperience = () => {
         description: "Missing required information to create project",
         variant: "destructive"
       });
-      return;
+      return null;
     }
 
     try {
@@ -106,28 +76,16 @@ const PriorExperience = () => {
           description: "Your project has been updated successfully!",
         });
         
-        navigate("/project-dashboard", {
-          state: {
-            ...projectPrefs,
-            priorExperience: {
-              hadPriorExperience: priorExperience,
-              positiveAspects,
-              negativeAspects
-            },
-            completed: true,
-            projectId
-          }
-        });
-        
-        return;
+        return projectId;
       }
 
+      // Create new project with all collected preferences
       const { data: project, error: projectError } = await supabase
         .from('projects')
         .insert({
           property_id: propertyId,
           user_id: user.id,
-          title: `${projectPrefs?.propertyName || 'New'} Renovation`,
+          title: `${propertyName || 'New'} Renovation`,
           renovation_areas: projectPrefs?.renovationAreas || [],
           project_preferences: projectPrefs?.projectPreferences || null,
           construction_preferences: projectPrefs?.constructionPreferences || null,
@@ -149,6 +107,24 @@ const PriorExperience = () => {
         description: "Your project has been created successfully!",
       });
 
+      return project.id;
+    } catch (error) {
+      console.error('Error creating project:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create your project. Please try again.",
+        variant: "destructive"
+      });
+      return null;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const finishProcess = async () => {
+    const createdProjectId = await createProject();
+    
+    if (createdProjectId) {
       navigate("/project-dashboard", {
         state: {
           ...projectPrefs,
@@ -158,23 +134,10 @@ const PriorExperience = () => {
             negativeAspects
           },
           completed: true,
-          projectId: project.id
+          projectId: createdProjectId
         }
       });
-    } catch (error) {
-      console.error('Error creating project:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create your project. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSubmitting(false);
     }
-  };
-
-  const finishProcess = async () => {
-    await createProject();
   };
 
   const goBack = () => {
@@ -183,13 +146,17 @@ const PriorExperience = () => {
     });
   };
 
-  const saveAndExit = () => {
-    toast({
-      title: "Project Saved",
-      description: "Your progress has been saved. You can continue later.",
-    });
+  const saveAndExit = async () => {
+    const createdProjectId = await createProject();
     
-    navigate("/dashboard");
+    if (createdProjectId) {
+      toast({
+        title: "Project Saved",
+        description: "Your project has been saved. You can continue later.",
+      });
+      
+      navigate("/projects");
+    }
   };
 
   const steps = [

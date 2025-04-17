@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -39,6 +38,7 @@ const RenovationAreas = () => {
   const [selectedLocation, setSelectedLocation] = useState<string>("");
   const [renovationAreas, setRenovationAreas] = useState<RenovationArea[]>([]);
   const [propertyId, setPropertyId] = useState<string | null>(null);
+  const [propertyName, setPropertyName] = useState<string>("");
   const [propertyDetails, setPropertyDetails] = useState<Property | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [projectId, setProjectId] = useState<string | null>(null);
@@ -46,9 +46,12 @@ const RenovationAreas = () => {
   useEffect(() => {
     if (location.state?.propertyId) {
       setPropertyId(location.state.propertyId);
+      if (location.state.propertyName) {
+        setPropertyName(location.state.propertyName);
+      }
       fetchPropertyDetails(location.state.propertyId);
       
-      // If there's an existing project ID, set it
+      // If there's an existing project ID from saved draft, set it
       if (location.state.projectId) {
         setProjectId(location.state.projectId);
         fetchExistingAreas(location.state.projectId);
@@ -78,6 +81,9 @@ const RenovationAreas = () => {
       };
       
       setPropertyDetails(propertyData);
+      if (!propertyName) {
+        setPropertyName(data.property_name);
+      }
     } catch (error) {
       console.error('Error fetching property details:', error);
       toast({
@@ -112,50 +118,6 @@ const RenovationAreas = () => {
       }
     } catch (error) {
       console.error('Error fetching existing renovation areas:', error);
-    }
-  };
-
-  const saveRenovationAreas = async (): Promise<string> => {
-    try {
-      let id = projectId;
-
-      // Convert to a format compatible with Supabase's Json type
-      const renovationAreasJson = JSON.parse(JSON.stringify(renovationAreas)) as Json;
-      
-      if (id) {
-        // Update existing project
-        const { error } = await supabase
-          .from('projects')
-          .update({ renovation_areas: renovationAreasJson })
-          .eq('id', id);
-          
-        if (error) throw error;
-      } else {
-        // Create new project
-        const { data, error } = await supabase
-          .from('projects')
-          .insert({
-            property_id: propertyId,
-            title: propertyDetails?.property_name + " Renovation",
-            renovation_areas: renovationAreasJson,
-            user_id: (await supabase.auth.getUser()).data.user?.id
-          })
-          .select('id')
-          .single();
-          
-        if (error) throw error;
-        id = data.id;
-      }
-      
-      return id;
-    } catch (error) {
-      console.error('Error saving renovation areas:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save renovation areas.",
-        variant: "destructive"
-      });
-      throw error;
     }
   };
 
@@ -207,27 +169,16 @@ const RenovationAreas = () => {
     }
   };
 
-  const goToNextStep = async () => {
-    try {
-      // Save areas to database and get project ID
-      const savedProjectId = await saveRenovationAreas();
-      
-      // Navigate to next page with both property ID and project ID
-      navigate("/project-preferences", {
-        state: {
-          propertyId,
-          projectId: savedProjectId,
-          renovationAreas
-        }
-      });
-      
-      toast({
-        title: "Success",
-        description: "Renovation areas saved successfully.",
-      });
-    } catch (error) {
-      console.error("Error navigating to next step:", error);
-    }
+  const goToNextStep = () => {
+    // Navigate to next page with both property ID and project preferences
+    navigate("/project-preferences", {
+      state: {
+        propertyId,
+        projectId,
+        propertyName,
+        renovationAreas
+      }
+    });
   };
 
   const goBack = () => {
