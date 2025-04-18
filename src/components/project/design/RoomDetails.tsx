@@ -1,5 +1,6 @@
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
+import { FileText } from "lucide-react";
 import EmptyDesignState from "./EmptyDesignState";
 import DesignTabHeader from "./DesignTabHeader";
 import BeforePhotosSection from "./BeforePhotosSection";
