@@ -10,6 +10,7 @@ interface DesignAssetsCardProps {
   onAddRenderings?: () => void;
   onAddDrawings?: () => void;
   onAddBlueprints?: () => void;
+  propertyBlueprint?: string | null;
 }
 
 const DesignAssetsCard = ({
@@ -18,6 +19,7 @@ const DesignAssetsCard = ({
   onAddRenderings,
   onAddDrawings,
   onAddBlueprints,
+  propertyBlueprint
 }: DesignAssetsCardProps) => {
   return (
     <Card>
@@ -50,18 +52,32 @@ const DesignAssetsCard = ({
             </CardContent>
           </Card>
 
-          <Card className="bg-gray-50 border-dashed">
-            <CardContent className="p-4">
-              <EmptyDesignState
-                type="renderings"
-                customIcon={<Building2 className="w-8 h-8 text-gray-400" />}
-                customTitle="Blueprints"
-                customDescription="Add blueprints"
-                customActionLabel="Add Blueprints"
-                onAction={onAddBlueprints}
+          {propertyBlueprint ? (
+            <Card className="overflow-hidden">
+              <img 
+                src={propertyBlueprint} 
+                alt="Property Blueprint"
+                className="w-full h-48 object-cover"
               />
-            </CardContent>
-          </Card>
+              <CardContent className="p-4">
+                <h4 className="font-medium text-sm mb-1">Property Blueprint</h4>
+                <p className="text-sm text-gray-500">Original property blueprint</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="bg-gray-50 border-dashed">
+              <CardContent className="p-4">
+                <EmptyDesignState
+                  type="renderings"
+                  customIcon={<Building2 className="w-8 h-8 text-gray-400" />}
+                  customTitle="Blueprints"
+                  customDescription="Add blueprints"
+                  customActionLabel="Add Blueprints"
+                  onAction={onAddBlueprints}
+                />
+              </CardContent>
+            </Card>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -1,4 +1,3 @@
-
 import { useParams, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -244,9 +243,10 @@ const ProjectDesign = () => {
                               <DesignAssetsCard
                                 hasRenderings={hasRenderings}
                                 renderingImages={designPreferences.renderingImages}
-                                onAddRenderings={() => console.log("Add renderings clicked")}
-                                onAddDrawings={() => console.log("Add drawings clicked")}
-                                onAddBlueprints={() => console.log("Add blueprints clicked")}
+                                onAddRenderings={handleAddRenderings}
+                                onAddDrawings={handleAddDrawings}
+                                onAddBlueprints={handleAddBlueprints}
+                                propertyBlueprint={propertyDetails?.blueprint_url}
                               />
                             </div>
                           </div>
