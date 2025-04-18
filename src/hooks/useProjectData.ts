@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -80,14 +81,22 @@ export const useProjectData = (projectId?: string, initialData?: any) => {
             ? JSON.parse(data.renovation_areas) 
             : []);
       
-      // Ensure design_preferences is properly typed
-      const designPreferences: DesignPreferences = {
-        hasDesigns: data.design_preferences?.hasDesigns || false,
-        designers: data.design_preferences?.designers || [],
-        designAssets: data.design_preferences?.designAssets || [],
-        renderingImages: data.design_preferences?.renderingImages || [],
-        inspirationImages: data.design_preferences?.inspirationImages || []
-      };
+      // Parse design_preferences with proper type casting
+      let designPreferencesData: DesignPreferences = {};
+      
+      if (data.design_preferences) {
+        // Handle different possible types of design_preferences
+        if (typeof data.design_preferences === 'string') {
+          try {
+            designPreferencesData = JSON.parse(data.design_preferences) as DesignPreferences;
+          } catch (e) {
+            console.error('Error parsing design_preferences string:', e);
+          }
+        } else {
+          // Assume it's already an object
+          designPreferencesData = data.design_preferences as DesignPreferences;
+        }
+      }
       
       // Create a properly typed Project object
       const typedProject: Project = {
@@ -96,7 +105,7 @@ export const useProjectData = (projectId?: string, initialData?: any) => {
         title: data.title,
         renovation_areas: renovationAreas,
         created_at: data.created_at,
-        design_preferences: designPreferences
+        design_preferences: designPreferencesData
       };
       
       setProjectData(typedProject);
