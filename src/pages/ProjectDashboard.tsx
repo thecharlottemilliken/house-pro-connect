@@ -1,53 +1,31 @@
 
 import React from "react";
-import { useLocation, useParams, Navigate, useNavigate } from "react-router-dom";
-import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
+import { useParams, useLocation, Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useProjectData, RenovationArea } from "@/hooks/useProjectData";
+import { useProjectData } from "@/hooks/useProjectData";
+import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import ProjectSidebar from "@/components/project/ProjectSidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import PropertyCard from "@/components/project/PropertyCard";
+import EventsCard from "@/components/project/EventsCard";
 import TasksCard from "@/components/project/TasksCard";
 import MessagesCard from "@/components/project/MessagesCard";
-import EventsCard from "@/components/project/EventsCard";
-import { SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { FileText, PenBox } from "lucide-react";
+import { FileText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useProjectAccess } from "@/hooks/useProjectAccess";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 const ProjectDashboard = () => {
-  const navigate = useNavigate();
   const location = useLocation();
   const params = useParams();
   const isMobile = useIsMobile();
   const { profile } = useAuth();
-  const [showNoDesignDialog, setShowNoDesignDialog] = React.useState(false);
+  const isCoach = profile?.role === "coach";
   
-  const projectId = params.projectId || "";
-  const { hasAccess, isOwner, role, isLoading: isAccessLoading } = useProjectAccess(projectId);
-  
-  const { projectData, propertyDetails, isLoading: isProjectLoading } = useProjectData(
-    projectId,
+  const { projectData, propertyDetails, isLoading } = useProjectData(
+    params.projectId,
     location.state
   );
-
-  const isLoading = isAccessLoading || isProjectLoading;
-
-  // If access check is complete and user doesn't have access, redirect to projects
-  if (!isAccessLoading && !hasAccess) {
-    return <Navigate to="/projects" replace />;
-  }
-
+  
   if (isLoading || !propertyDetails) {
     return (
       <div className="min-h-screen flex flex-col bg-white">
@@ -58,47 +36,13 @@ const ProjectDashboard = () => {
       </div>
     );
   }
-
-  const projectTitle = projectData?.title || "Project Overview";
-  // Type assertion for renovation areas
-  const renovationAreas = (projectData?.renovation_areas as unknown as RenovationArea[]) || [];
   
-  // Check if SOW data exists in design_preferences
-  const hasSOW = projectData?.design_preferences && 
-                 'statement_of_work' in (projectData.design_preferences || {});
-                 
-  const hasDesignPlan = propertyDetails.blueprint_url || 
-    (projectData?.design_preferences && projectData.design_preferences.designAssets?.length > 0);
-    
-  const isCoach = profile?.role === 'coach';
-
-  const handleStartSOW = () => {
-    if (!hasDesignPlan) {
-      setShowNoDesignDialog(true);
-    } else {
-      // Proceed with SOW creation
-      startSOWCreation();
-    }
-  };
-
-  const startSOWCreation = () => {
-    // Navigate to the SOW creation page
-    navigate(`/project-sow/${projectId}`);
-  };
-
-  // Filter and prepare data for the PropertyCard
-  const propertyCardData = {
-    id: propertyDetails.id,
-    property_name: propertyDetails.property_name,
-    image_url: propertyDetails.image_url,
-    home_photos: propertyDetails.home_photos,
-    address_line1: propertyDetails.address_line1,
-    city: propertyDetails.city,
-    state: propertyDetails.state,
-    zip_code: propertyDetails.zip_code
-  };
-
-  const userRole = isOwner ? "Owner" : role || "Team Member";
+  const projectId = projectData?.id || params.projectId || "";
+  const projectTitle = projectData?.title || "Project Dashboard";
+  
+  // Check if SOW exists in the design_preferences
+  const designPreferences = projectData?.design_preferences || {};
+  const hasSOW = Object.keys(designPreferences).length > 0;
 
   return (
     <div className="flex flex-col bg-white min-h-screen">
@@ -112,93 +56,45 @@ const ProjectDashboard = () => {
             activePage="overview"
           />
           
-          <div className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 bg-white overflow-y-auto">
-            <div className="mb-3 sm:mb-4 md:mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center">
-              <div>
-                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2 sm:mb-0">
-                  Project Overview
-                </h1>
-                <div className="flex items-center">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-2">
-                    {userRole}
-                  </span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="mb-3 sm:mb-4 md:mb-8">
-              <div className="text-gray-600 text-sm sm:text-base md:text-lg">
-                {propertyDetails.property_name} #{projectId.slice(-6)}
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 gap-3 sm:gap-4 md:gap-6 lg:grid-cols-2 2xl:grid-cols-3">
-              <PropertyCard 
-                propertyDetails={propertyCardData}
-                renovationAreas={renovationAreas}
-              />
-              
-              {!hasSOW ? (
-                <div className="lg:col-span-2 2xl:col-span-3">
-                  <div className="border border-gray-200 rounded-lg p-8 text-center">
-                    {isCoach ? (
-                      <>
-                        <PenBox className="mx-auto h-12 w-12 text-[#0f566c] mb-4" />
-                        
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">
-                          Begin Building the Statement of Work
-                        </h3>
-                        <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                          Create a comprehensive Statement of Work (SOW) that outlines the project's scope, specific deliverables, timeline, and key milestones.
-                        </p>
-                        <Button 
-                          onClick={handleStartSOW} 
-                          className="bg-[#0f566c] hover:bg-[#0d4a5d] px-6 py-3"
-                        >
-                          Start SOW
-                        </Button>
-                      </>
+          <div className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 bg-gray-50 overflow-y-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+              <div className="lg:col-span-2 space-y-4 md:space-y-6">
+                <PropertyCard propertyDetails={propertyDetails} />
+                
+                {isCoach && (
+                  <div className="bg-white p-4 md:p-6 rounded-lg border shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-lg font-medium">Statement of Work</h2>
+                      <Button asChild size="sm" variant="outline" className="gap-2">
+                        <Link to={`/project-sow/${projectId}`}>
+                          <FileText className="h-4 w-4" />
+                          {hasSOW ? "Edit SOW" : "Create SOW"}
+                        </Link>
+                      </Button>
+                    </div>
+                    {hasSOW ? (
+                      <p className="text-sm text-gray-600">
+                        This project has a Statement of Work. Click Edit SOW to view and modify it.
+                      </p>
                     ) : (
-                      <>
-                        <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                          SOW In Progress
-                        </h3>
-                        <p className="text-gray-600">
-                          Your coach is currently building a Statement of Work for you to review. You'll be notified when it's ready.
-                        </p>
-                      </>
+                      <p className="text-sm text-gray-600">
+                        No Statement of Work has been created for this project yet. Click Create SOW to get started.
+                      </p>
                     )}
                   </div>
-                </div>
-              ) : (
-                <>
-                  <TasksCard />
-                  <MessagesCard />
-                  <EventsCard />
-                </>
-              )}
+                )}
+                
+                <TasksCard projectId={projectId} />
+                <EventsCard projectId={projectId} />
+              </div>
+              
+              <div className="space-y-4 md:space-y-6">
+                <MessagesCard projectId={projectId} />
+              </div>
             </div>
           </div>
         </div>
       </SidebarProvider>
-
-      <AlertDialog open={showNoDesignDialog} onOpenChange={setShowNoDesignDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>No Design Plans</AlertDialogTitle>
-            <AlertDialogDescription>
-              There are no design plans for this project. Are you sure you want to proceed with creating the Statement of Work?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={startSOWCreation}>
-              Proceed
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };

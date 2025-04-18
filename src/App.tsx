@@ -25,14 +25,14 @@ import PublicRoute from "@/components/routes/PublicRoute";
 import PrivateRoute from "@/components/routes/PrivateRoute";
 
 function App() {
-  const { user, loading } = useAuth();
+  const { user, isLoading } = useAuth();
 
   useEffect(() => {
     // You can add any global initialization logic here
     // For example, fetching user settings or initializing analytics
   }, []);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="fixed top-0 left-0 right-0 bottom-0 bg-white flex items-center justify-center z-50">
         <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>

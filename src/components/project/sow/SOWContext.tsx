@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -36,6 +35,7 @@ export interface SOWData {
   workAreas: WorkArea[];
   laborItems: LaborItem[];
   materialItems: MaterialItem[];
+  [key: string]: any; // Add index signature to make it compatible with Json type
 }
 
 interface SOWContextType {
@@ -150,15 +150,12 @@ export const SOWProvider: React.FC<SOWProviderProps> = ({ children, projectId })
   // Save SOW to database
   const saveSOW = async () => {
     try {
-      // For now, we'll save the SOW as a JSON document in the project
+      // Update to use a proper approach for saving SOW data
       const { data, error } = await supabase
         .from('projects')
         .update({
-          // Using a generic approach to avoid type issues
-          // We are adding statement_of_work as a jsonb column to the projects table
-          // This will be handled properly by Supabase
           design_preferences: {
-            statement_of_work: sowData
+            ...sowData // Just save the entire SOW data as a JSON object
           }
         })
         .eq('id', projectId);
