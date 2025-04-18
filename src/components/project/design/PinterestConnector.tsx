@@ -48,6 +48,7 @@ const PinterestConnector: React.FC<PinterestConnectorProps> = ({ onBoardsSelecte
           description: "Please enter at least one Pinterest board URL",
           variant: "destructive",
         });
+        setIsLoading(false);
         return;
       }
 
@@ -64,7 +65,7 @@ const PinterestConnector: React.FC<PinterestConnectorProps> = ({ onBoardsSelecte
           const [, username, boardName] = match;
           const boardId = `${username}-${boardName}`;
 
-          // Scrape the board cover image
+          // Attempt to scrape the board cover image - use a fallback for CORS issues
           try {
             const response = await fetch(`https://www.pinterest.com/${username}/${boardName}`);
             const html = await response.text();
@@ -77,11 +78,11 @@ const PinterestConnector: React.FC<PinterestConnectorProps> = ({ onBoardsSelecte
               id: boardId,
               name: boardName.replace(/-/g, ' '),
               url: url,
-              imageUrl: coverImage || "https://i.pinimg.com/236x/1e/3f/58/1e3f587572dd30f9d242b3674482503b.jpg",
+              imageUrl: coverImage || "https://placehold.co/600x400?text=Pinterest+Board",
               pins: [
                 {
                   id: "1",
-                  imageUrl: "https://i.pinimg.com/236x/1e/3f/58/1e3f587572dd30f9d242b3674482503b.jpg",
+                  imageUrl: "https://placehold.co/600x400?text=Sample+Pin",
                   description: "Sample Pin"
                 }
               ]
@@ -93,11 +94,11 @@ const PinterestConnector: React.FC<PinterestConnectorProps> = ({ onBoardsSelecte
               id: boardId,
               name: boardName.replace(/-/g, ' '),
               url: url,
-              imageUrl: "https://i.pinimg.com/236x/1e/3f/58/1e3f587572dd30f9d242b3674482503b.jpg",
+              imageUrl: "https://placehold.co/600x400?text=Pinterest+Board",
               pins: [
                 {
                   id: "1",
-                  imageUrl: "https://i.pinimg.com/236x/1e/3f/58/1e3f587572dd30f9d242b3674482503b.jpg",
+                  imageUrl: "https://placehold.co/600x400?text=Sample+Pin",
                   description: "Sample Pin"
                 }
               ]

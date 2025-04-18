@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import PinterestConnector from "./PinterestConnector";
 import { Button } from "@/components/ui/button";
@@ -64,7 +63,10 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
       return;
     }
     console.log("Pinterest boards selected for room:", currentRoom, boards);
-    onAddPinterestBoards(boards, currentRoom, roomId);
+    
+    // Important: We need to combine the new boards with existing ones
+    const combinedBoards = [...localPinterestBoards, ...boards];
+    onAddPinterestBoards(combinedBoards, currentRoom, roomId);
   };
 
   const handleRemoveBoard = async (boardToRemove: PinterestBoard) => {

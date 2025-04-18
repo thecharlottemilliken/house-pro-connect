@@ -1,4 +1,3 @@
-
 import { useParams, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -31,10 +30,8 @@ const ProjectDesign = () => {
     pinterestBoards: PinterestBoard[];
   }>>({});
   
-  // Get the default tab
   const [defaultTab, setDefaultTab] = useState<string>("kitchen");
   
-  // Define static handlers at the component top level
   const handleAddDesignPlans = useCallback(() => console.log("Add design plans clicked"), []);
   const handleAddDesigner = useCallback(() => console.log("Add designer clicked"), []);
   const handleAddRenderings = useCallback(() => console.log("Add renderings clicked"), []);
@@ -42,7 +39,6 @@ const ProjectDesign = () => {
   const handleAddBlueprints = useCallback(() => console.log("Add blueprints clicked"), []);
   const handleAddInspiration = useCallback(() => console.log("Add inspiration clicked"), []);
   
-  // Move this function outside loops and useEffect - define once at component top level
   const fetchRoomDesignPreferences = useCallback(async (roomId: string) => {
     try {
       const { data, error } = await supabase
@@ -70,12 +66,10 @@ const ProjectDesign = () => {
     }
   }, []);
 
-  // Move room creation outside loops/conditionals - define once at component top level
   const createRoomIfNeeded = useCallback(async (propertyId: string, roomName: string) => {
     if (!propertyId || !roomName) return null;
     
     try {
-      // Check if room exists
       const { data: existingRooms, error: fetchError } = await supabase
         .from('property_rooms')
         .select('id, name')
@@ -84,12 +78,10 @@ const ProjectDesign = () => {
       
       if (fetchError) throw fetchError;
       
-      // If room exists, return it
       if (existingRooms && existingRooms.length > 0) {
         return existingRooms[0];
       }
       
-      // If room doesn't exist, create it
       const { data: newRoom, error: createError } = await supabase
         .from('property_rooms')
         .insert({
@@ -101,7 +93,6 @@ const ProjectDesign = () => {
       
       if (createError) throw createError;
       
-      // Add the new room to our local state
       setPropertyRooms(prev => [...prev, { id: newRoom.id, name: newRoom.name }]);
       
       return newRoom;
@@ -122,7 +113,6 @@ const ProjectDesign = () => {
       
       if (rooms) {
         setPropertyRooms(rooms);
-        // Once we have the rooms, fetch preferences for each room
         for (const room of rooms) {
           fetchRoomDesignPreferences(room.id);
         }
@@ -132,7 +122,6 @@ const ProjectDesign = () => {
     }
   }, [fetchRoomDesignPreferences]);
   
-  // Effect for setting up default tab from renovation areas
   useEffect(() => {
     if (projectData?.renovation_areas?.length > 0) {
       const firstArea = (projectData.renovation_areas as unknown as RenovationArea[])[0];
@@ -142,14 +131,12 @@ const ProjectDesign = () => {
     }
   }, [projectData?.renovation_areas]);
   
-  // Effect for fetching property rooms
   useEffect(() => {
     if (propertyDetails?.id) {
       fetchPropertyRooms(propertyDetails.id);
     }
   }, [propertyDetails?.id, fetchPropertyRooms]);
   
-  // Function for room setup - called once from the main useEffect
   const setupRooms = useCallback(async () => {
     if (!propertyDetails?.id || !projectData?.renovation_areas) return;
     
@@ -161,14 +148,12 @@ const ProjectDesign = () => {
     }
   }, [propertyDetails?.id, projectData?.renovation_areas, createRoomIfNeeded]);
   
-  // Setup rooms when the component first loads
   useEffect(() => {
     if (propertyDetails?.id && projectData?.renovation_areas) {
       setupRooms();
     }
   }, [propertyDetails?.id, projectData?.renovation_areas, setupRooms]);
   
-  // Helper function to get room ID by name
   const getRoomIdByName = useCallback((roomName: string) => {
     const room = propertyRooms.find(r => r.name.toLowerCase() === roomName.toLowerCase());
     return room?.id;
@@ -219,8 +204,27 @@ const ProjectDesign = () => {
         throw new Error("Room ID is required to add Pinterest boards");
       }
       
-      // Convert PinterestBoard[] to a format compatible with Supabase's Json type
-      const boardsForStorage = boards.map(board => ({
+      const { data: currentData } = await supabase
+        .from('room_design_preferences')
+        .select('pinterest_boards')
+        .eq('room_id', roomId)
+        .single();
+      
+      let allBoards = boards;
+      if (currentData && currentData.pinterest_boards) {
+        const existingBoardIds = new Set(
+          (currentData.pinterest_boards as unknown as PinterestBoard[]).map(b => b.id)
+        );
+        
+        const uniqueNewBoards = boards.filter(board => !existingBoardIds.has(board.id));
+        
+        allBoards = [
+          ...(currentData.pinterest_boards as unknown as PinterestBoard[]),
+          ...uniqueNewBoards
+        ];
+      }
+      
+      const boardsForStorage = allBoards.map(board => ({
         id: board.id,
         name: board.name,
         url: board.url,
@@ -246,7 +250,7 @@ const ProjectDesign = () => {
         ...prev,
         [roomId]: {
           ...prev[roomId],
-          pinterestBoards: boards
+          pinterestBoards: allBoards
         }
       }));
       
