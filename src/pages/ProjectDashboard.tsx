@@ -44,6 +44,9 @@ const ProjectDashboard = () => {
   const designPreferences = projectData?.design_preferences || {};
   const hasSOW = Object.keys(designPreferences).length > 0;
 
+  // Extract renovation areas from project data
+  const renovationAreas = projectData?.renovation_areas || [];
+
   return (
     <div className="flex flex-col bg-white min-h-screen">
       <DashboardNavbar />
@@ -59,7 +62,7 @@ const ProjectDashboard = () => {
           <div className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 bg-gray-50 overflow-y-auto">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
               <div className="lg:col-span-2 space-y-4 md:space-y-6">
-                <PropertyCard propertyDetails={propertyDetails} />
+                <PropertyCard propertyDetails={propertyDetails} renovationAreas={renovationAreas} />
                 
                 {isCoach && (
                   <div className="bg-white p-4 md:p-6 rounded-lg border shadow-sm">

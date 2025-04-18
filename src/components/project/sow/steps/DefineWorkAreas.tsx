@@ -1,4 +1,3 @@
-
 // Import necessary modules
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -10,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { X, Plus } from "lucide-react";
 import { useSOW, WorkArea } from "../SOWContext";
 import { v4 as uuidv4 } from "uuid";
-import { ProjectData, PropertyDetails } from "@/hooks/useProjectData";
+import { ProjectData, PropertyDetails, RenovationArea } from "@/hooks/useProjectData";
 
 // Define component props
 interface DefineWorkAreasProps {
@@ -32,9 +31,9 @@ const DefineWorkAreas: React.FC<DefineWorkAreasProps> = ({ projectData, property
 
   // Generate default work areas based on renovation areas if available
   const defaultWorkAreas = projectData?.renovation_areas 
-    ? (projectData.renovation_areas as string[]).map(area => ({
+    ? projectData.renovation_areas.map((area: RenovationArea) => ({
         id: uuidv4(),
-        name: area,
+        name: area.area,
         type: "primary" as const,
         notes: ""
       }))
@@ -42,11 +41,11 @@ const DefineWorkAreas: React.FC<DefineWorkAreasProps> = ({ projectData, property
 
   // Add a work area
   const handleAddWorkArea = () => {
-    if (!newWorkArea.name) return;
+    if (!newWorkArea.customName) return;
 
     const workArea: WorkArea = {
       id: uuidv4(),
-      name: newWorkArea.customName || newWorkArea.name, // Use customName if available
+      name: newWorkArea.customName, // Use customName for the name
       type: newWorkArea.type as "primary" | "secondary",
       notes: newWorkArea.notes || ""
     };

@@ -9,13 +9,26 @@ import {
 } from "@/components/ui/select";
 
 interface TeamMemberFilterProps {
-  value: string;
-  onChange: (value: string) => void;
+  selectedMember: string | null;
+  onSelectMember: (value: string | null) => void;
+  value?: string;
+  onChange?: (value: string) => void;
 }
 
-const TeamMemberFilter = ({ value, onChange }: TeamMemberFilterProps) => {
+const TeamMemberFilter = ({ selectedMember, onSelectMember, value, onChange }: TeamMemberFilterProps) => {
+  // Use either the new props or fall back to old props
+  const currentValue = selectedMember ?? value ?? 'all';
+  const handleValueChange = (newValue: string) => {
+    if (onSelectMember) {
+      onSelectMember(newValue === 'all' ? null : newValue);
+    }
+    if (onChange) {
+      onChange(newValue);
+    }
+  };
+  
   return (
-    <Select value={value} onValueChange={onChange}>
+    <Select value={currentValue} onValueChange={handleValueChange}>
       <SelectTrigger className="w-full md:w-[200px]">
         <SelectValue placeholder="Team Member: All" />
       </SelectTrigger>
