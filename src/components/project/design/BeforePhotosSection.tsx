@@ -50,7 +50,7 @@ const BeforePhotosSection = ({
           <div className="rounded-lg overflow-hidden border border-gray-100">
             <PropertyImageCarousel images={beforePhotos} />
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {beforePhotos.map((photo, index) => (
               <div key={index} className="relative group aspect-square rounded-lg overflow-hidden">
                 <img 

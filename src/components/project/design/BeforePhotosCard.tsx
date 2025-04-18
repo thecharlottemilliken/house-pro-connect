@@ -31,8 +31,8 @@ const BeforePhotosCard = ({
   };
 
   return (
-    <Card className="shadow-lg border-gray-200/50">
-      <CardContent className="p-6">
+    <Card className="shadow-lg border-gray-200/50 w-full h-full">
+      <CardContent className="p-4 sm:p-6">
         <BeforePhotosSection
           beforePhotos={beforePhotos}
           propertyPhotos={propertyPhotos}
