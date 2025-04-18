@@ -38,14 +38,14 @@ const navItems = [
 ];
 
 const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ projectId, projectTitle = "Project", activePage }) => {
-  const { isOpen } = useSidebar();
+  const { open } = useSidebar();
   const location = useLocation();
 
   return (
     <aside
       className={cn(
         "flex flex-col border-r bg-secondary text-secondary-foreground w-60",
-        isOpen ? "block" : "hidden"
+        open ? "block" : "hidden"
       )}
     >
       <div className="px-6 py-4">

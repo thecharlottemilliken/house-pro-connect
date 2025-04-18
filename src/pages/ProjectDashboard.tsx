@@ -87,6 +87,7 @@ const ProjectDashboard = () => {
                   </div>
                 )}
                 
+                {/* Updated to use projectId directly in the component */}
                 <TasksCard projectId={projectId} />
                 <EventsCard projectId={projectId} />
               </div>
