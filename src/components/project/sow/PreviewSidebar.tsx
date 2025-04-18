@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { FileImage, Download, Eye, Loader, Info, Building, MapPin, Settings } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -277,34 +278,36 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
   return (
     <>
       <div className="w-[320px] border-r bg-background h-[calc(100vh-56px)] flex flex-col">
-        <div className="p-6 border-b">
+        <div className="p-0 border-b">
           <ProjectInfo />
           
-          <h2 className="text-lg font-semibold mb-4 mt-6">Project Assets</h2>
-          <Select value={selectedType} onValueChange={(value: AssetType) => setSelectedType(value)}>
-            <SelectTrigger className="w-full bg-white">
-              <SelectValue placeholder="Select asset type" />
-            </SelectTrigger>
-            <SelectContent className="bg-white">
-              <SelectItem value="inspiration">Inspiration</SelectItem>
-              <SelectItem value="before-photos">Before Photos</SelectItem>
-              <SelectItem value="drawings">Drawings</SelectItem>
-              <SelectItem value="renderings">Renderings</SelectItem>
-              <SelectItem value="blueprints">Blueprints</SelectItem>
-            </SelectContent>
-          </Select>
+          <h2 className="text-lg font-semibold mb-4 mt-6 px-4">Project Assets</h2>
+          <div className="px-4">
+            <Select value={selectedType} onValueChange={(value: AssetType) => setSelectedType(value)}>
+              <SelectTrigger className="w-full bg-white">
+                <SelectValue placeholder="Select asset type" />
+              </SelectTrigger>
+              <SelectContent className="bg-white">
+                <SelectItem value="inspiration">Inspiration</SelectItem>
+                <SelectItem value="before-photos">Before Photos</SelectItem>
+                <SelectItem value="drawings">Drawings</SelectItem>
+                <SelectItem value="renderings">Renderings</SelectItem>
+                <SelectItem value="blueprints">Blueprints</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <div className="flex-1 overflow-auto">
-          <div className="p-4">
-            <h3 className="text-sm font-medium text-gray-900 mb-2">
+          <div className="p-0">
+            <h3 className="text-sm font-medium text-gray-900 mb-2 px-4">
               Files {selectedType === 'renderings' && '(Renderings)'} {selectedType === 'drawings' && '(Drawings)'}
             </h3>
             
             {isLoading && (selectedType === 'renderings' || selectedType === 'drawings') ? (
               <LoadingSkeleton />
             ) : (
-              <div className="space-y-1">
+              <div className="space-y-1 px-4">
                 {filteredAssets.map((asset, index) => (
                   <FileListItem
                     key={`${asset.name}-${index}`}
