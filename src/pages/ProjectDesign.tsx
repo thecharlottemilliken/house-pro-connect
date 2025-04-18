@@ -114,6 +114,15 @@ const ProjectDesign = () => {
         newBoard => !currentBoards.some(existingBoard => existingBoard.id === newBoard.id)
       );
       
+      if (uniqueNewBoards.length === 0) {
+        toast({
+          title: "No New Boards",
+          description: "This Pinterest board has already been added",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       const updatedBoards = [...currentBoards, ...uniqueNewBoards];
       
       const updatedDesignPreferences: Record<string, unknown> = {
@@ -132,7 +141,7 @@ const ProjectDesign = () => {
       
       toast({
         title: "Success",
-        description: `Added ${uniqueNewBoards.length} Pinterest boards`,
+        description: `Added ${uniqueNewBoards.length} Pinterest board${uniqueNewBoards.length > 1 ? 's' : ''}`,
       });
       
       // Update local state for immediate UI update

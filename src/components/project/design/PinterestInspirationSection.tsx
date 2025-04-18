@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import PinterestConnector from "./PinterestConnector";
 import { Button } from "@/components/ui/button";
@@ -39,8 +40,11 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
 
   const handlePinterestBoardsSelected = (boards: PinterestBoard[]) => {
     console.log("Pinterest boards selected:", boards);
+    
+    // Pass only the new boards to the parent component
     onAddPinterestBoards(boards);
     
+    // Extract image URLs from the new boards' pins and add them to inspiration
     const newImages = boards.flatMap(board => board.pins?.map(pin => pin.imageUrl) || []);
     if (newImages.length > 0) {
       onAddInspiration(newImages);
