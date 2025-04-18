@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { FileImage, Download, Eye, Loader } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -9,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface PreviewSidebarProps {
   projectData: any;
@@ -57,6 +59,7 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
 
         if (roomsError) {
           console.error("Error fetching rooms:", roomsError);
+          setIsLoading(false);
           return;
         }
 
@@ -64,6 +67,7 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
 
         if (!rooms || rooms.length === 0) {
           console.info("No rooms found for this property");
+          setIsLoading(false);
           return;
         }
 
@@ -75,6 +79,7 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
 
         if (prefsError) {
           console.error("Error fetching room design preferences:", prefsError);
+          setIsLoading(false);
           return;
         }
 
@@ -107,9 +112,9 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
 
         setRoomRenderingsWithNames(allRenderingsWithNames);
         setRoomDrawingsWithNames(allDrawingsWithNames);
-        setIsLoading(false);
       } catch (error) {
         console.error("Error in fetchRoomData:", error);
+      } finally {
         setIsLoading(false);
       }
     };
@@ -206,6 +211,27 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
 
   const filteredAssets = getFilteredAssets();
 
+  // Loading skeleton UI for assets
+  const LoadingSkeleton = () => (
+    <div className="space-y-4">
+      {[1, 2, 3].map(i => (
+        <div key={i} className="flex items-center justify-between py-4 border-b border-gray-100 last:border-0">
+          <div className="flex items-center gap-3">
+            <Skeleton className="w-10 h-10 rounded-full" />
+            <div>
+              <Skeleton className="h-4 w-24 mb-2" />
+              <Skeleton className="h-3 w-16" />
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-7 w-7 rounded" />
+            <Skeleton className="h-7 w-7 rounded" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <>
       <div className="w-[320px] border-r bg-background h-[calc(100vh-56px)] flex flex-col">
@@ -233,11 +259,9 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
             <h3 className="text-sm font-medium text-gray-900 mb-2">
               Files {selectedType === 'renderings' && '(Renderings)'} {selectedType === 'drawings' && '(Drawings)'}
             </h3>
-            {isLoading && selectedType === 'renderings' || selectedType === 'drawings' ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader className="h-6 w-6 text-gray-400 animate-spin mr-2" />
-                <span className="text-sm text-gray-500">Loading...</span>
-              </div>
+            
+            {isLoading && (selectedType === 'renderings' || selectedType === 'drawings') ? (
+              <LoadingSkeleton />
             ) : (
               <div className="space-y-1">
                 {filteredAssets.map((asset, index) => (
@@ -248,7 +272,7 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
                     url={asset.url}
                   />
                 ))}
-                {filteredAssets.length === 0 && (
+                {filteredAssets.length === 0 && !isLoading && (
                   <p className="text-sm text-gray-500 py-4 text-center">
                     No {selectedType.replace('-', ' ')} available
                   </p>
