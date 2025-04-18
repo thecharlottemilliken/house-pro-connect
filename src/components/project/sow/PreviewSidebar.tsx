@@ -1,16 +1,7 @@
-
 import React from 'react';
-import { FileImage, FileText, Image, X } from "lucide-react";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { FileImage, FileText, Image } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Accordion,
   AccordionContent,
@@ -24,7 +15,6 @@ interface PreviewSidebarProps {
 }
 
 export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarProps) {
-  const [isOpen, setIsOpen] = React.useState(false);
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
   
   const blueprintUrl = propertyDetails?.blueprint_url;
@@ -34,10 +24,6 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
 
   const handlePreview = (url: string) => {
     setPreviewUrl(url);
-  };
-
-  const handleClosePreview = () => {
-    setPreviewUrl(null);
   };
 
   const FileListItem = ({ name, room, url }: { name: string; room: string; url: string }) => (
@@ -72,87 +58,70 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
 
   return (
     <>
-      <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <SheetTrigger asChild>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="fixed right-4 top-20 z-50 gap-2"
-          >
-            <FileImage className="h-4 w-4" />
-            Project Assets
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="right" className="w-[400px] sm:w-[540px]">
-          <SheetHeader>
-            <div className="flex items-center justify-between pb-4 border-b">
-              <SheetTitle className="text-2xl font-bold">Project Assets</SheetTitle>
-              <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </SheetHeader>
-          
-          <ScrollArea className="h-[calc(100vh-80px)] mt-6">
-            <div className="px-1">
-              <Accordion type="single" collapsible className="w-full">
-                {blueprintUrl && (
-                  <AccordionItem value="blueprint" className="border-none">
-                    <AccordionTrigger className="py-4 text-base font-semibold">
-                      Blueprint
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <FileListItem
-                        name="Blueprint.pdf"
-                        room="Property"
-                        url={blueprintUrl}
-                      />
-                    </AccordionContent>
-                  </AccordionItem>
-                )}
+      <div className="w-[320px] border-r bg-background h-[calc(100vh-56px)] flex flex-col">
+        <div className="p-4 border-b">
+          <h2 className="text-lg font-semibold">Project Assets</h2>
+        </div>
+        
+        <ScrollArea className="flex-1">
+          <div className="px-4">
+            <Accordion type="single" collapsible className="w-full">
+              {blueprintUrl && (
+                <AccordionItem value="blueprint" className="border-none">
+                  <AccordionTrigger className="py-4 text-base font-semibold">
+                    Blueprint
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <FileListItem
+                      name="Blueprint.pdf"
+                      room="Property"
+                      url={blueprintUrl}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
+              )}
 
-                {Object.entries(beforePhotos).length > 0 && (
-                  <AccordionItem value="before-photos" className="border-none">
-                    <AccordionTrigger className="py-4 text-base font-semibold">
-                      Before Photos
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      {Object.entries(beforePhotos).map(([room, photos]) => (
-                        Array.isArray(photos) && photos.map((photo, index) => (
-                          <FileListItem
-                            key={`${room}-${index}`}
-                            name={`Photo ${index + 1}`}
-                            room={room}
-                            url={photo}
-                          />
-                        ))
-                      ))}
-                    </AccordionContent>
-                  </AccordionItem>
-                )}
-
-                {renderingImages.length > 0 && (
-                  <AccordionItem value="renderings" className="border-none">
-                    <AccordionTrigger className="py-4 text-base font-semibold">
-                      Renderings
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      {renderingImages.map((image: string, index: number) => (
+              {Object.entries(beforePhotos).length > 0 && (
+                <AccordionItem value="before-photos" className="border-none">
+                  <AccordionTrigger className="py-4 text-base font-semibold">
+                    Before Photos
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    {Object.entries(beforePhotos).map(([room, photos]) => (
+                      Array.isArray(photos) && photos.map((photo, index) => (
                         <FileListItem
-                          key={index}
-                          name={`Rendering ${index + 1}`}
-                          room="Design"
-                          url={image}
+                          key={`${room}-${index}`}
+                          name={`Photo ${index + 1}`}
+                          room={room}
+                          url={photo}
                         />
-                      ))}
-                    </AccordionContent>
-                  </AccordionItem>
-                )}
-              </Accordion>
-            </div>
-          </ScrollArea>
-        </SheetContent>
-      </Sheet>
+                      ))
+                    ))}
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+
+              {renderingImages.length > 0 && (
+                <AccordionItem value="renderings" className="border-none">
+                  <AccordionTrigger className="py-4 text-base font-semibold">
+                    Renderings
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    {renderingImages.map((image: string, index: number) => (
+                      <FileListItem
+                        key={index}
+                        name={`Rendering ${index + 1}`}
+                        room="Design"
+                        url={image}
+                      />
+                    ))}
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+            </Accordion>
+          </div>
+        </ScrollArea>
+      </div>
 
       <Dialog open={!!previewUrl} onOpenChange={() => setPreviewUrl(null)}>
         <DialogContent className="max-w-4xl">
