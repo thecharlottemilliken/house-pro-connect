@@ -1,8 +1,7 @@
-
 import React, { useState } from "react";
 import PinterestConnector from "./PinterestConnector";
 import { Button } from "@/components/ui/button";
-import { Plus, ExternalLink, Image } from "lucide-react";
+import { Plus, ExternalLink, Image, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import EmptyDesignState from "./EmptyDesignState";
 import { type PinterestBoard } from "@/types/pinterest";
@@ -29,7 +28,6 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
     console.log("Pinterest boards selected:", boards);
     onAddPinterestBoards(boards);
     
-    // Extract images from the boards to add as inspiration
     const newImages = boards.flatMap(board => board.pins?.map(pin => pin.imageUrl) || []);
     if (newImages.length > 0) {
       onAddInspiration(newImages);
@@ -42,6 +40,30 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
 
   const toggleBoardExpansion = (boardId: string) => {
     setExpandedBoard(expandedBoard === boardId ? null : boardId);
+  };
+
+  const handleRemoveBoard = async (boardToRemove: PinterestBoard) => {
+    try {
+      const updatedBoards = pinterestBoards.filter(board => board.id !== boardToRemove.id);
+      
+      const boardPinUrls = boardToRemove.pins?.map(pin => pin.imageUrl) || [];
+      const updatedInspiration = inspirationImages.filter(img => !boardPinUrls.includes(img));
+      
+      onAddPinterestBoards(updatedBoards);
+      onAddInspiration(updatedInspiration);
+      
+      toast({
+        title: "Board Removed",
+        description: "Pinterest board has been removed successfully",
+      });
+    } catch (error) {
+      console.error("Error removing board:", error);
+      toast({
+        title: "Error",
+        description: "Failed to remove Pinterest board",
+        variant: "destructive",
+      });
+    }
   };
 
   const renderPins = (board: PinterestBoard) => {
@@ -75,7 +97,7 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
 
   const renderBoardContent = (board: PinterestBoard) => (
     <div className="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-      <div className="aspect-video bg-gray-100 relative">
+      <div className="aspect-video bg-gray-100 relative group">
         {board.imageUrl ? (
           <img 
             src={board.imageUrl} 
@@ -91,6 +113,16 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
             <span className="text-pink-500">Pinterest</span>
           </div>
         )}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleRemoveBoard(board);
+          }}
+          className="absolute top-2 right-2 p-1 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+          aria-label="Remove board"
+        >
+          <X className="h-4 w-4" />
+        </button>
       </div>
       <div className="p-4">
         <h3 className="font-medium mb-1 truncate">{board.name}</h3>
