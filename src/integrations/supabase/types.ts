@@ -336,25 +336,31 @@ export type Database = {
       room_design_preferences: {
         Row: {
           created_at: string
+          drawings: string[] | null
           id: string
           inspiration_images: string[] | null
           pinterest_boards: Json | null
+          renderings: string[] | null
           room_id: string
           updated_at: string
         }
         Insert: {
           created_at?: string
+          drawings?: string[] | null
           id?: string
           inspiration_images?: string[] | null
           pinterest_boards?: Json | null
+          renderings?: string[] | null
           room_id: string
           updated_at?: string
         }
         Update: {
           created_at?: string
+          drawings?: string[] | null
           id?: string
           inspiration_images?: string[] | null
           pinterest_boards?: Json | null
+          renderings?: string[] | null
           room_id?: string
           updated_at?: string
         }
