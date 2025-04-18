@@ -150,23 +150,64 @@ const DesignAssetsCard = ({
     }
   };
 
-  const handleAddRenderings = (urls: string[]) => {
+  const handleAddRenderings = async (urls: string[]) => {
     console.log("Rendering URLs:", urls);
-    if (urls.length > 0) {
-      const newRenderings = urls.map((url, index) => {
-        const isJpg = url.toLowerCase().includes('.jpg') || url.toLowerCase().includes('.jpeg');
-        const isPng = url.toLowerCase().includes('.png');
-        const fileType = isJpg ? 'jpg' : (isPng ? 'png' : 'pdf');
+    const roomId = propertyId; // assuming propertyId is actually roomId, adjust if needed
+    
+    if (urls.length > 0 && roomId) {
+      try {
+        // First, get existing inspiration images
+        const { data: existingPrefs, error: fetchError } = await supabase
+          .from('room_design_preferences')
+          .select('inspiration_images')
+          .eq('room_id', roomId)
+          .maybeSingle();
         
-        return {
-          name: `New_Rendering_${index + 1}.${fileType}`,
-          size: "1.5MB",
-          type: fileType as 'jpg' | 'png' | 'pdf',
-          url: url
-        }
-      });
-      
-      setRenderingFiles(prev => [...prev, ...newRenderings]);
+        if (fetchError) throw fetchError;
+        
+        // Combine existing and new images
+        const existingImages = existingPrefs?.inspiration_images || [];
+        const updatedImages = [...existingImages, ...urls];
+        
+        // Update the database
+        const { error: updateError } = await supabase
+          .from('room_design_preferences')
+          .update({ 
+            inspiration_images: updatedImages,
+            updated_at: new Date().toISOString()
+          })
+          .eq('room_id', roomId);
+        
+        if (updateError) throw updateError;
+        
+        // Update local state
+        const newRenderings = urls.map((url, index) => {
+          const isJpg = url.toLowerCase().includes('.jpg') || url.toLowerCase().includes('.jpeg');
+          const isPng = url.toLowerCase().includes('.png');
+          const fileType = isJpg ? 'jpg' : (isPng ? 'png' : 'pdf');
+          
+          return {
+            name: `New_Rendering_${index + 1}.${fileType}`,
+            size: "1.5MB",
+            type: fileType as 'jpg' | 'png' | 'pdf',
+            url: url
+          }
+        });
+        
+        setRenderingFiles(prev => [...prev, ...newRenderings]);
+        
+        toast({
+          title: "Success",
+          description: "Renderings have been saved successfully."
+        });
+      } catch (error) {
+        console.error('Error saving renderings:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save renderings. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
     if (onAddRenderings) onAddRenderings();
   };
@@ -191,29 +232,64 @@ const DesignAssetsCard = ({
     }
   };
 
-  const handleAddDrawings = (urls: string[]) => {
+  const handleAddDrawings = async (urls: string[]) => {
     console.log("Drawing URLs:", urls);
+    const roomId = propertyId; // assuming propertyId is actually roomId, adjust if needed
     
-    if (urls.length > 0) {
-      const newDrawings = urls.map((url, index) => {
-        const isJpg = url.toLowerCase().includes('.jpg') || url.toLowerCase().includes('.jpeg');
-        const isPng = url.toLowerCase().includes('.png');
-        const fileType = isJpg ? 'jpg' : (isPng ? 'png' : 'pdf');
+    if (urls.length > 0 && roomId) {
+      try {
+        // First, get existing inspiration images
+        const { data: existingPrefs, error: fetchError } = await supabase
+          .from('room_design_preferences')
+          .select('inspiration_images')
+          .eq('room_id', roomId)
+          .maybeSingle();
         
-        return {
-          name: `Drawing_${drawingFiles.length + index + 1}.${fileType}`,
-          size: "1.2MB",
-          type: fileType as 'jpg' | 'png' | 'pdf',
-          url: url
-        };
-      });
-      
-      setDrawingFiles(prev => [...prev, ...newDrawings]);
-      
-      toast({
-        title: "Drawing Added",
-        description: "Your drawing has been successfully uploaded."
-      });
+        if (fetchError) throw fetchError;
+        
+        // Combine existing and new images
+        const existingImages = existingPrefs?.inspiration_images || [];
+        const updatedImages = [...existingImages, ...urls];
+        
+        // Update the database
+        const { error: updateError } = await supabase
+          .from('room_design_preferences')
+          .update({ 
+            inspiration_images: updatedImages,
+            updated_at: new Date().toISOString()
+          })
+          .eq('room_id', roomId);
+        
+        if (updateError) throw updateError;
+        
+        // Update local state
+        const newDrawings = urls.map((url, index) => {
+          const isJpg = url.toLowerCase().includes('.jpg') || url.toLowerCase().includes('.jpeg');
+          const isPng = url.toLowerCase().includes('.png');
+          const fileType = isJpg ? 'jpg' : (isPng ? 'png' : 'pdf');
+          
+          return {
+            name: `Drawing_${drawingFiles.length + index + 1}.${fileType}`,
+            size: "1.2MB",
+            type: fileType as 'jpg' | 'png' | 'pdf',
+            url: url
+          };
+        });
+        
+        setDrawingFiles(prev => [...prev, ...newDrawings]);
+        
+        toast({
+          title: "Success",
+          description: "Drawings have been saved successfully."
+        });
+      } catch (error) {
+        console.error('Error saving drawings:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save drawings. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
     
     if (onAddDrawings) onAddDrawings();
