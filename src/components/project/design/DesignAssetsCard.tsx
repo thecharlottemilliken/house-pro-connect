@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Building2, FileImage, PenTool } from "lucide-react";
+import { Building2, Image, Pen } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import EmptyDesignState from "./EmptyDesignState";
 
@@ -28,7 +28,7 @@ const DesignAssetsCard = ({
             <CardContent className="p-4">
               <EmptyDesignState
                 type="renderings"
-                customIcon={<FileImage className="w-8 h-8 text-gray-400" />}
+                customIcon={<Image className="w-8 h-8 text-gray-400" />}
                 customTitle="3D Renderings"
                 customDescription="Add design visualizations"
                 customActionLabel="Add Renderings"
@@ -41,7 +41,7 @@ const DesignAssetsCard = ({
             <CardContent className="p-4">
               <EmptyDesignState
                 type="renderings"
-                customIcon={<PenTool className="w-8 h-8 text-gray-400" />}
+                customIcon={<Pen className="w-8 h-8 text-gray-400" />}
                 customTitle="Design Drawings"
                 customDescription="Add design drawings"
                 customActionLabel="Add Drawings"

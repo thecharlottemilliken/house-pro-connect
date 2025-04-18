@@ -1,5 +1,6 @@
 import React, { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { Pen, FileText, Image, Lightbulb } from "lucide-react";
 
 interface EmptyDesignStateProps {
   type: "no-designs" | "designer" | "design-assets" | "renderings" | "inspiration";
@@ -22,14 +23,14 @@ const EmptyDesignState = ({
     switch (type) {
       case "no-designs":
         return {
-          icon: <PenBox className="w-12 h-12 text-gray-400" />,
+          icon: <Pen className="w-12 h-12 text-gray-400" />,
           title: "No Design Plans Yet",
           description: "Start by adding your design plans or connecting with a designer.",
           actionLabel: "Add Design Plans"
         };
       case "designer":
         return {
-          icon: <PenBox className="w-12 h-12 text-gray-400" />,
+          icon: <Pen className="w-12 h-12 text-gray-400" />,
           title: "No Designer Assigned",
           description: "Add a designer to help bring your vision to life.",
           actionLabel: "Add Designer"
@@ -43,7 +44,7 @@ const EmptyDesignState = ({
         };
       case "renderings":
         return {
-          icon: <ImageIcon className="w-12 h-12 text-gray-400" />,
+          icon: <Image className="w-12 h-12 text-gray-400" />,
           title: "No Renderings",
           description: "Add 3D renderings or visualizations of your design.",
           actionLabel: "Add Renderings"
