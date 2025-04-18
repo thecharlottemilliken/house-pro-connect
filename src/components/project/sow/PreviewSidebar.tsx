@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { FileImage, Download, Eye, Loader } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -18,28 +17,30 @@ interface PreviewSidebarProps {
 
 type AssetType = 'inspiration' | 'before-photos' | 'drawings' | 'renderings' | 'blueprints';
 
+interface RoomAsset {
+  roomName: string;
+  url: string;
+}
+
 export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarProps) {
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
   const [selectedType, setSelectedType] = React.useState<AssetType>('inspiration');
   const [isPreviewLoading, setIsPreviewLoading] = React.useState(false);
-  const [roomRenderings, setRoomRenderings] = useState<string[]>([]);
-  const [roomDrawings, setRoomDrawings] = useState<string[]>([]);
+  const [roomRenderingsWithNames, setRoomRenderingsWithNames] = useState<RoomAsset[]>([]);
+  const [roomDrawingsWithNames, setRoomDrawingsWithNames] = useState<RoomAsset[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   
   const designPreferences = projectData?.design_preferences || {};
   
-  // Extract data with better fallbacks and add more detailed logging
   const beforePhotos = designPreferences.beforePhotos || {};
   const blueprintUrl = propertyDetails?.blueprint_url;
   const inspirationImages = designPreferences.inspirationImages || [];
 
-  // For debugging
   console.info("Design Preferences:", designPreferences);
   console.info("Before Photos:", beforePhotos);
   console.info("Inspiration Images:", inspirationImages);
   console.info("Blueprint URL:", blueprintUrl);
 
-  // Fetch room-specific renderings and drawings when component mounts or property ID changes
   useEffect(() => {
     const fetchRoomData = async () => {
       if (!propertyDetails?.id) {
@@ -49,7 +50,6 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
 
       setIsLoading(true);
       try {
-        // First, get the rooms for this property
         const { data: rooms, error: roomsError } = await supabase
           .from('property_rooms')
           .select('id, name')
@@ -67,7 +67,6 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
           return;
         }
 
-        // Get all the design preferences for all rooms
         const roomIds = rooms.map(room => room.id);
         const { data: designPrefs, error: prefsError } = await supabase
           .from('room_design_preferences')
@@ -79,30 +78,38 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
           return;
         }
 
-        console.info("Room design preferences:", designPrefs);
-
-        // Collect all renderings and drawings from all rooms
-        let allRenderings: string[] = [];
-        let allDrawings: string[] = [];
+        let allRenderingsWithNames: RoomAsset[] = [];
+        let allDrawingsWithNames: RoomAsset[] = [];
 
         designPrefs?.forEach(pref => {
+          const room = rooms.find(r => r.id === pref.room_id);
+          const roomName = room?.name || 'Unknown Room';
+
           if (pref.renderings && Array.isArray(pref.renderings)) {
-            allRenderings = [...allRenderings, ...pref.renderings];
+            const renderingsWithRoom = pref.renderings.map(url => ({
+              roomName,
+              url
+            }));
+            allRenderingsWithNames = [...allRenderingsWithNames, ...renderingsWithRoom];
           }
           
           if (pref.drawings && Array.isArray(pref.drawings)) {
-            allDrawings = [...allDrawings, ...pref.drawings];
+            const drawingsWithRoom = pref.drawings.map(url => ({
+              roomName,
+              url
+            }));
+            allDrawingsWithNames = [...allDrawingsWithNames, ...drawingsWithRoom];
           }
         });
 
-        console.info("All room renderings:", allRenderings);
-        console.info("All room drawings:", allDrawings);
+        console.info("All room renderings with names:", allRenderingsWithNames);
+        console.info("All room drawings with names:", allDrawingsWithNames);
 
-        setRoomRenderings(allRenderings);
-        setRoomDrawings(allDrawings);
+        setRoomRenderingsWithNames(allRenderingsWithNames);
+        setRoomDrawingsWithNames(allDrawingsWithNames);
+        setIsLoading(false);
       } catch (error) {
         console.error("Error in fetchRoomData:", error);
-      } finally {
         setIsLoading(false);
       }
     };
@@ -141,27 +148,19 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
           })) : []
         );
       case 'drawings':
-        // Use the room drawings fetched from the database
-        console.info("Processing drawings:", roomDrawings);
-        return Array.isArray(roomDrawings) ? roomDrawings.map((url: string, index: number) => {
-          console.info(`Drawing ${index}:`, url);
-          return {
-            name: `Drawing ${index + 1}`,
-            room: 'Design',
-            url
-          };
-        }) : [];
+        console.info("Processing drawings with room names:", roomDrawingsWithNames);
+        return roomDrawingsWithNames.map((item, index) => ({
+          name: `Drawing ${index + 1}`,
+          room: item.roomName,
+          url: item.url
+        }));
       case 'renderings':
-        // Use the room renderings fetched from the database
-        console.info("Processing renderings:", roomRenderings);
-        return Array.isArray(roomRenderings) ? roomRenderings.map((url: string, index: number) => {
-          console.info(`Rendering ${index}:`, url);
-          return {
-            name: `Rendering ${index + 1}`,
-            room: 'Design',
-            url
-          };
-        }) : [];
+        console.info("Processing renderings with room names:", roomRenderingsWithNames);
+        return roomRenderingsWithNames.map((item, index) => ({
+          name: `Rendering ${index + 1}`,
+          room: item.roomName,
+          url: item.url
+        }));
       case 'blueprints':
         return blueprintUrl ? [{
           name: 'Blueprint',
