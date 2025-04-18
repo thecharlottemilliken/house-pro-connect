@@ -46,7 +46,7 @@ export function SOWWizard() {
       <PreviewSidebar projectData={projectData} propertyDetails={propertyDetails} />
       
       <div className="flex-1 overflow-auto">
-        <div className="px-6 py-8">
+        <div className="px-0 py-0">
           <div className="max-w-6xl mx-auto">
             <div className="mb-8">
               <div className="flex items-center justify-between mb-6">
@@ -61,7 +61,7 @@ export function SOWWizard() {
               <Progress value={progress} className="h-2" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-0">
               <div className="md:col-span-1">
                 <Card>
                   <CardHeader>

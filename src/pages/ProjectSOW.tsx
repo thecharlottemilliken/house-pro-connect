@@ -18,7 +18,7 @@ const ProjectSOW = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <header className="h-14 border-b flex items-center px-4 bg-white">
+      <header className="h-14 border-b flex items-center px-0 bg-white">
         <Button variant="ghost" size="sm" className="gap-2" onClick={() => window.history.back()}>
           <ChevronLeft className="h-4 w-4" />
           Back to Project
@@ -29,7 +29,7 @@ const ProjectSOW = () => {
         <div className="w-[72px]" /> {/* Spacer to center the title */}
       </header>
       
-      <main className="px-4 py-6">
+      <main className="px-0 py-0">
         <SOWWizard />
       </main>
     </div>
