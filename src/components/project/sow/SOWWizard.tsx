@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,7 @@ import { ChevronRight } from "lucide-react";
 import { useProjectData } from "@/hooks/useProjectData";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { PreviewSidebar } from "./PreviewSidebar";
 
 const steps = [
   { id: 'project-review', title: 'Project Review', description: 'Review project details and requirements' },
@@ -43,6 +43,8 @@ export function SOWWizard() {
 
   return (
     <div className="max-w-6xl mx-auto">
+      <PreviewSidebar projectData={projectData} propertyDetails={propertyDetails} />
+      
       <div className="mb-8">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -93,7 +95,6 @@ export function SOWWizard() {
           </CardHeader>
           <CardContent>
             <div className="min-h-[400px]">
-              {/* Content will be implemented for each step */}
               <p className="text-gray-600">Step content for {steps[currentStep].title} will be implemented here.</p>
             </div>
             
@@ -109,7 +110,6 @@ export function SOWWizard() {
               <Button
                 onClick={() => {
                   if (currentStep === steps.length - 1) {
-                    // Handle completion
                     navigate(`/project-dashboard/${projectId}`);
                   } else {
                     setCurrentStep(current => current + 1);
