@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Download, Eye, X } from "lucide-react";
 import {
@@ -21,12 +22,13 @@ interface FileListItemProps {
   name: string;
   size: string;
   type: 'pdf' | 'xls';
+  url?: string;
   onDownload: () => void;
   onView: () => void;
   onDelete: () => void;
 }
 
-export const FileListItem = ({ name, size, type, onDownload, onView, onDelete }: FileListItemProps) => {
+export const FileListItem = ({ name, size, type, url, onDownload, onView, onDelete }: FileListItemProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
@@ -82,9 +84,9 @@ export const FileListItem = ({ name, size, type, onDownload, onView, onDelete }:
             <SheetTitle>{name}</SheetTitle>
           </SheetHeader>
           <div className="mt-6">
-            {type === 'pdf' ? (
+            {type === 'pdf' && url ? (
               <iframe
-                src={`https://docs.google.com/viewer?embedded=true&url=${encodeURIComponent(name)}`}
+                src={`https://docs.google.com/viewer?embedded=true&url=${encodeURIComponent(url)}`}
                 className="w-full h-[80vh]"
                 title="PDF Preview"
               />

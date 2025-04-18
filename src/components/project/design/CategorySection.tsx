@@ -8,7 +8,7 @@ import { FileUpload } from "@/components/ui/file-upload";
 
 interface CategorySectionProps {
   title: string;
-  files?: { name: string; size: string; type: 'pdf' | 'xls' }[];
+  files?: { name: string; size: string; type: 'pdf' | 'xls'; url?: string }[];
   onUpload: (urls: string[]) => void;
   onDelete: () => void;
 }

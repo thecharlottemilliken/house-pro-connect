@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from "@/components/ui/dialog";
@@ -30,14 +29,15 @@ const DesignAssetsCard = ({
   const [isUploading, setIsUploading] = useState(false);
   const [pdfStatus, setPdfStatus] = useState<'unknown' | 'valid' | 'invalid'>('unknown');
   const [isCheckingPdf, setIsCheckingPdf] = useState(false);
-  const [blueprintFile, setBlueprintFile] = useState<{name: string; size: string; type: 'pdf'} | null>(
-    propertyBlueprint ? { name: "Blueprint.pdf", size: "1.2MB", type: 'pdf' } : null
+  const [blueprintFile, setBlueprintFile] = useState<{name: string; size: string; type: 'pdf'; url?: string} | null>(
+    propertyBlueprint ? { name: "Blueprint.pdf", size: "1.2MB", type: 'pdf', url: propertyBlueprint } : null
   );
-  const [renderingFiles, setRenderingFiles] = useState<{name: string; size: string; type: 'pdf'}[]>(
+  const [renderingFiles, setRenderingFiles] = useState<{name: string; size: string; type: 'pdf'; url?: string}[]>(
     renderingImages.map((url, index) => ({
       name: `Rendering_${index + 1}.jpg`,
       size: "1.5MB",
-      type: 'pdf'
+      type: 'pdf',
+      url
     }))
   );
   
@@ -84,7 +84,7 @@ const DesignAssetsCard = ({
       if (error) throw error;
       
       // Update local state to reflect the change
-      setBlueprintFile({ name: "Blueprint.pdf", size: "1.2MB", type: 'pdf' });
+      setBlueprintFile({ name: "Blueprint.pdf", size: "1.2MB", type: 'pdf', url: urls[0] });
 
       toast({
         title: "Blueprint Added",
@@ -157,7 +157,8 @@ const DesignAssetsCard = ({
       const newRenderings = urls.map((url, index) => ({
         name: `New_Rendering_${index + 1}.jpg`,
         size: "1.5MB",
-        type: 'pdf' as const
+        type: 'pdf' as const,
+        url: url
       }));
       
       setRenderingFiles(prev => [...prev, ...newRenderings]);
