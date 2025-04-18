@@ -44,13 +44,7 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
   
   const handlePinterestBoardsSelected = (boards: PinterestBoard[]) => {
     console.log("Pinterest boards selected:", boards);
-    
     onAddPinterestBoards(boards);
-    
-    const newImages = boards.flatMap(board => board.pins?.map(pin => pin.imageUrl) || []);
-    if (newImages.length > 0) {
-      onAddInspiration(newImages);
-    }
   };
 
   const handleRemoveBoard = async (boardToRemove: PinterestBoard) => {

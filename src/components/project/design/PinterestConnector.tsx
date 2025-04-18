@@ -81,12 +81,9 @@ const PinterestConnector: React.FC<PinterestConnectorProps> = ({ onBoardsSelecte
         pins: mockPins
       };
       
-      // Pass the board to the parent component
       onBoardsSelected([board]);
       setIsDialogOpen(false);
       setBoardUrl("");
-      
-      // Success notification is handled in the parent component
     } catch (error) {
       console.error("Error processing Pinterest board:", error);
       toast({
