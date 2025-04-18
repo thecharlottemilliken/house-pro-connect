@@ -278,9 +278,6 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
     <>
       <div className="w-[320px] border-r bg-background h-[calc(100vh-56px)] flex flex-col">
         <div className="p-6 border-b">
-          <h1 className="text-2xl font-semibold mb-2">Build the SOW</h1>
-          <p className="text-gray-500 mb-6">Create a detailed statement of work.</p>
-          
           <ProjectInfo />
           
           <h2 className="text-lg font-semibold mb-4 mt-6">Project Assets</h2>
