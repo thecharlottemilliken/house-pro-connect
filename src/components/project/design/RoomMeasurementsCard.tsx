@@ -31,6 +31,15 @@ const RoomMeasurementsCard = ({
   const params = useParams();
   const projectId = params.projectId;
   const hasMeasurements = measurements && (measurements.length || measurements.width);
+
+  const calculateSquareFootage = () => {
+    if (!measurements?.length || !measurements?.width) return null;
+    const area = measurements.length * measurements.width;
+    // Convert to square feet if measurements are in meters
+    return measurements.unit === 'm' ? area * 10.764 : area;
+  };
+
+  const squareFootage = calculateSquareFootage();
   
   const handleSaveMeasurements = async (newMeasurements: any) => {
     try {
@@ -129,6 +138,12 @@ const RoomMeasurementsCard = ({
                 <div>
                   <p className="text-sm text-gray-500">Height</p>
                   <p className="font-medium">{measurements.height} {measurements.unit}</p>
+                </div>
+              )}
+              {squareFootage && (
+                <div>
+                  <p className="text-sm text-gray-500">Square Footage</p>
+                  <p className="font-medium">{squareFootage.toFixed(2)} ft²</p>
                 </div>
               )}
             </div>
