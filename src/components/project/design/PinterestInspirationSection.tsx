@@ -56,6 +56,10 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
                 src={pin.imageUrl}
                 alt={pin.description || "Pinterest pin"}
                 className="w-full h-full object-cover rounded-lg transition-transform group-hover:scale-105"
+                onError={(e) => {
+                  console.error("Failed to load image:", pin.imageUrl);
+                  e.currentTarget.src = "https://placehold.co/600x400?text=Image+Not+Found";
+                }}
               />
             </AspectRatio>
             {pin.description && (
@@ -73,7 +77,15 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
     <div className="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
       <div className="aspect-video bg-gray-100 relative">
         {board.imageUrl ? (
-          <img src={board.imageUrl} alt={board.name} className="w-full h-full object-cover" />
+          <img 
+            src={board.imageUrl} 
+            alt={board.name} 
+            className="w-full h-full object-cover" 
+            onError={(e) => {
+              console.error("Failed to load board image:", board.imageUrl);
+              e.currentTarget.src = "https://placehold.co/600x400?text=Board+Image";
+            }}
+          />
         ) : (
           <div className="flex items-center justify-center h-full bg-pink-50">
             <span className="text-pink-500">Pinterest</span>
@@ -112,7 +124,15 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {inspirationImages.map((img, idx) => (
             <div key={idx} className="aspect-video bg-gray-100 rounded overflow-hidden">
-              <img src={img} alt={`Inspiration ${idx + 1}`} className="w-full h-full object-cover" />
+              <img 
+                src={img} 
+                alt={`Inspiration ${idx + 1}`} 
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  console.error("Failed to load inspiration image:", img);
+                  e.currentTarget.src = "https://placehold.co/600x400?text=Image+Not+Found";
+                }}
+              />
             </div>
           ))}
         </div>

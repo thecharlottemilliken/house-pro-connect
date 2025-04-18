@@ -71,11 +71,14 @@ const PinterestConnector: React.FC<PinterestConnectorProps> = ({ onBoardsSelecte
       const [, username, boardName] = match;
       const boardId = `${username}-${boardName}`;
       
+      // For demo purposes, use a fixed image from mockPins as the board cover
+      const boardCoverImage = "https://i.pinimg.com/564x/a1/94/a5/a194a58ce675f39a3d74e9b41e6be00a.jpg";
+      
       const board: PinterestBoard = {
         id: boardId,
         name: boardName.replace(/-/g, ' '),
         url: boardUrl,
-        imageUrl: "https://i.pinimg.com/236x/1e/3f/58/1e3f587572dd30f9d242b3674482503b.jpg",
+        imageUrl: boardCoverImage,
         pins: mockPins
       };
       
@@ -148,7 +151,7 @@ const PinterestConnector: React.FC<PinterestConnectorProps> = ({ onBoardsSelecte
               disabled={isLoading || !boardUrl}
               className="bg-pink-500 hover:bg-pink-600 text-white"
             >
-              Add Board
+              {isLoading ? "Adding..." : "Add Board"}
             </Button>
           </DialogFooter>
         </DialogContent>
