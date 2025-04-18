@@ -1,3 +1,4 @@
+
 import { useParams, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -39,7 +40,8 @@ const ProjectDesign = () => {
     designAssets: [],
     renderingImages: [],
     inspirationImages: [],
-    beforePhotos: {}
+    beforePhotos: {},
+    roomMeasurements: {}
   };
 
   const hasDesigns = designPreferences.hasDesigns;
@@ -137,6 +139,45 @@ const ProjectDesign = () => {
     }
   };
 
+  const handleSaveMeasurements = async (area: string, measurements: any) => {
+    try {
+      const areaKey = area.toLowerCase().replace(/\s+/g, '_');
+      
+      // Create a new object to avoid modifying the original reference
+      const updatedMeasurements = { 
+        ...(designPreferences.roomMeasurements || {}),
+        [areaKey]: measurements
+      };
+      
+      const updatedDesignPreferences: Record<string, unknown> = {
+        ...designPreferences,
+        roomMeasurements: updatedMeasurements
+      };
+      
+      const { error } = await supabase
+        .from('projects')
+        .update({ 
+          design_preferences: updatedDesignPreferences as Json
+        })
+        .eq('id', projectData.id);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: `Measurements saved for ${area}`,
+      });
+      
+    } catch (error: any) {
+      console.error('Error updating room measurements:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save measurements. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="flex flex-col bg-white min-h-screen">
       <DashboardNavbar />
@@ -176,6 +217,7 @@ const ProjectDesign = () => {
                   {projectData.renovation_areas?.map((area) => {
                     const areaKey = area.area.toLowerCase().replace(/\s+/g, '_');
                     const beforePhotos = designPreferences.beforePhotos?.[areaKey] || [];
+                    const measurements = designPreferences.roomMeasurements?.[areaKey];
                     
                     return (
                       <TabsContent key={area.area} value={area.area.toLowerCase()} className="w-full">
@@ -187,8 +229,10 @@ const ProjectDesign = () => {
                                 location={area.location}
                                 designers={designPreferences.designers}
                                 designAssets={designPreferences.designAssets}
+                                measurements={measurements}
                                 onAddDesigner={handleAddDesigner}
                                 onUploadAssets={handleUploadAssets}
+                                onSaveMeasurements={(newMeasurements) => handleSaveMeasurements(area.area, newMeasurements)}
                                 propertyPhotos={propertyPhotos}
                                 onSelectBeforePhotos={(photos) => handleSelectBeforePhotos(area.area, photos)}
                                 onUploadBeforePhotos={(photos) => handleUploadBeforePhotos(area.area, photos)}

@@ -1,17 +1,27 @@
+
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { FileText } from "lucide-react";
 import EmptyDesignState from "./EmptyDesignState";
 import DesignTabHeader from "./DesignTabHeader";
 import BeforePhotosCard from "./BeforePhotosCard";
+import RoomMeasurementsCard from './RoomMeasurementsCard';
 
 interface RoomDetailsProps {
   area: string;
   location?: string;
   designers?: Array<{ id: string; businessName: string; }>;
   designAssets?: Array<{ name: string; url: string; }>;
+  measurements?: {
+    length?: number;
+    width?: number;
+    height?: number;
+    unit: 'ft' | 'm';
+    additionalNotes?: string;
+  };
   onAddDesigner?: () => void;
   onUploadAssets?: () => void;
+  onSaveMeasurements?: (measurements: any) => void;
   propertyPhotos?: string[];
   onSelectBeforePhotos?: (photos: string[]) => void;
   onUploadBeforePhotos?: (photos: string[]) => void;
@@ -23,8 +33,10 @@ const RoomDetails = ({
   location,
   designers,
   designAssets,
+  measurements,
   onAddDesigner,
   onUploadAssets,
+  onSaveMeasurements = () => {},
   propertyPhotos = [],
   onSelectBeforePhotos,
   onUploadBeforePhotos,
@@ -87,6 +99,13 @@ const RoomDetails = ({
           )}
         </CardContent>
       </Card>
+
+      {/* Room Measurements Section */}
+      <RoomMeasurementsCard 
+        area={area}
+        measurements={measurements}
+        onSaveMeasurements={onSaveMeasurements}
+      />
 
       <BeforePhotosCard
         beforePhotos={beforePhotos}
