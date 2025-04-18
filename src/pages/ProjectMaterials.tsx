@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -13,6 +14,8 @@ const ProjectMaterials = () => {
   const location = useLocation();
   const params = useParams();
   const isMobile = useIsMobile();
+  const [activeSpecialty, setActiveSpecialty] = useState("Tile");
+  const [activeStatus, setActiveStatus] = useState<"scheduled" | "delivered" | "wishlist">("scheduled");
   
   const { projectData, isLoading } = useProjectData(
     params.projectId,
@@ -46,7 +49,10 @@ const ProjectMaterials = () => {
           />
           
           <div className="flex flex-1">
-            <MaterialsSpecialtiesSidebar />
+            <MaterialsSpecialtiesSidebar 
+              activeSpecialty={activeSpecialty}
+              setActiveSpecialty={setActiveSpecialty}
+            />
             
             <div className="flex-1 p-6 overflow-y-auto">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
@@ -60,7 +66,10 @@ const ProjectMaterials = () => {
                 </Button>
               </div>
               
-              <MaterialsStatusTabs />
+              <MaterialsStatusTabs 
+                activeStatus={activeStatus}
+                onStatusChange={setActiveStatus}
+              />
             </div>
           </div>
         </div>

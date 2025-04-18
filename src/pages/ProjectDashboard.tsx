@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useLocation, useParams } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
@@ -48,7 +49,8 @@ const ProjectDashboard = () => {
 
   const projectId = projectData?.id || params.projectId || "";
   const projectTitle = projectData?.title || "Project Overview";
-  const renovationAreas = projectData?.renovation_areas as RenovationArea[] || [];
+  // Type assertion for renovation areas
+  const renovationAreas = (projectData?.renovation_areas as unknown as RenovationArea[]) || [];
   const hasSOW = false; // This should be updated to check actual SOW status once implemented
   const hasDesignPlan = false; // This should be updated to check actual design plan status once implemented
   const isCoach = profile?.role === 'coach';

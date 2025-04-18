@@ -1,3 +1,4 @@
+
 import { useParams, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -32,7 +33,8 @@ const ProjectDesign = () => {
     );
   }
 
-  const designPreferences: DesignPreferences = (projectData.design_preferences as any) || {
+  // Type assertion to handle the JSON type
+  const designPreferences = (projectData.design_preferences as unknown as DesignPreferences) || {
     hasDesigns: false,
     designers: [],
     designAssets: [],
@@ -45,7 +47,10 @@ const ProjectDesign = () => {
   const hasDesigns = designPreferences.hasDesigns;
   const hasRenderings = designPreferences.renderingImages && designPreferences.renderingImages.length > 0;
   const hasInspiration = designPreferences.inspirationImages && designPreferences.inspirationImages.length > 0;
-  const defaultTab = (projectData.renovation_areas as RenovationArea[])?.[0]?.area?.toLowerCase() || "kitchen";
+  
+  // Type assertion for renovation areas
+  const renovationAreas = (projectData.renovation_areas as unknown as RenovationArea[]) || [];
+  const defaultTab = renovationAreas[0]?.area?.toLowerCase() || "kitchen";
   
   const propertyPhotos = propertyDetails?.home_photos || [];
 
@@ -195,7 +200,7 @@ const ProjectDesign = () => {
                 <h2 className="text-lg font-medium mb-3">Select a room</h2>
                 <Tabs defaultValue={defaultTab} className="w-full">
                   <TabsList className="mb-4">
-                    {(projectData.renovation_areas as RenovationArea[])?.map((area, index) => (
+                    {renovationAreas.map((area, index) => (
                       <TabsTrigger 
                         key={area.area} 
                         value={area.area.toLowerCase()}
@@ -209,7 +214,7 @@ const ProjectDesign = () => {
                     ))}
                   </TabsList>
 
-                  {(projectData.renovation_areas as RenovationArea[])?.map((area) => {
+                  {renovationAreas.map((area) => {
                     const areaKey = area.area.toLowerCase().replace(/\s+/g, '_');
                     const beforePhotos = designPreferences.beforePhotos?.[areaKey] || [];
                     const measurements = designPreferences.roomMeasurements?.[areaKey];
