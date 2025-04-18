@@ -204,27 +204,19 @@ const ProjectDesign = () => {
         throw new Error("Room ID is required to add Pinterest boards");
       }
       
-      const { data: currentData } = await supabase
+      // Get existing boards from the database
+      const { data: currentData, error: fetchError } = await supabase
         .from('room_design_preferences')
         .select('pinterest_boards')
         .eq('room_id', roomId)
         .single();
       
-      let allBoards = boards;
-      if (currentData && currentData.pinterest_boards) {
-        const existingBoardIds = new Set(
-          (currentData.pinterest_boards as unknown as PinterestBoard[]).map(b => b.id)
-        );
-        
-        const uniqueNewBoards = boards.filter(board => !existingBoardIds.has(board.id));
-        
-        allBoards = [
-          ...(currentData.pinterest_boards as unknown as PinterestBoard[]),
-          ...uniqueNewBoards
-        ];
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error('Error fetching existing Pinterest boards:', fetchError);
       }
       
-      const boardsForStorage = allBoards.map(board => ({
+      // Convert the boards to Supabase JSON format for storage
+      const boardsForStorage = boards.map(board => ({
         id: board.id,
         name: board.name,
         url: board.url,
@@ -236,27 +228,44 @@ const ProjectDesign = () => {
         })) : undefined
       })) as unknown as Json;
       
-      const { error } = await supabase
-        .from('room_design_preferences')
-        .update({ 
-          pinterest_boards: boardsForStorage,
-          updated_at: new Date().toISOString()
-        })
-        .eq('room_id', roomId);
+      // Check if we need to create or update
+      let response;
+      if (!currentData) {
+        // Create new record if it doesn't exist
+        response = await supabase
+          .from('room_design_preferences')
+          .insert({ 
+            room_id: roomId,
+            pinterest_boards: boardsForStorage,
+            inspiration_images: [],
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+      } else {
+        // Update existing record
+        response = await supabase
+          .from('room_design_preferences')
+          .update({ 
+            pinterest_boards: boardsForStorage,
+            updated_at: new Date().toISOString()
+          })
+          .eq('room_id', roomId);
+      }
       
-      if (error) throw error;
+      if (response.error) throw response.error;
       
+      // Update local state
       setRoomPreferences(prev => ({
         ...prev,
         [roomId]: {
           ...prev[roomId],
-          pinterestBoards: allBoards
+          pinterestBoards: boards
         }
       }));
       
       toast({
         title: "Success",
-        description: `Added Pinterest boards to ${roomName}`,
+        description: `Updated Pinterest boards for ${roomName}`,
       });
       
     } catch (error: any) {

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import PinterestConnector from "./PinterestConnector";
 import { Button } from "@/components/ui/button";
@@ -65,7 +66,16 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
     console.log("Pinterest boards selected for room:", currentRoom, boards);
     
     // Important: We need to combine the new boards with existing ones
-    const combinedBoards = [...localPinterestBoards, ...boards];
+    const combinedBoards = [...localPinterestBoards];
+    
+    // Only add boards that don't already exist (by ID)
+    const existingBoardIds = new Set(localPinterestBoards.map(board => board.id));
+    boards.forEach(newBoard => {
+      if (!existingBoardIds.has(newBoard.id)) {
+        combinedBoards.push(newBoard);
+      }
+    });
+
     onAddPinterestBoards(combinedBoards, currentRoom, roomId);
   };
 

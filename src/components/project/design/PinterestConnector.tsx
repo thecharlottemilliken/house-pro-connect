@@ -52,29 +52,40 @@ const PinterestConnector: React.FC<PinterestConnectorProps> = ({ onBoardsSelecte
         return;
       }
 
-      const boardsData: PinterestBoard[] = await Promise.all(
+      // Process boards in parallel
+      const boardsData: PinterestBoard[] = [];
+      const failedUrls: string[] = [];
+
+      await Promise.all(
         nonEmptyUrls.map(async (url) => {
-          // Validate Pinterest board URL format
-          const pinterestUrlRegex = /^https?:\/\/(?:www\.)?pinterest\.(?:\w+)\/([^\/]+)\/([^\/]+)/;
-          const match = url.match(pinterestUrlRegex);
-
-          if (!match) {
-            throw new Error(`Invalid Pinterest URL: ${url}`);
-          }
-
-          const [, username, boardName] = match;
-          const boardId = `${username}-${boardName}`;
-
-          // Attempt to scrape the board cover image - use a fallback for CORS issues
           try {
-            const response = await fetch(`https://www.pinterest.com/${username}/${boardName}`);
-            const html = await response.text();
-            
-            // Extract og:image meta tag for cover photo
-            const ogImageMatch = html.match(/<meta[^>]*property="og:image"[^>]*content="([^"]*)"[^>]*>/);
-            const coverImage = ogImageMatch ? ogImageMatch[1] : null;
+            // Validate Pinterest board URL format
+            const pinterestUrlRegex = /^https?:\/\/(?:www\.)?pinterest\.(?:\w+)\/([^\/]+)\/([^\/]+)/;
+            const match = url.match(pinterestUrlRegex);
 
-            return {
+            if (!match) {
+              failedUrls.push(url);
+              return;
+            }
+
+            const [, username, boardName] = match;
+            const boardId = `${username}-${boardName}`;
+
+            // Attempt to get the board cover image
+            let coverImage = null;
+            try {
+              const response = await fetch(`https://www.pinterest.com/${username}/${boardName}`);
+              const html = await response.text();
+              
+              // Extract og:image meta tag for cover photo
+              const ogImageMatch = html.match(/<meta[^>]*property="og:image"[^>]*content="([^"]*)"[^>]*>/);
+              coverImage = ogImageMatch ? ogImageMatch[1] : null;
+            } catch (error) {
+              console.error('Error scraping board cover:', error);
+              // We'll continue with a fallback image
+            }
+
+            boardsData.push({
               id: boardId,
               name: boardName.replace(/-/g, ' '),
               url: url,
@@ -86,35 +97,38 @@ const PinterestConnector: React.FC<PinterestConnectorProps> = ({ onBoardsSelecte
                   description: "Sample Pin"
                 }
               ]
-            };
+            });
           } catch (error) {
-            console.error('Error scraping board cover:', error);
-            // Return board with default cover image if scraping fails
-            return {
-              id: boardId,
-              name: boardName.replace(/-/g, ' '),
-              url: url,
-              imageUrl: "https://placehold.co/600x400?text=Pinterest+Board",
-              pins: [
-                {
-                  id: "1",
-                  imageUrl: "https://placehold.co/600x400?text=Sample+Pin",
-                  description: "Sample Pin"
-                }
-              ]
-            };
+            console.error('Error processing board URL:', url, error);
+            failedUrls.push(url);
           }
         })
       );
 
-      onBoardsSelected(boardsData);
-      setIsDialogOpen(false);
-      setBoardUrls(['']);
-      
-      toast({
-        title: "Success",
-        description: `Added ${boardsData.length} Pinterest board${boardsData.length > 1 ? 's' : ''}`,
-      });
+      if (failedUrls.length > 0) {
+        toast({
+          title: "Warning",
+          description: `Could not process ${failedUrls.length} URL${failedUrls.length > 1 ? 's' : ''}`,
+          variant: "default",
+        });
+      }
+
+      if (boardsData.length > 0) {
+        onBoardsSelected(boardsData);
+        setIsDialogOpen(false);
+        setBoardUrls(['']);
+        
+        toast({
+          title: "Success",
+          description: `Added ${boardsData.length} Pinterest board${boardsData.length > 1 ? 's' : ''}`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Could not add any Pinterest boards with the provided URLs",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error("Error processing Pinterest boards:", error);
       toast({
