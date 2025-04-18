@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,55 @@ const DesignAssetsCard = ({
   );
   
   const [drawingFiles, setDrawingFiles] = useState<{name: string; size: string; type: 'jpg' | 'png' | 'pdf'; url?: string}[]>([]);
+
+  // Effect to load drawings when component mounts
+  useEffect(() => {
+    if (propertyId) {
+      fetchExistingDrawings();
+    }
+  }, [propertyId]);
+
+  // Function to fetch existing drawings from the database
+  const fetchExistingDrawings = async () => {
+    if (!propertyId) return;
+    
+    try {
+      const { data: rooms } = await supabase
+        .from('property_rooms')
+        .select('id')
+        .eq('property_id', propertyId)
+        .single();
+        
+      if (rooms) {
+        const { data: preferences, error } = await supabase
+          .from('room_design_preferences')
+          .select('drawings')
+          .eq('room_id', rooms.id)
+          .single();
+          
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error fetching drawings:', error);
+          return;
+        }
+        
+        if (preferences?.drawings && preferences.drawings.length > 0) {
+          const files = preferences.drawings.map((url: string, index: number) => {
+            const fileType = url.toLowerCase().endsWith('.png') ? 'png' : 'jpg';
+            return {
+              name: `Drawing_${index + 1}.${fileType}`,
+              size: "1.2MB",
+              type: fileType as 'jpg' | 'png' | 'pdf',
+              url: url
+            };
+          });
+          
+          setDrawingFiles(files);
+        }
+      }
+    } catch (error) {
+      console.error('Error in fetchExistingDrawings:', error);
+    }
+  };
 
   const verifyBlueprintUrl = async () => {
     if (!propertyBlueprint) {
@@ -152,129 +202,182 @@ const DesignAssetsCard = ({
 
   const handleAddRenderings = async (urls: string[]) => {
     console.log("Adding rendering URLs:", urls);
-    const roomId = propertyId; // assuming propertyId is actually roomId
+    if (!propertyId || urls.length === 0) {
+      console.log("Missing propertyId or URLs");
+      return;
+    }
     
-    if (urls.length > 0 && roomId) {
-      try {
-        // First, get existing room design preferences
-        const { data: existingPrefs, error: fetchError } = await supabase
-          .from('room_design_preferences')
-          .select('renderings')
-          .eq('room_id', roomId)
-          .maybeSingle();
-        
-        if (fetchError && fetchError.code !== 'PGRST116') {
-          throw fetchError;
-        }
-        
-        // Combine existing and new renderings
-        const existingRenderings = existingPrefs?.renderings || [];
-        const updatedRenderings = [...existingRenderings, ...urls];
-        
-        // Check if record exists first
-        const { data: existingRecord, error: checkError } = await supabase
-          .from('room_design_preferences')
-          .select('id')
-          .eq('room_id', roomId)
-          .maybeSingle();
-          
-        if (checkError && checkError.code !== 'PGRST116') {
-          throw checkError;
-        }
-        
-        let updateError;
-        
-        if (existingRecord) {
-          // Update existing record
-          const { error } = await supabase
-            .from('room_design_preferences')
-            .update({ 
-              renderings: updatedRenderings,
-              updated_at: new Date().toISOString()
-            })
-            .eq('room_id', roomId);
-            
-          updateError = error;
-        } else {
-          // Create new record
-          const { error } = await supabase
-            .from('room_design_preferences')
-            .insert({ 
-              room_id: roomId,
-              renderings: updatedRenderings,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            });
-            
-          updateError = error;
-        }
-        
-        if (updateError) throw updateError;
-        
-        // Update local state with renderings
-        const newRenderings = urls.map((url, index) => {
-          const fileType = url.toLowerCase().endsWith('.png') ? 'png' : 'jpg';
-          return {
-            name: `Rendering_${renderingFiles.length + index + 1}.${fileType}`,
-            size: "1.5MB",
-            type: fileType as 'jpg' | 'png' | 'pdf',
-            url: url
-          };
-        });
-        
-        setRenderingFiles(prev => [...prev, ...newRenderings]);
-        
+    try {
+      // First get the room ID from property ID
+      const { data: rooms, error: roomsError } = await supabase
+        .from('property_rooms')
+        .select('id')
+        .eq('property_id', propertyId)
+        .single();
+      
+      if (roomsError) {
+        console.error('Error fetching room:', roomsError);
+        throw roomsError;
+      }
+      
+      if (!rooms) {
+        console.error('No room found for property');
         toast({
-          title: "Success",
-          description: "Renderings have been saved successfully."
-        });
-      } catch (error) {
-        console.error('Error saving renderings:', error);
-        toast({
-          title: "Error",
-          description: "Failed to save renderings. Please try again.",
+          title: "Room Not Found",
+          description: "Could not find a room associated with this property.",
           variant: "destructive"
         });
+        return;
       }
+      
+      const roomId = rooms.id;
+      console.log("Found room ID:", roomId);
+      
+      // Get existing renderings
+      const { data: existingPrefs, error: fetchError } = await supabase
+        .from('room_design_preferences')
+        .select('renderings')
+        .eq('room_id', roomId)
+        .maybeSingle();
+      
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error('Error fetching room design preferences:', fetchError);
+        throw fetchError;
+      }
+      
+      // Combine existing and new renderings
+      const existingRenderings = existingPrefs?.renderings || [];
+      const updatedRenderings = [...existingRenderings, ...urls];
+      
+      console.log("Existing renderings:", existingRenderings);
+      console.log("Updated renderings:", updatedRenderings);
+      
+      // Check if record exists
+      const { data: existingRecord, error: checkError } = await supabase
+        .from('room_design_preferences')
+        .select('id')
+        .eq('room_id', roomId)
+        .maybeSingle();
+      
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('Error checking room design preferences:', checkError);
+        throw checkError;
+      }
+      
+      let updateError;
+      
+      if (existingRecord) {
+        console.log("Updating existing record");
+        // Update existing record
+        const { error } = await supabase
+          .from('room_design_preferences')
+          .update({ 
+            renderings: updatedRenderings,
+            updated_at: new Date().toISOString()
+          })
+          .eq('room_id', roomId);
+        
+        updateError = error;
+      } else {
+        console.log("Creating new record");
+        // Create new record
+        const { error } = await supabase
+          .from('room_design_preferences')
+          .insert({ 
+            room_id: roomId,
+            renderings: updatedRenderings,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+        
+        updateError = error;
+      }
+      
+      if (updateError) {
+        console.error('Error saving renderings:', updateError);
+        throw updateError;
+      }
+      
+      // Update local state with renderings
+      const newRenderings = urls.map((url, index) => {
+        const fileType = url.toLowerCase().endsWith('.png') ? 'png' : 'jpg';
+        return {
+          name: `Rendering_${renderingFiles.length + index + 1}.${fileType}`,
+          size: "1.5MB",
+          type: fileType as 'jpg' | 'png' | 'pdf',
+          url: url
+        };
+      });
+      
+      setRenderingFiles(prev => [...prev, ...newRenderings]);
+      
+      toast({
+        title: "Success",
+        description: "Renderings have been saved successfully."
+      });
+    } catch (error) {
+      console.error('Error saving renderings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save renderings. Please try again.",
+        variant: "destructive"
+      });
     }
+    
     if (onAddRenderings) onAddRenderings();
   };
 
   const handleRemoveRenderings = async () => {
     try {
-      if (renderingFiles.length > 0 && propertyId) {
-        const { data: existingPrefs, error: fetchError } = await supabase
-          .from('room_design_preferences')
-          .select('renderings')
-          .eq('room_id', propertyId)
-          .maybeSingle();
-          
-        if (fetchError && fetchError.code !== 'PGRST116') {
-          throw fetchError;
-        }
-        
-        const existingRenderings = existingPrefs?.renderings || [];
-        if (existingRenderings.length > 0) {
-          const updatedRenderings = existingRenderings.slice(0, -1);
-          
-          const { error: updateError } = await supabase
-            .from('room_design_preferences')
-            .update({ 
-              renderings: updatedRenderings,
-              updated_at: new Date().toISOString()
-            })
-            .eq('room_id', propertyId);
-            
-          if (updateError) throw updateError;
-        }
-        
-        setRenderingFiles(prev => prev.slice(0, -1));
-        
-        toast({
-          title: "Success",
-          description: "Rendering removed successfully."
-        });
+      if (renderingFiles.length === 0 || !propertyId) {
+        return;
       }
+      
+      // Get the room ID
+      const { data: room, error: roomError } = await supabase
+        .from('property_rooms')
+        .select('id')
+        .eq('property_id', propertyId)
+        .single();
+      
+      if (roomError) {
+        console.error('Error fetching room:', roomError);
+        throw roomError;
+      }
+      
+      const roomId = room.id;
+        
+      const { data: existingPrefs, error: fetchError } = await supabase
+        .from('room_design_preferences')
+        .select('renderings')
+        .eq('room_id', roomId)
+        .maybeSingle();
+          
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
+      }
+      
+      const existingRenderings = existingPrefs?.renderings || [];
+      if (existingRenderings.length > 0) {
+        const updatedRenderings = existingRenderings.slice(0, -1);
+        
+        const { error: updateError } = await supabase
+          .from('room_design_preferences')
+          .update({ 
+            renderings: updatedRenderings,
+            updated_at: new Date().toISOString()
+          })
+          .eq('room_id', roomId);
+          
+        if (updateError) throw updateError;
+      }
+      
+      setRenderingFiles(prev => prev.slice(0, -1));
+      
+      toast({
+        title: "Success",
+        description: "Rendering removed successfully."
+      });
     } catch (error) {
       console.error('Error removing rendering:', error);
       toast({
@@ -287,88 +390,126 @@ const DesignAssetsCard = ({
 
   const handleAddDrawings = async (urls: string[]) => {
     console.log("Adding drawing URLs:", urls);
-    const roomId = propertyId;
+    if (!propertyId || urls.length === 0) {
+      console.log("Missing propertyId or URLs");
+      return;
+    }
     
-    if (urls.length > 0 && roomId) {
-      try {
-        // Get existing room design preferences
-        const { data: existingPrefs, error: fetchError } = await supabase
-          .from('room_design_preferences')
-          .select('drawings')
-          .eq('room_id', roomId)
-          .maybeSingle();
-        
-        if (fetchError && fetchError.code !== 'PGRST116') {
-          throw fetchError;
-        }
-        
-        // Combine existing and new drawings
-        const existingDrawings = existingPrefs?.drawings || [];
-        const updatedDrawings = [...existingDrawings, ...urls];
-        
-        // Check if record exists
-        const { data: existingRecord, error: checkError } = await supabase
-          .from('room_design_preferences')
-          .select('id')
-          .eq('room_id', roomId)
-          .maybeSingle();
-          
-        if (checkError && checkError.code !== 'PGRST116') {
-          throw checkError;
-        }
-        
-        let updateError;
-        
-        if (existingRecord) {
-          const { error } = await supabase
-            .from('room_design_preferences')
-            .update({ 
-              drawings: updatedDrawings,
-              updated_at: new Date().toISOString()
-            })
-            .eq('room_id', roomId);
-            
-          updateError = error;
-        } else {
-          const { error } = await supabase
-            .from('room_design_preferences')
-            .insert({ 
-              room_id: roomId,
-              drawings: updatedDrawings,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            });
-            
-          updateError = error;
-        }
-        
-        if (updateError) throw updateError;
-        
-        // Update local state
-        const newDrawings = urls.map((url, index) => {
-          const fileType = url.toLowerCase().endsWith('.png') ? 'png' : 'jpg';
-          return {
-            name: `Drawing_${drawingFiles.length + index + 1}.${fileType}`,
-            size: "1.2MB",
-            type: fileType as 'jpg' | 'png' | 'pdf',
-            url: url
-          };
-        });
-        
-        setDrawingFiles(prev => [...prev, ...newDrawings]);
-        
+    try {
+      // First get the room ID from property ID
+      const { data: rooms, error: roomsError } = await supabase
+        .from('property_rooms')
+        .select('id')
+        .eq('property_id', propertyId)
+        .single();
+      
+      if (roomsError) {
+        console.error('Error fetching room:', roomsError);
+        throw roomsError;
+      }
+      
+      if (!rooms) {
+        console.error('No room found for property');
         toast({
-          title: "Success",
-          description: "Drawings have been saved successfully."
-        });
-      } catch (error) {
-        console.error('Error saving drawings:', error);
-        toast({
-          title: "Error",
-          description: "Failed to save drawings. Please try again.",
+          title: "Room Not Found", 
+          description: "Could not find a room associated with this property.",
           variant: "destructive"
         });
+        return;
       }
+      
+      const roomId = rooms.id;
+      console.log("Found room ID for drawings:", roomId);
+      
+      // Get existing room design preferences
+      const { data: existingPrefs, error: fetchError } = await supabase
+        .from('room_design_preferences')
+        .select('drawings')
+        .eq('room_id', roomId)
+        .maybeSingle();
+      
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error('Error fetching room design preferences:', fetchError);
+        throw fetchError;
+      }
+      
+      // Combine existing and new drawings
+      const existingDrawings = existingPrefs?.drawings || [];
+      const updatedDrawings = [...existingDrawings, ...urls];
+      
+      console.log("Existing drawings:", existingDrawings);
+      console.log("Updated drawings:", updatedDrawings);
+      
+      // Check if record exists
+      const { data: existingRecord, error: checkError } = await supabase
+        .from('room_design_preferences')
+        .select('id')
+        .eq('room_id', roomId)
+        .maybeSingle();
+      
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('Error checking room design preferences:', checkError);
+        throw checkError;
+      }
+      
+      let updateError;
+      
+      if (existingRecord) {
+        console.log("Updating existing record for drawings");
+        // Update existing record
+        const { error } = await supabase
+          .from('room_design_preferences')
+          .update({ 
+            drawings: updatedDrawings,
+            updated_at: new Date().toISOString()
+          })
+          .eq('room_id', roomId);
+        
+        updateError = error;
+      } else {
+        console.log("Creating new record for drawings");
+        // Create new record
+        const { error } = await supabase
+          .from('room_design_preferences')
+          .insert({ 
+            room_id: roomId,
+            drawings: updatedDrawings,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+        
+        updateError = error;
+      }
+      
+      if (updateError) {
+        console.error('Error saving drawings:', updateError);
+        throw updateError;
+      }
+      
+      // Update local state
+      const newDrawings = urls.map((url, index) => {
+        const fileType = url.toLowerCase().endsWith('.png') ? 'png' : 'jpg';
+        return {
+          name: `Drawing_${drawingFiles.length + index + 1}.${fileType}`,
+          size: "1.2MB",
+          type: fileType as 'jpg' | 'png' | 'pdf',
+          url: url
+        };
+      });
+      
+      setDrawingFiles(prev => [...prev, ...newDrawings]);
+      
+      toast({
+        title: "Success",
+        description: "Drawings have been saved successfully."
+      });
+    } catch (error) {
+      console.error('Error saving drawings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save drawings. Please try again.",
+        variant: "destructive"
+      });
     }
     
     if (onAddDrawings) onAddDrawings();
@@ -376,39 +517,55 @@ const DesignAssetsCard = ({
 
   const handleRemoveDrawings = async () => {
     try {
-      if (drawingFiles.length > 0 && propertyId) {
-        const { data: existingPrefs, error: fetchError } = await supabase
-          .from('room_design_preferences')
-          .select('drawings')
-          .eq('room_id', propertyId)
-          .maybeSingle();
-          
-        if (fetchError && fetchError.code !== 'PGRST116') {
-          throw fetchError;
-        }
-        
-        const existingDrawings = existingPrefs?.drawings || [];
-        if (existingDrawings.length > 0) {
-          const updatedDrawings = existingDrawings.slice(0, -1);
-          
-          const { error: updateError } = await supabase
-            .from('room_design_preferences')
-            .update({ 
-              drawings: updatedDrawings,
-              updated_at: new Date().toISOString()
-            })
-            .eq('room_id', propertyId);
-            
-          if (updateError) throw updateError;
-        }
-        
-        setDrawingFiles(prev => prev.slice(0, -1));
-        
-        toast({
-          title: "Success",
-          description: "Drawing removed successfully."
-        });
+      if (drawingFiles.length === 0 || !propertyId) {
+        return;
       }
+      
+      // Get the room ID
+      const { data: room, error: roomError } = await supabase
+        .from('property_rooms')
+        .select('id')
+        .eq('property_id', propertyId)
+        .single();
+      
+      if (roomError) {
+        console.error('Error fetching room:', roomError);
+        throw roomError;
+      }
+      
+      const roomId = room.id;
+        
+      const { data: existingPrefs, error: fetchError } = await supabase
+        .from('room_design_preferences')
+        .select('drawings')
+        .eq('room_id', roomId)
+        .maybeSingle();
+          
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
+      }
+      
+      const existingDrawings = existingPrefs?.drawings || [];
+      if (existingDrawings.length > 0) {
+        const updatedDrawings = existingDrawings.slice(0, -1);
+        
+        const { error: updateError } = await supabase
+          .from('room_design_preferences')
+          .update({ 
+            drawings: updatedDrawings,
+            updated_at: new Date().toISOString()
+          })
+          .eq('room_id', roomId);
+          
+        if (updateError) throw updateError;
+      }
+      
+      setDrawingFiles(prev => prev.slice(0, -1));
+      
+      toast({
+        title: "Success",
+        description: "Drawing removed successfully."
+      });
     } catch (error) {
       console.error('Error removing drawing:', error);
       toast({
