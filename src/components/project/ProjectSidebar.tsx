@@ -12,7 +12,7 @@ import {
   ListChecks,
   LayoutDashboard
 } from "lucide-react";
-import { NavLink, useParams, useLocation } from "react-router-dom";
+import { NavLink, useParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/components/ui/sidebar";
 
@@ -39,7 +39,6 @@ const navItems = [
 
 const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ projectId, projectTitle = "Project", activePage }) => {
   const { open } = useSidebar();
-  const location = useLocation();
 
   return (
     <aside
