@@ -53,7 +53,10 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
       console.log("Removing board:", boardToRemove);
       
       // Get the project ID from the URL
-      const projectId = window.location.pathname.split('/').pop();
+      const urlPath = window.location.pathname;
+      const projectId = urlPath.substring(urlPath.lastIndexOf('/') + 1);
+      console.log("Project ID:", projectId);
+      
       if (!projectId) {
         throw new Error("Could not determine project ID");
       }
@@ -63,6 +66,7 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
       
       // Get pin image URLs from the board being removed
       const boardPinUrls = boardToRemove.pins?.map(pin => pin.imageUrl) || [];
+      console.log("Pin URLs to remove:", boardPinUrls);
       
       // Remove those pin URLs from inspiration images
       const updatedInspiration = inspirationImages.filter(img => !boardPinUrls.includes(img));
@@ -74,7 +78,12 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
         .eq('id', projectId)
         .single();
       
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error("Error fetching project data:", fetchError);
+        throw fetchError;
+      }
+      
+      console.log("Project data fetched:", projectData);
       
       // Type casting to ensure TypeScript recognizes the object structure
       const designPreferences = projectData.design_preferences as {
@@ -87,6 +96,8 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
       designPreferences.pinterestBoards = updatedBoards;
       designPreferences.inspirationImages = updatedInspiration;
       
+      console.log("Updated design preferences:", designPreferences);
+      
       // Save updated design preferences to database
       const { error: updateError } = await supabase
         .from('projects')
@@ -95,7 +106,12 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
         })
         .eq('id', projectId);
       
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error("Error updating project:", updateError);
+        throw updateError;
+      }
+      
+      console.log("Database updated successfully");
       
       // Update UI via passed state update functions
       onAddPinterestBoards(updatedBoards);
