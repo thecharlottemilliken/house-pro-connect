@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { useParams, useLocation, Navigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -10,39 +10,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useProjectAccess } from "@/hooks/useProjectAccess";
 import SOWCreationWizard from "@/components/project/sow/SOWCreationWizard";
 import { Card } from "@/components/ui/card";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-// Create a new QueryClient
-const queryClient = new QueryClient();
-
+// Use the QueryClient from main.tsx instead of creating a new one
 const ProjectSOW = () => {
   const location = useLocation();
   const params = useParams();
   const isMobile = useIsMobile();
   const { profile } = useAuth();
-  
   const projectId = params.projectId || "";
 
-  // Wrap the component that uses react-query hooks with QueryClientProvider
-  return (
-    <QueryClientProvider client={queryClient}>
-      <ProjectSOWContent 
-        projectId={projectId} 
-        isMobile={isMobile} 
-        location={location} 
-        profile={profile} 
-      />
-    </QueryClientProvider>
-  );
-};
-
-// Separate component that uses react-query hooks
-const ProjectSOWContent = ({ 
-  projectId, 
-  isMobile, 
-  location, 
-  profile 
-}) => {
   const { hasAccess, isOwner, role, isLoading: isAccessLoading } = useProjectAccess(projectId);
   
   const { projectData, propertyDetails, isLoading: isProjectLoading } = useProjectData(

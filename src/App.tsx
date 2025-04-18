@@ -1,16 +1,16 @@
+
 import { useState } from "react";
 import {
   BrowserRouter,
   Routes,
   Route,
   Navigate,
-  useLocation,
 } from "react-router-dom";
 import { useAuth } from "./contexts/AuthContext";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
+import SignIn from "./pages/SignIn";
+import SignUp from "./pages/SignUp";
 import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
+import LandingPage from "./pages/LandingPage";
 import Dashboard from "./pages/Dashboard";
 import Projects from "./pages/Projects";
 import ProjectDashboard from "./pages/ProjectDashboard";
@@ -21,38 +21,38 @@ import ProjectTeam from "./pages/ProjectTeam";
 import ProjectMaterials from "./pages/ProjectMaterials";
 import ProjectAccounting from "./pages/ProjectAccounting";
 import ProjectManage from "./pages/ProjectManage";
-import ProjectActivity from "./pages/ProjectActivity";
 import ProjectBidsProposals from "./pages/ProjectBidsProposals";
 import ProjectSOW from "./pages/ProjectSOW";
 
 function App() {
-  const { currentUser } = useAuth();
+  const { user } = useAuth();
   const [activeSpecialty, setActiveSpecialty] = useState("");
 
   const RequireAuth = ({ children }: { children: JSX.Element }) => {
-    return currentUser ? children : <Navigate to="/login" />;
+    return user ? children : <Navigate to="/signin" />;
   };
 
   const PublicRoute = ({ children }: { children: JSX.Element }) => {
-    return currentUser ? <Navigate to="/" /> : children;
+    return user ? <Navigate to="/dashboard" /> : children;
   };
 
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<LandingPage />} />
         <Route
-          path="/login"
+          path="/signin"
           element={
             <PublicRoute>
-              <Login />
+              <SignIn />
             </PublicRoute>
           }
         />
         <Route
-          path="/register"
+          path="/signup"
           element={
             <PublicRoute>
-              <Register />
+              <SignUp />
             </PublicRoute>
           }
         />
@@ -65,15 +65,7 @@ function App() {
           }
         />
         <Route
-          path="/reset-password"
-          element={
-            <PublicRoute>
-              <ResetPassword />
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/"
+          path="/dashboard"
           element={
             <RequireAuth>
               <Dashboard />
@@ -140,10 +132,7 @@ function App() {
           path="/project-accounting/:projectId"
           element={
             <RequireAuth>
-              <ProjectAccounting
-                activeSpecialty={activeSpecialty}
-                setActiveSpecialty={setActiveSpecialty}
-              />
+              <ProjectAccounting />
             </RequireAuth>
           }
         />
@@ -152,14 +141,6 @@ function App() {
           element={
             <RequireAuth>
               <ProjectManage />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/project-activity/:projectId"
-          element={
-            <RequireAuth>
-              <ProjectActivity />
             </RequireAuth>
           }
         />
