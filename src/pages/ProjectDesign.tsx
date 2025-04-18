@@ -1,4 +1,3 @@
-
 import { useParams, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -557,6 +556,7 @@ const ProjectDesign = () => {
                                   onAddBlueprints={handleAddBlueprints}
                                   propertyBlueprint={propertyDetails?.blueprint_url || null}
                                   propertyId={propertyDetails?.id}
+                                  currentRoom={area.area}
                                 />
                               </div>
                             </div>

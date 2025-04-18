@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
@@ -13,6 +12,7 @@ interface DesignAssetsCardProps {
   onAddBlueprints?: () => void;
   propertyBlueprint?: string | null;
   propertyId?: string;
+  currentRoom: string; // Add this prop to track current room
 }
 
 const DesignAssetsCard = ({
@@ -22,11 +22,10 @@ const DesignAssetsCard = ({
   onAddDrawings,
   onAddBlueprints,
   propertyBlueprint,
-  propertyId
+  propertyId,
+  currentRoom
 }: DesignAssetsCardProps) => {
   const [isUploading, setIsUploading] = useState(false);
-  const [pdfStatus, setPdfStatus] = useState<'unknown' | 'valid' | 'invalid'>('unknown');
-  const [isCheckingPdf, setIsCheckingPdf] = useState(false);
   const [blueprintFile, setBlueprintFile] = useState<{name: string; size: string; type: 'pdf' | 'xls' | 'jpg' | 'png'; url?: string} | null>(
     propertyBlueprint ? { name: "Blueprint.pdf", size: "1.2MB", type: 'pdf', url: propertyBlueprint } : null
   );
@@ -35,41 +34,43 @@ const DesignAssetsCard = ({
   const [roomId, setRoomId] = useState<string | null>(null);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
 
-  // Effect to load drawings and renderings when component mounts
+  // Effect to load data when component mounts or room changes
   useEffect(() => {
-    if (propertyId) {
+    if (propertyId && currentRoom) {
+      console.log("Loading data for room:", currentRoom);
       fetchRoomId().then(() => {
         fetchExistingData();
       });
     }
-  }, [propertyId]);
+  }, [propertyId, currentRoom]); // Add currentRoom as dependency
 
-  // Function to fetch room ID for the current property
+  // Function to fetch room ID for the current property and room
   const fetchRoomId = async () => {
-    if (!propertyId) {
-      console.error("No propertyId provided");
+    if (!propertyId || !currentRoom) {
+      console.error("Missing propertyId or currentRoom");
       return;
     }
     
     try {
-      console.log("Fetching room ID for property:", propertyId);
+      console.log("Fetching room ID for property:", propertyId, "and room:", currentRoom);
       const { data: rooms, error } = await supabase
         .from('property_rooms')
         .select('id')
         .eq('property_id', propertyId)
-        .limit(1);
+        .eq('name', currentRoom)
+        .maybeSingle();
         
       if (error) {
         console.error('Error fetching rooms:', error);
         return;
       }
       
-      if (rooms && rooms.length > 0) {
-        console.log('Room ID set to:', rooms[0].id);
-        setRoomId(rooms[0].id);
-        return rooms[0].id;
+      if (rooms) {
+        console.log('Room ID set to:', rooms.id);
+        setRoomId(rooms.id);
+        return rooms.id;
       } else {
-        console.log('No rooms found for property');
+        console.log('No rooms found for property and room name');
       }
     } catch (error) {
       console.error('Error in fetchRoomId:', error);
@@ -127,6 +128,9 @@ const DesignAssetsCard = ({
         });
         
         setRenderingFiles(files);
+      } else {
+        // Clear renderings if none found
+        setRenderingFiles([]);
       }
     } catch (error) {
       console.error('Error in fetchExistingRenderings:', error);
@@ -162,6 +166,9 @@ const DesignAssetsCard = ({
         });
         
         setDrawingFiles(files);
+      } else {
+        // Clear drawings if none found
+        setDrawingFiles([]);
       }
     } catch (error) {
       console.error('Error in fetchExistingDrawings:', error);
