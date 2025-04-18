@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
-import { Enums, Json } from "@/integrations/supabase/types";
+import { Json } from "@/integrations/supabase/types";
 
 export interface PropertyDetails {
   id: string;
@@ -24,8 +23,22 @@ export interface ProjectData {
   status: string;
   property_id: string;
   user_id: string;
-  design_preferences: Json;
-  renovation_areas: Json;
+  design_preferences: {
+    hasDesigns: boolean;
+    designers?: Array<{ id: string; businessName: string; }>;
+    designAssets?: Array<{ name: string; url: string; }>;
+    renderingImages?: string[];
+    inspirationImages?: string[];
+    beforePhotos?: Record<string, string[]>;
+    roomMeasurements?: Record<string, {
+      length?: number;
+      width?: number;
+      height?: number;
+      unit: 'ft' | 'm';
+      additionalNotes?: string;
+    }>;
+  };
+  renovation_areas: RenovationArea[];
   construction_preferences: Json;
   management_preferences: Json;
   project_preferences: Json;
@@ -91,7 +104,7 @@ export const useProjectData = (projectId: string | undefined, locationState: any
           throw new Error("Project not found");
         }
 
-        // Map database fields to ProjectData interface
+        // Map database fields to ProjectData interface with proper type assertions
         const projectDataMapped: ProjectData = {
           id: project.id,
           created_at: project.created_at,
@@ -100,12 +113,20 @@ export const useProjectData = (projectId: string | undefined, locationState: any
           status: project.state || 'active',
           property_id: project.property_id,
           user_id: project.user_id,
-          design_preferences: project.design_preferences,
-          renovation_areas: project.renovation_areas,
-          construction_preferences: project.construction_preferences,
-          management_preferences: project.management_preferences,
-          project_preferences: project.project_preferences,
-          prior_experience: project.prior_experience
+          design_preferences: project.design_preferences as ProjectData['design_preferences'] || {
+            hasDesigns: false,
+            designers: [],
+            designAssets: [],
+            renderingImages: [],
+            inspirationImages: [],
+            beforePhotos: {},
+            roomMeasurements: {}
+          },
+          renovation_areas: (project.renovation_areas as RenovationArea[]) || [],
+          construction_preferences: project.construction_preferences || {},
+          management_preferences: project.management_preferences || {},
+          project_preferences: project.project_preferences || {},
+          prior_experience: project.prior_experience || {}
         };
 
         setProjectData(projectDataMapped);

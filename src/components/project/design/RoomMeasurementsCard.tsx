@@ -1,10 +1,12 @@
-
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Ruler } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 import MeasuringWizard from './MeasuringWizard';
+import { supabase } from "@/integrations/supabase/client";
+import { useParams } from 'react-router-dom';
 
 interface RoomMeasurementsCardProps {
   area: string;
@@ -23,8 +25,54 @@ const RoomMeasurementsCard = ({
   measurements, 
   onSaveMeasurements 
 }: RoomMeasurementsCardProps) => {
+  const { toast } = useToast();
+  const params = useParams();
+  const projectId = params.projectId;
   const hasMeasurements = measurements && (measurements.length || measurements.width);
   
+  const handleSaveMeasurements = async (newMeasurements: any) => {
+    try {
+      const { data: currentProject, error: fetchError } = await supabase
+        .from('projects')
+        .select('design_preferences')
+        .eq('id', projectId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      const currentDesignPreferences = currentProject.design_preferences || {};
+      const updatedDesignPreferences = {
+        ...currentDesignPreferences,
+        roomMeasurements: {
+          ...(currentDesignPreferences.roomMeasurements || {}),
+          [area.toLowerCase()]: newMeasurements
+        }
+      };
+
+      const { error: updateError } = await supabase
+        .from('projects')
+        .update({
+          design_preferences: updatedDesignPreferences
+        })
+        .eq('id', projectId);
+
+      if (updateError) throw updateError;
+
+      onSaveMeasurements(newMeasurements);
+      toast({
+        title: "Measurements saved",
+        description: `Room measurements for ${area} have been saved successfully.`
+      });
+    } catch (error: any) {
+      console.error('Error saving measurements:', error);
+      toast({
+        title: "Error saving measurements",
+        description: "There was a problem saving the room measurements. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <Card className="shadow-sm border-gray-200/50 mt-6">
       <CardContent className="p-6">
@@ -47,7 +95,7 @@ const RoomMeasurementsCard = ({
               <MeasuringWizard 
                 area={area} 
                 initialMeasurements={measurements} 
-                onComplete={onSaveMeasurements} 
+                onComplete={handleSaveMeasurements} 
               />
             </DialogContent>
           </Dialog>
