@@ -25,7 +25,7 @@ import {
 interface FileListItemProps {
   name: string;
   size: string;
-  type: 'pdf' | 'xls';
+  type: 'pdf' | 'xls' | 'jpg' | 'png';
   url?: string;
   onDownload: () => void;
   onView: () => void;
@@ -46,12 +46,28 @@ export const FileListItem = ({ name, size, type, url, onDownload, onView, onDele
     setShowPreview(true);
   };
 
+  const getFileTypeColor = () => {
+    switch (type) {
+      case 'pdf':
+        return { bg: 'bg-blue-100', text: 'text-blue-600' };
+      case 'xls':
+        return { bg: 'bg-green-100', text: 'text-green-600' };
+      case 'jpg':
+      case 'png':
+        return { bg: 'bg-purple-100', text: 'text-purple-600' };
+      default:
+        return { bg: 'bg-gray-100', text: 'text-gray-600' };
+    }
+  };
+
+  const fileTypeColors = getFileTypeColor();
+
   return (
     <>
       <div className="flex items-center justify-between py-2">
         <div className="flex items-center gap-3">
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${type === 'pdf' ? 'bg-blue-100' : 'bg-green-100'}`}>
-            <span className={`text-xs font-medium uppercase ${type === 'pdf' ? 'text-blue-600' : 'text-green-600'}`}>
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${fileTypeColors.bg}`}>
+            <span className={`text-xs font-medium uppercase ${fileTypeColors.text}`}>
               {type}
             </span>
           </div>
@@ -87,7 +103,9 @@ export const FileListItem = ({ name, size, type, url, onDownload, onView, onDele
           <DrawerHeader className="border-b">
             <DrawerTitle>{name}</DrawerTitle>
             <DrawerDescription>
-              {type === 'pdf' ? 'PDF Document' : 'Excel Sheet'}
+              {type === 'pdf' ? 'PDF Document' : 
+               type === 'xls' ? 'Excel Sheet' : 
+               'Image'}
             </DrawerDescription>
           </DrawerHeader>
           <div className="p-4 h-full">
@@ -96,6 +114,12 @@ export const FileListItem = ({ name, size, type, url, onDownload, onView, onDele
                 src={`https://docs.google.com/viewer?embedded=true&url=${encodeURIComponent(url)}`}
                 className="w-full h-[70vh]"
                 title="PDF Preview"
+              />
+            ) : (type === 'jpg' || type === 'png') && url ? (
+              <img 
+                src={url} 
+                alt={name} 
+                className="max-w-full max-h-[70vh] mx-auto object-contain" 
               />
             ) : (
               <div className="flex items-center justify-center h-[70vh] bg-gray-100 rounded-lg">
