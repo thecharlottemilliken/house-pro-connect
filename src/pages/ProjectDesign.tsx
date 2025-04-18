@@ -1,4 +1,3 @@
-
 import { useParams, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -14,6 +13,8 @@ import RoomDetails from "@/components/project/design/RoomDetails";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
+
+import DesignAssetsCard from "@/components/project/design/DesignAssetsCard";
 
 const ProjectDesign = () => {
   const location = useLocation();
@@ -52,6 +53,8 @@ const ProjectDesign = () => {
   const handleAddDesigner = () => console.log("Add designer clicked");
   const handleUploadAssets = () => console.log("Upload assets clicked");
   const handleAddRenderings = () => console.log("Add renderings clicked");
+  const handleAddDrawings = () => console.log("Add drawings clicked");
+  const handleAddBlueprints = () => console.log("Add blueprints clicked");
   const handleAddInspiration = () => console.log("Add inspiration clicked");
 
   const handleSelectBeforePhotos = async (area: string, selectedPhotos: string[]) => {
@@ -194,30 +197,13 @@ const ProjectDesign = () => {
                             </div>
                             
                             <div className="col-span-1 lg:col-span-3 w-full">
-                              {!hasRenderings ? (
-                                <EmptyDesignState 
-                                  type="renderings" 
-                                  onAction={handleAddRenderings}
-                                />
-                              ) : (
-                                <Card className="mb-6 w-full">
-                                  <CardContent className="p-4 sm:p-6">
-                                    <div className="flex justify-between items-center mb-4">
-                                      <h2 className="text-xl font-bold">Renderings</h2>
-                                      <Button variant="ghost" size="sm" className="uppercase text-xs">
-                                        Manage Photos
-                                      </Button>
-                                    </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                                      {designPreferences.renderingImages?.map((img, idx) => (
-                                        <div key={idx} className="aspect-square bg-gray-100 rounded overflow-hidden">
-                                          <img src={img} alt={`Rendering ${idx + 1}`} className="w-full h-full object-cover" />
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              )}
+                              <DesignAssetsCard
+                                hasRenderings={hasRenderings}
+                                renderingImages={designPreferences.renderingImages}
+                                onAddRenderings={handleAddRenderings}
+                                onAddDrawings={handleAddDrawings}
+                                onAddBlueprints={handleAddBlueprints}
+                              />
                             </div>
                           </div>
                         ) : (
