@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FileImage, Download, Eye, Loader, Info, Building, MapPin, Tool } from "lucide-react";
+import { FileImage, Download, Eye, Loader, Info, Building, MapPin, Settings } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   Select,
@@ -210,7 +210,6 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
 
   const filteredAssets = getFilteredAssets();
 
-  // Loading skeleton UI for assets
   const LoadingSkeleton = () => (
     <div className="space-y-4">
       {[1, 2, 3].map(i => (
@@ -231,7 +230,6 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
     </div>
   );
 
-  // Project information blurbs
   const ProjectInfo = () => (
     <div className="px-4 py-3 border-b">
       <div className="space-y-4">
@@ -260,7 +258,7 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
         </div>
 
         <div className="flex items-start gap-3">
-          <Tool className="w-5 h-5 text-gray-500 mt-0.5" />
+          <Settings className="w-5 h-5 text-gray-500 mt-0.5" />
           <div>
             <h3 className="text-sm font-medium text-gray-900">Renovation Areas</h3>
             <div className="text-sm text-gray-500">
