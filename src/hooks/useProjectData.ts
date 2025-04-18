@@ -1,7 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
+import { type PinterestBoard } from "@/types/pinterest";
 
 export interface PropertyDetails {
   id: string;
@@ -25,22 +25,7 @@ export interface ProjectData {
   status: string;
   property_id: string;
   user_id: string;
-  design_preferences: {
-    hasDesigns: boolean;
-    designers?: Array<{ id: string; businessName: string; }>;
-    designAssets?: Array<{ name: string; url: string; }>;
-    renderingImages?: string[];
-    inspirationImages?: string[];
-    pinterestBoards?: PinterestBoard[];
-    beforePhotos?: Record<string, string[]>;
-    roomMeasurements?: Record<string, {
-      length?: number;
-      width?: number;
-      height?: number;
-      unit: 'ft' | 'm';
-      additionalNotes?: string;
-    }>;
-  } | null;
+  design_preferences: DesignPreferences | null;
   renovation_areas: RenovationArea[];
   construction_preferences: Json;
   management_preferences: Json;
@@ -122,12 +107,13 @@ export const useProjectData = (projectId: string | undefined, locationState: any
           status: project.state || 'active',
           property_id: project.property_id,
           user_id: project.user_id,
-          design_preferences: project.design_preferences as ProjectData['design_preferences'] || {
+          design_preferences: project.design_preferences as DesignPreferences || {
             hasDesigns: false,
             designers: [],
             designAssets: [],
             renderingImages: [],
             inspirationImages: [],
+            pinterestBoards: [],
             beforePhotos: {},
             roomMeasurements: {}
           },
@@ -182,3 +168,5 @@ export const useProjectData = (projectId: string | undefined, locationState: any
 
   return { projectData, propertyDetails, isLoading, error };
 };
+
+export { useProjectData };

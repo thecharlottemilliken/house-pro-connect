@@ -12,11 +12,29 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { PinterestBoard } from "@/hooks/useProjectData";
+import { type PinterestBoard } from "@/types/pinterest";
 
 interface PinterestConnectorProps {
   onBoardsSelected: (boards: PinterestBoard[]) => void;
 }
+
+const mockPins = [
+  {
+    id: "1",
+    imageUrl: "https://i.pinimg.com/564x/a1/94/a5/a194a58ce675f39a3d74e9b41e6be00a.jpg",
+    description: "Modern Living Room Design"
+  },
+  {
+    id: "2",
+    imageUrl: "https://i.pinimg.com/564x/8e/bf/36/8ebf36a1f7f2c91c92b3bcf59be3c59.jpg",
+    description: "Kitchen Renovation Inspiration"
+  },
+  {
+    id: "3",
+    imageUrl: "https://i.pinimg.com/564x/5e/66/28/5e6628e606068dbeaa81e9dfbd489fe8.jpg",
+    description: "Bathroom Design Ideas"
+  }
+];
 
 const PinterestConnector: React.FC<PinterestConnectorProps> = ({ onBoardsSelected }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -55,7 +73,8 @@ const PinterestConnector: React.FC<PinterestConnectorProps> = ({ onBoardsSelecte
         id: boardId,
         name: boardName.replace(/-/g, ' '),
         url: boardUrl,
-        imageUrl: "https://i.pinimg.com/236x/1e/3f/58/1e3f587572dd30f9d242b3674482503b.jpg" // Default Pinterest logo or preview
+        imageUrl: "https://i.pinimg.com/236x/1e/3f/58/1e3f587572dd30f9d242b3674482503b.jpg",
+        pins: mockPins
       };
       
       onBoardsSelected([board]);

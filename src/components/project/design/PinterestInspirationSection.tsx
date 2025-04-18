@@ -1,11 +1,11 @@
-
 import React, { useState } from "react";
 import PinterestConnector from "./PinterestConnector";
 import { Button } from "@/components/ui/button";
-import { Plus, ExternalLink } from "lucide-react";
+import { Plus, ExternalLink, Image } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import EmptyDesignState from "./EmptyDesignState";
-import { PinterestBoard } from "@/hooks/useProjectData";
+import { type PinterestBoard } from "@/types/pinterest";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 interface PinterestInspirationSectionProps {
   inspirationImages: string[];
@@ -22,25 +22,87 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
 }) => {
   const hasInspiration = inspirationImages.length > 0 || pinterestBoards.length > 0;
   const [selectedTab, setSelectedTab] = useState<'images' | 'boards'>('images');
+  const [expandedBoard, setExpandedBoard] = useState<string | null>(null);
 
   const handlePinterestBoardsSelected = (boards: PinterestBoard[]) => {
     onAddPinterestBoards(boards);
     
-    // For demo purposes, extract some images from the boards to add as inspiration
-    // In a real implementation, this would fetch actual images from the Pinterest API
-    const mockImages = [
-      "https://i.pinimg.com/564x/a1/94/a5/a194a58ce675f39a3d74e9b41e6be00a.jpg",
-      "https://i.pinimg.com/564x/8e/bf/36/8ebf36a1f7f2c91c92b3bcf595be3c59.jpg",
-      "https://i.pinimg.com/564x/5e/66/28/5e6628e606068dbeaa81e9dfbd489fe8.jpg"
-    ];
-    
-    // Add these mock images to inspiration
-    onAddInspiration(mockImages);
+    // Extract images from the boards to add as inspiration
+    const newImages = boards.flatMap(board => board.pins?.map(pin => pin.imageUrl) || []);
+    if (newImages.length > 0) {
+      onAddInspiration(newImages);
+    }
   };
   
   const openPinterestBoard = (url: string) => {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
+
+  const toggleBoardExpansion = (boardId: string) => {
+    setExpandedBoard(expandedBoard === boardId ? null : boardId);
+  };
+
+  const renderPins = (board: PinterestBoard) => {
+    if (!board.pins || board.pins.length === 0) return null;
+
+    return (
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-4 p-4 bg-gray-50 rounded-lg">
+        {board.pins.map((pin) => (
+          <div key={pin.id} className="relative group">
+            <AspectRatio ratio={1}>
+              <img
+                src={pin.imageUrl}
+                alt={pin.description || "Pinterest pin"}
+                className="w-full h-full object-cover rounded-lg transition-transform group-hover:scale-105"
+              />
+            </AspectRatio>
+            {pin.description && (
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                <p className="text-white text-xs line-clamp-2">{pin.description}</p>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderBoardContent = (board: PinterestBoard) => (
+    <div key={board.id} className="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+      <div className="aspect-video bg-gray-100 relative">
+        {board.imageUrl ? (
+          <img src={board.imageUrl} alt={board.name} className="w-full h-full object-cover" />
+        ) : (
+          <div className="flex items-center justify-center h-full bg-pink-50">
+            <span className="text-pink-500">Pinterest</span>
+          </div>
+        )}
+      </div>
+      <div className="p-4">
+        <h3 className="font-medium mb-1 truncate">{board.name}</h3>
+        <div className="flex justify-between items-center mt-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-pink-500 hover:text-pink-700 hover:bg-pink-50 text-xs p-2 h-auto"
+            onClick={() => openPinterestBoard(board.url)}
+          >
+            <ExternalLink className="h-3 w-3 mr-1" /> Open Board
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-gray-500 hover:text-gray-700 hover:bg-gray-50 text-xs p-2 h-auto"
+            onClick={() => toggleBoardExpansion(board.id)}
+          >
+            <Image className="h-3 w-3 mr-1" />
+            {expandedBoard === board.id ? "Hide Pins" : "Show Pins"}
+          </Button>
+        </div>
+      </div>
+      {expandedBoard === board.id && renderPins(board)}
+    </div>
+  );
 
   const renderTabContent = () => {
     if (selectedTab === 'images') {
@@ -61,28 +123,7 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
               key={board.id} 
               className="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
             >
-              <div className="aspect-video bg-gray-100 relative">
-                {board.imageUrl ? (
-                  <img src={board.imageUrl} alt={board.name} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="flex items-center justify-center h-full bg-pink-50">
-                    <span className="text-pink-500">Pinterest</span>
-                  </div>
-                )}
-              </div>
-              <div className="p-4">
-                <h3 className="font-medium mb-1 truncate">{board.name}</h3>
-                <div className="flex justify-between items-center mt-2">
-                  <Button 
-                    size="sm" 
-                    variant="ghost"
-                    className="text-pink-500 hover:text-pink-700 hover:bg-pink-50 text-xs p-2 h-auto"
-                    onClick={() => openPinterestBoard(board.url)}
-                  >
-                    <ExternalLink className="h-3 w-3 mr-1" /> Open Board
-                  </Button>
-                </div>
-              </div>
+              {renderBoardContent(board)}
             </div>
           ))}
         </div>
