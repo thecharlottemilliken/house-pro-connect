@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { FileImage, Download, Eye } from "lucide-react";
+import { FileImage, Download, Eye, Loader } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   Select,
@@ -20,6 +20,7 @@ type AssetType = 'inspiration' | 'before-photos' | 'drawings' | 'renderings' | '
 export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarProps) {
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
   const [selectedType, setSelectedType] = React.useState<AssetType>('inspiration');
+  const [isPreviewLoading, setIsPreviewLoading] = React.useState(false);
   
   const designPreferences = projectData?.design_preferences || {};
   const renderingImages = designPreferences.renderingImages || [];
@@ -28,20 +29,38 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
   const inspirationImages = designPreferences.inspirationImages || [];
   const drawings = designPreferences.drawings || [];
 
+  // For debugging
+  console.log("Design Preferences:", designPreferences);
+  console.log("Renderings:", renderingImages);
+  console.log("Before Photos:", beforePhotos);
+  console.log("Inspiration Images:", inspirationImages);
+  console.log("Drawings:", drawings);
+  console.log("Blueprint URL:", blueprintUrl);
+
   const handlePreview = (url: string) => {
+    setIsPreviewLoading(true);
     setPreviewUrl(url);
+  };
+
+  const handleImageLoad = () => {
+    setIsPreviewLoading(false);
+  };
+
+  const handleImageError = () => {
+    setIsPreviewLoading(false);
+    console.error("Error loading image:", previewUrl);
   };
 
   const getFilteredAssets = () => {
     switch (selectedType) {
       case 'inspiration':
-        return inspirationImages.map((url: string, index: number) => ({
+        return Array.isArray(inspirationImages) ? inspirationImages.map((url: string, index: number) => ({
           name: `Inspiration ${index + 1}`,
           room: 'Design',
           url
-        }));
+        })) : [];
       case 'before-photos':
-        return Object.entries(beforePhotos).flatMap(([room, photos]) => 
+        return Object.entries(beforePhotos || {}).flatMap(([room, photos]) => 
           Array.isArray(photos) ? photos.map((url, index) => ({
             name: `Photo ${index + 1}`,
             room,
@@ -49,17 +68,17 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
           })) : []
         );
       case 'drawings':
-        return drawings.map((url: string, index: number) => ({
+        return Array.isArray(drawings) ? drawings.map((url: string, index: number) => ({
           name: `Drawing ${index + 1}`,
           room: 'Design',
           url
-        }));
+        })) : [];
       case 'renderings':
-        return renderingImages.map((url: string, index: number) => ({
+        return Array.isArray(renderingImages) ? renderingImages.map((url: string, index: number) => ({
           name: `Rendering ${index + 1}`,
           room: 'Design',
           url
-        }));
+        })) : [];
       case 'blueprints':
         return blueprintUrl ? [{
           name: 'Blueprint',
@@ -88,6 +107,8 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
           download
           className="p-1.5 text-gray-500 hover:text-gray-700 transition-colors"
           onClick={(e) => e.stopPropagation()}
+          target="_blank"
+          rel="noopener noreferrer"
         >
           <Download className="w-4 h-4" />
         </a>
@@ -101,6 +122,8 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
     </div>
   );
 
+  const filteredAssets = getFilteredAssets();
+
   return (
     <>
       <div className="w-[320px] border-r bg-background h-[calc(100vh-56px)] flex flex-col">
@@ -113,7 +136,7 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select asset type" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white">
               <SelectItem value="inspiration">Inspiration</SelectItem>
               <SelectItem value="before-photos">Before Photos</SelectItem>
               <SelectItem value="drawings">Drawings</SelectItem>
@@ -127,7 +150,7 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
           <div className="p-4">
             <h3 className="text-sm font-medium text-gray-900 mb-2">Files</h3>
             <div className="space-y-1">
-              {getFilteredAssets().map((asset, index) => (
+              {filteredAssets.map((asset, index) => (
                 <FileListItem
                   key={`${asset.name}-${index}`}
                   name={asset.name}
@@ -135,7 +158,7 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
                   url={asset.url}
                 />
               ))}
-              {getFilteredAssets().length === 0 && (
+              {filteredAssets.length === 0 && (
                 <p className="text-sm text-gray-500 py-4 text-center">
                   No {selectedType.replace('-', ' ')} available
                 </p>
@@ -148,11 +171,20 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
       <Dialog open={!!previewUrl} onOpenChange={() => setPreviewUrl(null)}>
         <DialogContent className="max-w-4xl">
           <div className="aspect-video relative rounded-lg overflow-hidden">
-            <img 
-              src={previewUrl || ''} 
-              alt="Preview" 
-              className="w-full h-full object-contain bg-black/5"
-            />
+            {isPreviewLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/5">
+                <Loader className="w-10 h-10 text-gray-400 animate-spin" />
+              </div>
+            )}
+            {previewUrl && (
+              <img 
+                src={previewUrl} 
+                alt="Preview" 
+                className="w-full h-full object-contain bg-black/5"
+                onLoad={handleImageLoad}
+                onError={handleImageError}
+              />
+            )}
           </div>
         </DialogContent>
       </Dialog>
