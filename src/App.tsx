@@ -1,6 +1,6 @@
 
 import React, { useEffect } from "react";
-import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { useAuth } from "@/contexts/AuthContext";
 import SignIn from "@/pages/SignIn";
@@ -41,7 +41,7 @@ function App() {
   }
 
   return (
-    <Router>
+    <>
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<PublicRoute><SignIn /></PublicRoute>} />
@@ -96,7 +96,7 @@ function App() {
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
       <Toaster />
-    </Router>
+    </>
   );
 }
 
