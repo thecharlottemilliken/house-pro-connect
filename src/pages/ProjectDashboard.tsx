@@ -1,4 +1,4 @@
-
+import React from "react";
 import { useLocation, useParams } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -10,7 +10,7 @@ import MessagesCard from "@/components/project/MessagesCard";
 import EventsCard from "@/components/project/EventsCard";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { FileText } from "lucide-react";
+import { FileText, PenBox } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const ProjectDashboard = () => {
@@ -66,7 +66,6 @@ const ProjectDashboard = () => {
               </div>
             </div>
             
-            {/* Property Card is always shown as it contains initial project info */}
             <div className="grid grid-cols-1 gap-3 sm:gap-4 md:gap-6 lg:grid-cols-2 2xl:grid-cols-3">
               <PropertyCard 
                 propertyDetails={propertyDetails} 
@@ -76,32 +75,33 @@ const ProjectDashboard = () => {
               {!hasSOW ? (
                 <div className="lg:col-span-2 2xl:col-span-3">
                   <div className="border border-gray-200 rounded-lg p-8 text-center">
-                    <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                    
                     {isCoach ? (
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                          Begin Building the SOW
+                      <>
+                        <PenBox className="mx-auto h-12 w-12 text-[#0f566c] mb-4" />
+                        
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">
+                          Begin Building the Statement of Work
                         </h3>
-                        <p className="text-gray-600 mb-4">
-                          Start creating the Statement of Work for this project to outline the scope, deliverables, and timeline.
+                        <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                          Create a comprehensive Statement of Work (SOW) that outlines the project's scope, specific deliverables, timeline, and key milestones.
                         </p>
                         <Button 
                           onClick={() => {}} 
-                          className="bg-[#0f566c] hover:bg-[#0d4a5d]"
+                          className="bg-[#0f566c] hover:bg-[#0d4a5d] px-6 py-3"
                         >
-                          Create SOW
+                          Start SOW
                         </Button>
-                      </div>
+                      </>
                     ) : (
-                      <div>
+                      <>
+                        <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">
                           SOW In Progress
                         </h3>
                         <p className="text-gray-600">
                           Your coach is currently building a Statement of Work for you to review. You'll be notified when it's ready.
                         </p>
-                      </div>
+                      </>
                     )}
                   </div>
                 </div>
