@@ -8,7 +8,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Image } from "lucide-react";
+import { Image, CheckCircle } from "lucide-react";
 
 interface SelectPropertyPhotosDialogProps {
   photos: string[];
@@ -64,16 +64,30 @@ const SelectPropertyPhotosDialog = ({
                 alt={`Property photo ${idx + 1}`} 
                 className="w-full h-full object-cover"
               />
+              {selectedPhotos.includes(photo) && (
+                <div className="absolute top-2 right-2 bg-primary text-white rounded-full p-1">
+                  <CheckCircle className="h-5 w-5" />
+                </div>
+              )}
+              <div className="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center">
+                <span className="text-xs">{selectedPhotos.includes(photo) ? 
+                  selectedPhotos.findIndex(p => p === photo) + 1 : ""}</span>
+              </div>
             </div>
           ))}
         </div>
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setSelectedPhotos([])}>
-            Clear Selection
-          </Button>
-          <Button onClick={handleConfirm}>
-            Confirm Selection
-          </Button>
+        <div className="flex justify-between items-center">
+          <div className="text-sm text-gray-500">
+            {selectedPhotos.length} photo{selectedPhotos.length !== 1 ? 's' : ''} selected
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setSelectedPhotos([])}>
+              Clear Selection
+            </Button>
+            <Button onClick={handleConfirm} disabled={selectedPhotos.length === 0}>
+              Confirm Selection
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
