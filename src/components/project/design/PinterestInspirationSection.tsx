@@ -2,11 +2,12 @@
 import React, { useState } from "react";
 import PinterestConnector from "./PinterestConnector";
 import { Button } from "@/components/ui/button";
-import { Plus, ExternalLink, Image, X } from "lucide-react";
+import { Plus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import EmptyDesignState from "./EmptyDesignState";
 import { type PinterestBoard } from "@/types/pinterest";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
+import PinterestBoardCard from "./PinterestBoardCard";
+import InspirationImagesGrid from "./InspirationImagesGrid";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,33 +46,18 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
       onAddInspiration(newImages);
     }
   };
-  
-  const openPinterestBoard = (url: string) => {
-    window.open(url, '_blank', 'noopener,noreferrer');
-  };
-
-  const toggleBoardExpansion = (boardId: string) => {
-    setExpandedBoard(expandedBoard === boardId ? null : boardId);
-  };
 
   const handleRemoveBoard = async (boardToRemove: PinterestBoard) => {
     try {
       console.log("Removing board:", boardToRemove);
       
-      // Filter out the board to remove
       const updatedBoards = pinterestBoards.filter(board => board.id !== boardToRemove.id);
-      
-      // Find pin URLs from the board being removed
       const boardPinUrls = boardToRemove.pins?.map(pin => pin.imageUrl) || [];
-      
-      // Filter out inspiration images that came from the removed board
       const updatedInspiration = inspirationImages.filter(img => !boardPinUrls.includes(img));
       
-      // Update state via props
       onAddPinterestBoards(updatedBoards);
       onAddInspiration(updatedInspiration);
       
-      // Clear the board to delete state
       setBoardToDelete(null);
       
       toast({
@@ -88,120 +74,33 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
     }
   };
 
-  const renderPins = (board: PinterestBoard) => {
-    if (!board.pins || board.pins.length === 0) return null;
-
-    return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-4 p-4 bg-gray-50 rounded-lg">
-        {board.pins.map((pin) => (
-          <div key={pin.id} className="relative group">
-            <AspectRatio ratio={1}>
-              <img
-                src={pin.imageUrl}
-                alt={pin.description || "Pinterest pin"}
-                className="w-full h-full object-cover rounded-lg transition-transform group-hover:scale-105"
-                onError={(e) => {
-                  console.error("Failed to load image:", pin.imageUrl);
-                  e.currentTarget.src = "https://placehold.co/600x400?text=Image+Not+Found";
-                }}
-              />
-            </AspectRatio>
-            {pin.description && (
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
-                <p className="text-white text-xs line-clamp-2">{pin.description}</p>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    );
+  const openPinterestBoard = (url: string) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  const renderBoardContent = (board: PinterestBoard) => (
-    <div className="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-      <div className="aspect-video bg-gray-100 relative group">
-        {board.imageUrl ? (
-          <img 
-            src={board.imageUrl} 
-            alt={board.name} 
-            className="w-full h-full object-cover" 
-            onError={(e) => {
-              console.error("Failed to load board image:", board.imageUrl);
-              e.currentTarget.src = "https://placehold.co/600x400?text=Board+Image";
-            }}
-          />
-        ) : (
-          <div className="flex items-center justify-center h-full bg-pink-50">
-            <span className="text-pink-500">Pinterest</span>
-          </div>
-        )}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setBoardToDelete(board);
-          }}
-          className="absolute top-2 right-2 p-1 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-          aria-label="Remove board"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-      <div className="p-4">
-        <h3 className="font-medium mb-1 truncate">{board.name}</h3>
-        <div className="flex justify-between items-center mt-2">
-          <Button
-            size="sm"
-            variant="ghost"
-            className="text-pink-500 hover:text-pink-700 hover:bg-pink-50 text-xs p-2 h-auto"
-            onClick={() => openPinterestBoard(board.url)}
-          >
-            <ExternalLink className="h-3 w-3 mr-1" /> Open Board
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="text-gray-500 hover:text-gray-700 hover:bg-gray-50 text-xs p-2 h-auto"
-            onClick={() => toggleBoardExpansion(board.id)}
-          >
-            <Image className="h-3 w-3 mr-1" />
-            {expandedBoard === board.id ? "Hide Pins" : "Show Pins"}
-          </Button>
-        </div>
-      </div>
-      {expandedBoard === board.id && renderPins(board)}
-    </div>
-  );
+  const toggleBoardExpansion = (boardId: string) => {
+    setExpandedBoard(expandedBoard === boardId ? null : boardId);
+  };
 
   const renderTabContent = () => {
     if (selectedTab === 'images') {
-      return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {inspirationImages.map((img, idx) => (
-            <div key={idx} className="aspect-video bg-gray-100 rounded overflow-hidden">
-              <img 
-                src={img} 
-                alt={`Inspiration ${idx + 1}`} 
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  console.error("Failed to load inspiration image:", img);
-                  e.currentTarget.src = "https://placehold.co/600x400?text=Image+Not+Found";
-                }}
-              />
-            </div>
-          ))}
-        </div>
-      );
-    } else {
-      return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {pinterestBoards.map((board) => (
-            <div key={board.id}>
-              {renderBoardContent(board)}
-            </div>
-          ))}
-        </div>
-      );
+      return <InspirationImagesGrid images={inspirationImages} />;
     }
+
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        {pinterestBoards.map((board) => (
+          <PinterestBoardCard
+            key={board.id}
+            board={board}
+            isExpanded={expandedBoard === board.id}
+            onToggleExpand={toggleBoardExpansion}
+            onOpenBoard={openPinterestBoard}
+            onRequestDelete={setBoardToDelete}
+          />
+        ))}
+      </div>
+    );
   };
 
   return (
