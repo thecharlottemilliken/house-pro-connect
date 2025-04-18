@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import EmptyDesignState from "./EmptyDesignState";
-import { FileText, Upload, Image } from "lucide-react";
+import { FileText, Upload, Image as ImageIcon } from "lucide-react";
 import { FileUpload } from "@/components/ui/file-upload";
 import { PropertyImageCarousel } from "@/components/property/PropertyImageCarousel";
 import SelectPropertyPhotosDialog from "./SelectPropertyPhotosDialog";
@@ -61,20 +62,32 @@ const RoomDetails = ({
             ) : (
               <div className="space-y-4">
                 {propertyPhotos.length > 0 && (
-                  <SelectPropertyPhotosDialog
-                    photos={propertyPhotos}
-                    onSelect={onSelectBeforePhotos!}
-                  />
+                  <div className="flex gap-4">
+                    <SelectPropertyPhotosDialog
+                      photos={propertyPhotos}
+                      onSelect={onSelectBeforePhotos!}
+                    />
+                    <FileUpload
+                      label="Upload Before Photos"
+                      description="Upload photos of the room's current state"
+                      accept="image/*"
+                      multiple={true}
+                      onUploadComplete={onUploadBeforePhotos}
+                      uploadedFiles={beforePhotos}
+                    />
+                  </div>
                 )}
                 
-                <FileUpload
-                  label="Upload Before Photos"
-                  description="Upload photos of the room's current state"
-                  accept="image/*"
-                  multiple={true}
-                  onUploadComplete={onUploadBeforePhotos}
-                  uploadedFiles={beforePhotos}
-                />
+                {propertyPhotos.length === 0 && (
+                  <FileUpload
+                    label="Upload Before Photos"
+                    description="Upload photos of the room's current state"
+                    accept="image/*"
+                    multiple={true}
+                    onUploadComplete={onUploadBeforePhotos}
+                    uploadedFiles={beforePhotos}
+                  />
+                )}
               </div>
             )}
           </div>
@@ -118,3 +131,4 @@ const RoomDetails = ({
 };
 
 export default RoomDetails;
+
