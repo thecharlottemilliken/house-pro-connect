@@ -1,81 +1,72 @@
 
 import React from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-interface MessageItemProps {
-  name: string;
-  role: string;
-  snippet: string;
-  time: string;
-  avatar: string;
-  isNew?: boolean;
+interface Message {
+  id: string;
+  sender_id: string;
+  recipient_id: string;
+  message: string;
+  created_at: string;
+  read_at: string | null;
 }
 
-const MessageItem = ({ name, role, snippet, time, avatar, isNew }: MessageItemProps) => {
-  const initials = name.split(' ').map(word => word[0]).join('');
-  
-  return (
-    <div className={`flex items-start gap-3 p-4 hover:bg-gray-100 cursor-pointer ${isNew ? 'bg-blue-50 hover:bg-blue-100' : ''}`}>
-      <Avatar className="h-10 w-10">
-        <AvatarImage src={avatar} alt={name} />
-        <AvatarFallback>{initials}</AvatarFallback>
-      </Avatar>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between">
-          <div className="font-medium">{name}</div>
-          <div className="text-sm text-gray-500 whitespace-nowrap">{time}</div>
-        </div>
-        <div className="text-sm text-gray-500">{role}</div>
-        <div className="text-sm text-gray-700 truncate">{snippet}</div>
-      </div>
-      {isNew && (
-        <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full">NEW</span>
-      )}
-    </div>
-  );
-};
+interface MessageListProps {
+  messages: Message[];
+  loading: boolean;
+}
 
-const MessageList = () => {
-  const messages = [
-    {
-      name: "Don Smith",
-      role: "Coach",
-      snippet: "Did you have any more questions regarding the pricing and designs for your kitchen pro...",
-      time: "15min",
-      avatar: "/placeholder.svg",
-      isNew: true
-    },
-    {
-      name: "Sarah Lee",
-      role: "Landscaper",
-      snippet: "Thank you for your help! Could you please give me an update on when you think the...",
-      time: "1hr",
-      avatar: "/placeholder.svg",
-      isNew: false
-    },
-    {
-      name: "Gary Fisher",
-      role: "Plumber",
-      snippet: "I appreciate it. I'll let you know if I have any other questions.",
-      time: "1 day",
-      avatar: "/placeholder.svg",
-      isNew: false
-    },
-    {
-      name: "Sophia Jackson",
-      role: "Designer",
-      snippet: "Everything looks great! Your team did a fantastic job on getting everything working...",
-      time: "12/24/24",
-      avatar: "/placeholder.svg",
-      isNew: false
-    },
-  ];
-  
+const MessageList = ({ messages, loading }: MessageListProps) => {
+  const { user } = useAuth();
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-full">Loading messages...</div>;
+  }
+
+  if (messages.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full text-gray-500">
+        No messages yet. Start the conversation!
+      </div>
+    );
+  }
+
   return (
-    <div className="flex-1 overflow-y-auto">
-      {messages.map((message, index) => (
-        <MessageItem key={index} {...message} />
-      ))}
+    <div className="space-y-4">
+      {messages.map((message) => {
+        const isOutgoing = message.sender_id === user?.id;
+        
+        return (
+          <div
+            key={message.id}
+            className={`flex ${isOutgoing ? 'justify-end' : 'justify-start'}`}
+          >
+            <div className={`flex items-start gap-2 max-w-[70%] ${isOutgoing ? 'flex-row-reverse' : 'flex-row'}`}>
+              <Avatar className="h-8 w-8 mt-1">
+                <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${message.sender_id}`} />
+                <AvatarFallback>?</AvatarFallback>
+              </Avatar>
+              
+              <div
+                className={`rounded-lg px-4 py-2 ${
+                  isOutgoing
+                    ? 'bg-[#0f566c] text-white'
+                    : 'bg-white border border-gray-200'
+                }`}
+              >
+                <p className="text-sm">{message.message}</p>
+                <span className="text-xs opacity-70 mt-1 block">
+                  {new Date(message.created_at).toLocaleTimeString([], { 
+                    hour: '2-digit', 
+                    minute: '2-digit'
+                  })}
+                </span>
+              </div>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };
