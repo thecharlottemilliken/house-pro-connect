@@ -10,6 +10,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import EmptyDesignState from "@/components/project/design/EmptyDesignState";
 import RecommendedContent from "@/components/dashboard/RecommendedContent";
 import RoomDetails from "@/components/project/design/RoomDetails";
+import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const ProjectDesign = () => {
   const location = useLocation();
@@ -33,20 +35,96 @@ const ProjectDesign = () => {
     designers: [],
     designAssets: [],
     renderingImages: [],
-    inspirationImages: []
+    inspirationImages: [],
+    beforePhotos: {}
   };
 
   const hasDesigns = designPreferences.hasDesigns;
   const hasRenderings = designPreferences.renderingImages && designPreferences.renderingImages.length > 0;
   const hasInspiration = designPreferences.inspirationImages && designPreferences.inspirationImages.length > 0;
   const defaultTab = projectData.renovation_areas?.[0]?.area.toLowerCase() || "kitchen";
+  
+  const propertyPhotos = propertyDetails?.home_photos || [];
 
-  // Mock actions - these would connect to real functionality
   const handleAddDesignPlans = () => console.log("Add design plans clicked");
   const handleAddDesigner = () => console.log("Add designer clicked");
   const handleUploadAssets = () => console.log("Upload assets clicked");
   const handleAddRenderings = () => console.log("Add renderings clicked");
   const handleAddInspiration = () => console.log("Add inspiration clicked");
+
+  const handleSelectBeforePhotos = async (area: string, selectedPhotos: string[]) => {
+    try {
+      const areaKey = area.toLowerCase().replace(/\s+/g, '_');
+      
+      const updatedDesignPreferences = {
+        ...designPreferences,
+        beforePhotos: {
+          ...designPreferences.beforePhotos,
+          [areaKey]: selectedPhotos
+        }
+      };
+      
+      const { error } = await supabase
+        .from('projects')
+        .update({ 
+          design_preferences: updatedDesignPreferences 
+        })
+        .eq('id', projectData.id);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: `Selected photos added to ${area}`,
+      });
+      
+    } catch (error: any) {
+      console.error('Error updating before photos:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save selected photos. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUploadBeforePhotos = async (area: string, uploadedPhotos: string[]) => {
+    try {
+      const areaKey = area.toLowerCase().replace(/\s+/g, '_');
+      
+      const existingPhotos = designPreferences.beforePhotos?.[areaKey] || [];
+      
+      const updatedDesignPreferences = {
+        ...designPreferences,
+        beforePhotos: {
+          ...designPreferences.beforePhotos,
+          [areaKey]: [...existingPhotos, ...uploadedPhotos]
+        }
+      };
+      
+      const { error } = await supabase
+        .from('projects')
+        .update({ 
+          design_preferences: updatedDesignPreferences 
+        })
+        .eq('id', projectData.id);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: `Uploaded photos added to ${area}`,
+      });
+      
+    } catch (error: any) {
+      console.error('Error updating before photos:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save uploaded photos. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
     <div className="flex flex-col bg-white min-h-screen">
@@ -84,58 +162,66 @@ const ProjectDesign = () => {
                     ))}
                   </TabsList>
 
-                  {projectData.renovation_areas?.map((area) => (
-                    <TabsContent key={area.area} value={area.area.toLowerCase()}>
-                      {hasDesigns ? (
-                        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                          <RoomDetails
-                            area={area.area}
-                            location={area.location}
-                            designers={designPreferences.designers}
-                            designAssets={designPreferences.designAssets}
-                            onAddDesigner={handleAddDesigner}
-                            onUploadAssets={handleUploadAssets}
-                          />
-                          
-                          <div className="col-span-1 lg:col-span-3">
-                            {!hasRenderings ? (
-                              <EmptyDesignState 
-                                type="renderings" 
-                                onAction={handleAddRenderings}
-                              />
-                            ) : (
-                              <Card className="mb-6">
-                                <CardContent className="p-6">
-                                  <div className="flex justify-between items-center mb-4">
-                                    <h2 className="text-xl font-bold">Renderings</h2>
-                                    <Button variant="ghost" size="sm" className="uppercase text-xs">
-                                      Manage Photos
-                                    </Button>
-                                  </div>
-                                  <div className="grid grid-cols-3 gap-3">
-                                    {designPreferences.renderingImages?.map((img, idx) => (
-                                      <div key={idx} className="aspect-square bg-gray-100 rounded overflow-hidden">
-                                        <img src={img} alt={`Rendering ${idx + 1}`} className="w-full h-full object-cover" />
-                                      </div>
-                                    ))}
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            )}
+                  {projectData.renovation_areas?.map((area) => {
+                    const areaKey = area.area.toLowerCase().replace(/\s+/g, '_');
+                    const beforePhotos = designPreferences.beforePhotos?.[areaKey] || [];
+                    
+                    return (
+                      <TabsContent key={area.area} value={area.area.toLowerCase()}>
+                        {hasDesigns ? (
+                          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                            <RoomDetails
+                              area={area.area}
+                              location={area.location}
+                              designers={designPreferences.designers}
+                              designAssets={designPreferences.designAssets}
+                              onAddDesigner={handleAddDesigner}
+                              onUploadAssets={handleUploadAssets}
+                              propertyPhotos={propertyPhotos}
+                              onSelectBeforePhotos={(photos) => handleSelectBeforePhotos(area.area, photos)}
+                              onUploadBeforePhotos={(photos) => handleUploadBeforePhotos(area.area, photos)}
+                              beforePhotos={beforePhotos}
+                            />
+                            
+                            <div className="col-span-1 lg:col-span-3">
+                              {!hasRenderings ? (
+                                <EmptyDesignState 
+                                  type="renderings" 
+                                  onAction={handleAddRenderings}
+                                />
+                              ) : (
+                                <Card className="mb-6">
+                                  <CardContent className="p-6">
+                                    <div className="flex justify-between items-center mb-4">
+                                      <h2 className="text-xl font-bold">Renderings</h2>
+                                      <Button variant="ghost" size="sm" className="uppercase text-xs">
+                                        Manage Photos
+                                      </Button>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-3">
+                                      {designPreferences.renderingImages?.map((img, idx) => (
+                                        <div key={idx} className="aspect-square bg-gray-100 rounded overflow-hidden">
+                                          <img src={img} alt={`Rendering ${idx + 1}`} className="w-full h-full object-cover" />
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ) : (
-                        <EmptyDesignState 
-                          type="no-designs" 
-                          onAction={handleAddDesignPlans}
-                        />
-                      )}
-                    </TabsContent>
-                  ))}
+                        ) : (
+                          <EmptyDesignState 
+                            type="no-designs" 
+                            onAction={handleAddDesignPlans}
+                          />
+                        )}
+                      </TabsContent>
+                    );
+                  })}
                 </Tabs>
               </div>
               
-              {/* Inspiration Section */}
               <div className="mt-8">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-bold">Inspiration</h2>
@@ -158,15 +244,13 @@ const ProjectDesign = () => {
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {designPreferences.inspirationImages?.map((img, idx) => (
                       <div key={idx} className="aspect-video bg-gray-100 rounded overflow-hidden">
-                        <img src={img} alt={`Inspiration ${idx + 1}`} className="w-full h-full object
--cover" />
+                        <img src={img} alt={`Inspiration ${idx + 1}`} className="w-full h-full object-cover" />
                       </div>
                     ))}
                   </div>
                 )}
               </div>
 
-              {/* Recommended Content Section */}
               <div className="mt-8">
                 <RecommendedContent />
               </div>

@@ -20,6 +20,7 @@ const SelectPropertyPhotosDialog = ({
   onSelect,
 }: SelectPropertyPhotosDialogProps) => {
   const [selectedPhotos, setSelectedPhotos] = React.useState<string[]>([]);
+  const [isOpen, setIsOpen] = React.useState(false);
 
   const handlePhotoClick = (photo: string) => {
     setSelectedPhotos((prev) => {
@@ -33,10 +34,18 @@ const SelectPropertyPhotosDialog = ({
 
   const handleConfirm = () => {
     onSelect(selectedPhotos);
+    setIsOpen(false);
+  };
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      setSelectedPhotos([]);
+    }
+    setIsOpen(open);
   };
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button 
           variant="outline" 
