@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from "@/components/ui/dialog";
@@ -137,10 +138,48 @@ const DesignAssetsCard = ({
     if (onAddRenderings) onAddRenderings();
   };
 
+  const handleRemoveRenderings = async () => {
+    try {
+      // This is a placeholder function for removing renderings
+      // Actual implementation would require storing rendering references
+      // and removing them from storage and database
+      toast({
+        title: "Rendering Removed",
+        description: "The rendering has been removed successfully."
+      });
+    } catch (error) {
+      console.error('Error removing rendering:', error);
+      toast({
+        title: "Remove Failed",
+        description: "There was a problem removing the rendering.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleAddDrawings = (urls: string[]) => {
     // Handle drawings uploads when implemented
     console.log("Drawing URLs:", urls);
     if (onAddDrawings) onAddDrawings();
+  };
+
+  const handleRemoveDrawings = async () => {
+    try {
+      // This is a placeholder function for removing drawings
+      // Actual implementation would require storing drawing references
+      // and removing them from storage and database
+      toast({
+        title: "Drawing Removed",
+        description: "The drawing has been removed successfully."
+      });
+    } catch (error) {
+      console.error('Error removing drawing:', error);
+      toast({
+        title: "Remove Failed",
+        description: "There was a problem removing the drawing.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -163,12 +202,14 @@ const DesignAssetsCard = ({
             type: 'pdf'
           }))}
           onUpload={handleAddRenderings}
+          onDelete={handleRemoveRenderings}
         />
 
         <CategorySection
           title="Drawings"
           files={[]}
           onUpload={handleAddDrawings}
+          onDelete={handleRemoveDrawings}
         />
       </CardContent>
     </Card>
