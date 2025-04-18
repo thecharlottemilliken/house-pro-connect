@@ -1,102 +1,186 @@
-
-import React, { useEffect } from "react";
-import { Route, Routes, Navigate } from "react-router-dom";
-import { Toaster } from "@/components/ui/toaster";
-import { useAuth } from "@/contexts/AuthContext";
-import SignIn from "@/pages/SignIn";
-import SignUp from "@/pages/SignUp";
-import ForgotPassword from "@/pages/ForgotPassword";
-import UpdateProfile from "@/pages/UpdateProfile";
-import Dashboard from "@/pages/Dashboard";
-import Projects from "@/pages/Projects";
-import NewProject from "@/pages/NewProject";
-import ProjectDashboard from "@/pages/ProjectDashboard";
-import ProjectDesign from "@/pages/ProjectDesign";
-import ProjectDocuments from "@/pages/ProjectDocuments";
-import ProjectMessages from "@/pages/ProjectMessages";
-import ProjectTeam from "@/pages/ProjectTeam";
-import ProjectMaterials from "@/pages/ProjectMaterials";
-import ProjectAccounting from "@/pages/ProjectAccounting";
-import ProjectManage from "@/pages/ProjectManage";
-import ProjectActivityHistory from "@/pages/ProjectActivityHistory";
-import ProjectBidsProposals from "@/pages/ProjectBidsProposals";
-import ProjectSOW from "@/pages/ProjectSOW";
-import PublicRoute from "@/components/routes/PublicRoute";
-import PrivateRoute from "@/components/routes/PrivateRoute";
+import { useState } from "react";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
+import { useAuth } from "./contexts/AuthContext";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import Dashboard from "./pages/Dashboard";
+import Projects from "./pages/Projects";
+import ProjectDashboard from "./pages/ProjectDashboard";
+import ProjectDesign from "./pages/ProjectDesign";
+import ProjectDocuments from "./pages/ProjectDocuments";
+import ProjectMessages from "./pages/ProjectMessages";
+import ProjectTeam from "./pages/ProjectTeam";
+import ProjectMaterials from "./pages/ProjectMaterials";
+import ProjectAccounting from "./pages/ProjectAccounting";
+import ProjectManage from "./pages/ProjectManage";
+import ProjectActivity from "./pages/ProjectActivity";
+import ProjectBidsProposals from "./pages/ProjectBidsProposals";
+import ProjectSOW from "./pages/ProjectSOW";
 
 function App() {
-  const { user, isLoading } = useAuth();
+  const { currentUser } = useAuth();
+  const [activeSpecialty, setActiveSpecialty] = useState("");
 
-  useEffect(() => {
-    // You can add any global initialization logic here
-    // For example, fetching user settings or initializing analytics
-  }, []);
+  const RequireAuth = ({ children }: { children: JSX.Element }) => {
+    return currentUser ? children : <Navigate to="/login" />;
+  };
 
-  if (isLoading) {
-    return (
-      <div className="fixed top-0 left-0 right-0 bottom-0 bg-white flex items-center justify-center z-50">
-        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  const PublicRoute = ({ children }: { children: JSX.Element }) => {
+    return currentUser ? <Navigate to="/" /> : children;
+  };
 
   return (
-    <>
+    <BrowserRouter>
       <Routes>
-        {/* Public Routes */}
-        <Route path="/login" element={<PublicRoute><SignIn /></PublicRoute>} />
-        <Route path="/register" element={<PublicRoute><SignUp /></PublicRoute>} />
-        <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
-
-        {/* Private Routes */}
         <Route
-          path="/update-profile"
+          path="/login"
           element={
-            <PrivateRoute>
-              <UpdateProfile />
-            </PrivateRoute>
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
           }
         />
         <Route
-          path="/dashboard"
+          path="/register"
           element={
-            <PrivateRoute>
+            <PublicRoute>
+              <Register />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <PublicRoute>
+              <ForgotPassword />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/reset-password"
+          element={
+            <PublicRoute>
+              <ResetPassword />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/"
+          element={
+            <RequireAuth>
               <Dashboard />
-            </PrivateRoute>
+            </RequireAuth>
           }
         />
         <Route
           path="/projects"
           element={
-            <PrivateRoute>
+            <RequireAuth>
               <Projects />
-            </PrivateRoute>
+            </RequireAuth>
           }
         />
         <Route
-          path="/new-project"
+          path="/project-dashboard/:projectId"
           element={
-            <PrivateRoute>
-              <NewProject />
-            </PrivateRoute>
+            <RequireAuth>
+              <ProjectDashboard />
+            </RequireAuth>
           }
         />
-        <Route path="/" element={<PrivateRoute><Navigate to="/dashboard" replace /></PrivateRoute>} />
-        <Route path="/project-dashboard/:projectId" element={<ProjectDashboard />} />
-        <Route path="/project-design/:projectId" element={<ProjectDesign />} />
-        <Route path="/project-documents/:projectId" element={<ProjectDocuments />} />
-        <Route path="/project-messages/:projectId" element={<ProjectMessages />} />
-        <Route path="/project-team/:projectId" element={<ProjectTeam />} />
-        <Route path="/project-materials/:projectId" element={<ProjectMaterials />} />
-        <Route path="/project-accounting/:projectId" element={<ProjectAccounting />} />
-        <Route path="/project-manage/:projectId" element={<ProjectManage />} />
-        <Route path="/project-activity/:projectId" element={<ProjectActivityHistory />} />
-        <Route path="/project-bids-proposals/:projectId" element={<ProjectBidsProposals />} />
-        <Route path="/project-sow/:projectId" element={<ProjectSOW />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route
+          path="/project-design/:projectId"
+          element={
+            <RequireAuth>
+              <ProjectDesign />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/project-documents/:projectId"
+          element={
+            <RequireAuth>
+              <ProjectDocuments />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/project-messages/:projectId"
+          element={
+            <RequireAuth>
+              <ProjectMessages />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/project-team/:projectId"
+          element={
+            <RequireAuth>
+              <ProjectTeam />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/project-materials/:projectId"
+          element={
+            <RequireAuth>
+              <ProjectMaterials />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/project-accounting/:projectId"
+          element={
+            <RequireAuth>
+              <ProjectAccounting
+                activeSpecialty={activeSpecialty}
+                setActiveSpecialty={setActiveSpecialty}
+              />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/project-manage/:projectId"
+          element={
+            <RequireAuth>
+              <ProjectManage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/project-activity/:projectId"
+          element={
+            <RequireAuth>
+              <ProjectActivity />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/project-bids-proposals/:projectId"
+          element={
+            <RequireAuth>
+              <ProjectBidsProposals />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/project-sow/:projectId"
+          element={
+            <RequireAuth>
+              <ProjectSOW />
+            </RequireAuth>
+          }
+        />
       </Routes>
-      <Toaster />
-    </>
+    </BrowserRouter>
   );
 }
 

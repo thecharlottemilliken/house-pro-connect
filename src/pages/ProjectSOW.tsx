@@ -10,6 +10,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useProjectAccess } from "@/hooks/useProjectAccess";
 import SOWCreationWizard from "@/components/project/sow/SOWCreationWizard";
 import { Card } from "@/components/ui/card";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+// Create a new QueryClient
+const queryClient = new QueryClient();
 
 const ProjectSOW = () => {
   const location = useLocation();
@@ -18,6 +22,27 @@ const ProjectSOW = () => {
   const { profile } = useAuth();
   
   const projectId = params.projectId || "";
+
+  // Wrap the component that uses react-query hooks with QueryClientProvider
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ProjectSOWContent 
+        projectId={projectId} 
+        isMobile={isMobile} 
+        location={location} 
+        profile={profile} 
+      />
+    </QueryClientProvider>
+  );
+};
+
+// Separate component that uses react-query hooks
+const ProjectSOWContent = ({ 
+  projectId, 
+  isMobile, 
+  location, 
+  profile 
+}) => {
   const { hasAccess, isOwner, role, isLoading: isAccessLoading } = useProjectAccess(projectId);
   
   const { projectData, propertyDetails, isLoading: isProjectLoading } = useProjectData(
