@@ -4,6 +4,7 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, Image, X } from "lucide-react";
 import { type PinterestBoard } from "@/types/pinterest";
+import PinterestPinsGrid from "./PinterestPinsGrid";
 
 interface PinterestBoardCardProps {
   board: PinterestBoard;
