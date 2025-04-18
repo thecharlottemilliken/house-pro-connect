@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
@@ -50,13 +51,6 @@ export interface DesignPreferences {
   }>;
 }
 
-export interface PinterestBoard {
-  id: string;
-  name: string;
-  url: string;
-  imageUrl?: string;
-}
-
 export interface RenovationArea {
   area: string;
   location?: string;
@@ -107,7 +101,7 @@ export const useProjectData = (projectId: string | undefined, locationState: any
           status: project.state || 'active',
           property_id: project.property_id,
           user_id: project.user_id,
-          design_preferences: project.design_preferences as DesignPreferences || {
+          design_preferences: project.design_preferences as unknown as DesignPreferences || {
             hasDesigns: false,
             designers: [],
             designAssets: [],
@@ -168,5 +162,3 @@ export const useProjectData = (projectId: string | undefined, locationState: any
 
   return { projectData, propertyDetails, isLoading, error };
 };
-
-export { useProjectData };

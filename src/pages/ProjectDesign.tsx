@@ -15,7 +15,8 @@ import { Json } from "@/integrations/supabase/types";
 
 import DesignAssetsCard from "@/components/project/design/DesignAssetsCard";
 import PinterestInspirationSection from "@/components/project/design/PinterestInspirationSection";
-import { PinterestBoard } from "@/components/project/design/PinterestConnector";
+import PinterestConnector from "@/components/project/design/PinterestConnector";
+import { type PinterestBoard } from "@/types/pinterest";
 
 const ProjectDesign = () => {
   const location = useLocation();
