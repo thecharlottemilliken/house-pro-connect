@@ -70,7 +70,13 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
       
       if (fetchError) throw fetchError;
       
-      const designPreferences = projectData.design_preferences || {};
+      // Type casting to ensure TypeScript recognizes the object structure
+      const designPreferences = projectData.design_preferences as {
+        pinterestBoards?: PinterestBoard[];
+        inspirationImages?: string[];
+        [key: string]: any;
+      } || {};
+      
       designPreferences.pinterestBoards = updatedBoards;
       designPreferences.inspirationImages = updatedInspiration;
       
