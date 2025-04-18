@@ -1,5 +1,6 @@
+
 import React from "react";
-import { useLocation, useParams, Navigate } from "react-router-dom";
+import { useLocation, useParams, Navigate, useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useProjectData, RenovationArea } from "@/hooks/useProjectData";
@@ -27,6 +28,7 @@ import {
 const ProjectDashboard = () => {
   const location = useLocation();
   const params = useParams();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { profile } = useAuth();
   const [showNoDesignDialog, setShowNoDesignDialog] = React.useState(false);
