@@ -1,8 +1,5 @@
-
 import React, { ReactNode } from "react";
-import { FileText, Image as ImageIcon, PenBox, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 
 interface EmptyDesignStateProps {
   type: "no-designs" | "designer" | "design-assets" | "renderings" | "inspiration";
@@ -64,22 +61,21 @@ const EmptyDesignState = ({
   const content = getContent();
 
   return (
-    <Card className="bg-gray-50">
-      <CardContent className="p-6 text-center">
-        <div className="flex flex-col items-center">
-          {customIcon || content?.icon}
-          <h3 className="text-lg font-semibold mt-4 mb-2">{customTitle || content?.title}</h3>
-          <p className="text-gray-600 mb-4">{customDescription || content?.description}</p>
-          <Button 
-            variant="outline" 
-            className="bg-gray-200 border-gray-300"
-            onClick={onAction}
-          >
-            {customActionLabel || content?.actionLabel}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="text-center">
+      <div className="flex flex-col items-center space-y-3">
+        {customIcon || content?.icon}
+        <h3 className="font-medium">{customTitle || content?.title}</h3>
+        <p className="text-sm text-gray-500">{customDescription || content?.description}</p>
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={onAction}
+          className="mt-2"
+        >
+          {customActionLabel || content?.actionLabel}
+        </Button>
+      </div>
+    </div>
   );
 };
 
