@@ -62,71 +62,40 @@ export function SOWWizard() {
               <Progress value={progress} className="h-2" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-0">
-              <div className="md:col-span-1">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Project Information</CardTitle>
-                    <CardDescription>Quick reference details</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <h3 className="font-medium mb-1">Property</h3>
-                      <p className="text-sm text-gray-500">{propertyDetails?.property_name}</p>
-                    </div>
-                    <div>
-                      <h3 className="font-medium mb-1">Address</h3>
-                      <p className="text-sm text-gray-500">{propertyDetails?.address}</p>
-                    </div>
-                    {projectData?.renovation_areas && (
-                      <div>
-                        <h3 className="font-medium mb-1">Areas</h3>
-                        <ul className="text-sm text-gray-500 space-y-1">
-                          {projectData.renovation_areas.map((area: any, index: number) => (
-                            <li key={index}>{area.area}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-
-              <Card className="md:col-span-2">
-                <CardHeader>
-                  <CardTitle>{steps[currentStep].title}</CardTitle>
-                  <CardDescription>{steps[currentStep].description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="min-h-[400px]">
-                    <p className="text-gray-600">Step content for {steps[currentStep].title} will be implemented here.</p>
-                  </div>
+            <Card className="w-full">
+              <CardHeader>
+                <CardTitle>{steps[currentStep].title}</CardTitle>
+                <CardDescription>{steps[currentStep].description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="min-h-[400px]">
+                  <p className="text-gray-600">Step content for {steps[currentStep].title} will be implemented here.</p>
+                </div>
+                
+                <div className="flex justify-between mt-6 pt-6 border-t">
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentStep(current => Math.max(0, current - 1))}
+                    disabled={currentStep === 0}
+                  >
+                    Previous
+                  </Button>
                   
-                  <div className="flex justify-between mt-6 pt-6 border-t">
-                    <Button
-                      variant="outline"
-                      onClick={() => setCurrentStep(current => Math.max(0, current - 1))}
-                      disabled={currentStep === 0}
-                    >
-                      Previous
-                    </Button>
-                    
-                    <Button
-                      onClick={() => {
-                        if (currentStep === steps.length - 1) {
-                          navigate(`/project-dashboard/${projectId}`);
-                        } else {
-                          setCurrentStep(current => current + 1);
-                        }
-                      }}
-                    >
-                      {currentStep === steps.length - 1 ? 'Complete' : 'Next'}
-                      {currentStep !== steps.length - 1 && <ChevronRight className="ml-2 h-4 w-4" />}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                  <Button
+                    onClick={() => {
+                      if (currentStep === steps.length - 1) {
+                        navigate(`/project-dashboard/${projectId}`);
+                      } else {
+                        setCurrentStep(current => current + 1);
+                      }
+                    }}
+                  >
+                    {currentStep === steps.length - 1 ? 'Complete' : 'Next'}
+                    {currentStep !== steps.length - 1 && <ChevronRight className="ml-2 h-4 w-4" />}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
