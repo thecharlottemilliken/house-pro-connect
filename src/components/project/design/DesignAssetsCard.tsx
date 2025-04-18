@@ -1,11 +1,8 @@
 
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { FileUpload } from "@/components/ui/file-upload";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import CategorySection from "./CategorySection";
 
 interface DesignAssetsCardProps {
@@ -47,19 +44,6 @@ const DesignAssetsCard = ({
     }
   }, [propertyId]);
 
-  // Effect to update file states when renderingImages prop changes
-  useEffect(() => {
-    if (renderingImages && renderingImages.length > 0 && !isDataLoaded) {
-      const files = renderingImages.map((url, index) => ({
-        name: `Rendering_${index + 1}.jpg`,
-        size: "1.5MB",
-        type: 'jpg' as 'jpg' | 'png' | 'pdf',
-        url
-      }));
-      setRenderingFiles(files);
-    }
-  }, [renderingImages, isDataLoaded]);
-
   // Function to fetch room ID for the current property
   const fetchRoomId = async () => {
     if (!propertyId) {
@@ -96,26 +80,33 @@ const DesignAssetsCard = ({
   // Function to fetch existing data from the database
   const fetchExistingData = async () => {
     try {
-      await fetchExistingDrawings();
-      await fetchExistingRenderings();
+      const currentRoomId = roomId || await fetchRoomId();
+      if (currentRoomId) {
+        await Promise.all([
+          fetchExistingDrawings(currentRoomId),
+          fetchExistingRenderings(currentRoomId)
+        ]);
+      }
       setIsDataLoaded(true);
     } catch (error) {
       console.error('Error fetching existing data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load existing design assets",
+        variant: "destructive"
+      });
     }
   };
 
   // Function to fetch existing renderings from the database
-  const fetchExistingRenderings = async () => {
-    if (!roomId) {
-      const fetchedRoomId = await fetchRoomId();
-      if (!fetchedRoomId) return;
-    }
-    
+  const fetchExistingRenderings = async (currentRoomId: string) => {
     try {
+      console.log("Fetching existing renderings for room:", currentRoomId);
+      
       const { data: preferences, error } = await supabase
         .from('room_design_preferences')
         .select('renderings')
-        .eq('room_id', roomId)
+        .eq('room_id', currentRoomId)
         .maybeSingle();
           
       if (error && error.code !== 'PGRST116') {
@@ -123,7 +114,7 @@ const DesignAssetsCard = ({
         return;
       }
       
-      if (preferences?.renderings && preferences.renderings.length > 0) {
+      if (preferences?.renderings) {
         console.log('Found existing renderings:', preferences.renderings);
         const files = preferences.renderings.map((url: string, index: number) => {
           const fileType = url.toLowerCase().endsWith('.png') ? 'png' : 'jpg';
@@ -143,19 +134,14 @@ const DesignAssetsCard = ({
   };
 
   // Function to fetch existing drawings from the database
-  const fetchExistingDrawings = async () => {
-    if (!roomId) {
-      const fetchedRoomId = await fetchRoomId();
-      if (!fetchedRoomId) return;
-    }
-    
+  const fetchExistingDrawings = async (currentRoomId: string) => {
     try {
-      console.log("Fetching existing drawings for room ID:", roomId);
+      console.log("Fetching existing drawings for room ID:", currentRoomId);
         
       const { data: preferences, error } = await supabase
         .from('room_design_preferences')
         .select('drawings')
-        .eq('room_id', roomId)
+        .eq('room_id', currentRoomId)
         .maybeSingle();
           
       if (error && error.code !== 'PGRST116') {
@@ -163,7 +149,7 @@ const DesignAssetsCard = ({
         return;
       }
       
-      if (preferences?.drawings && preferences.drawings.length > 0) {
+      if (preferences?.drawings) {
         console.log('Found existing drawings:', preferences.drawings);
         const files = preferences.drawings.map((url: string, index: number) => {
           const fileType = url.toLowerCase().endsWith('.png') ? 'png' : 'jpg';
@@ -182,36 +168,6 @@ const DesignAssetsCard = ({
     }
   };
 
-  const verifyBlueprintUrl = async () => {
-    if (!propertyBlueprint) {
-      setPdfStatus('invalid');
-      return false;
-    }
-    
-    try {
-      setIsCheckingPdf(true);
-      console.log("Verifying blueprint URL:", propertyBlueprint);
-      
-      const response = await fetch(propertyBlueprint, { method: 'HEAD' });
-      const isValid = response.ok && response.headers.get('content-type')?.includes('pdf');
-      
-      console.log("PDF verification result:", { 
-        status: response.status, 
-        contentType: response.headers.get('content-type'),
-        isValid 
-      });
-      
-      setPdfStatus(isValid ? 'valid' : 'invalid');
-      return isValid;
-    } catch (error) {
-      console.error("Error verifying blueprint URL:", error);
-      setPdfStatus('invalid');
-      return false;
-    } finally {
-      setIsCheckingPdf(false);
-    }
-  };
-  
   const handleUploadBlueprint = async (urls: string[]) => {
     if (!urls.length || !propertyId) return;
 
@@ -250,7 +206,7 @@ const DesignAssetsCard = ({
         const filename = propertyBlueprint.split('/').pop();
         if (filename) {
           await supabase.storage
-            .from('property-blueprints')
+            .from('property-files')
             .remove([filename]);
         }
       }
@@ -275,17 +231,6 @@ const DesignAssetsCard = ({
         description: "There was a problem removing the blueprint.",
         variant: "destructive"
       });
-    }
-  };
-
-  const handleDownloadBlueprint = () => {
-    if (propertyBlueprint) {
-      const link = document.createElement('a');
-      link.href = propertyBlueprint;
-      link.download = "property-blueprint.pdf";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
     }
   };
 
@@ -376,7 +321,7 @@ const DesignAssetsCard = ({
         throw updateError;
       }
       
-      // Update local state with renderings
+      // Update local state
       const newRenderings = urls.map((url, index) => {
         const fileType = url.toLowerCase().endsWith('.png') ? 'png' : 'jpg';
         return {
@@ -395,7 +340,7 @@ const DesignAssetsCard = ({
       });
 
       // Refresh the data to ensure we have the latest
-      fetchExistingRenderings();
+      fetchExistingRenderings(currentRoomId);
     } catch (error) {
       console.error('Error saving renderings:', error);
       toast({
@@ -413,7 +358,7 @@ const DesignAssetsCard = ({
       if (renderingFiles.length === 0 || !propertyId) {
         return;
       }
-
+      
       let currentRoomId = roomId;
       if (!currentRoomId) {
         currentRoomId = await fetchRoomId();
@@ -460,7 +405,7 @@ const DesignAssetsCard = ({
       });
 
       // Refresh the data to ensure we have the latest
-      fetchExistingRenderings();
+      fetchExistingRenderings(currentRoomId);
     } catch (error) {
       console.error('Error removing rendering:', error);
       toast({
@@ -579,7 +524,7 @@ const DesignAssetsCard = ({
       });
 
       // Refresh the data to ensure we have the latest
-      fetchExistingDrawings();
+      fetchExistingDrawings(currentRoomId);
     } catch (error) {
       console.error('Error saving drawings:', error);
       toast({
@@ -644,7 +589,7 @@ const DesignAssetsCard = ({
       });
 
       // Refresh the data to ensure we have the latest
-      fetchExistingDrawings();
+      fetchExistingDrawings(currentRoomId);
     } catch (error) {
       console.error('Error removing drawing:', error);
       toast({
