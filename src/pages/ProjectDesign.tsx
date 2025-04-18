@@ -154,8 +154,8 @@ const ProjectDesign = () => {
               
               <div className="mb-8">
                 <h2 className="text-lg font-medium mb-3">Select a room</h2>
-                <Tabs defaultValue={defaultTab}>
-                  <TabsList>
+                <Tabs defaultValue={defaultTab} className="w-full">
+                  <TabsList className="mb-4">
                     {projectData.renovation_areas?.map((area, index) => (
                       <TabsTrigger 
                         key={area.area} 
@@ -175,38 +175,40 @@ const ProjectDesign = () => {
                     const beforePhotos = designPreferences.beforePhotos?.[areaKey] || [];
                     
                     return (
-                      <TabsContent key={area.area} value={area.area.toLowerCase()}>
+                      <TabsContent key={area.area} value={area.area.toLowerCase()} className="w-full">
                         {hasDesigns ? (
-                          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                            <RoomDetails
-                              area={area.area}
-                              location={area.location}
-                              designers={designPreferences.designers}
-                              designAssets={designPreferences.designAssets}
-                              onAddDesigner={handleAddDesigner}
-                              onUploadAssets={handleUploadAssets}
-                              propertyPhotos={propertyPhotos}
-                              onSelectBeforePhotos={(photos) => handleSelectBeforePhotos(area.area, photos)}
-                              onUploadBeforePhotos={(photos) => handleUploadBeforePhotos(area.area, photos)}
-                              beforePhotos={beforePhotos}
-                            />
+                          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 w-full">
+                            <div className="col-span-1 lg:col-span-2 w-full">
+                              <RoomDetails
+                                area={area.area}
+                                location={area.location}
+                                designers={designPreferences.designers}
+                                designAssets={designPreferences.designAssets}
+                                onAddDesigner={handleAddDesigner}
+                                onUploadAssets={handleUploadAssets}
+                                propertyPhotos={propertyPhotos}
+                                onSelectBeforePhotos={(photos) => handleSelectBeforePhotos(area.area, photos)}
+                                onUploadBeforePhotos={(photos) => handleUploadBeforePhotos(area.area, photos)}
+                                beforePhotos={beforePhotos}
+                              />
+                            </div>
                             
-                            <div className="col-span-1 lg:col-span-3">
+                            <div className="col-span-1 lg:col-span-3 w-full">
                               {!hasRenderings ? (
                                 <EmptyDesignState 
                                   type="renderings" 
                                   onAction={handleAddRenderings}
                                 />
                               ) : (
-                                <Card className="mb-6">
-                                  <CardContent className="p-6">
+                                <Card className="mb-6 w-full">
+                                  <CardContent className="p-4 sm:p-6">
                                     <div className="flex justify-between items-center mb-4">
                                       <h2 className="text-xl font-bold">Renderings</h2>
                                       <Button variant="ghost" size="sm" className="uppercase text-xs">
                                         Manage Photos
                                       </Button>
                                     </div>
-                                    <div className="grid grid-cols-3 gap-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                                       {designPreferences.renderingImages?.map((img, idx) => (
                                         <div key={idx} className="aspect-square bg-gray-100 rounded overflow-hidden">
                                           <img src={img} alt={`Rendering ${idx + 1}`} className="w-full h-full object-cover" />
@@ -230,7 +232,7 @@ const ProjectDesign = () => {
                 </Tabs>
               </div>
               
-              <div className="mt-8">
+              <div className="mt-8 w-full">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-bold">Inspiration</h2>
                   <Button 
@@ -249,7 +251,7 @@ const ProjectDesign = () => {
                     onAction={handleAddInspiration}
                   />
                 ) : (
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {designPreferences.inspirationImages?.map((img, idx) => (
                       <div key={idx} className="aspect-video bg-gray-100 rounded overflow-hidden">
                         <img src={img} alt={`Inspiration ${idx + 1}`} className="w-full h-full object-cover" />
@@ -259,7 +261,7 @@ const ProjectDesign = () => {
                 )}
               </div>
 
-              <div className="mt-8">
+              <div className="mt-8 w-full">
                 <RecommendedContent />
               </div>
             </div>

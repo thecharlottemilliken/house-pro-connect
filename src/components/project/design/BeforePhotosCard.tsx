@@ -31,7 +31,7 @@ const BeforePhotosCard = ({
   };
 
   return (
-    <Card className="shadow-lg border-gray-200/50 w-full h-full">
+    <Card className="shadow-lg border-gray-200/50 w-full">
       <CardContent className="p-4 sm:p-6">
         <BeforePhotosSection
           beforePhotos={beforePhotos}
