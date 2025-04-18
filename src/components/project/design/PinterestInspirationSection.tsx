@@ -49,87 +49,56 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
 
   const handleRemoveBoard = async (boardToRemove: PinterestBoard) => {
     try {
-      console.log("Removing board:", boardToRemove);
+      console.log("Attempting to remove board:", boardToRemove);
       
-      // Get the project ID from the URL
       const urlPath = window.location.pathname;
       const projectId = urlPath.substring(urlPath.lastIndexOf('/') + 1);
-      console.log("Project ID:", projectId);
       
       if (!projectId) {
         throw new Error("Could not determine project ID");
       }
       
-      // Get current boards from props and filter out the one to remove
       const updatedBoards = pinterestBoards.filter(board => board.id !== boardToRemove.id);
-      console.log("Updated boards list:", updatedBoards);
       
-      // Get pin image URLs from the board being removed
       const boardPinUrls = boardToRemove.pins?.map(pin => pin.imageUrl) || [];
-      console.log("Pin URLs to remove:", boardPinUrls);
-      
-      // Remove those pin URLs from inspiration images
       const updatedInspiration = inspirationImages.filter(img => !boardPinUrls.includes(img));
-      console.log("Updated inspiration images:", updatedInspiration);
       
-      // Fetch current project data first
       const { data: projectData, error: fetchError } = await supabase
         .from('projects')
         .select('design_preferences')
         .eq('id', projectId)
         .single();
       
-      if (fetchError) {
-        console.error("Error fetching project data:", fetchError);
-        throw fetchError;
-      }
+      if (fetchError) throw fetchError;
       
-      console.log("Project data fetched:", projectData);
+      const designPreferences = projectData.design_preferences 
+        ? JSON.parse(JSON.stringify(projectData.design_preferences)) 
+        : {};
       
-      if (!projectData || !projectData.design_preferences) {
-        throw new Error("Project data or design preferences not found");
-      }
-      
-      // Create a deep copy of the design preferences to avoid mutation issues
-      const designPreferences = JSON.parse(JSON.stringify(projectData.design_preferences));
-      
-      // Update design preferences with new boards and images
       designPreferences.pinterestBoards = updatedBoards;
       designPreferences.inspirationImages = updatedInspiration;
       
-      console.log("Updated design preferences:", designPreferences);
-      
-      // Save updated design preferences to database
       const { error: updateError } = await supabase
         .from('projects')
-        .update({ 
-          design_preferences: designPreferences 
-        })
+        .update({ design_preferences: designPreferences })
         .eq('id', projectId);
       
-      if (updateError) {
-        console.error("Error updating project:", updateError);
-        throw updateError;
-      }
+      if (updateError) throw updateError;
       
-      console.log("Database updated successfully");
-      
-      // Update UI via passed state update functions
       onAddPinterestBoards(updatedBoards);
       onAddInspiration(updatedInspiration);
       
-      // Reset delete confirmation dialog state
       setBoardToDelete(null);
       
       toast({
-        title: "Board Removed",
-        description: `Pinterest board "${boardToRemove.name}" has been removed successfully`,
+        title: "Pinterest Board Removed",
+        description: `"${boardToRemove.name}" has been deleted successfully`,
       });
     } catch (error) {
-      console.error("Error removing board:", error);
+      console.error("Error removing Pinterest board:", error);
       toast({
-        title: "Error",
-        description: "Failed to remove Pinterest board",
+        title: "Error Removing Board",
+        description: "Failed to remove Pinterest board. Please try again.",
         variant: "destructive",
       });
     }
@@ -220,18 +189,18 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
       <AlertDialog open={!!boardToDelete} onOpenChange={(open) => !open && setBoardToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove Pinterest Board</AlertDialogTitle>
+            <AlertDialogTitle>Delete Pinterest Board</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to remove this board? This action cannot be undone.
+              Are you sure you want to delete this Pinterest board? This will remove all associated pins from your inspiration.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => boardToDelete && handleRemoveBoard(boardToDelete)}
-              className="bg-red-500 text-white hover:bg-red-600"
+              className="bg-red-500 text-white hover:bg-red-600 flex items-center gap-2"
             >
-              Remove
+              <Trash2 className="h-4 w-4" /> Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
