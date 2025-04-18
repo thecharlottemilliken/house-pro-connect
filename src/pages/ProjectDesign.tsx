@@ -1,3 +1,4 @@
+
 import { useParams, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -17,7 +18,7 @@ const ProjectDesign = () => {
   const isMobile = useIsMobile();
   const { projectData, propertyDetails, isLoading } = useProjectData(params.projectId, location.state);
   
-  if (isLoading || !propertyDetails) {
+  if (isLoading || !projectData) {
     return (
       <div className="min-h-screen flex flex-col bg-white">
         <DashboardNavbar />
@@ -30,9 +31,22 @@ const ProjectDesign = () => {
 
   const projectId = projectData?.id || params.projectId || "unknown";
   const projectTitle = projectData?.title || "Project Overview";
-  const designPreferences = projectData?.design_preferences || {};
+  
+  // Initialize design preferences with defaults if not present
+  const designPreferences = projectData.design_preferences || {
+    hasDesigns: false,
+    designers: [],
+    designAssets: [],
+    renderingImages: [],
+    inspirationImages: []
+  };
+  
+  // Check if we have design plans
   const hasDesigns = designPreferences?.hasDesigns || false;
+  
+  // Check if we have designers
   const designers = designPreferences?.designers || [];
+  const hasDesigner = designers.length > 0;
   
   // Check if we have any design assets
   const designAssets = designPreferences?.designAssets || [];
@@ -45,6 +59,32 @@ const ProjectDesign = () => {
   // Check if we have any inspiration images
   const inspirationImages = designPreferences?.inspirationImages || [];
   const hasInspiration = inspirationImages.length > 0;
+
+  // Default tab to first renovation area if available
+  const defaultTab = projectData.renovation_areas?.length > 0 
+    ? projectData.renovation_areas[0].area.toLowerCase()
+    : "kitchen";
+
+  // Mock actions for empty states - these would connect to real functionality
+  const handleAddDesignPlans = () => {
+    console.log("Add design plans clicked");
+  };
+
+  const handleAddDesigner = () => {
+    console.log("Add designer clicked");
+  };
+
+  const handleUploadAssets = () => {
+    console.log("Upload assets clicked");
+  };
+
+  const handleAddRenderings = () => {
+    console.log("Add renderings clicked");
+  };
+
+  const handleAddInspiration = () => {
+    console.log("Add inspiration clicked");
+  };
 
   return (
     <div className="flex flex-col bg-white min-h-screen">
@@ -66,9 +106,9 @@ const ProjectDesign = () => {
               
               <div className="mb-8">
                 <h2 className="text-lg font-medium mb-3">Select a room</h2>
-                <Tabs defaultValue="kitchen">
+                <Tabs defaultValue={defaultTab}>
                   <TabsList>
-                    {projectData?.renovation_areas?.map((area: any, index: number) => (
+                    {projectData?.renovation_areas?.map((area, index) => (
                       <TabsTrigger 
                         key={area.area} 
                         value={area.area.toLowerCase()} 
@@ -95,9 +135,9 @@ const ProjectDesign = () => {
                           <Button variant="ghost" size="sm">Edit</Button>
                         </div>
                         
-                        {designers.length > 0 ? (
+                        {hasDesigner ? (
                           <div className="space-y-4">
-                            {designers.map((designer: any, index: number) => (
+                            {designers.map((designer, index) => (
                               <div key={index} className="flex justify-between">
                                 <span className="text-gray-600">Designer:</span>
                                 <div className="flex items-center">
@@ -108,7 +148,10 @@ const ProjectDesign = () => {
                             ))}
                           </div>
                         ) : (
-                          <EmptyDesignState type="designer" />
+                          <EmptyDesignState 
+                            type="designer" 
+                            onAction={handleAddDesigner}
+                          />
                         )}
                       </CardContent>
                     </Card>
@@ -117,7 +160,10 @@ const ProjectDesign = () => {
                   {/* Right side - Design assets */}
                   <div className="col-span-1 lg:col-span-3">
                     {!hasDesignAssets ? (
-                      <EmptyDesignState type="design-assets" />
+                      <EmptyDesignState 
+                        type="design-assets" 
+                        onAction={handleUploadAssets}
+                      />
                     ) : (
                       <Card className="mb-6">
                         <CardContent className="p-6">
@@ -127,7 +173,7 @@ const ProjectDesign = () => {
                           </div>
                           
                           <div className="grid grid-cols-2 gap-3">
-                            {designAssets.map((asset: any, idx: number) => (
+                            {designAssets.map((asset, idx) => (
                               <div key={idx} className="flex items-center text-sm">
                                 <FileText className="h-4 w-4 mr-2 text-gray-500" />
                                 <span className="truncate">{asset.name}</span>
@@ -139,7 +185,10 @@ const ProjectDesign = () => {
                     )}
                     
                     {!hasRenderings ? (
-                      <EmptyDesignState type="renderings" />
+                      <EmptyDesignState 
+                        type="renderings" 
+                        onAction={handleAddRenderings}
+                      />
                     ) : (
                       <Card className="mb-6">
                         <CardContent className="p-6">
@@ -149,7 +198,7 @@ const ProjectDesign = () => {
                           </div>
                           
                           <div className="grid grid-cols-3 gap-3">
-                            {renderingImages.map((img: string, idx: number) => (
+                            {renderingImages.map((img, idx) => (
                               <div key={idx} className="aspect-square bg-gray-100 rounded overflow-hidden">
                                 <img src={img} alt={`Rendering ${idx + 1}`} className="w-full h-full object-cover" />
                               </div>
@@ -161,21 +210,34 @@ const ProjectDesign = () => {
                   </div>
                 </div>
               ) : (
-                <EmptyDesignState type="no-designs" />
+                <EmptyDesignState 
+                  type="no-designs" 
+                  onAction={handleAddDesignPlans}
+                />
               )}
               
               {/* Inspiration Section */}
               <div className="mt-8">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-bold">Inspiration</h2>
-                  <Button variant="ghost" size="sm" className="uppercase text-xs">Add Inspiration</Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="uppercase text-xs"
+                    onClick={handleAddInspiration}
+                  >
+                    Add Inspiration
+                  </Button>
                 </div>
                 
                 {!hasInspiration ? (
-                  <EmptyDesignState type="inspiration" />
+                  <EmptyDesignState 
+                    type="inspiration" 
+                    onAction={handleAddInspiration}
+                  />
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {inspirationImages.map((img: string, idx: number) => (
+                    {inspirationImages.map((img, idx) => (
                       <div key={idx} className="aspect-video bg-gray-100 rounded overflow-hidden">
                         <img src={img} alt={`Inspiration ${idx + 1}`} className="w-full h-full object-cover" />
                       </div>

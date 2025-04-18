@@ -6,9 +6,10 @@ import { Card, CardContent } from "@/components/ui/card";
 
 interface EmptyDesignStateProps {
   type: "no-designs" | "designer" | "design-assets" | "renderings" | "inspiration";
+  onAction?: () => void;
 }
 
-const EmptyDesignState = ({ type }: EmptyDesignStateProps) => {
+const EmptyDesignState = ({ type, onAction }: EmptyDesignStateProps) => {
   const getContent = () => {
     switch (type) {
       case "no-designs":
@@ -58,7 +59,11 @@ const EmptyDesignState = ({ type }: EmptyDesignStateProps) => {
           {content?.icon}
           <h3 className="text-lg font-semibold mt-4 mb-2">{content?.title}</h3>
           <p className="text-gray-600 mb-4">{content?.description}</p>
-          <Button variant="outline" className="bg-gray-200 border-gray-300">
+          <Button 
+            variant="outline" 
+            className="bg-gray-200 border-gray-300"
+            onClick={onAction}
+          >
             {content?.actionLabel}
           </Button>
         </div>

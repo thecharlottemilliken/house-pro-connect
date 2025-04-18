@@ -19,12 +19,27 @@ interface RenovationArea {
   location: string;
 }
 
+interface Designer {
+  id: string;
+  businessName: string;
+  email?: string;
+}
+
+interface DesignPreferences {
+  hasDesigns?: boolean;
+  designers?: Designer[];
+  designAssets?: Array<{name: string, url: string}>;
+  renderingImages?: string[];
+  inspirationImages?: string[];
+}
+
 interface Project {
   id: string;
   property_id: string;
   title: string;
   renovation_areas: RenovationArea[];
   created_at: string;
+  design_preferences?: DesignPreferences;
 }
 
 export const useProjectData = (projectId?: string, initialData?: any) => {
@@ -72,7 +87,14 @@ export const useProjectData = (projectId?: string, initialData?: any) => {
         property_id: data.property_id,
         title: data.title,
         renovation_areas: renovationAreas,
-        created_at: data.created_at
+        created_at: data.created_at,
+        design_preferences: data.design_preferences || {
+          hasDesigns: false,
+          designers: [],
+          designAssets: [],
+          renderingImages: [],
+          inspirationImages: []
+        }
       };
       
       setProjectData(typedProject);
