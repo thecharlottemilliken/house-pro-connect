@@ -17,6 +17,7 @@ import DesignAssetsCard from "@/components/project/design/DesignAssetsCard";
 import PinterestInspirationSection from "@/components/project/design/PinterestInspirationSection";
 import PinterestConnector from "@/components/project/design/PinterestConnector";
 import { type PinterestBoard } from "@/types/pinterest";
+import { useEffect } from "react";
 
 const ProjectDesign = () => {
   const location = useLocation();
@@ -66,24 +67,15 @@ const ProjectDesign = () => {
   const handleAddBlueprints = () => console.log("Add blueprints clicked");
   const handleAddInspiration = () => console.log("Add inspiration clicked");
 
-  const handleAddInspirationImages = async (images: string[]) => {
+  const handleAddInspirationImages = async (images: string[], roomId: string) => {
     try {
-      const updatedImages = [
-        ...(designPreferences.inspirationImages || []),
-        ...images
-      ];
-      
-      const updatedDesignPreferences: Record<string, unknown> = {
-        ...designPreferences,
-        inspirationImages: updatedImages
-      };
-      
       const { error } = await supabase
-        .from('projects')
+        .from('room_design_preferences')
         .update({ 
-          design_preferences: updatedDesignPreferences as Json
+          inspiration_images: images,
+          updated_at: new Date().toISOString()
         })
-        .eq('id', projectData.id);
+        .eq('room_id', roomId);
       
       if (error) throw error;
       
@@ -91,9 +83,6 @@ const ProjectDesign = () => {
         title: "Success",
         description: `Added ${images.length} inspiration images`,
       });
-      
-      // Update local state for immediate UI update
-      designPreferences.inspirationImages = updatedImages;
       
     } catch (error: any) {
       console.error('Error adding inspiration images:', error);
@@ -105,51 +94,22 @@ const ProjectDesign = () => {
     }
   };
 
-  const handleAddPinterestBoards = async (boards: PinterestBoard[], room: string) => {
+  const handleAddPinterestBoards = async (boards: PinterestBoard[], roomId: string) => {
     try {
-      const currentBoards = designPreferences.pinterestBoards || {};
-      const roomBoards = currentBoards[room] || [];
-      
-      // Filter out duplicates based on board ID
-      const uniqueNewBoards = boards.filter(
-        newBoard => !roomBoards.some(existingBoard => existingBoard.id === newBoard.id)
-      );
-      
-      if (uniqueNewBoards.length === 0) {
-        toast({
-          title: "No New Boards",
-          description: "This Pinterest board has already been added to this room",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      const updatedBoards = {
-        ...currentBoards,
-        [room]: [...roomBoards, ...uniqueNewBoards]
-      };
-      
-      const updatedDesignPreferences: Record<string, unknown> = {
-        ...designPreferences,
-        pinterestBoards: updatedBoards
-      };
-      
       const { error } = await supabase
-        .from('projects')
+        .from('room_design_preferences')
         .update({ 
-          design_preferences: updatedDesignPreferences as Json
+          pinterest_boards: boards,
+          updated_at: new Date().toISOString()
         })
-        .eq('id', projectData.id);
+        .eq('room_id', roomId);
       
       if (error) throw error;
       
       toast({
         title: "Success",
-        description: `Added ${uniqueNewBoards.length} Pinterest board${uniqueNewBoards.length > 1 ? 's' : ''} to ${room}`,
+        description: `Added Pinterest boards to room`,
       });
-      
-      // Update local state for immediate UI update
-      designPreferences.pinterestBoards = updatedBoards;
       
     } catch (error: any) {
       console.error('Error adding Pinterest boards:', error);
@@ -325,6 +285,47 @@ const ProjectDesign = () => {
                     const measurements = designPreferences.roomMeasurements?.[areaKey];
                     const roomBoards = (designPreferences.pinterestBoards || {})[area.area] || [];
                     
+                    // Get or create room in property_rooms table
+                    const createRoomIfNeeded = async () => {
+                      const { data: existingRoom, error: fetchError } = await supabase
+                        .from('property_rooms')
+                        .select('*')
+                        .eq('property_id', propertyDetails?.id)
+                        .eq('name', area.area)
+                        .single();
+
+                      if (fetchError && fetchError.code !== 'PGRST116') {
+                        console.error('Error fetching room:', fetchError);
+                        return null;
+                      }
+
+                      if (existingRoom) {
+                        return existingRoom;
+                      }
+
+                      const { data: newRoom, error: createError } = await supabase
+                        .from('property_rooms')
+                        .insert({
+                          property_id: propertyDetails?.id,
+                          name: area.area
+                        })
+                        .select()
+                        .single();
+
+                      if (createError) {
+                        console.error('Error creating room:', createError);
+                        return null;
+                      }
+
+                      return newRoom;
+                    };
+
+                    useEffect(() => {
+                      if (propertyDetails?.id) {
+                        createRoomIfNeeded();
+                      }
+                    }, [propertyDetails?.id, area.area]);
+                    
                     return (
                       <TabsContent key={area.area} value={area.area.toLowerCase()} className="w-full">
                         {hasDesigns ? (
@@ -372,6 +373,7 @@ const ProjectDesign = () => {
                             onAddInspiration={handleAddInspirationImages}
                             onAddPinterestBoards={handleAddPinterestBoards}
                             currentRoom={area.area}
+                            roomId={area.roomId}
                           />
                         </div>
 

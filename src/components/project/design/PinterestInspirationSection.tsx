@@ -25,6 +25,7 @@ interface PinterestInspirationSectionProps {
   onAddInspiration: (images: string[]) => void;
   onAddPinterestBoards: (boards: PinterestBoard[], room: string) => void;
   currentRoom: string;
+  roomId?: string;
 }
 
 const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = ({
@@ -32,7 +33,8 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
   pinterestBoards = [],
   onAddInspiration,
   onAddPinterestBoards,
-  currentRoom
+  currentRoom,
+  roomId
 }) => {
   const hasInspiration = inspirationImages.length > 0 || pinterestBoards.length > 0;
   const [selectedTab, setSelectedTab] = useState<'images' | 'boards'>('images');
@@ -45,52 +47,38 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
   }, [pinterestBoards]);
   
   const handlePinterestBoardsSelected = (boards: PinterestBoard[]) => {
+    if (!roomId) {
+      toast({
+        title: "Error",
+        description: "Room ID is required to save Pinterest boards",
+        variant: "destructive"
+      });
+      return;
+    }
     console.log("Pinterest boards selected for room:", currentRoom, boards);
     onAddPinterestBoards(boards, currentRoom);
   };
 
   const handleRemoveBoard = async (boardToRemove: PinterestBoard) => {
     try {
-      console.log("Attempting to remove board:", boardToRemove);
-      
-      const urlPath = window.location.pathname;
-      const projectId = urlPath.substring(urlPath.lastIndexOf('/') + 1);
-      
-      if (!projectId) {
-        throw new Error("Could not determine project ID");
+      if (!roomId) {
+        throw new Error("Room ID is required to remove Pinterest board");
       }
       
       const updatedBoards = localPinterestBoards.filter(board => board.id !== boardToRemove.id);
       
-      const boardPinUrls = boardToRemove.pins?.map(pin => pin.imageUrl) || [];
-      const updatedInspiration = inspirationImages.filter(img => !boardPinUrls.includes(img));
-      
-      const { data: projectData, error: fetchError } = await supabase
-        .from('projects')
-        .select('design_preferences')
-        .eq('id', projectId)
-        .single();
-      
-      if (fetchError) throw fetchError;
-      
-      const designPreferences = projectData.design_preferences 
-        ? JSON.parse(JSON.stringify(projectData.design_preferences)) 
-        : {};
-      
-      designPreferences.pinterestBoards = updatedBoards;
-      designPreferences.inspirationImages = updatedInspiration;
-      
       const { error: updateError } = await supabase
-        .from('projects')
-        .update({ design_preferences: designPreferences })
-        .eq('id', projectId);
+        .from('room_design_preferences')
+        .update({ 
+          pinterest_boards: updatedBoards,
+          updated_at: new Date().toISOString()
+        })
+        .eq('room_id', roomId);
       
       if (updateError) throw updateError;
       
-      onAddPinterestBoards(updatedBoards);
-      onAddInspiration(updatedInspiration);
+      onAddPinterestBoards(updatedBoards, currentRoom);
       setLocalPinterestBoards(updatedBoards);
-      
       setBoardToDelete(null);
       
       toast({
@@ -109,33 +97,19 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
 
   const handleDeleteImage = async (imageToDelete: string) => {
     try {
-      const urlPath = window.location.pathname;
-      const projectId = urlPath.substring(urlPath.lastIndexOf('/') + 1);
-      
-      if (!projectId) {
-        throw new Error("Could not determine project ID");
+      if (!roomId) {
+        throw new Error("Room ID is required to delete image");
       }
       
       const updatedImages = inspirationImages.filter(img => img !== imageToDelete);
       
-      const { data: projectData, error: fetchError } = await supabase
-        .from('projects')
-        .select('design_preferences')
-        .eq('id', projectId)
-        .single();
-      
-      if (fetchError) throw fetchError;
-      
-      const designPreferences = projectData.design_preferences 
-        ? JSON.parse(JSON.stringify(projectData.design_preferences)) 
-        : {};
-      
-      designPreferences.inspirationImages = updatedImages;
-      
       const { error: updateError } = await supabase
-        .from('projects')
-        .update({ design_preferences: designPreferences })
-        .eq('id', projectId);
+        .from('room_design_preferences')
+        .update({ 
+          inspiration_images: updatedImages,
+          updated_at: new Date().toISOString()
+        })
+        .eq('room_id', roomId);
       
       if (updateError) throw updateError;
       
