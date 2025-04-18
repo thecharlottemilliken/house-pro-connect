@@ -164,20 +164,60 @@ const DesignAssetsCard = ({
           .eq('room_id', roomId)
           .maybeSingle();
         
-        if (fetchError) throw fetchError;
+        if (fetchError && fetchError.code !== 'PGRST116') {
+          console.error('Error fetching room design preferences:', fetchError);
+          throw fetchError;
+        }
         
         // Combine existing and new inspiration images
         const existingImages = existingPrefs?.inspiration_images || [];
         const updatedImages = [...existingImages, ...urls];
         
-        // Update the database with new inspiration images
-        const { error: updateError } = await supabase
+        console.log("Updating room design preferences with:", {
+          roomId,
+          existingImages: existingImages.length,
+          newImages: urls.length,
+          updatedImages: updatedImages.length
+        });
+        
+        // Check if record exists first
+        const { data: existingRecord, error: checkError } = await supabase
           .from('room_design_preferences')
-          .update({ 
-            inspiration_images: updatedImages,
-            updated_at: new Date().toISOString()
-          })
-          .eq('room_id', roomId);
+          .select('id')
+          .eq('room_id', roomId)
+          .maybeSingle();
+          
+        if (checkError && checkError.code !== 'PGRST116') {
+          throw checkError;
+        }
+        
+        let updateError;
+        
+        if (existingRecord) {
+          // Update existing record
+          const { error } = await supabase
+            .from('room_design_preferences')
+            .update({ 
+              inspiration_images: updatedImages,
+              updated_at: new Date().toISOString()
+            })
+            .eq('room_id', roomId);
+            
+          updateError = error;
+        } else {
+          // Create new record
+          const { error } = await supabase
+            .from('room_design_preferences')
+            .insert({ 
+              room_id: roomId,
+              inspiration_images: updatedImages,
+              pinterest_boards: [],
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+            
+          updateError = error;
+        }
         
         if (updateError) throw updateError;
         
@@ -194,11 +234,11 @@ const DesignAssetsCard = ({
           }
           
           return {
-            name: `Rendering_${index + 1}.${fileType}`,
+            name: `Rendering_${renderingFiles.length + index + 1}.${fileType}`,
             size: "1.5MB",
             type: fileType,
             url: url
-          }
+          };
         });
         
         setRenderingFiles(prev => [...prev, ...newRenderings]);
@@ -222,6 +262,38 @@ const DesignAssetsCard = ({
   const handleRemoveRenderings = async () => {
     try {
       if (renderingFiles.length > 0) {
+        const roomId = propertyId;
+        if (roomId) {
+          // Get current inspiration images
+          const { data: existingPrefs, error: fetchError } = await supabase
+            .from('room_design_preferences')
+            .select('inspiration_images')
+            .eq('room_id', roomId)
+            .maybeSingle();
+            
+          if (fetchError && fetchError.code !== 'PGRST116') {
+            throw fetchError;
+          }
+          
+          // Remove the last image URL
+          const existingImages = existingPrefs?.inspiration_images || [];
+          if (existingImages.length > 0) {
+            const updatedImages = existingImages.slice(0, -1);
+            
+            // Update in the database
+            const { error: updateError } = await supabase
+              .from('room_design_preferences')
+              .update({ 
+                inspiration_images: updatedImages,
+                updated_at: new Date().toISOString()
+              })
+              .eq('room_id', roomId);
+              
+            if (updateError) throw updateError;
+          }
+        }
+        
+        // Update local state
         setRenderingFiles(prev => prev.slice(0, -1));
       }
       
@@ -252,20 +324,60 @@ const DesignAssetsCard = ({
           .eq('room_id', roomId)
           .maybeSingle();
         
-        if (fetchError) throw fetchError;
+        if (fetchError && fetchError.code !== 'PGRST116') {
+          console.error('Error fetching room design preferences:', fetchError);
+          throw fetchError;
+        }
         
         // Combine existing and new inspiration images
         const existingImages = existingPrefs?.inspiration_images || [];
         const updatedImages = [...existingImages, ...urls];
         
-        // Update the database with new inspiration images
-        const { error: updateError } = await supabase
+        console.log("Updating room design preferences with:", {
+          roomId,
+          existingImages: existingImages.length,
+          newImages: urls.length,
+          updatedImages: updatedImages.length
+        });
+        
+        // Check if record exists first
+        const { data: existingRecord, error: checkError } = await supabase
           .from('room_design_preferences')
-          .update({ 
-            inspiration_images: updatedImages,
-            updated_at: new Date().toISOString()
-          })
-          .eq('room_id', roomId);
+          .select('id')
+          .eq('room_id', roomId)
+          .maybeSingle();
+          
+        if (checkError && checkError.code !== 'PGRST116') {
+          throw checkError;
+        }
+        
+        let updateError;
+        
+        if (existingRecord) {
+          // Update existing record
+          const { error } = await supabase
+            .from('room_design_preferences')
+            .update({ 
+              inspiration_images: updatedImages,
+              updated_at: new Date().toISOString()
+            })
+            .eq('room_id', roomId);
+            
+          updateError = error;
+        } else {
+          // Create new record
+          const { error } = await supabase
+            .from('room_design_preferences')
+            .insert({ 
+              room_id: roomId,
+              inspiration_images: updatedImages,
+              pinterest_boards: [],
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+            
+          updateError = error;
+        }
         
         if (updateError) throw updateError;
         
@@ -311,6 +423,38 @@ const DesignAssetsCard = ({
   const handleRemoveDrawings = async () => {
     try {
       if (drawingFiles.length > 0) {
+        const roomId = propertyId;
+        if (roomId) {
+          // Get current inspiration images
+          const { data: existingPrefs, error: fetchError } = await supabase
+            .from('room_design_preferences')
+            .select('inspiration_images')
+            .eq('room_id', roomId)
+            .maybeSingle();
+            
+          if (fetchError && fetchError.code !== 'PGRST116') {
+            throw fetchError;
+          }
+          
+          // Remove the last image URL
+          const existingImages = existingPrefs?.inspiration_images || [];
+          if (existingImages.length > 0) {
+            const updatedImages = existingImages.slice(0, -1);
+            
+            // Update in the database
+            const { error: updateError } = await supabase
+              .from('room_design_preferences')
+              .update({ 
+                inspiration_images: updatedImages,
+                updated_at: new Date().toISOString()
+              })
+              .eq('room_id', roomId);
+              
+            if (updateError) throw updateError;
+          }
+        }
+        
+        // Update local state
         setDrawingFiles(prev => prev.slice(0, -1));
       }
       
