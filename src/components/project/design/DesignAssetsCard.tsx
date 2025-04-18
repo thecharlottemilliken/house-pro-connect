@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from "react";
-import { Building2, Image, Pen, Eye, FileWarning, ExternalLink, Download, AlertTriangle } from "lucide-react";
+import { Building2, Image, Pen, Eye, FileWarning, ExternalLink, Download, AlertTriangle, FileText, Trash, Plus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import EmptyDesignState from "./EmptyDesignState";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { toast } from "@/hooks/use-toast";
 import { FileUpload } from "@/components/ui/file-upload";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DesignAssetsCardProps {
   hasRenderings: boolean;
@@ -17,6 +17,7 @@ interface DesignAssetsCardProps {
   onAddDrawings?: () => void;
   onAddBlueprints?: () => void;
   propertyBlueprint?: string | null;
+  propertyId?: string; // Add this to help with updating the blueprint
 }
 
 const DesignAssetsCard = ({
@@ -25,7 +26,8 @@ const DesignAssetsCard = ({
   onAddRenderings,
   onAddDrawings,
   onAddBlueprints,
-  propertyBlueprint
+  propertyBlueprint,
+  propertyId
 }: DesignAssetsCardProps) => {
   const [showBlueprintPreview, setShowBlueprintPreview] = React.useState(false);
   const [previewError, setPreviewError] = React.useState(false);
@@ -33,6 +35,7 @@ const DesignAssetsCard = ({
   const [isCheckingPdf, setIsCheckingPdf] = useState(false);
   const [pdfStatus, setPdfStatus] = useState<'unknown' | 'valid' | 'invalid'>('unknown');
   const [showUploadBlueprint, setShowUploadBlueprint] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   
   // Check if blueprint URL exists and is valid
   const verifyBlueprintUrl = async () => {
@@ -123,15 +126,66 @@ const DesignAssetsCard = ({
     setPreviewError(true);
   };
 
-  const handleUploadBlueprint = (urls: string[]) => {
-    if (urls.length > 0) {
-      console.log("New blueprint uploaded:", urls[0]);
-      // In a real implementation, we would update the propertyBlueprint in the database
+  const handleUploadBlueprint = async (urls: string[]) => {
+    if (!urls.length || !propertyId) return;
+
+    try {
+      setIsUploading(true);
+      const { error } = await supabase
+        .from('properties')
+        .update({ blueprint_url: urls[0] })
+        .eq('id', propertyId);
+
+      if (error) throw error;
+
       toast({
-        title: "Blueprint Uploaded",
-        description: "Your blueprint has been uploaded successfully. Refresh the page to see it."
+        title: "Blueprint Added",
+        description: "Your blueprint has been successfully uploaded."
       });
       setShowUploadBlueprint(false);
+    } catch (error) {
+      console.error('Error uploading blueprint:', error);
+      toast({
+        title: "Upload Failed",
+        description: "There was a problem uploading the blueprint.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleRemoveBlueprint = async () => {
+    if (!propertyId) return;
+
+    try {
+      // Remove the file from storage if it exists
+      if (propertyBlueprint) {
+        const filename = propertyBlueprint.split('/').pop();
+        await supabase.storage
+          .from('property-blueprints')
+          .remove([filename!]);
+      }
+
+      // Update the property record
+      const { error } = await supabase
+        .from('properties')
+        .update({ blueprint_url: null })
+        .eq('id', propertyId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Blueprint Removed",
+        description: "The blueprint has been successfully removed."
+      });
+    } catch (error) {
+      console.error('Error removing blueprint:', error);
+      toast({
+        title: "Remove Failed",
+        description: "There was a problem removing the blueprint.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -213,6 +267,15 @@ const DesignAssetsCard = ({
                     >
                       <Download className="w-5 h-5 text-gray-700" />
                     </button>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveBlueprint();
+                      }}
+                      className="bg-white/90 p-2 rounded-full hover:bg-white transition-colors"
+                    >
+                      <Trash className="w-5 h-5 text-red-500" />
+                    </button>
                   </div>
                 </div>
                 <CardContent className="p-4">
@@ -271,7 +334,7 @@ const DesignAssetsCard = ({
                     customTitle="Blueprints"
                     customDescription="Add blueprints"
                     customActionLabel="Add Blueprints"
-                    onAction={onAddBlueprints}
+                    onAction={() => setShowUploadBlueprint(true)}
                   />
                 </CardContent>
               </Card>
