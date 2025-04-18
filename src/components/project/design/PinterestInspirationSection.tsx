@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import PinterestConnector from "./PinterestConnector";
 import { Button } from "@/components/ui/button";
@@ -22,8 +23,8 @@ import {
 interface PinterestInspirationSectionProps {
   inspirationImages: string[];
   pinterestBoards?: PinterestBoard[];
-  onAddInspiration: (images: string[]) => void;
-  onAddPinterestBoards: (boards: PinterestBoard[], room: string) => void;
+  onAddInspiration: (images: string[], roomId?: string) => void;
+  onAddPinterestBoards: (boards: PinterestBoard[], room: string, roomId?: string) => void;
   currentRoom: string;
   roomId?: string;
 }
@@ -56,7 +57,7 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
       return;
     }
     console.log("Pinterest boards selected for room:", currentRoom, boards);
-    onAddPinterestBoards(boards, currentRoom);
+    onAddPinterestBoards(boards, currentRoom, roomId);
   };
 
   const handleRemoveBoard = async (boardToRemove: PinterestBoard) => {
@@ -67,17 +68,30 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
       
       const updatedBoards = localPinterestBoards.filter(board => board.id !== boardToRemove.id);
       
+      // Convert PinterestBoard[] to a format compatible with Supabase's Json type
+      const boardsForStorage = updatedBoards.map(board => ({
+        id: board.id,
+        name: board.name,
+        url: board.url,
+        imageUrl: board.imageUrl,
+        pins: board.pins ? board.pins.map(pin => ({
+          id: pin.id,
+          imageUrl: pin.imageUrl,
+          description: pin.description
+        })) : undefined
+      }));
+      
       const { error: updateError } = await supabase
         .from('room_design_preferences')
         .update({ 
-          pinterest_boards: updatedBoards,
+          pinterest_boards: boardsForStorage,
           updated_at: new Date().toISOString()
         })
         .eq('room_id', roomId);
       
       if (updateError) throw updateError;
       
-      onAddPinterestBoards(updatedBoards, currentRoom);
+      onAddPinterestBoards(updatedBoards, currentRoom, roomId);
       setLocalPinterestBoards(updatedBoards);
       setBoardToDelete(null);
       
@@ -113,7 +127,7 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
       
       if (updateError) throw updateError;
       
-      onAddInspiration(updatedImages);
+      onAddInspiration(updatedImages, roomId);
       
       toast({
         title: "Image Removed",

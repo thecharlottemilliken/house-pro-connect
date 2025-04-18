@@ -17,13 +17,37 @@ import DesignAssetsCard from "@/components/project/design/DesignAssetsCard";
 import PinterestInspirationSection from "@/components/project/design/PinterestInspirationSection";
 import PinterestConnector from "@/components/project/design/PinterestConnector";
 import { type PinterestBoard } from "@/types/pinterest";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const ProjectDesign = () => {
   const location = useLocation();
   const params = useParams();
   const isMobile = useIsMobile();
   const { projectData, propertyDetails, isLoading } = useProjectData(params.projectId, location.state);
+  const [propertyRooms, setPropertyRooms] = useState<{id: string, name: string}[]>([]);
+  
+  useEffect(() => {
+    if (propertyDetails?.id) {
+      fetchPropertyRooms(propertyDetails.id);
+    }
+  }, [propertyDetails?.id]);
+  
+  const fetchPropertyRooms = async (propertyId: string) => {
+    try {
+      const { data: rooms, error } = await supabase
+        .from('property_rooms')
+        .select('id, name')
+        .eq('property_id', propertyId);
+        
+      if (error) throw error;
+      
+      if (rooms) {
+        setPropertyRooms(rooms);
+      }
+    } catch (error) {
+      console.error('Error fetching property rooms:', error);
+    }
+  };
   
   if (isLoading || !projectData) {
     return (
@@ -67,8 +91,12 @@ const ProjectDesign = () => {
   const handleAddBlueprints = () => console.log("Add blueprints clicked");
   const handleAddInspiration = () => console.log("Add inspiration clicked");
 
-  const handleAddInspirationImages = async (images: string[], roomId: string) => {
+  const handleAddInspirationImages = async (images: string[], roomId?: string) => {
     try {
+      if (!roomId) {
+        throw new Error("Room ID is required to add inspiration images");
+      }
+      
       const { error } = await supabase
         .from('room_design_preferences')
         .update({ 
@@ -94,12 +122,29 @@ const ProjectDesign = () => {
     }
   };
 
-  const handleAddPinterestBoards = async (boards: PinterestBoard[], roomId: string) => {
+  const handleAddPinterestBoards = async (boards: PinterestBoard[], roomName: string, roomId?: string) => {
     try {
+      if (!roomId) {
+        throw new Error("Room ID is required to add Pinterest boards");
+      }
+      
+      // Convert PinterestBoard[] to a format compatible with Supabase's Json type
+      const boardsForStorage = boards.map(board => ({
+        id: board.id,
+        name: board.name,
+        url: board.url,
+        imageUrl: board.imageUrl,
+        pins: board.pins ? board.pins.map(pin => ({
+          id: pin.id,
+          imageUrl: pin.imageUrl,
+          description: pin.description
+        })) : undefined
+      }));
+      
       const { error } = await supabase
         .from('room_design_preferences')
         .update({ 
-          pinterest_boards: boards,
+          pinterest_boards: boardsForStorage,
           updated_at: new Date().toISOString()
         })
         .eq('room_id', roomId);
@@ -108,7 +153,7 @@ const ProjectDesign = () => {
       
       toast({
         title: "Success",
-        description: `Added Pinterest boards to room`,
+        description: `Added Pinterest boards to ${roomName}`,
       });
       
     } catch (error: any) {
@@ -237,6 +282,66 @@ const ProjectDesign = () => {
     }
   };
 
+  const createRoomIfNeeded = async (propertyId: string, roomName: string) => {
+    try {
+      // Check if room exists
+      const { data: existingRooms, error: fetchError } = await supabase
+        .from('property_rooms')
+        .select('id, name')
+        .eq('property_id', propertyId)
+        .eq('name', roomName);
+      
+      if (fetchError) throw fetchError;
+      
+      // If room exists, return it
+      if (existingRooms && existingRooms.length > 0) {
+        return existingRooms[0];
+      }
+      
+      // If room doesn't exist, create it
+      const { data: newRoom, error: createError } = await supabase
+        .from('property_rooms')
+        .insert({
+          property_id: propertyId,
+          name: roomName
+        })
+        .select()
+        .single();
+      
+      if (createError) throw createError;
+      
+      // Add the new room to our local state
+      setPropertyRooms(prev => [...prev, { id: newRoom.id, name: newRoom.name }]);
+      
+      return newRoom;
+    } catch (error) {
+      console.error('Error creating/fetching room:', error);
+      return null;
+    }
+  };
+
+  const getRoomIdByName = (roomName: string) => {
+    const room = propertyRooms.find(r => r.name.toLowerCase() === roomName.toLowerCase());
+    return room?.id;
+  };
+
+  const fetchRoomDesignPreferences = async (roomId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('room_design_preferences')
+        .select('pinterest_boards, inspiration_images')
+        .eq('room_id', roomId)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      
+      return data;
+    } catch (error) {
+      console.error('Error fetching room design preferences:', error);
+      return null;
+    }
+  };
+
   return (
     <div className="flex flex-col bg-white min-h-screen">
       <DashboardNavbar />
@@ -283,48 +388,22 @@ const ProjectDesign = () => {
                     const areaKey = area.area.toLowerCase().replace(/\s+/g, '_');
                     const beforePhotos = designPreferences.beforePhotos?.[areaKey] || [];
                     const measurements = designPreferences.roomMeasurements?.[areaKey];
-                    const roomBoards = (designPreferences.pinterestBoards || {})[area.area] || [];
                     
-                    // Get or create room in property_rooms table
-                    const createRoomIfNeeded = async () => {
-                      const { data: existingRoom, error: fetchError } = await supabase
-                        .from('property_rooms')
-                        .select('*')
-                        .eq('property_id', propertyDetails?.id)
-                        .eq('name', area.area)
-                        .single();
-
-                      if (fetchError && fetchError.code !== 'PGRST116') {
-                        console.error('Error fetching room:', fetchError);
-                        return null;
-                      }
-
-                      if (existingRoom) {
-                        return existingRoom;
-                      }
-
-                      const { data: newRoom, error: createError } = await supabase
-                        .from('property_rooms')
-                        .insert({
-                          property_id: propertyDetails?.id,
-                          name: area.area
-                        })
-                        .select()
-                        .single();
-
-                      if (createError) {
-                        console.error('Error creating room:', createError);
-                        return null;
-                      }
-
-                      return newRoom;
-                    };
-
                     useEffect(() => {
-                      if (propertyDetails?.id) {
-                        createRoomIfNeeded();
-                      }
-                    }, [propertyDetails?.id, area.area]);
+                      const setupRoom = async () => {
+                        if (propertyDetails?.id) {
+                          const room = await createRoomIfNeeded(propertyDetails.id, area.area);
+                          if (room) {
+                            const preferences = await fetchRoomDesignPreferences(room.id);
+                            console.log(`Room ${area.area} preferences:`, preferences);
+                          }
+                        }
+                      };
+                      
+                      setupRoom();
+                    }, [area.area, propertyDetails?.id]);
+                    
+                    const roomId = getRoomIdByName(area.area);
                     
                     return (
                       <TabsContent key={area.area} value={area.area.toLowerCase()} className="w-full">
@@ -368,12 +447,12 @@ const ProjectDesign = () => {
                         
                         <div className="mt-8 w-full">
                           <PinterestInspirationSection 
-                            inspirationImages={designPreferences.inspirationImages || []}
-                            pinterestBoards={roomBoards}
+                            inspirationImages={[]} // We'll fetch this from room_design_preferences
+                            pinterestBoards={[]} // We'll fetch this from room_design_preferences  
                             onAddInspiration={handleAddInspirationImages}
                             onAddPinterestBoards={handleAddPinterestBoards}
                             currentRoom={area.area}
-                            roomId={area.roomId}
+                            roomId={roomId}
                           />
                         </div>
 
