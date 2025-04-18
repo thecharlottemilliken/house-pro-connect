@@ -50,6 +50,7 @@ const PinterestConnector: React.FC<PinterestConnectorProps> = ({ onBoardsSelecte
           description: "Please enter a Pinterest board URL",
           variant: "destructive",
         });
+        setIsLoading(false);
         return;
       }
 
@@ -63,6 +64,7 @@ const PinterestConnector: React.FC<PinterestConnectorProps> = ({ onBoardsSelecte
           description: "Please enter a valid Pinterest board URL",
           variant: "destructive",
         });
+        setIsLoading(false);
         return;
       }
 
@@ -116,16 +118,17 @@ const PinterestConnector: React.FC<PinterestConnectorProps> = ({ onBoardsSelecte
             <DialogTitle>Add Pinterest Board</DialogTitle>
             <DialogDescription>
               Share your Pinterest board by entering its URL.
-              <div className="mt-2 text-sm text-muted-foreground">
-                Example: https://pinterest.com/username/board-name
-              </div>
             </DialogDescription>
+            <div className="mt-2 text-sm text-muted-foreground">
+              Example: https://pinterest.com/username/board-name
+            </div>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Pinterest Board URL</label>
+              <label htmlFor="pinterest-board-url" className="text-sm font-medium">Pinterest Board URL</label>
               <Input 
+                id="pinterest-board-url"
                 placeholder="https://pinterest.com/username/board-name"
                 value={boardUrl}
                 onChange={(e) => setBoardUrl(e.target.value)}

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import PinterestConnector from "./PinterestConnector";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
   const [expandedBoard, setExpandedBoard] = useState<string | null>(null);
 
   const handlePinterestBoardsSelected = (boards: PinterestBoard[]) => {
+    console.log("Pinterest boards selected:", boards);
     onAddPinterestBoards(boards);
     
     // Extract images from the boards to add as inspiration
@@ -68,7 +70,7 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
   };
 
   const renderBoardContent = (board: PinterestBoard) => (
-    <div key={board.id} className="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+    <div className="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
       <div className="aspect-video bg-gray-100 relative">
         {board.imageUrl ? (
           <img src={board.imageUrl} alt={board.name} className="w-full h-full object-cover" />
@@ -119,10 +121,7 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
       return (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {pinterestBoards.map((board) => (
-            <div 
-              key={board.id} 
-              className="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-            >
+            <div key={board.id}>
               {renderBoardContent(board)}
             </div>
           ))}
