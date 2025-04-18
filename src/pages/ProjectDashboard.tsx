@@ -13,12 +13,23 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { FileText, PenBox } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const ProjectDashboard = () => {
   const location = useLocation();
   const params = useParams();
   const isMobile = useIsMobile();
   const { profile } = useAuth();
+  const [showNoDesignDialog, setShowNoDesignDialog] = React.useState(false);
   
   const { projectData, propertyDetails, isLoading } = useProjectData(
     params.projectId,
@@ -40,10 +51,22 @@ const ProjectDashboard = () => {
   const projectTitle = projectData?.title || "Project Overview";
   const renovationAreas = projectData?.renovation_areas || [];
   const hasSOW = false; // This should be updated to check actual SOW status once implemented
+  const hasDesignPlan = false; // This should be updated to check actual design plan status once implemented
   const isCoach = profile?.role === 'coach';
-  
-  console.log("Current user profile:", profile);
-  console.log("Is coach:", isCoach);
+
+  const handleStartSOW = () => {
+    if (!hasDesignPlan) {
+      setShowNoDesignDialog(true);
+    } else {
+      // Proceed with SOW creation
+      startSOWCreation();
+    }
+  };
+
+  const startSOWCreation = () => {
+    // Logic for creating SOW will go here
+    console.log("Starting SOW creation...");
+  };
 
   return (
     <div className="flex flex-col bg-white min-h-screen">
@@ -90,7 +113,7 @@ const ProjectDashboard = () => {
                           Create a comprehensive Statement of Work (SOW) that outlines the project's scope, specific deliverables, timeline, and key milestones.
                         </p>
                         <Button 
-                          onClick={() => {}} 
+                          onClick={handleStartSOW} 
                           className="bg-[#0f566c] hover:bg-[#0d4a5d] px-6 py-3"
                         >
                           Start SOW
@@ -120,6 +143,23 @@ const ProjectDashboard = () => {
           </div>
         </div>
       </SidebarProvider>
+
+      <AlertDialog open={showNoDesignDialog} onOpenChange={setShowNoDesignDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>No Design Plans</AlertDialogTitle>
+            <AlertDialogDescription>
+              There are no design plans for this project. Are you sure you want to proceed with creating the Statement of Work?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={startSOWCreation}>
+              Proceed
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
