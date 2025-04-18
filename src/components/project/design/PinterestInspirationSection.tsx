@@ -8,6 +8,7 @@ import EmptyDesignState from "./EmptyDesignState";
 import { type PinterestBoard } from "@/types/pinterest";
 import PinterestBoardCard from "./PinterestBoardCard";
 import InspirationImagesGrid from "./InspirationImagesGrid";
+import { supabase } from "@/integrations/supabase/client";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,18 +52,47 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
     try {
       console.log("Removing board:", boardToRemove);
       
+      // Get current boards from state and filter out the one to remove
       const updatedBoards = pinterestBoards.filter(board => board.id !== boardToRemove.id);
+      
+      // Get pin image URLs from the board being removed
       const boardPinUrls = boardToRemove.pins?.map(pin => pin.imageUrl) || [];
+      
+      // Remove those pin URLs from inspiration images
       const updatedInspiration = inspirationImages.filter(img => !boardPinUrls.includes(img));
       
+      // Update the Supabase database with the changes
+      const { data: projectData, error: fetchError } = await supabase
+        .from('projects')
+        .select('design_preferences')
+        .eq('id', new URL(window.location.href).pathname.split('/').pop())
+        .single();
+      
+      if (fetchError) throw fetchError;
+      
+      const designPreferences = projectData.design_preferences || {};
+      designPreferences.pinterestBoards = updatedBoards;
+      designPreferences.inspirationImages = updatedInspiration;
+      
+      const { error: updateError } = await supabase
+        .from('projects')
+        .update({ 
+          design_preferences: designPreferences 
+        })
+        .eq('id', new URL(window.location.href).pathname.split('/').pop());
+      
+      if (updateError) throw updateError;
+      
+      // Update UI via passed state update functions
       onAddPinterestBoards(updatedBoards);
       onAddInspiration(updatedInspiration);
       
+      // Reset delete confirmation dialog state
       setBoardToDelete(null);
       
       toast({
         title: "Board Removed",
-        description: "Pinterest board has been removed successfully",
+        description: "Pinterest board and related pins have been removed successfully",
       });
     } catch (error) {
       console.error("Error removing board:", error);
