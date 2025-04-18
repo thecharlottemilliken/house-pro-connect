@@ -68,11 +68,26 @@ const Projects = () => {
         }));
         
         // Then, get projects where the user is a team member but not the owner
-        const { data: teamProjects, error: teamError } = await supabase
+        // Fix: Query project_team_members first, then join with projects table
+        const { data: teamMemberships, error: teamError } = await supabase
           .from('project_team_members')
           .select(`
             role,
-            project:projects(
+            project_id
+          `)
+          .eq('user_id', user.id);
+        
+        if (teamError) throw teamError;
+
+        let teamProjects: Project[] = [];
+        
+        // If user is a team member on any projects, fetch those projects
+        if (teamMemberships && teamMemberships.length > 0) {
+          const projectIds = teamMemberships.map(member => member.project_id);
+          
+          const { data: teamProjectsData, error: projectsError } = await supabase
+            .from('projects')
+            .select(`
               id,
               title,
               property_id,
@@ -85,34 +100,24 @@ const Projects = () => {
                 state,
                 zip_code
               )
-            )
-          `)
-          .eq('user_id', user.id);
-        
-        if (teamError) throw teamError;
-
-        // Format team projects and filter out nulls (in case of deleted projects)
-        const formattedTeamProjects = (teamProjects || [])
-          .filter(item => item.project !== null)
-          .map(item => ({
-            id: item.project.id,
-            title: item.project.title,
-            property_id: item.project.property_id,
-            created_at: item.project.created_at,
-            property: item.project.property,
-            is_owner: false,
-            team_role: item.role
-          }));
+            `)
+            .in('id', projectIds);
+            
+          if (projectsError) throw projectsError;
+          
+          // Match projects with their roles from teamMemberships
+          teamProjects = (teamProjectsData || []).map(project => {
+            const membership = teamMemberships.find(m => m.project_id === project.id);
+            return {
+              ...project,
+              is_owner: false,
+              team_role: membership?.role || 'Team Member'
+            };
+          });
+        }
         
         // Combine both sets of projects
-        const allProjects = [...ownedProjectsWithRole];
-        
-        // Add team projects if they're not already in the list (avoid duplicates)
-        formattedTeamProjects.forEach(teamProject => {
-          if (!allProjects.some(p => p.id === teamProject.id)) {
-            allProjects.push(teamProject);
-          }
-        });
+        const allProjects = [...ownedProjectsWithRole, ...teamProjects];
         
         console.log(`Found ${allProjects.length} projects in total`);
         setProjects(allProjects);
