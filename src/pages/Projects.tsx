@@ -116,8 +116,23 @@ const Projects = () => {
           });
         }
         
-        // Combine both sets of projects
-        const allProjects = [...ownedProjectsWithRole, ...teamProjects];
+        // Create a Map to store unique projects by ID
+        const projectMap = new Map<string, Project>();
+        
+        // Add owned projects to the map first (they take precedence)
+        ownedProjectsWithRole.forEach(project => {
+          projectMap.set(project.id, project);
+        });
+        
+        // Add team projects only if not already in the map
+        teamProjects.forEach(project => {
+          if (!projectMap.has(project.id)) {
+            projectMap.set(project.id, project);
+          }
+        });
+        
+        // Convert map back to array for state
+        const allProjects = Array.from(projectMap.values());
         
         console.log(`Found ${allProjects.length} projects in total`);
         setProjects(allProjects);
