@@ -1,3 +1,4 @@
+
 import { useParams, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -25,6 +26,10 @@ const ProjectDesign = () => {
   const isMobile = useIsMobile();
   const { projectData, propertyDetails, isLoading } = useProjectData(params.projectId, location.state);
   const [propertyRooms, setPropertyRooms] = useState<{id: string, name: string}[]>([]);
+  const [roomPreferences, setRoomPreferences] = useState<Record<string, {
+    inspirationImages: string[];
+    pinterestBoards: PinterestBoard[];
+  }>>({});
   
   useEffect(() => {
     if (propertyDetails?.id) {
@@ -43,9 +48,40 @@ const ProjectDesign = () => {
       
       if (rooms) {
         setPropertyRooms(rooms);
+        // Once we have the rooms, fetch preferences for each room
+        for (const room of rooms) {
+          fetchRoomDesignPreferences(room.id);
+        }
       }
     } catch (error) {
       console.error('Error fetching property rooms:', error);
+    }
+  };
+
+  const fetchRoomDesignPreferences = async (roomId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('room_design_preferences')
+        .select('pinterest_boards, inspiration_images')
+        .eq('room_id', roomId)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching room design preferences:', error);
+        return;
+      }
+      
+      if (data) {
+        setRoomPreferences(prev => ({
+          ...prev,
+          [roomId]: {
+            inspirationImages: data.inspiration_images || [],
+            pinterestBoards: (data.pinterest_boards as any as PinterestBoard[]) || []
+          }
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching room design preferences:', error);
     }
   };
   
@@ -107,6 +143,14 @@ const ProjectDesign = () => {
       
       if (error) throw error;
       
+      setRoomPreferences(prev => ({
+        ...prev,
+        [roomId]: {
+          ...prev[roomId],
+          inspirationImages: images
+        }
+      }));
+      
       toast({
         title: "Success",
         description: `Added ${images.length} inspiration images`,
@@ -144,12 +188,20 @@ const ProjectDesign = () => {
       const { error } = await supabase
         .from('room_design_preferences')
         .update({ 
-          pinterest_boards: boardsForStorage,
+          pinterest_boards: boardsForStorage as Json,
           updated_at: new Date().toISOString()
         })
         .eq('room_id', roomId);
       
       if (error) throw error;
+      
+      setRoomPreferences(prev => ({
+        ...prev,
+        [roomId]: {
+          ...prev[roomId],
+          pinterestBoards: boards
+        }
+      }));
       
       toast({
         title: "Success",
@@ -325,22 +377,18 @@ const ProjectDesign = () => {
     return room?.id;
   };
 
-  const fetchRoomDesignPreferences = async (roomId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('room_design_preferences')
-        .select('pinterest_boards, inspiration_images')
-        .eq('room_id', roomId)
-        .single();
-      
-      if (error && error.code !== 'PGRST116') throw error;
-      
-      return data;
-    } catch (error) {
-      console.error('Error fetching room design preferences:', error);
-      return null;
-    }
-  };
+  // Setup rooms when the component first loads
+  useEffect(() => {
+    const setupRooms = async () => {
+      if (propertyDetails?.id && renovationAreas.length > 0) {
+        for (const area of renovationAreas) {
+          await createRoomIfNeeded(propertyDetails.id, area.area);
+        }
+      }
+    };
+    
+    setupRooms();
+  }, [propertyDetails?.id, renovationAreas]);
 
   return (
     <div className="flex flex-col bg-white min-h-screen">
@@ -388,22 +436,8 @@ const ProjectDesign = () => {
                     const areaKey = area.area.toLowerCase().replace(/\s+/g, '_');
                     const beforePhotos = designPreferences.beforePhotos?.[areaKey] || [];
                     const measurements = designPreferences.roomMeasurements?.[areaKey];
-                    
-                    useEffect(() => {
-                      const setupRoom = async () => {
-                        if (propertyDetails?.id) {
-                          const room = await createRoomIfNeeded(propertyDetails.id, area.area);
-                          if (room) {
-                            const preferences = await fetchRoomDesignPreferences(room.id);
-                            console.log(`Room ${area.area} preferences:`, preferences);
-                          }
-                        }
-                      };
-                      
-                      setupRoom();
-                    }, [area.area, propertyDetails?.id]);
-                    
                     const roomId = getRoomIdByName(area.area);
+                    const roomPrefs = roomId ? roomPreferences[roomId] : null;
                     
                     return (
                       <TabsContent key={area.area} value={area.area.toLowerCase()} className="w-full">
@@ -446,14 +480,16 @@ const ProjectDesign = () => {
                         )}
                         
                         <div className="mt-8 w-full">
-                          <PinterestInspirationSection 
-                            inspirationImages={[]} // We'll fetch this from room_design_preferences
-                            pinterestBoards={[]} // We'll fetch this from room_design_preferences  
-                            onAddInspiration={handleAddInspirationImages}
-                            onAddPinterestBoards={handleAddPinterestBoards}
-                            currentRoom={area.area}
-                            roomId={roomId}
-                          />
+                          {roomId && (
+                            <PinterestInspirationSection 
+                              inspirationImages={roomPrefs?.inspirationImages || []}
+                              pinterestBoards={roomPrefs?.pinterestBoards || []}
+                              onAddInspiration={handleAddInspirationImages}
+                              onAddPinterestBoards={handleAddPinterestBoards}
+                              currentRoom={area.area}
+                              roomId={roomId}
+                            />
+                          )}
                         </div>
 
                         <div className="mt-8 w-full">

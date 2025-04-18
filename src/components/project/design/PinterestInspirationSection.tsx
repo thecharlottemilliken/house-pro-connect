@@ -19,10 +19,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Json } from "@/integrations/supabase/types";
 
 interface PinterestInspirationSectionProps {
   inspirationImages: string[];
-  pinterestBoards?: PinterestBoard[];
+  pinterestBoards: PinterestBoard[];
   onAddInspiration: (images: string[], roomId?: string) => void;
   onAddPinterestBoards: (boards: PinterestBoard[], room: string, roomId?: string) => void;
   currentRoom: string;
@@ -84,7 +85,7 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
       const { error: updateError } = await supabase
         .from('room_design_preferences')
         .update({ 
-          pinterest_boards: boardsForStorage,
+          pinterest_boards: boardsForStorage as Json,
           updated_at: new Date().toISOString()
         })
         .eq('room_id', roomId);
