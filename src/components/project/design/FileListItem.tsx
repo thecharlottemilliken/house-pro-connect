@@ -2,12 +2,6 @@
 import React, { useState } from "react";
 import { Download, Eye, X } from "lucide-react";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -17,6 +11,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 
 interface FileListItemProps {
   name: string;
@@ -78,26 +82,36 @@ export const FileListItem = ({ name, size, type, url, onDownload, onView, onDele
         </div>
       </div>
 
-      <Sheet open={showPreview} onOpenChange={setShowPreview}>
-        <SheetContent className="sm:max-w-2xl">
-          <SheetHeader>
-            <SheetTitle>{name}</SheetTitle>
-          </SheetHeader>
-          <div className="mt-6">
+      <Drawer open={showPreview} onOpenChange={setShowPreview}>
+        <DrawerContent className="h-[90vh]">
+          <DrawerHeader className="border-b">
+            <DrawerTitle>{name}</DrawerTitle>
+            <DrawerDescription>
+              {type === 'pdf' ? 'PDF Document' : 'Excel Sheet'}
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="p-4 h-full">
             {type === 'pdf' && url ? (
               <iframe
                 src={`https://docs.google.com/viewer?embedded=true&url=${encodeURIComponent(url)}`}
-                className="w-full h-[80vh]"
+                className="w-full h-[70vh]"
                 title="PDF Preview"
               />
             ) : (
-              <div className="flex items-center justify-center h-[80vh] bg-gray-100 rounded-lg">
+              <div className="flex items-center justify-center h-[70vh] bg-gray-100 rounded-lg">
                 <p className="text-gray-500">Preview not available for this file type</p>
               </div>
             )}
           </div>
-        </SheetContent>
-      </Sheet>
+          <DrawerFooter className="border-t">
+            <DrawerClose asChild>
+              <button className="w-full py-2 bg-gray-100 hover:bg-gray-200 rounded text-sm">
+                Close
+              </button>
+            </DrawerClose>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
