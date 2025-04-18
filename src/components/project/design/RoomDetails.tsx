@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +5,7 @@ import EmptyDesignState from "./EmptyDesignState";
 import { FileText, Upload, Image } from "lucide-react";
 import { FileUpload } from "@/components/ui/file-upload";
 import { PropertyImageCarousel } from "@/components/property/PropertyImageCarousel";
+import SelectPropertyPhotosDialog from "./SelectPropertyPhotosDialog";
 
 interface RoomDetailsProps {
   area: string;
@@ -61,14 +61,10 @@ const RoomDetails = ({
             ) : (
               <div className="space-y-4">
                 {propertyPhotos.length > 0 && (
-                  <Button 
-                    variant="outline" 
-                    className="w-full flex items-center justify-center gap-2"
-                    onClick={() => onSelectBeforePhotos?.([])}
-                  >
-                    <Image className="h-4 w-4" />
-                    Select from Property Photos
-                  </Button>
+                  <SelectPropertyPhotosDialog
+                    photos={propertyPhotos}
+                    onSelect={onSelectBeforePhotos!}
+                  />
                 )}
                 
                 <FileUpload
