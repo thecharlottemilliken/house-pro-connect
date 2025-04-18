@@ -14,6 +14,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
 
 import DesignAssetsCard from "@/components/project/design/DesignAssetsCard";
+import PinterestInspirationSection from "@/components/project/design/PinterestInspirationSection";
+import { PinterestBoard } from "@/components/project/design/PinterestConnector";
 
 const ProjectDesign = () => {
   const location = useLocation();
@@ -41,6 +43,7 @@ const ProjectDesign = () => {
     designAssets: [],
     renderingImages: [],
     inspirationImages: [],
+    pinterestBoards: [],
     beforePhotos: {},
     roomMeasurements: {}
   };
@@ -48,6 +51,7 @@ const ProjectDesign = () => {
   const hasDesigns = designPreferences.hasDesigns;
   const hasRenderings = designPreferences.renderingImages && designPreferences.renderingImages.length > 0;
   const hasInspiration = designPreferences.inspirationImages && designPreferences.inspirationImages.length > 0;
+  const pinterestBoards = designPreferences.pinterestBoards || [];
   
   const renovationAreas = (projectData.renovation_areas as unknown as RenovationArea[]) || [];
   const defaultTab = renovationAreas[0]?.area?.toLowerCase() || "kitchen";
@@ -56,11 +60,92 @@ const ProjectDesign = () => {
 
   const handleAddDesignPlans = () => console.log("Add design plans clicked");
   const handleAddDesigner = () => console.log("Add designer clicked");
-  const handleUploadAssets = () => console.log("Upload assets clicked");
   const handleAddRenderings = () => console.log("Add renderings clicked");
   const handleAddDrawings = () => console.log("Add drawings clicked");
   const handleAddBlueprints = () => console.log("Add blueprints clicked");
   const handleAddInspiration = () => console.log("Add inspiration clicked");
+
+  const handleAddInspirationImages = async (images: string[]) => {
+    try {
+      const updatedImages = [
+        ...(designPreferences.inspirationImages || []),
+        ...images
+      ];
+      
+      const updatedDesignPreferences: Record<string, unknown> = {
+        ...designPreferences,
+        inspirationImages: updatedImages
+      };
+      
+      const { error } = await supabase
+        .from('projects')
+        .update({ 
+          design_preferences: updatedDesignPreferences as Json
+        })
+        .eq('id', projectData.id);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: `Added ${images.length} inspiration images`,
+      });
+      
+      // Update local state for immediate UI update
+      designPreferences.inspirationImages = updatedImages;
+      
+    } catch (error: any) {
+      console.error('Error adding inspiration images:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add inspiration images",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleAddPinterestBoards = async (boards: PinterestBoard[]) => {
+    try {
+      const currentBoards = designPreferences.pinterestBoards || [];
+      
+      // Filter out duplicates based on board ID
+      const uniqueNewBoards = boards.filter(
+        newBoard => !currentBoards.some(existingBoard => existingBoard.id === newBoard.id)
+      );
+      
+      const updatedBoards = [...currentBoards, ...uniqueNewBoards];
+      
+      const updatedDesignPreferences: Record<string, unknown> = {
+        ...designPreferences,
+        pinterestBoards: updatedBoards
+      };
+      
+      const { error } = await supabase
+        .from('projects')
+        .update({ 
+          design_preferences: updatedDesignPreferences as Json
+        })
+        .eq('id', projectData.id);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: `Added ${uniqueNewBoards.length} Pinterest boards`,
+      });
+      
+      // Update local state for immediate UI update
+      designPreferences.pinterestBoards = updatedBoards;
+      
+    } catch (error: any) {
+      console.error('Error adding Pinterest boards:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add Pinterest boards",
+        variant: "destructive"
+      });
+    }
+  };
 
   const handleSelectBeforePhotos = async (area: string, selectedPhotos: string[]) => {
     try {
@@ -271,32 +356,12 @@ const ProjectDesign = () => {
               </div>
               
               <div className="mt-8 w-full">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold">Inspiration</h2>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="uppercase text-xs"
-                    onClick={() => console.log("Add inspiration clicked")}
-                  >
-                    Add Inspiration
-                  </Button>
-                </div>
-                
-                {!hasInspiration ? (
-                  <EmptyDesignState 
-                    type="inspiration" 
-                    onAction={() => console.log("Add inspiration clicked")}
-                  />
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {designPreferences.inspirationImages?.map((img, idx) => (
-                      <div key={idx} className="aspect-video bg-gray-100 rounded overflow-hidden">
-                        <img src={img} alt={`Inspiration ${idx + 1}`} className="w-full h-full object-cover" />
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <PinterestInspirationSection 
+                  inspirationImages={designPreferences.inspirationImages || []}
+                  pinterestBoards={pinterestBoards}
+                  onAddInspiration={handleAddInspirationImages}
+                  onAddPinterestBoards={handleAddPinterestBoards}
+                />
               </div>
 
               <div className="mt-8 w-full">
