@@ -38,12 +38,18 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
   currentRoom,
   roomId
 }) => {
-  const hasInspiration = inspirationImages.length > 0 || pinterestBoards.length > 0;
+  const [hasInspiration, setHasInspiration] = useState(false);
   const [selectedTab, setSelectedTab] = useState<'images' | 'boards'>('images');
   const [expandedBoard, setExpandedBoard] = useState<string | null>(null);
   const [boardToDelete, setBoardToDelete] = useState<PinterestBoard | null>(null);
   const [localPinterestBoards, setLocalPinterestBoards] = useState<PinterestBoard[]>(pinterestBoards);
 
+  // Update hasInspiration based on local state
+  useEffect(() => {
+    setHasInspiration(inspirationImages.length > 0 || localPinterestBoards.length > 0);
+  }, [inspirationImages, localPinterestBoards]);
+
+  // Sync with prop changes
   useEffect(() => {
     setLocalPinterestBoards(pinterestBoards);
   }, [pinterestBoards]);
@@ -80,12 +86,12 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
           imageUrl: pin.imageUrl,
           description: pin.description
         })) : undefined
-      }));
+      })) as unknown as Json;
       
       const { error: updateError } = await supabase
         .from('room_design_preferences')
         .update({ 
-          pinterest_boards: boardsForStorage as Json,
+          pinterest_boards: boardsForStorage,
           updated_at: new Date().toISOString()
         })
         .eq('room_id', roomId);
