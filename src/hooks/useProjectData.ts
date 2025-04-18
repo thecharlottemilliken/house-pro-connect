@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,7 +38,7 @@ interface Project {
   title: string;
   renovation_areas: RenovationArea[];
   created_at: string;
-  design_preferences?: DesignPreferences;
+  design_preferences: DesignPreferences;
 }
 
 export const useProjectData = (projectId?: string, initialData?: any) => {
@@ -74,12 +73,21 @@ export const useProjectData = (projectId?: string, initialData?: any) => {
         throw error;
       }
 
-      // Parse renovation_areas from JSON to ensure it's an array
+      // Parse renovation_areas from JSON
       const renovationAreas = Array.isArray(data.renovation_areas) 
         ? data.renovation_areas 
         : (typeof data.renovation_areas === 'string' 
             ? JSON.parse(data.renovation_areas) 
             : []);
+      
+      // Ensure design_preferences is properly typed
+      const designPreferences: DesignPreferences = {
+        hasDesigns: data.design_preferences?.hasDesigns || false,
+        designers: data.design_preferences?.designers || [],
+        designAssets: data.design_preferences?.designAssets || [],
+        renderingImages: data.design_preferences?.renderingImages || [],
+        inspirationImages: data.design_preferences?.inspirationImages || []
+      };
       
       // Create a properly typed Project object
       const typedProject: Project = {
@@ -88,13 +96,7 @@ export const useProjectData = (projectId?: string, initialData?: any) => {
         title: data.title,
         renovation_areas: renovationAreas,
         created_at: data.created_at,
-        design_preferences: data.design_preferences || {
-          hasDesigns: false,
-          designers: [],
-          designAssets: [],
-          renderingImages: [],
-          inspirationImages: []
-        }
+        design_preferences: designPreferences
       };
       
       setProjectData(typedProject);
