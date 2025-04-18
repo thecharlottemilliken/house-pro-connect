@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import PinterestConnector from "./PinterestConnector";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import EmptyDesignState from "./EmptyDesignState";
 import { type PinterestBoard } from "@/types/pinterest";
