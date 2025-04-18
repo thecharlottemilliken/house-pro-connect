@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import MeasuringWizard from './MeasuringWizard';
 import { supabase } from "@/integrations/supabase/client";
 import { useParams } from 'react-router-dom';
+import { Json } from "@/integrations/supabase/types";
 
 interface RoomMeasurementsCardProps {
   area: string;
@@ -40,11 +42,22 @@ const RoomMeasurementsCard = ({
 
       if (fetchError) throw fetchError;
 
-      const currentDesignPreferences = currentProject.design_preferences || {};
+      // Handle the design_preferences as an object, accounting for it possibly being null or another type
+      const designPreferences = typeof currentProject.design_preferences === 'object' && currentProject.design_preferences !== null 
+        ? currentProject.design_preferences 
+        : {};
+      
+      // Handle roomMeasurements, ensuring we're working with an object
+      const roomMeasurements = typeof designPreferences === 'object' && 
+        'roomMeasurements' in designPreferences && 
+        typeof designPreferences.roomMeasurements === 'object' 
+          ? designPreferences.roomMeasurements 
+          : {};
+
       const updatedDesignPreferences = {
-        ...currentDesignPreferences,
+        ...designPreferences,
         roomMeasurements: {
-          ...(currentDesignPreferences.roomMeasurements || {}),
+          ...roomMeasurements,
           [area.toLowerCase()]: newMeasurements
         }
       };
@@ -52,7 +65,7 @@ const RoomMeasurementsCard = ({
       const { error: updateError } = await supabase
         .from('projects')
         .update({
-          design_preferences: updatedDesignPreferences
+          design_preferences: updatedDesignPreferences as Json
         })
         .eq('id', projectId);
 

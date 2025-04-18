@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
@@ -37,7 +38,7 @@ export interface ProjectData {
       unit: 'ft' | 'm';
       additionalNotes?: string;
     }>;
-  };
+  } | null;
   renovation_areas: RenovationArea[];
   construction_preferences: Json;
   management_preferences: Json;
@@ -122,7 +123,7 @@ export const useProjectData = (projectId: string | undefined, locationState: any
             beforePhotos: {},
             roomMeasurements: {}
           },
-          renovation_areas: (project.renovation_areas as RenovationArea[]) || [],
+          renovation_areas: (project.renovation_areas as unknown as RenovationArea[]) || [],
           construction_preferences: project.construction_preferences || {},
           management_preferences: project.management_preferences || {},
           project_preferences: project.project_preferences || {},
