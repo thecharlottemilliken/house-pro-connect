@@ -205,15 +205,18 @@ const ProjectDesign = () => {
         throw new Error("Room ID is required to add Pinterest boards");
       }
       
+      console.log(`Attempting to add ${boards.length} Pinterest boards for ${roomName}`);
+      
       // Get existing boards from the database
       const { data: currentData, error: fetchError } = await supabase
         .from('room_design_preferences')
         .select('pinterest_boards')
         .eq('room_id', roomId)
-        .single();
+        .maybeSingle();
       
       if (fetchError && fetchError.code !== 'PGRST116') {
         console.error('Error fetching existing Pinterest boards:', fetchError);
+        throw fetchError;
       }
       
       // Important: We need to merge the new boards with existing ones
@@ -221,16 +224,23 @@ const ProjectDesign = () => {
       
       if (currentData?.pinterest_boards) {
         existingBoards = currentData.pinterest_boards as unknown as PinterestBoard[];
+        console.log(`Found ${existingBoards.length} existing Pinterest boards`);
       }
       
       // Create a Set of existing board IDs to avoid duplicates
       const existingBoardIds = new Set(existingBoards.map(board => board.id));
+      console.log('Existing board IDs:', Array.from(existingBoardIds));
       
       // Only add boards that aren't already in the database
       const uniqueNewBoards = boards.filter(board => !existingBoardIds.has(board.id));
+      console.log(`${uniqueNewBoards.length} new unique Pinterest boards to add`);
+      
+      // Log IDs of new boards being added
+      uniqueNewBoards.forEach(board => console.log('Adding new board ID:', board.id));
       
       // Combine existing and new unique boards
       const combinedBoards = [...existingBoards, ...uniqueNewBoards];
+      console.log(`Total of ${combinedBoards.length} Pinterest boards after merging`);
       
       // Convert PinterestBoard[] to a format compatible with Supabase's Json type
       const boardsForStorage = combinedBoards.map(board => ({
@@ -248,6 +258,7 @@ const ProjectDesign = () => {
       // Check if we need to create or update
       let response;
       if (!currentData) {
+        console.log('Creating new room_design_preferences record');
         // Create new record if it doesn't exist
         response = await supabase
           .from('room_design_preferences')
@@ -259,6 +270,7 @@ const ProjectDesign = () => {
             updated_at: new Date().toISOString()
           });
       } else {
+        console.log('Updating existing room_design_preferences record');
         // Update existing record
         response = await supabase
           .from('room_design_preferences')
@@ -269,7 +281,10 @@ const ProjectDesign = () => {
           .eq('room_id', roomId);
       }
       
-      if (response.error) throw response.error;
+      if (response.error) {
+        console.error('Error saving Pinterest boards to database:', response.error);
+        throw response.error;
+      }
       
       // Update local state with combined boards
       setRoomPreferences(prev => ({
@@ -280,10 +295,19 @@ const ProjectDesign = () => {
         }
       }));
       
-      toast({
-        title: "Success",
-        description: `Added ${uniqueNewBoards.length} new Pinterest board(s) for ${roomName}`,
-      });
+      // Only show toast for successful additions
+      if (uniqueNewBoards.length > 0) {
+        toast({
+          title: "Success",
+          description: `Added ${uniqueNewBoards.length} new Pinterest board${uniqueNewBoards.length > 1 ? 's' : ''} for ${roomName}`,
+        });
+      } else {
+        toast({
+          title: "Information",
+          description: "No new Pinterest boards were added (all boards already exist)",
+          variant: "default"
+        });
+      }
       
     } catch (error: any) {
       console.error('Error adding Pinterest boards:', error);

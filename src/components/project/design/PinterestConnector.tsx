@@ -67,11 +67,12 @@ const PinterestConnector: React.FC<PinterestConnectorProps> = ({ onBoardsSelecte
       for (const url of nonEmptyUrls) {
         try {
           // Validate Pinterest board URL format
-          const pinterestUrlRegex = /^https?:\/\/(?:www\.)?pinterest\.(?:\w+)\/([^\/]+)\/([^\/]+)/;
+          const pinterestUrlRegex = /^https?:\/\/(?:www\.)?pinterest\.(?:\w+)\/([^\/]+)\/([^\/]+)\/?/;
           const match = url.match(pinterestUrlRegex);
 
           if (!match) {
             failedUrls.push(url);
+            console.error('Invalid Pinterest board URL format:', url);
             continue;
           }
 
@@ -100,15 +101,13 @@ const PinterestConnector: React.FC<PinterestConnectorProps> = ({ onBoardsSelecte
         }
       }
 
-      if (failedUrls.length > 0) {
+      if (boardsData.length === 0) {
         toast({
-          title: "Warning",
-          description: `Could not process ${failedUrls.length} URL${failedUrls.length > 1 ? 's' : ''}`,
-          variant: "default",
+          title: "Error",
+          description: "Could not add any Pinterest boards with the provided URLs",
+          variant: "destructive",
         });
-      }
-
-      if (boardsData.length > 0) {
+      } else {
         onBoardsSelected(boardsData);
         setIsDialogOpen(false);
         setBoardUrls(['']);
@@ -117,11 +116,13 @@ const PinterestConnector: React.FC<PinterestConnectorProps> = ({ onBoardsSelecte
           title: "Success",
           description: `Added ${boardsData.length} Pinterest board${boardsData.length > 1 ? 's' : ''}`,
         });
-      } else {
+      }
+
+      if (failedUrls.length > 0) {
         toast({
-          title: "Error",
-          description: "Could not add any Pinterest boards with the provided URLs",
-          variant: "destructive",
+          title: "Warning",
+          description: `Could not process ${failedUrls.length} URL${failedUrls.length > 1 ? 's' : ''}`,
+          variant: "default",
         });
       }
     } catch (error) {

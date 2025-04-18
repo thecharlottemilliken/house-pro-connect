@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import PinterestConnector from "./PinterestConnector";
 import { Button } from "@/components/ui/button";
@@ -45,15 +46,12 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
 
   useEffect(() => {
     console.log("Current Pinterest boards:", pinterestBoards);
+    setLocalPinterestBoards(pinterestBoards);
   }, [pinterestBoards]);
 
   useEffect(() => {
     setHasInspiration(inspirationImages.length > 0 || localPinterestBoards.length > 0);
   }, [inspirationImages, localPinterestBoards]);
-
-  useEffect(() => {
-    setLocalPinterestBoards(pinterestBoards);
-  }, [pinterestBoards]);
   
   const handlePinterestBoardsSelected = (boards: PinterestBoard[]) => {
     if (!roomId) {
@@ -98,7 +96,6 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
       
       if (updateError) throw updateError;
       
-      onAddPinterestBoards(updatedBoards, currentRoom, roomId);
       setLocalPinterestBoards(updatedBoards);
       setBoardToDelete(null);
       
