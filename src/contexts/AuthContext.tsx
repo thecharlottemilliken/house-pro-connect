@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
@@ -14,11 +15,6 @@ interface AuthContextType {
   signOut: () => Promise<{ error: any | null }>;
   updateProfile: (data: any) => Promise<{ error: any | null }>;
   refreshProfile: () => Promise<void>;
-  loading: boolean;
-  resetPassword: (email: string) => Promise<{ data?: any, error: any | null }>;
-  updateUserProfile: (data: any) => Promise<{ error: any | null }>;
-  updateEmail: (email: string) => Promise<{ data?: any, error: any | null }>;
-  updatePassword: (password: string) => Promise<{ data?: any, error: any | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -213,47 +209,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const resetPassword = async (email: string) => {
-    try {
-      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + '/update-password',
-      });
-      return { data, error };
-    } catch (error: any) {
-      return { error };
-    }
-  };
-
-  const updateUserProfile = async (data: any) => {
-    return updateProfile(data);
-  };
-
-  const updateEmail = async (email: string) => {
-    try {
-      if (!user) return { error: new Error('No user logged in') };
-      
-      const { data, error } = await supabase.auth.updateUser({ email });
-      
-      if (error) return { error };
-      return { data, error: null };
-    } catch (error: any) {
-      return { error };
-    }
-  };
-
-  const updatePassword = async (password: string) => {
-    try {
-      if (!user) return { error: new Error('No user logged in') };
-      
-      const { data, error } = await supabase.auth.updateUser({ password });
-      
-      if (error) return { error };
-      return { data, error: null };
-    } catch (error: any) {
-      return { error };
-    }
-  };
-
   return (
     <AuthContext.Provider
       value={{
@@ -261,16 +216,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         profile,
         isLoading,
-        loading: isLoading,
         signUp,
         signIn,
         signOut,
         updateProfile,
         refreshProfile,
-        resetPassword,
-        updateUserProfile,
-        updateEmail,
-        updatePassword,
       }}
     >
       {children}

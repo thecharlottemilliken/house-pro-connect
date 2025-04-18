@@ -1,149 +1,160 @@
 
 import React, { useState } from "react";
-import { useParams, useLocation } from "react-router-dom";
-import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
+import { useParams } from "react-router-dom";
+import { Search, Filter } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useProjectData } from "@/hooks/useProjectData";
-import ProjectSidebar from "@/components/project/ProjectSidebar";
 import ActivityItem from "@/components/project/activity/ActivityItem";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import TeamMemberFilter from "@/components/project/activity/TeamMemberFilter";
-
-// Mock data for activity items
-const activityItems = [
-  {
-    id: 1,
-    user: "Jane Cooper",
-    userImage: "https://randomuser.me/api/portraits/women/10.jpg",
-    action: "added a new design document",
-    item: "Kitchen Cabinet Layout",
-    timestamp: "2023-04-15T14:30:00",
-  },
-  {
-    id: 2,
-    user: "Robert Fox",
-    userImage: "https://randomuser.me/api/portraits/men/4.jpg",
-    action: "updated project timeline",
-    item: "Demolition Phase",
-    timestamp: "2023-04-14T10:15:00",
-  },
-  {
-    id: 3,
-    user: "Leslie Alexander",
-    userImage: "https://randomuser.me/api/portraits/women/4.jpg",
-    action: "uploaded new photos",
-    item: "Bathroom Tile Options",
-    timestamp: "2023-04-13T16:45:00",
-  },
-  {
-    id: 4,
-    user: "Cody Fisher",
-    userImage: "https://randomuser.me/api/portraits/men/7.jpg",
-    action: "added a comment",
-    item: "Floor Plan Review",
-    timestamp: "2023-04-12T09:20:00",
-  },
-  {
-    id: 5,
-    user: "Jenny Wilson",
-    userImage: "https://randomuser.me/api/portraits/women/3.jpg",
-    action: "created a task",
-    item: "Select Kitchen Appliances",
-    timestamp: "2023-04-11T13:10:00",
-  },
-];
+import ProjectSidebar from "@/components/project/ProjectSidebar";
+import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 
 const ProjectActivityHistory = () => {
-  const location = useLocation();
-  const params = useParams();
-  const isMobile = useIsMobile();
-  const [filter, setFilter] = useState("all");
-  const [selectedTeamMember, setSelectedTeamMember] = useState<string | null>(null);
+  const { projectId } = useParams<{ projectId: string }>();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [teamMemberFilter, setTeamMemberFilter] = useState("all");
+  const [sortOrder, setSortOrder] = useState("recent");
+
+  // Mock activity data
+  const activities = [
+    {
+      id: 1,
+      title: "Kitchen Remodeling Consultation",
+      role: "Designer",
+      personName: "Sophia Jackson",
+      date: "February 10, 10:00 PM",
+    },
+    {
+      id: 2,
+      title: "Bathroom Tile Installation",
+      role: "Plumber",
+      personName: "Gary Fisher",
+      date: "February 5, 12:00 PM",
+    },
+    {
+      id: 3,
+      title: "Deck Building Assessment",
+      role: "Landscaper",
+      personName: "Sarah Lee",
+      date: "February 1, 8:15 AM",
+    },
+    {
+      id: 4,
+      title: "Roof Repair Evaluation",
+      role: "Electrician",
+      personName: "Doug Martin",
+      date: "January 30, 3:00 PM",
+    },
+    {
+      id: 5,
+      title: "Interior Painting Estimate",
+      role: "Carpenter",
+      personName: "Mary Johnson",
+      date: "January 25, 1:45 PM",
+    },
+    {
+      id: 6,
+      title: "Drywall Installation Review",
+      role: "Coach",
+      personName: "Don Smith",
+      date: "January 15, 5:30 PM",
+    }
+  ];
   
-  const { projectData, propertyDetails, isLoading } = useProjectData(
-    params.projectId,
-    location.state
-  );
-
-  if (isLoading || !propertyDetails) {
-    return (
-      <div className="min-h-screen flex flex-col bg-white">
-        <DashboardNavbar />
-        <div className="flex-1 p-4 md:p-10">
-          <div className="text-center py-10">Loading project details...</div>
-        </div>
-      </div>
-    );
-  }
-
-  const projectId = projectData?.id || params.projectId || "";
-  const projectTitle = projectData?.title || "Activity History";
-
-  // Filter activity items based on selection
-  const filteredActivities = activityItems.filter(item => {
-    if (filter === "all") return true;
-    if (filter === "documents") return item.action.includes("document");
-    if (filter === "comments") return item.action.includes("comment");
-    if (filter === "uploads") return item.action.includes("upload");
-    if (filter === "tasks") return item.action.includes("task");
-    return true;
-  }).filter(item => {
-    if (!selectedTeamMember) return true;
-    return item.user === selectedTeamMember;
+  // Filter activities based on search query and team member filter
+  const filteredActivities = activities.filter(activity => {
+    const matchesSearch = searchQuery === "" || 
+      activity.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      activity.personName.toLowerCase().includes(searchQuery.toLowerCase());
+      
+    const matchesTeamFilter = teamMemberFilter === "all" || 
+      activity.role.toLowerCase() === teamMemberFilter.toLowerCase();
+      
+    return matchesSearch && matchesTeamFilter;
   });
 
   return (
-    <div className="flex flex-col bg-white min-h-screen">
+    <div className="flex flex-col min-h-screen bg-gray-50">
       <DashboardNavbar />
       
-      <SidebarProvider defaultOpen={!isMobile}>
-        <div className="flex flex-1 h-[calc(100vh-64px)] w-full">
-          <ProjectSidebar 
-            projectId={projectId} 
-            projectTitle={projectTitle}
-            activePage="activity"
-          />
+      <div className="flex flex-1">
+        <SidebarProvider defaultOpen={true}>
+          <ProjectSidebar projectId={projectId || ""} activePage="activity" />
           
-          <div className="flex-1 p-6 overflow-y-auto">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-              <h1 className="text-2xl font-bold mb-4 md:mb-0">Activity History</h1>
+          <main className="flex-1 overflow-y-auto">
+            <div className="container max-w-5xl mx-auto px-4 py-8">
+              <h1 className="text-3xl font-bold mb-6 text-gray-900">Activity History</h1>
               
-              <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
-                <TeamMemberFilter 
-                  selectedMember={selectedTeamMember}
-                  onSelectMember={setSelectedTeamMember}
-                />
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                <div className="flex flex-1 flex-col md:flex-row gap-2 w-full md:w-auto">
+                  <div className="relative flex-1 w-full md:w-auto">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Search"
+                      className="pl-10 w-full"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="w-full md:w-auto">
+                    <TeamMemberFilter 
+                      value={teamMemberFilter} 
+                      onChange={setTeamMemberFilter}
+                    />
+                  </div>
+                  
+                  <Button variant="outline" size="icon" className="hidden md:flex">
+                    <Filter className="h-4 w-4" />
+                    <span className="sr-only">Filter</span>
+                  </Button>
+                </div>
                 
-                <Select value={filter} onValueChange={setFilter}>
-                  <SelectTrigger className="w-full md:w-[180px]">
-                    <SelectValue placeholder="Filter activities" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Activities</SelectItem>
-                    <SelectItem value="documents">Documents</SelectItem>
-                    <SelectItem value="comments">Comments</SelectItem>
-                    <SelectItem value="uploads">Uploads</SelectItem>
-                    <SelectItem value="tasks">Tasks</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center gap-2 w-full md:w-auto">
+                  <span className="text-sm text-gray-500 whitespace-nowrap">Sort by</span>
+                  <Select value={sortOrder} onValueChange={setSortOrder}>
+                    <SelectTrigger className="w-full md:w-[150px]">
+                      <SelectValue placeholder="Recent" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="recent">Recent</SelectItem>
+                      <SelectItem value="oldest">Oldest</SelectItem>
+                      <SelectItem value="a-z">A-Z</SelectItem>
+                      <SelectItem value="z-a">Z-A</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-md shadow">
+                {filteredActivities.length > 0 ? (
+                  filteredActivities.map((activity) => (
+                    <ActivityItem
+                      key={activity.id}
+                      title={activity.title}
+                      role={activity.role}
+                      personName={activity.personName}
+                      date={activity.date}
+                    />
+                  ))
+                ) : (
+                  <div className="py-10 text-center text-gray-500">
+                    No activities found.
+                  </div>
+                )}
               </div>
             </div>
-            
-            <div className="space-y-4">
-              {filteredActivities.length > 0 ? (
-                filteredActivities.map(item => (
-                  <ActivityItem key={item.id} item={item} />
-                ))
-              ) : (
-                <div className="text-center py-10 bg-gray-50 rounded-lg">
-                  <p className="text-gray-500">No activity items match your filters</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </SidebarProvider>
+          </main>
+        </SidebarProvider>
+      </div>
     </div>
   );
 };
