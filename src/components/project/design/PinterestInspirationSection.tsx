@@ -52,7 +52,13 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
     try {
       console.log("Removing board:", boardToRemove);
       
-      // Get current boards from state and filter out the one to remove
+      // Get the project ID from the URL
+      const projectId = window.location.pathname.split('/').pop();
+      if (!projectId) {
+        throw new Error("Could not determine project ID");
+      }
+      
+      // Get current boards from props and filter out the one to remove
       const updatedBoards = pinterestBoards.filter(board => board.id !== boardToRemove.id);
       
       // Get pin image URLs from the board being removed
@@ -61,11 +67,11 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
       // Remove those pin URLs from inspiration images
       const updatedInspiration = inspirationImages.filter(img => !boardPinUrls.includes(img));
       
-      // Update the Supabase database with the changes
+      // Fetch current project data first
       const { data: projectData, error: fetchError } = await supabase
         .from('projects')
         .select('design_preferences')
-        .eq('id', new URL(window.location.href).pathname.split('/').pop())
+        .eq('id', projectId)
         .single();
       
       if (fetchError) throw fetchError;
@@ -77,15 +83,17 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
         [key: string]: any;
       } || {};
       
+      // Update design preferences with new boards and images
       designPreferences.pinterestBoards = updatedBoards;
       designPreferences.inspirationImages = updatedInspiration;
       
+      // Save updated design preferences to database
       const { error: updateError } = await supabase
         .from('projects')
         .update({ 
           design_preferences: designPreferences 
         })
-        .eq('id', new URL(window.location.href).pathname.split('/').pop());
+        .eq('id', projectId);
       
       if (updateError) throw updateError;
       
@@ -98,7 +106,7 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
       
       toast({
         title: "Board Removed",
-        description: "Pinterest board and related pins have been removed successfully",
+        description: `Pinterest board "${boardToRemove.name}" has been removed successfully`,
       });
     } catch (error) {
       console.error("Error removing board:", error);
