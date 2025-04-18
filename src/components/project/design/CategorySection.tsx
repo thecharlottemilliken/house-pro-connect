@@ -9,7 +9,7 @@ import { FileUpload } from "@/components/ui/file-upload";
 interface CategorySectionProps {
   title: string;
   files?: { name: string; size: string; type: 'pdf' | 'xls' }[];
-  onUpload: () => void;
+  onUpload: (urls: string[]) => void;
 }
 
 const CategorySection = ({ title, files = [], onUpload }: CategorySectionProps) => {
@@ -56,7 +56,7 @@ const CategorySection = ({ title, files = [], onUpload }: CategorySectionProps) 
             accept={title.toLowerCase() === 'blueprints' ? "application/pdf" : "application/pdf,application/vnd.ms-excel"}
             multiple={false}
             onUploadComplete={(urls) => {
-              onUpload();
+              onUpload(urls);
               setShowUploadDialog(false);
             }}
             label={`${title} File`}

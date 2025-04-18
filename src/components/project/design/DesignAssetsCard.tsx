@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from "@/components/ui/dialog";
@@ -131,6 +132,18 @@ const DesignAssetsCard = ({
     }
   };
 
+  const handleAddRenderings = (urls: string[]) => {
+    // Handle rendering uploads when implemented
+    console.log("Rendering URLs:", urls);
+    if (onAddRenderings) onAddRenderings();
+  };
+
+  const handleAddDrawings = (urls: string[]) => {
+    // Handle drawings uploads when implemented
+    console.log("Drawing URLs:", urls);
+    if (onAddDrawings) onAddDrawings();
+  };
+
   return (
     <Card>
       <CardContent className="p-6">
@@ -149,13 +162,13 @@ const DesignAssetsCard = ({
             size: "1.5MB",
             type: 'pdf'
           }))}
-          onUpload={onAddRenderings}
+          onUpload={handleAddRenderings}
         />
 
         <CategorySection
           title="Drawings"
           files={[]}
-          onUpload={onAddDrawings}
+          onUpload={handleAddDrawings}
         />
       </CardContent>
     </Card>
