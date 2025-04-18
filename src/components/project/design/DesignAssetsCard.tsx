@@ -54,11 +54,17 @@ const DesignAssetsCard = ({
 
           {propertyBlueprint ? (
             <Card className="overflow-hidden">
-              <img 
-                src={propertyBlueprint} 
-                alt="Property Blueprint"
-                className="w-full h-48 object-cover"
-              />
+              <div className="w-full h-48 bg-gray-100">
+                <img 
+                  src={propertyBlueprint} 
+                  alt="Property Blueprint"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    console.error("Blueprint image failed to load:", propertyBlueprint);
+                    e.currentTarget.src = "/placeholder.svg";
+                  }}
+                />
+              </div>
               <CardContent className="p-4">
                 <h4 className="font-medium text-sm mb-1">Property Blueprint</h4>
                 <p className="text-sm text-gray-500">Original property blueprint</p>

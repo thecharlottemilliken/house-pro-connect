@@ -32,6 +32,10 @@ const ProjectDesign = () => {
     );
   }
 
+  // For debugging purposes
+  console.log("Property details:", propertyDetails);
+  console.log("Blueprint URL:", propertyDetails?.blueprint_url);
+
   // Type assertion to handle the JSON type
   const designPreferences = (projectData.design_preferences as unknown as DesignPreferences) || {
     hasDesigns: false,
@@ -195,6 +199,13 @@ const ProjectDesign = () => {
                 Project Design
               </h1>
               
+              {/* Debug info - will be removed in production */}
+              {propertyDetails?.blueprint_url && (
+                <div className="p-2 mb-4 bg-gray-100 rounded text-xs">
+                  <p>Debug: Blueprint URL: {propertyDetails.blueprint_url}</p>
+                </div>
+              )}
+              
               <div className="mb-8">
                 <h2 className="text-lg font-medium mb-3">Select a room</h2>
                 <Tabs defaultValue={defaultTab} className="w-full">
@@ -246,14 +257,14 @@ const ProjectDesign = () => {
                                 onAddRenderings={handleAddRenderings}
                                 onAddDrawings={handleAddDrawings}
                                 onAddBlueprints={handleAddBlueprints}
-                                propertyBlueprint={propertyDetails?.blueprint_url}
+                                propertyBlueprint={propertyDetails?.blueprint_url || null}
                               />
                             </div>
                           </div>
                         ) : (
                           <EmptyDesignState 
                             type="no-designs" 
-                            onAction={() => console.log("Add design plans clicked")}
+                            onAction={handleAddDesignPlans}
                           />
                         )}
                       </TabsContent>
