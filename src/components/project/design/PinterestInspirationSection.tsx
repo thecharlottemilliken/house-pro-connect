@@ -105,6 +105,54 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
     }
   };
 
+  const handleDeleteImage = async (imageToDelete: string) => {
+    try {
+      const urlPath = window.location.pathname;
+      const projectId = urlPath.substring(urlPath.lastIndexOf('/') + 1);
+      
+      if (!projectId) {
+        throw new Error("Could not determine project ID");
+      }
+      
+      const updatedImages = inspirationImages.filter(img => img !== imageToDelete);
+      
+      const { data: projectData, error: fetchError } = await supabase
+        .from('projects')
+        .select('design_preferences')
+        .eq('id', projectId)
+        .single();
+      
+      if (fetchError) throw fetchError;
+      
+      const designPreferences = projectData.design_preferences 
+        ? JSON.parse(JSON.stringify(projectData.design_preferences)) 
+        : {};
+      
+      designPreferences.inspirationImages = updatedImages;
+      
+      const { error: updateError } = await supabase
+        .from('projects')
+        .update({ design_preferences: designPreferences })
+        .eq('id', projectId);
+      
+      if (updateError) throw updateError;
+      
+      onAddInspiration(updatedImages);
+      
+      toast({
+        title: "Image Removed",
+        description: "The inspiration image has been deleted successfully",
+      });
+    } catch (error) {
+      console.error("Error removing inspiration image:", error);
+      toast({
+        title: "Error Removing Image",
+        description: "Failed to remove inspiration image. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const openPinterestBoard = (url: string) => {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
@@ -115,7 +163,10 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
 
   const renderTabContent = () => {
     if (selectedTab === 'images') {
-      return <InspirationImagesGrid images={inspirationImages} />;
+      return <InspirationImagesGrid 
+        images={inspirationImages} 
+        onDeleteImage={handleDeleteImage}
+      />;
     }
 
     return (
