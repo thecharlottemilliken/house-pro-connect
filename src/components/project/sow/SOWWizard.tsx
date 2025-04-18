@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -46,7 +47,7 @@ export function SOWWizard() {
       <PreviewSidebar projectData={projectData} propertyDetails={propertyDetails} />
       
       <div className="flex-1 overflow-auto">
-        <div className="px-0 py-0">
+        <div className="px-6 py-6">
           <div className="max-w-6xl mx-auto">
             <div className="mb-8">
               <div className="flex items-center justify-between mb-6">
