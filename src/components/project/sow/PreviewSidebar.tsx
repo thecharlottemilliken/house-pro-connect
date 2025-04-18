@@ -23,6 +23,8 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
   const [isPreviewLoading, setIsPreviewLoading] = React.useState(false);
   
   const designPreferences = projectData?.design_preferences || {};
+  
+  // Extract data with better fallbacks and add more detailed logging
   const renderingImages = designPreferences.renderingImages || [];
   const beforePhotos = designPreferences.beforePhotos || {};
   const blueprintUrl = propertyDetails?.blueprint_url;
@@ -30,12 +32,12 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
   const drawings = designPreferences.drawings || [];
 
   // For debugging
-  console.log("Design Preferences:", designPreferences);
-  console.log("Renderings:", renderingImages);
-  console.log("Before Photos:", beforePhotos);
-  console.log("Inspiration Images:", inspirationImages);
-  console.log("Drawings:", drawings);
-  console.log("Blueprint URL:", blueprintUrl);
+  console.info("Design Preferences:", designPreferences);
+  console.info("Renderings:", renderingImages);
+  console.info("Before Photos:", beforePhotos);
+  console.info("Inspiration Images:", inspirationImages);
+  console.info("Drawings:", drawings);
+  console.info("Blueprint URL:", blueprintUrl);
 
   const handlePreview = (url: string) => {
     setIsPreviewLoading(true);
@@ -68,17 +70,27 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
           })) : []
         );
       case 'drawings':
-        return Array.isArray(drawings) ? drawings.map((url: string, index: number) => ({
-          name: `Drawing ${index + 1}`,
-          room: 'Design',
-          url
-        })) : [];
+        // Add more detailed logging for drawings
+        console.info("Processing drawings:", drawings);
+        return Array.isArray(drawings) ? drawings.map((url: string, index: number) => {
+          console.info(`Drawing ${index}:`, url);
+          return {
+            name: `Drawing ${index + 1}`,
+            room: 'Design',
+            url
+          };
+        }) : [];
       case 'renderings':
-        return Array.isArray(renderingImages) ? renderingImages.map((url: string, index: number) => ({
-          name: `Rendering ${index + 1}`,
-          room: 'Design',
-          url
-        })) : [];
+        // Add more detailed logging for renderings
+        console.info("Processing renderings:", renderingImages);
+        return Array.isArray(renderingImages) ? renderingImages.map((url: string, index: number) => {
+          console.info(`Rendering ${index}:`, url);
+          return {
+            name: `Rendering ${index + 1}`,
+            room: 'Design',
+            url
+          };
+        }) : [];
       case 'blueprints':
         return blueprintUrl ? [{
           name: 'Blueprint',
@@ -133,7 +145,7 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
           
           <h2 className="text-lg font-semibold mb-4">Project Assets</h2>
           <Select value={selectedType} onValueChange={(value: AssetType) => setSelectedType(value)}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full bg-white">
               <SelectValue placeholder="Select asset type" />
             </SelectTrigger>
             <SelectContent className="bg-white">
@@ -148,7 +160,7 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
 
         <div className="flex-1 overflow-auto">
           <div className="p-4">
-            <h3 className="text-sm font-medium text-gray-900 mb-2">Files</h3>
+            <h3 className="text-sm font-medium text-gray-900 mb-2">Files {selectedType === 'renderings' && '(Renderings)'} {selectedType === 'drawings' && '(Drawings)'}</h3>
             <div className="space-y-1">
               {filteredAssets.map((asset, index) => (
                 <FileListItem
