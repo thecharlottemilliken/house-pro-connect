@@ -1,10 +1,11 @@
 
 import React, { useState } from "react";
-import PinterestConnector, { PinterestBoard } from "./PinterestConnector";
+import PinterestConnector from "./PinterestConnector";
 import { Button } from "@/components/ui/button";
 import { Plus, ExternalLink } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import EmptyDesignState from "./EmptyDesignState";
+import { PinterestBoard } from "@/hooks/useProjectData";
 
 interface PinterestInspirationSectionProps {
   inspirationImages: string[];

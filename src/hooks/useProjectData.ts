@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
@@ -30,6 +31,7 @@ export interface ProjectData {
     designAssets?: Array<{ name: string; url: string; }>;
     renderingImages?: string[];
     inspirationImages?: string[];
+    pinterestBoards?: PinterestBoard[];
     beforePhotos?: Record<string, string[]>;
     roomMeasurements?: Record<string, {
       length?: number;
@@ -52,6 +54,7 @@ export interface DesignPreferences {
   designAssets?: Array<{ name: string; url: string; }>;
   renderingImages?: string[];
   inspirationImages?: string[];
+  pinterestBoards?: PinterestBoard[];
   beforePhotos?: Record<string, string[]>;
   roomMeasurements?: Record<string, {
     length?: number;
@@ -60,6 +63,13 @@ export interface DesignPreferences {
     unit: 'ft' | 'm';
     additionalNotes?: string;
   }>;
+}
+
+export interface PinterestBoard {
+  id: string;
+  name: string;
+  url: string;
+  imageUrl?: string;
 }
 
 export interface RenovationArea {

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
@@ -12,16 +11,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { PinterestBoard } from "@/hooks/useProjectData";
 
 interface PinterestConnectorProps {
   onBoardsSelected: (boards: PinterestBoard[]) => void;
-}
-
-export interface PinterestBoard {
-  id: string;
-  name: string;
-  url: string;
-  imageUrl?: string;
 }
 
 const PinterestConnector: React.FC<PinterestConnectorProps> = ({ onBoardsSelected }) => {
@@ -31,12 +24,9 @@ const PinterestConnector: React.FC<PinterestConnectorProps> = ({ onBoardsSelecte
   const [availableBoards, setAvailableBoards] = useState<PinterestBoard[]>([]);
   const [selectedBoards, setSelectedBoards] = useState<Record<string, boolean>>({});
 
-  // This function would connect to Pinterest API in a real implementation
   const handleConnect = async () => {
     setIsLoading(true);
     try {
-      // Sample implementation with mock data
-      // In a real app, this would connect to Pinterest API
       if (!boardUrl) {
         toast({
           title: "Error",
@@ -46,11 +36,9 @@ const PinterestConnector: React.FC<PinterestConnectorProps> = ({ onBoardsSelecte
         return;
       }
 
-      // Extract board ID from URL for demo purposes
       const boardId = boardUrl.split("/").filter(Boolean).pop() || "";
       const boardName = boardId.replace(/-/g, " ");
       
-      // Mock data - in reality, this would come from Pinterest API
       const mockedBoard: PinterestBoard = {
         id: boardId,
         name: boardName,
