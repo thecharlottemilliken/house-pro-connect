@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
@@ -14,6 +13,7 @@ export interface PropertyDetails {
   zip_code: string;
   home_photos: string[];
   image_url: string;
+  blueprint_url?: string | null;
 }
 
 export interface ProjectData {
@@ -90,7 +90,6 @@ export const useProjectData = (projectId: string | undefined, locationState: any
           throw new Error("Project ID is undefined");
         }
 
-        // Fetch project data
         const { data: project, error: projectError } = await supabase
           .from('projects')
           .select('*')
@@ -105,14 +104,11 @@ export const useProjectData = (projectId: string | undefined, locationState: any
           throw new Error("Project not found");
         }
 
-        // Map database fields to ProjectData interface with proper type assertions
         const projectDataMapped: ProjectData = {
           id: project.id,
           created_at: project.created_at,
           title: project.title,
-          // Since 'description' might not exist in the database schema, we need to handle it safely
           description: (project as any).description || null,
-          // Use state field for status and provide a default if not present
           status: project.state || 'active',
           property_id: project.property_id,
           user_id: project.user_id,
@@ -134,7 +130,6 @@ export const useProjectData = (projectId: string | undefined, locationState: any
 
         setProjectData(projectDataMapped);
 
-        // Fetch property details
         const { data: property, error: propertyError } = await supabase
           .from('properties')
           .select('*')
@@ -149,7 +144,6 @@ export const useProjectData = (projectId: string | undefined, locationState: any
           throw new Error("Property not found");
         }
 
-        // Map database fields to PropertyDetails interface
         const propertyDetailsMapped: PropertyDetails = {
           id: property.id,
           property_name: property.property_name,
@@ -160,7 +154,8 @@ export const useProjectData = (projectId: string | undefined, locationState: any
           zip: property.zip_code,
           zip_code: property.zip_code,
           home_photos: property.home_photos || [],
-          image_url: property.image_url || ''
+          image_url: property.image_url || '',
+          blueprint_url: property.blueprint_url
         };
 
         setPropertyDetails(propertyDetailsMapped);
