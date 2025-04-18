@@ -110,8 +110,8 @@ export const useProjectData = (projectId: string | undefined, locationState: any
           id: project.id,
           created_at: project.created_at,
           title: project.title,
-          // Handle the description field which may not exist in the database schema
-          description: project.description || null,
+          // Since 'description' might not exist in the database schema, we need to handle it safely
+          description: (project as any).description || null,
           // Use state field for status and provide a default if not present
           status: project.state || 'active',
           property_id: project.property_id,
