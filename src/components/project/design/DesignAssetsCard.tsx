@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from "@/components/ui/dialog";
@@ -182,8 +183,15 @@ const DesignAssetsCard = ({
         
         // Update local state with renderings
         const newRenderings = urls.map((url, index) => {
-          const fileType = url.toLowerCase().includes('.jpg') || url.toLowerCase().includes('.jpeg') ? 'jpg' 
-            : (url.toLowerCase().includes('.png') ? 'png' : 'pdf');
+          let fileType: 'jpg' | 'png' | 'pdf';
+          
+          if (url.toLowerCase().includes('.jpg') || url.toLowerCase().includes('.jpeg')) {
+            fileType = 'jpg';
+          } else if (url.toLowerCase().includes('.png')) {
+            fileType = 'png';
+          } else {
+            fileType = 'pdf';
+          }
           
           return {
             name: `Rendering_${index + 1}.${fileType}`,
@@ -263,8 +271,15 @@ const DesignAssetsCard = ({
         
         // Update local state with drawings
         const newDrawings = urls.map((url, index) => {
-          const fileType = url.toLowerCase().includes('.jpg') || url.toLowerCase().includes('.jpeg') ? 'jpg' 
-            : (url.toLowerCase().includes('.png') ? 'png' : 'pdf');
+          let fileType: 'jpg' | 'png' | 'pdf';
+          
+          if (url.toLowerCase().includes('.jpg') || url.toLowerCase().includes('.jpeg')) {
+            fileType = 'jpg';
+          } else if (url.toLowerCase().includes('.png')) {
+            fileType = 'png';
+          } else {
+            fileType = 'pdf';
+          }
           
           return {
             name: `Drawing_${drawingFiles.length + index + 1}.${fileType}`,
