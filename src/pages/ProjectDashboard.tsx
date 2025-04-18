@@ -1,6 +1,6 @@
 
 import React from "react";
-import { useLocation, useParams, Navigate } from "react-router-dom";
+import { useLocation, useParams, Navigate, useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useProjectData, RenovationArea } from "@/hooks/useProjectData";
@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const ProjectDashboard = () => {
+  const navigate = useNavigate();
   const location = useLocation();
   const params = useParams();
   const isMobile = useIsMobile();
@@ -61,8 +62,8 @@ const ProjectDashboard = () => {
   const projectTitle = projectData?.title || "Project Overview";
   // Type assertion for renovation areas
   const renovationAreas = (projectData?.renovation_areas as unknown as RenovationArea[]) || [];
-  const hasSOW = false; // This should be updated to check actual SOW status once implemented
-  const hasDesignPlan = false; // This should be updated to check actual design plan status once implemented
+  const hasSOW = projectData?.statement_of_work !== undefined && projectData?.statement_of_work !== null; 
+  const hasDesignPlan = propertyDetails.blueprint_url || (projectData?.design_preferences?.designAssets?.length || 0) > 0;
   const isCoach = profile?.role === 'coach';
 
   const handleStartSOW = () => {
@@ -75,8 +76,8 @@ const ProjectDashboard = () => {
   };
 
   const startSOWCreation = () => {
-    // Logic for creating SOW will go here
-    console.log("Starting SOW creation...");
+    // Navigate to the SOW creation page
+    navigate(`/project-sow/${projectId}`);
   };
 
   // Filter and prepare data for the PropertyCard
