@@ -95,7 +95,11 @@ const Projects = () => {
         const formattedTeamProjects = (teamProjects || [])
           .filter(item => item.project !== null)
           .map(item => ({
-            ...item.project,
+            id: item.project.id,
+            title: item.project.title,
+            property_id: item.project.property_id,
+            created_at: item.project.created_at,
+            property: item.project.property,
             is_owner: false,
             team_role: item.role
           }));
