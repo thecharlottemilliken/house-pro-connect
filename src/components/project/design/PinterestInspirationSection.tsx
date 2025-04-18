@@ -23,14 +23,16 @@ interface PinterestInspirationSectionProps {
   inspirationImages: string[];
   pinterestBoards?: PinterestBoard[];
   onAddInspiration: (images: string[]) => void;
-  onAddPinterestBoards: (boards: PinterestBoard[]) => void;
+  onAddPinterestBoards: (boards: PinterestBoard[], room: string) => void;
+  currentRoom: string;
 }
 
 const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = ({
   inspirationImages = [],
   pinterestBoards = [],
   onAddInspiration,
-  onAddPinterestBoards
+  onAddPinterestBoards,
+  currentRoom
 }) => {
   const hasInspiration = inspirationImages.length > 0 || pinterestBoards.length > 0;
   const [selectedTab, setSelectedTab] = useState<'images' | 'boards'>('images');
@@ -43,8 +45,8 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
   }, [pinterestBoards]);
   
   const handlePinterestBoardsSelected = (boards: PinterestBoard[]) => {
-    console.log("Pinterest boards selected:", boards);
-    onAddPinterestBoards(boards);
+    console.log("Pinterest boards selected for room:", currentRoom, boards);
+    onAddPinterestBoards(boards, currentRoom);
   };
 
   const handleRemoveBoard = async (boardToRemove: PinterestBoard) => {
@@ -188,7 +190,7 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
   return (
     <div className="w-full">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">Inspiration</h2>
+        <h2 className="text-xl font-bold">Inspiration for {currentRoom}</h2>
         <div className="flex items-center gap-2">
           <Button 
             variant="ghost" 

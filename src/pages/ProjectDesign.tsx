@@ -44,7 +44,7 @@ const ProjectDesign = () => {
     designAssets: [],
     renderingImages: [],
     inspirationImages: [],
-    pinterestBoards: [],
+    pinterestBoards: {},
     beforePhotos: {},
     roomMeasurements: {}
   };
@@ -52,7 +52,7 @@ const ProjectDesign = () => {
   const hasDesigns = designPreferences.hasDesigns;
   const hasRenderings = designPreferences.renderingImages && designPreferences.renderingImages.length > 0;
   const hasInspiration = designPreferences.inspirationImages && designPreferences.inspirationImages.length > 0;
-  const pinterestBoards = designPreferences.pinterestBoards || [];
+  const pinterestBoards = designPreferences.pinterestBoards || {};
   
   const renovationAreas = (projectData.renovation_areas as unknown as RenovationArea[]) || [];
   const defaultTab = renovationAreas[0]?.area?.toLowerCase() || "kitchen";
@@ -105,25 +105,29 @@ const ProjectDesign = () => {
     }
   };
 
-  const handleAddPinterestBoards = async (boards: PinterestBoard[]) => {
+  const handleAddPinterestBoards = async (boards: PinterestBoard[], room: string) => {
     try {
-      const currentBoards = designPreferences.pinterestBoards || [];
+      const currentBoards = designPreferences.pinterestBoards || {};
+      const roomBoards = currentBoards[room] || [];
       
       // Filter out duplicates based on board ID
       const uniqueNewBoards = boards.filter(
-        newBoard => !currentBoards.some(existingBoard => existingBoard.id === newBoard.id)
+        newBoard => !roomBoards.some(existingBoard => existingBoard.id === newBoard.id)
       );
       
       if (uniqueNewBoards.length === 0) {
         toast({
           title: "No New Boards",
-          description: "This Pinterest board has already been added",
+          description: "This Pinterest board has already been added to this room",
           variant: "destructive"
         });
         return;
       }
       
-      const updatedBoards = [...currentBoards, ...uniqueNewBoards];
+      const updatedBoards = {
+        ...currentBoards,
+        [room]: [...roomBoards, ...uniqueNewBoards]
+      };
       
       const updatedDesignPreferences: Record<string, unknown> = {
         ...designPreferences,
@@ -141,7 +145,7 @@ const ProjectDesign = () => {
       
       toast({
         title: "Success",
-        description: `Added ${uniqueNewBoards.length} Pinterest board${uniqueNewBoards.length > 1 ? 's' : ''}`,
+        description: `Added ${uniqueNewBoards.length} Pinterest board${uniqueNewBoards.length > 1 ? 's' : ''} to ${room}`,
       });
       
       // Update local state for immediate UI update
@@ -319,6 +323,7 @@ const ProjectDesign = () => {
                     const areaKey = area.area.toLowerCase().replace(/\s+/g, '_');
                     const beforePhotos = designPreferences.beforePhotos?.[areaKey] || [];
                     const measurements = designPreferences.roomMeasurements?.[areaKey];
+                    const roomBoards = (designPreferences.pinterestBoards || {})[area.area] || [];
                     
                     return (
                       <TabsContent key={area.area} value={area.area.toLowerCase()} className="w-full">
@@ -359,21 +364,26 @@ const ProjectDesign = () => {
                             onAction={handleAddDesignPlans}
                           />
                         )}
+                        
+                        <div className="mt-8 w-full">
+                          <PinterestInspirationSection 
+                            inspirationImages={designPreferences.inspirationImages || []}
+                            pinterestBoards={roomBoards}
+                            onAddInspiration={handleAddInspirationImages}
+                            onAddPinterestBoards={handleAddPinterestBoards}
+                            currentRoom={area.area}
+                          />
+                        </div>
+
+                        <div className="mt-8 w-full">
+                          <RecommendedContent />
+                        </div>
                       </TabsContent>
                     );
                   })}
                 </Tabs>
               </div>
               
-              <div className="mt-8 w-full">
-                <PinterestInspirationSection 
-                  inspirationImages={designPreferences.inspirationImages || []}
-                  pinterestBoards={designPreferences.pinterestBoards || []}
-                  onAddInspiration={handleAddInspirationImages}
-                  onAddPinterestBoards={handleAddPinterestBoards}
-                />
-              </div>
-
               <div className="mt-8 w-full">
                 <RecommendedContent />
               </div>
