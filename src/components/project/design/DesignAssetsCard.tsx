@@ -156,7 +156,7 @@ const DesignAssetsCard = ({
     
     if (urls.length > 0 && roomId) {
       try {
-        // First, get existing inspiration images
+        // First, get existing room design preferences
         const { data: existingPrefs, error: fetchError } = await supabase
           .from('room_design_preferences')
           .select('inspiration_images')
@@ -165,11 +165,11 @@ const DesignAssetsCard = ({
         
         if (fetchError) throw fetchError;
         
-        // Combine existing and new images
+        // Combine existing and new inspiration images
         const existingImages = existingPrefs?.inspiration_images || [];
         const updatedImages = [...existingImages, ...urls];
         
-        // Update the database
+        // Update the database with new inspiration images
         const { error: updateError } = await supabase
           .from('room_design_preferences')
           .update({ 
@@ -180,16 +180,15 @@ const DesignAssetsCard = ({
         
         if (updateError) throw updateError;
         
-        // Update local state
+        // Update local state with renderings
         const newRenderings = urls.map((url, index) => {
-          const isJpg = url.toLowerCase().includes('.jpg') || url.toLowerCase().includes('.jpeg');
-          const isPng = url.toLowerCase().includes('.png');
-          const fileType = isJpg ? 'jpg' : (isPng ? 'png' : 'pdf');
+          const fileType = url.toLowerCase().includes('.jpg') || url.toLowerCase().includes('.jpeg') ? 'jpg' 
+            : (url.toLowerCase().includes('.png') ? 'png' : 'pdf');
           
           return {
-            name: `New_Rendering_${index + 1}.${fileType}`,
+            name: `Rendering_${index + 1}.${fileType}`,
             size: "1.5MB",
-            type: fileType as 'jpg' | 'png' | 'pdf',
+            type: fileType,
             url: url
           }
         });
@@ -238,7 +237,7 @@ const DesignAssetsCard = ({
     
     if (urls.length > 0 && roomId) {
       try {
-        // First, get existing inspiration images
+        // First, get existing room design preferences
         const { data: existingPrefs, error: fetchError } = await supabase
           .from('room_design_preferences')
           .select('inspiration_images')
@@ -247,11 +246,11 @@ const DesignAssetsCard = ({
         
         if (fetchError) throw fetchError;
         
-        // Combine existing and new images
+        // Combine existing and new inspiration images
         const existingImages = existingPrefs?.inspiration_images || [];
         const updatedImages = [...existingImages, ...urls];
         
-        // Update the database
+        // Update the database with new inspiration images
         const { error: updateError } = await supabase
           .from('room_design_preferences')
           .update({ 
@@ -262,16 +261,15 @@ const DesignAssetsCard = ({
         
         if (updateError) throw updateError;
         
-        // Update local state
+        // Update local state with drawings
         const newDrawings = urls.map((url, index) => {
-          const isJpg = url.toLowerCase().includes('.jpg') || url.toLowerCase().includes('.jpeg');
-          const isPng = url.toLowerCase().includes('.png');
-          const fileType = isJpg ? 'jpg' : (isPng ? 'png' : 'pdf');
+          const fileType = url.toLowerCase().includes('.jpg') || url.toLowerCase().includes('.jpeg') ? 'jpg' 
+            : (url.toLowerCase().includes('.png') ? 'png' : 'pdf');
           
           return {
             name: `Drawing_${drawingFiles.length + index + 1}.${fileType}`,
             size: "1.2MB",
-            type: fileType as 'jpg' | 'png' | 'pdf',
+            type: fileType,
             url: url
           };
         });
