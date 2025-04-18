@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Plus, Upload } from "lucide-react";
@@ -18,6 +17,8 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { DesignPreferences as DesignPreferencesType } from "@/hooks/useProjectData";
+import { Json } from "@/integrations/supabase/types";
 
 const DesignPreferences = () => {
   const navigate = useNavigate();
@@ -68,11 +69,11 @@ const DesignPreferences = () => {
       if (error) throw error;
       
       if (data && data.design_preferences) {
-        const prefs = data.design_preferences as any;
+        const prefs = data.design_preferences as DesignPreferencesType;
         
         if (prefs.hasDesigns !== undefined) setHasDesigns(prefs.hasDesigns);
         if (prefs.designers && Array.isArray(prefs.designers) && prefs.designers.length > 0) {
-          setDesigners(prefs.designers);
+          setDesigners(prefs.designers as any);
         }
       }
     } catch (error) {
@@ -82,9 +83,10 @@ const DesignPreferences = () => {
 
   const savePreferences = async () => {
     // Create design preferences object
-    const designPreferences = {
+    const designPreferences: Record<string, unknown> = {
       hasDesigns,
-      designers: !hasDesigns ? designers : []
+      designers: !hasDesigns ? designers : [],
+      beforePhotos: {} // Initialize beforePhotos as an empty object
     };
     
     // If we already have a project ID, update it
@@ -93,7 +95,7 @@ const DesignPreferences = () => {
         const { error } = await supabase
           .from('projects')
           .update({
-            design_preferences: designPreferences
+            design_preferences: designPreferences as Json
           })
           .eq('id', projectId);
 

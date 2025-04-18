@@ -12,6 +12,7 @@ interface PropertyDetails {
   city: string;
   state: string;
   zip_code: string;
+  home_photos?: string[]; // Added home_photos property
 }
 
 interface RenovationArea {
@@ -25,12 +26,13 @@ interface Designer {
   email?: string;
 }
 
-interface DesignPreferences {
+export interface DesignPreferences {
   hasDesigns?: boolean;
   designers?: Designer[];
   designAssets?: Array<{name: string, url: string}>;
   renderingImages?: string[];
   inspirationImages?: string[];
+  beforePhotos?: Record<string, string[]>; // Added beforePhotos property as a record of area keys to photo arrays
 }
 
 interface Project {
@@ -96,6 +98,11 @@ export const useProjectData = (projectId?: string, initialData?: any) => {
           // Assume it's already an object
           designPreferencesData = data.design_preferences as DesignPreferences;
         }
+      }
+
+      // Initialize beforePhotos if it doesn't exist
+      if (!designPreferencesData.beforePhotos) {
+        designPreferencesData.beforePhotos = {};
       }
       
       // Create a properly typed Project object

@@ -1,7 +1,8 @@
+
 import { useParams, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useProjectData } from "@/hooks/useProjectData";
+import { useProjectData, DesignPreferences } from "@/hooks/useProjectData";
 import { Button } from "@/components/ui/button";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import ProjectSidebar from "@/components/project/ProjectSidebar";
@@ -12,6 +13,7 @@ import RecommendedContent from "@/components/dashboard/RecommendedContent";
 import RoomDetails from "@/components/project/design/RoomDetails";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Json } from "@/integrations/supabase/types";
 
 const ProjectDesign = () => {
   const location = useLocation();
@@ -30,7 +32,7 @@ const ProjectDesign = () => {
     );
   }
 
-  const designPreferences = projectData.design_preferences || {
+  const designPreferences: DesignPreferences = projectData.design_preferences || {
     hasDesigns: false,
     designers: [],
     designAssets: [],
@@ -56,18 +58,21 @@ const ProjectDesign = () => {
     try {
       const areaKey = area.toLowerCase().replace(/\s+/g, '_');
       
-      const updatedDesignPreferences = {
+      // Create a new object to avoid modifying the original reference
+      const updatedBeforePhotos = { 
+        ...(designPreferences.beforePhotos || {}),
+        [areaKey]: selectedPhotos
+      };
+      
+      const updatedDesignPreferences: Record<string, unknown> = {
         ...designPreferences,
-        beforePhotos: {
-          ...designPreferences.beforePhotos,
-          [areaKey]: selectedPhotos
-        }
+        beforePhotos: updatedBeforePhotos
       };
       
       const { error } = await supabase
         .from('projects')
         .update({ 
-          design_preferences: updatedDesignPreferences 
+          design_preferences: updatedDesignPreferences as Json
         })
         .eq('id', projectData.id);
       
@@ -94,18 +99,21 @@ const ProjectDesign = () => {
       
       const existingPhotos = designPreferences.beforePhotos?.[areaKey] || [];
       
-      const updatedDesignPreferences = {
+      // Create a new object to avoid modifying the original reference
+      const updatedBeforePhotos = { 
+        ...(designPreferences.beforePhotos || {}),
+        [areaKey]: [...existingPhotos, ...uploadedPhotos]
+      };
+      
+      const updatedDesignPreferences: Record<string, unknown> = {
         ...designPreferences,
-        beforePhotos: {
-          ...designPreferences.beforePhotos,
-          [areaKey]: [...existingPhotos, ...uploadedPhotos]
-        }
+        beforePhotos: updatedBeforePhotos
       };
       
       const { error } = await supabase
         .from('projects')
         .update({ 
-          design_preferences: updatedDesignPreferences 
+          design_preferences: updatedDesignPreferences as Json
         })
         .eq('id', projectData.id);
       
