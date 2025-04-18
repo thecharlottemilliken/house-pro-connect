@@ -63,6 +63,7 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
       
       // Get current boards from props and filter out the one to remove
       const updatedBoards = pinterestBoards.filter(board => board.id !== boardToRemove.id);
+      console.log("Updated boards list:", updatedBoards);
       
       // Get pin image URLs from the board being removed
       const boardPinUrls = boardToRemove.pins?.map(pin => pin.imageUrl) || [];
@@ -70,6 +71,7 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
       
       // Remove those pin URLs from inspiration images
       const updatedInspiration = inspirationImages.filter(img => !boardPinUrls.includes(img));
+      console.log("Updated inspiration images:", updatedInspiration);
       
       // Fetch current project data first
       const { data: projectData, error: fetchError } = await supabase
@@ -85,12 +87,12 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
       
       console.log("Project data fetched:", projectData);
       
-      // Type casting to ensure TypeScript recognizes the object structure
-      const designPreferences = projectData.design_preferences as {
-        pinterestBoards?: PinterestBoard[];
-        inspirationImages?: string[];
-        [key: string]: any;
-      } || {};
+      if (!projectData || !projectData.design_preferences) {
+        throw new Error("Project data or design preferences not found");
+      }
+      
+      // Create a deep copy of the design preferences to avoid mutation issues
+      const designPreferences = JSON.parse(JSON.stringify(projectData.design_preferences));
       
       // Update design preferences with new boards and images
       designPreferences.pinterestBoards = updatedBoards;
