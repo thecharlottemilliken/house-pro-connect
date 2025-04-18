@@ -10,9 +10,10 @@ interface CategorySectionProps {
   title: string;
   files?: { name: string; size: string; type: 'pdf' | 'xls' }[];
   onUpload: (urls: string[]) => void;
+  onDelete: () => void;
 }
 
-const CategorySection = ({ title, files = [], onUpload }: CategorySectionProps) => {
+const CategorySection = ({ title, files = [], onUpload, onDelete }: CategorySectionProps) => {
   const [showUploadDialog, setShowUploadDialog] = React.useState(false);
 
   return (
@@ -35,7 +36,7 @@ const CategorySection = ({ title, files = [], onUpload }: CategorySectionProps) 
               {...file}
               onDownload={() => console.log('Download:', file.name)}
               onView={() => console.log('View:', file.name)}
-              onDelete={() => console.log('Delete:', file.name)}
+              onDelete={onDelete}
             />
           ))}
         </div>

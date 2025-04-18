@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from "@/components/ui/dialog";
@@ -153,6 +152,7 @@ const DesignAssetsCard = ({
             { name: "Blueprint.pdf", size: "1.2MB", type: 'pdf' }
           ] : []}
           onUpload={handleUploadBlueprint}
+          onDelete={handleRemoveBlueprint}
         />
 
         <CategorySection
