@@ -291,6 +291,7 @@ const DesignAssetsCard = ({
     
     if (urls.length > 0 && roomId) {
       try {
+        // Get existing room design preferences
         const { data: existingPrefs, error: fetchError } = await supabase
           .from('room_design_preferences')
           .select('drawings')
@@ -301,9 +302,11 @@ const DesignAssetsCard = ({
           throw fetchError;
         }
         
+        // Combine existing and new drawings
         const existingDrawings = existingPrefs?.drawings || [];
         const updatedDrawings = [...existingDrawings, ...urls];
         
+        // Check if record exists
         const { data: existingRecord, error: checkError } = await supabase
           .from('room_design_preferences')
           .select('id')
@@ -341,6 +344,7 @@ const DesignAssetsCard = ({
         
         if (updateError) throw updateError;
         
+        // Update local state
         const newDrawings = urls.map((url, index) => {
           const fileType = url.toLowerCase().endsWith('.png') ? 'png' : 'jpg';
           return {
