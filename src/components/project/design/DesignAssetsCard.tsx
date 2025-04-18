@@ -1,8 +1,10 @@
+
 import React from "react";
-import { Building2, Image, Pen, Eye } from "lucide-react";
+import { Building2, Image, Pen, Eye, FileWarning } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import EmptyDesignState from "./EmptyDesignState";
 
 interface DesignAssetsCardProps {
@@ -23,6 +25,17 @@ const DesignAssetsCard = ({
   propertyBlueprint
 }: DesignAssetsCardProps) => {
   const [showBlueprintPreview, setShowBlueprintPreview] = React.useState(false);
+  const [previewError, setPreviewError] = React.useState(false);
+  
+  const handleOpenPreview = () => {
+    setPreviewError(false);
+    setShowBlueprintPreview(true);
+  };
+
+  const handlePreviewError = () => {
+    console.error("Blueprint preview failed to load:", propertyBlueprint);
+    setPreviewError(true);
+  };
   
   return (
     <>
@@ -57,10 +70,10 @@ const DesignAssetsCard = ({
             </Card>
 
             {propertyBlueprint ? (
-              <Card className="overflow-hidden cursor-pointer group" onClick={() => setShowBlueprintPreview(true)}>
+              <Card className="overflow-hidden cursor-pointer group" onClick={handleOpenPreview}>
                 <div className="w-full h-48 bg-gray-100 relative">
                   <img 
-                    src={propertyBlueprint} 
+                    src={propertyBlueprint.endsWith('.pdf') ? '/placeholder.svg' : propertyBlueprint} 
                     alt="Property Blueprint"
                     className="w-full h-full object-cover"
                     onError={(e) => {
@@ -95,15 +108,49 @@ const DesignAssetsCard = ({
         </CardContent>
       </Card>
 
-      <Dialog open={showBlueprintPreview} onOpenChange={setShowBlueprintPreview}>
+      <Dialog open={showBlueprintPreview && !previewError} onOpenChange={(open) => !open && setShowBlueprintPreview(false)}>
         <DialogContent className="max-w-4xl w-full h-[80vh]">
-          <iframe
-            src={propertyBlueprint}
-            className="w-full h-full"
-            title="Blueprint Preview"
-          />
+          {propertyBlueprint && (
+            <iframe
+              src={propertyBlueprint}
+              className="w-full h-full border-0"
+              title="Blueprint Preview"
+              onError={handlePreviewError}
+              onLoad={(e) => {
+                console.log("Blueprint preview loaded successfully");
+              }}
+              sandbox="allow-same-origin allow-scripts"
+            />
+          )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={previewError} onOpenChange={setPreviewError}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Document Preview Error</AlertDialogTitle>
+            <AlertDialogDescription>
+              There was a problem displaying the document. This might be due to browser security restrictions or an issue with the file format.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => {
+              setPreviewError(false);
+              if (propertyBlueprint) {
+                window.open(propertyBlueprint, '_blank');
+              }
+            }}>
+              Open in New Tab
+            </AlertDialogAction>
+            <AlertDialogCancel onClick={() => {
+              setPreviewError(false);
+              setShowBlueprintPreview(false);
+            }}>
+              Close
+            </AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
