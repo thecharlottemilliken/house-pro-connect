@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useLocation, useParams, Navigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
@@ -42,7 +41,6 @@ const ProjectDashboard = () => {
 
   const isLoading = isAccessLoading || isProjectLoading;
 
-  // If access check is complete and user doesn't have access, redirect to projects
   if (!isAccessLoading && !hasAccess) {
     return <Navigate to="/projects" replace />;
   }
@@ -59,27 +57,23 @@ const ProjectDashboard = () => {
   }
 
   const projectTitle = projectData?.title || "Project Overview";
-  // Type assertion for renovation areas
   const renovationAreas = (projectData?.renovation_areas as unknown as RenovationArea[]) || [];
-  const hasSOW = false; // This should be updated to check actual SOW status once implemented
-  const hasDesignPlan = false; // This should be updated to check actual design plan status once implemented
+  const hasSOW = false;
+  const hasDesignPlan = false;
   const isCoach = profile?.role === 'coach';
 
   const handleStartSOW = () => {
     if (!hasDesignPlan) {
       setShowNoDesignDialog(true);
     } else {
-      // Proceed with SOW creation
       startSOWCreation();
     }
   };
 
   const startSOWCreation = () => {
-    // Logic for creating SOW will go here
-    console.log("Starting SOW creation...");
+    navigate(`/project-sow/${projectId}`);
   };
 
-  // Filter and prepare data for the PropertyCard
   const propertyCardData = {
     id: propertyDetails.id,
     property_name: propertyDetails.property_name,

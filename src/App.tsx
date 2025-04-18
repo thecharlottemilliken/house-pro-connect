@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -33,6 +32,7 @@ import Profile from "./pages/Profile";
 import CoachDashboard from "./pages/CoachDashboard";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import CoachRoute from "./components/auth/CoachRoute";
+import ProjectSOW from "./pages/ProjectSOW";
 
 const App = () => {
   return (
@@ -199,6 +199,13 @@ const App = () => {
           <ProtectedRoute>
             <TooltipProvider>
               <AddProperty />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/project-sow/:projectId" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <ProjectSOW />
             </TooltipProvider>
           </ProtectedRoute>
         } />
