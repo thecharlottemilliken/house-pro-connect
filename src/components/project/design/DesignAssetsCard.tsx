@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from "react";
-import { Building2, Image, Pen, FileWarning, Download, AlertTriangle, Trash, Plus, FileCheck, FileX } from "lucide-react";
+import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import EmptyDesignState from "./EmptyDesignState";
-import { toast } from "@/hooks/use-toast";
 import { FileUpload } from "@/components/ui/file-upload";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import CategorySection from "./CategorySection";
 
 interface DesignAssetsCardProps {
   hasRenderings: boolean;
@@ -136,119 +135,32 @@ const DesignAssetsCard = ({
     }
   };
 
-  useEffect(() => {
-    if (propertyBlueprint) {
-      verifyBlueprintUrl();
-    }
-  }, [propertyBlueprint]);
-
-  const getFileExtension = (url: string) => {
-    return url.split('.').pop()?.toLowerCase() || '';
-  };
-
-  const formatFileSize = () => "2.3 MB"; // Placeholder for demo
-
   return (
     <Card>
       <CardContent className="p-6">
-        <h3 className="font-semibold text-lg mb-4">Design Assets</h3>
-        <div className="space-y-2">
-          {propertyBlueprint && (
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded">
-                  <FileCheck className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Blueprint.pdf</p>
-                  <p className="text-xs text-gray-500">{formatFileSize()}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={handleDownloadBlueprint}
-                  className="p-1.5 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-200"
-                >
-                  <Download className="w-4 h-4" />
-                </button>
-                <button 
-                  onClick={handleRemoveBlueprint}
-                  className="p-1.5 text-gray-500 hover:text-red-600 rounded-full hover:bg-gray-200"
-                >
-                  <Trash className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          )}
-          
-          {renderingImages.map((url, index) => (
-            <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded">
-                  <Image className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Rendering_{index + 1}.{getFileExtension(url)}</p>
-                  <p className="text-xs text-gray-500">{formatFileSize()}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => window.open(url, '_blank')}
-                  className="p-1.5 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-200"
-                >
-                  <Download className="w-4 h-4" />
-                </button>
-                <button 
-                  className="p-1.5 text-gray-500 hover:text-red-600 rounded-full hover:bg-gray-200"
-                >
-                  <Trash className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          ))}
+        <CategorySection
+          title="Blueprints"
+          files={propertyBlueprint ? [
+            { name: "Biodata.pdf", size: "1.2MB / 1.2MB", type: 'pdf' }
+          ] : []}
+          onUpload={() => setShowUploadBlueprint(true)}
+        />
 
-          {!propertyBlueprint && (
-            <Card className="bg-gray-50 border-dashed">
-              <CardContent className="p-4">
-                <EmptyDesignState
-                  type="renderings"
-                  customIcon={<Building2 className="w-8 h-8 text-gray-400" />}
-                  customTitle="Blueprints"
-                  customDescription="Add blueprints"
-                  customActionLabel="Add Blueprints"
-                  onAction={() => setShowUploadBlueprint(true)}
-                />
-              </CardContent>
-            </Card>
-          )}
+        <CategorySection
+          title="Renderings"
+          files={renderingImages.map((url, index) => ({
+            name: `Rendering_${index + 1}.jpg`,
+            size: "1.5MB / 1.5MB",
+            type: 'pdf'
+          }))}
+          onUpload={onAddRenderings}
+        />
 
-          <Card className="bg-gray-50 border-dashed">
-            <CardContent className="p-4">
-              <EmptyDesignState
-                type="renderings"
-                customIcon={<Image className="w-8 h-8 text-gray-400" />}
-                customTitle="3D Renderings"
-                customDescription="Add design visualizations"
-                customActionLabel="Add Renderings"
-                onAction={onAddRenderings}
-              />
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gray-50 border-dashed">
-            <CardContent className="p-4">
-              <EmptyDesignState
-                type="renderings"
-                customIcon={<Pen className="w-8 h-8 text-gray-400" />}
-                customTitle="Design Drawings"
-                customDescription="Add design drawings"
-                customActionLabel="Add Drawings"
-                onAction={onAddDrawings}
-              />
-            </CardContent>
-          </Card>
-        </div>
+        <CategorySection
+          title="Drawings"
+          files={[]}
+          onUpload={onAddDrawings}
+        />
       </CardContent>
 
       {/* Upload Blueprint Dialog */}
@@ -257,7 +169,7 @@ const DesignAssetsCard = ({
           <DialogHeader>
             <DialogTitle>Upload Blueprint</DialogTitle>
             <DialogDescription>
-              Upload a new blueprint PDF file for your property. This will replace the current blueprint.
+              Upload a new blueprint PDF file for your property.
             </DialogDescription>
           </DialogHeader>
           
