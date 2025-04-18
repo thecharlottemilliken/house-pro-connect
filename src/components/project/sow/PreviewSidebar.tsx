@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { FileImage, Download, Eye, Loader } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PreviewSidebarProps {
   projectData: any;
@@ -21,23 +22,93 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
   const [selectedType, setSelectedType] = React.useState<AssetType>('inspiration');
   const [isPreviewLoading, setIsPreviewLoading] = React.useState(false);
+  const [roomRenderings, setRoomRenderings] = useState<string[]>([]);
+  const [roomDrawings, setRoomDrawings] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   
   const designPreferences = projectData?.design_preferences || {};
   
   // Extract data with better fallbacks and add more detailed logging
-  const renderingImages = designPreferences.renderingImages || [];
   const beforePhotos = designPreferences.beforePhotos || {};
   const blueprintUrl = propertyDetails?.blueprint_url;
   const inspirationImages = designPreferences.inspirationImages || [];
-  const drawings = designPreferences.drawings || [];
 
   // For debugging
   console.info("Design Preferences:", designPreferences);
-  console.info("Renderings:", renderingImages);
   console.info("Before Photos:", beforePhotos);
   console.info("Inspiration Images:", inspirationImages);
-  console.info("Drawings:", drawings);
   console.info("Blueprint URL:", blueprintUrl);
+
+  // Fetch room-specific renderings and drawings when component mounts or property ID changes
+  useEffect(() => {
+    const fetchRoomData = async () => {
+      if (!propertyDetails?.id) {
+        console.info("No property ID available");
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        // First, get the rooms for this property
+        const { data: rooms, error: roomsError } = await supabase
+          .from('property_rooms')
+          .select('id, name')
+          .eq('property_id', propertyDetails.id);
+
+        if (roomsError) {
+          console.error("Error fetching rooms:", roomsError);
+          return;
+        }
+
+        console.info("Rooms for property:", rooms);
+
+        if (!rooms || rooms.length === 0) {
+          console.info("No rooms found for this property");
+          return;
+        }
+
+        // Get all the design preferences for all rooms
+        const roomIds = rooms.map(room => room.id);
+        const { data: designPrefs, error: prefsError } = await supabase
+          .from('room_design_preferences')
+          .select('room_id, renderings, drawings')
+          .in('room_id', roomIds);
+
+        if (prefsError) {
+          console.error("Error fetching room design preferences:", prefsError);
+          return;
+        }
+
+        console.info("Room design preferences:", designPrefs);
+
+        // Collect all renderings and drawings from all rooms
+        let allRenderings: string[] = [];
+        let allDrawings: string[] = [];
+
+        designPrefs?.forEach(pref => {
+          if (pref.renderings && Array.isArray(pref.renderings)) {
+            allRenderings = [...allRenderings, ...pref.renderings];
+          }
+          
+          if (pref.drawings && Array.isArray(pref.drawings)) {
+            allDrawings = [...allDrawings, ...pref.drawings];
+          }
+        });
+
+        console.info("All room renderings:", allRenderings);
+        console.info("All room drawings:", allDrawings);
+
+        setRoomRenderings(allRenderings);
+        setRoomDrawings(allDrawings);
+      } catch (error) {
+        console.error("Error in fetchRoomData:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRoomData();
+  }, [propertyDetails?.id]);
 
   const handlePreview = (url: string) => {
     setIsPreviewLoading(true);
@@ -70,9 +141,9 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
           })) : []
         );
       case 'drawings':
-        // Add more detailed logging for drawings
-        console.info("Processing drawings:", drawings);
-        return Array.isArray(drawings) ? drawings.map((url: string, index: number) => {
+        // Use the room drawings fetched from the database
+        console.info("Processing drawings:", roomDrawings);
+        return Array.isArray(roomDrawings) ? roomDrawings.map((url: string, index: number) => {
           console.info(`Drawing ${index}:`, url);
           return {
             name: `Drawing ${index + 1}`,
@@ -81,9 +152,9 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
           };
         }) : [];
       case 'renderings':
-        // Add more detailed logging for renderings
-        console.info("Processing renderings:", renderingImages);
-        return Array.isArray(renderingImages) ? renderingImages.map((url: string, index: number) => {
+        // Use the room renderings fetched from the database
+        console.info("Processing renderings:", roomRenderings);
+        return Array.isArray(roomRenderings) ? roomRenderings.map((url: string, index: number) => {
           console.info(`Rendering ${index}:`, url);
           return {
             name: `Rendering ${index + 1}`,
@@ -160,22 +231,31 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
 
         <div className="flex-1 overflow-auto">
           <div className="p-4">
-            <h3 className="text-sm font-medium text-gray-900 mb-2">Files {selectedType === 'renderings' && '(Renderings)'} {selectedType === 'drawings' && '(Drawings)'}</h3>
-            <div className="space-y-1">
-              {filteredAssets.map((asset, index) => (
-                <FileListItem
-                  key={`${asset.name}-${index}`}
-                  name={asset.name}
-                  room={asset.room}
-                  url={asset.url}
-                />
-              ))}
-              {filteredAssets.length === 0 && (
-                <p className="text-sm text-gray-500 py-4 text-center">
-                  No {selectedType.replace('-', ' ')} available
-                </p>
-              )}
-            </div>
+            <h3 className="text-sm font-medium text-gray-900 mb-2">
+              Files {selectedType === 'renderings' && '(Renderings)'} {selectedType === 'drawings' && '(Drawings)'}
+            </h3>
+            {isLoading && selectedType === 'renderings' || selectedType === 'drawings' ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader className="h-6 w-6 text-gray-400 animate-spin mr-2" />
+                <span className="text-sm text-gray-500">Loading...</span>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {filteredAssets.map((asset, index) => (
+                  <FileListItem
+                    key={`${asset.name}-${index}`}
+                    name={asset.name}
+                    room={asset.room}
+                    url={asset.url}
+                  />
+                ))}
+                {filteredAssets.length === 0 && (
+                  <p className="text-sm text-gray-500 py-4 text-center">
+                    No {selectedType.replace('-', ' ')} available
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
