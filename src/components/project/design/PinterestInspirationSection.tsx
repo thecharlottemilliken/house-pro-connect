@@ -6,6 +6,16 @@ import { toast } from "@/hooks/use-toast";
 import EmptyDesignState from "./EmptyDesignState";
 import { type PinterestBoard } from "@/types/pinterest";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface PinterestInspirationSectionProps {
   inspirationImages: string[];
@@ -23,6 +33,7 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
   const hasInspiration = inspirationImages.length > 0 || pinterestBoards.length > 0;
   const [selectedTab, setSelectedTab] = useState<'images' | 'boards'>('images');
   const [expandedBoard, setExpandedBoard] = useState<string | null>(null);
+  const [boardToDelete, setBoardToDelete] = useState<PinterestBoard | null>(null);
 
   const handlePinterestBoardsSelected = (boards: PinterestBoard[]) => {
     console.log("Pinterest boards selected:", boards);
@@ -52,6 +63,7 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
       onAddPinterestBoards(updatedBoards);
       onAddInspiration(updatedInspiration);
       
+      setBoardToDelete(null);
       toast({
         title: "Board Removed",
         description: "Pinterest board has been removed successfully",
@@ -116,7 +128,7 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
         <button
           onClick={(e) => {
             e.stopPropagation();
-            handleRemoveBoard(board);
+            setBoardToDelete(board);
           }}
           className="absolute top-2 right-2 p-1 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
           aria-label="Remove board"
@@ -234,6 +246,26 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
           {renderTabContent()}
         </>
       )}
+      
+      <AlertDialog open={!!boardToDelete} onOpenChange={(open) => !open && setBoardToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Pinterest Board</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove this board? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => boardToDelete && handleRemoveBoard(boardToDelete)}
+              className="bg-red-500 text-white hover:bg-red-600"
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
