@@ -37,6 +37,41 @@ const PinterestConnector: React.FC<PinterestConnectorProps> = ({ onBoardsSelecte
     setBoardUrls(prev => prev.map((url, i) => i === index ? value : url));
   };
 
+  // Helper function to attempt to fetch the board's cover image
+  const fetchBoardCoverImage = async (url: string): Promise<string | null> => {
+    try {
+      // Extract username and board name from URL
+      const pinterestUrlRegex = /^https?:\/\/(?:www\.)?pinterest\.(?:\w+)\/([^\/]+)\/([^\/]+)/;
+      const match = url.match(pinterestUrlRegex);
+      
+      if (!match) return null;
+      
+      const [, username, boardName] = match;
+      
+      // Try using a proxy to bypass CORS issues - this is for demonstration
+      // In a production app, you would use a server-side solution
+      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://www.pinterest.com/${username}/${boardName}`)}`;
+      
+      const response = await fetch(proxyUrl, { 
+        method: 'GET',
+        headers: { 'Content-Type': 'text/html' }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch board page: ${response.status}`);
+      }
+      
+      const html = await response.text();
+      
+      // Extract og:image meta tag for cover photo
+      const ogImageMatch = html.match(/<meta[^>]*property="og:image"[^>]*content="([^"]*)"[^>]*>/);
+      return ogImageMatch ? ogImageMatch[1] : null;
+    } catch (error) {
+      console.error('Error scraping board cover:', error);
+      return null;
+    }
+  };
+
   const handleConnect = async () => {
     setIsLoading(true);
     try {
@@ -70,26 +105,21 @@ const PinterestConnector: React.FC<PinterestConnectorProps> = ({ onBoardsSelecte
 
             const [, username, boardName] = match;
             const boardId = `${username}-${boardName}`;
-
+            
             // Attempt to get the board cover image
-            let coverImage = null;
-            try {
-              const response = await fetch(`https://www.pinterest.com/${username}/${boardName}`);
-              const html = await response.text();
-              
-              // Extract og:image meta tag for cover photo
-              const ogImageMatch = html.match(/<meta[^>]*property="og:image"[^>]*content="([^"]*)"[^>]*>/);
-              coverImage = ogImageMatch ? ogImageMatch[1] : null;
-            } catch (error) {
-              console.error('Error scraping board cover:', error);
-              // We'll continue with a fallback image
+            let coverImage = await fetchBoardCoverImage(url);
+            
+            // If cover image fetch failed, try alternative methods or use default
+            if (!coverImage) {
+              // As a fallback, we could try another approach or just use the default
+              coverImage = `https://placehold.co/600x400?text=${encodeURIComponent(boardName.replace(/-/g, ' '))}`;
             }
 
             boardsData.push({
               id: boardId,
               name: boardName.replace(/-/g, ' '),
               url: url,
-              imageUrl: coverImage || "https://placehold.co/600x400?text=Pinterest+Board",
+              imageUrl: coverImage,
               pins: [
                 {
                   id: "1",

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import PinterestConnector from "./PinterestConnector";
 import { Button } from "@/components/ui/button";
@@ -44,12 +43,14 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
   const [boardToDelete, setBoardToDelete] = useState<PinterestBoard | null>(null);
   const [localPinterestBoards, setLocalPinterestBoards] = useState<PinterestBoard[]>(pinterestBoards);
 
-  // Update hasInspiration based on local state
+  useEffect(() => {
+    console.log("Current Pinterest boards:", pinterestBoards);
+  }, [pinterestBoards]);
+
   useEffect(() => {
     setHasInspiration(inspirationImages.length > 0 || localPinterestBoards.length > 0);
   }, [inspirationImages, localPinterestBoards]);
 
-  // Sync with prop changes
   useEffect(() => {
     setLocalPinterestBoards(pinterestBoards);
   }, [pinterestBoards]);
@@ -63,20 +64,8 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
       });
       return;
     }
-    console.log("Pinterest boards selected for room:", currentRoom, boards);
     
-    // Important: We need to combine the new boards with existing ones
-    const combinedBoards = [...localPinterestBoards];
-    
-    // Only add boards that don't already exist (by ID)
-    const existingBoardIds = new Set(localPinterestBoards.map(board => board.id));
-    boards.forEach(newBoard => {
-      if (!existingBoardIds.has(newBoard.id)) {
-        combinedBoards.push(newBoard);
-      }
-    });
-
-    onAddPinterestBoards(combinedBoards, currentRoom, roomId);
+    onAddPinterestBoards(boards, currentRoom, roomId);
   };
 
   const handleRemoveBoard = async (boardToRemove: PinterestBoard) => {
@@ -87,7 +76,6 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
       
       const updatedBoards = localPinterestBoards.filter(board => board.id !== boardToRemove.id);
       
-      // Convert PinterestBoard[] to a format compatible with Supabase's Json type
       const boardsForStorage = updatedBoards.map(board => ({
         id: board.id,
         name: board.name,

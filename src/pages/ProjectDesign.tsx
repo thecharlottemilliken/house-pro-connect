@@ -1,3 +1,4 @@
+
 import { useParams, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -215,8 +216,24 @@ const ProjectDesign = () => {
         console.error('Error fetching existing Pinterest boards:', fetchError);
       }
       
-      // Convert the boards to Supabase JSON format for storage
-      const boardsForStorage = boards.map(board => ({
+      // Important: We need to merge the new boards with existing ones
+      let existingBoards: PinterestBoard[] = [];
+      
+      if (currentData?.pinterest_boards) {
+        existingBoards = currentData.pinterest_boards as unknown as PinterestBoard[];
+      }
+      
+      // Create a Set of existing board IDs to avoid duplicates
+      const existingBoardIds = new Set(existingBoards.map(board => board.id));
+      
+      // Only add boards that aren't already in the database
+      const uniqueNewBoards = boards.filter(board => !existingBoardIds.has(board.id));
+      
+      // Combine existing and new unique boards
+      const combinedBoards = [...existingBoards, ...uniqueNewBoards];
+      
+      // Convert PinterestBoard[] to a format compatible with Supabase's Json type
+      const boardsForStorage = combinedBoards.map(board => ({
         id: board.id,
         name: board.name,
         url: board.url,
@@ -254,18 +271,18 @@ const ProjectDesign = () => {
       
       if (response.error) throw response.error;
       
-      // Update local state
+      // Update local state with combined boards
       setRoomPreferences(prev => ({
         ...prev,
         [roomId]: {
           ...prev[roomId],
-          pinterestBoards: boards
+          pinterestBoards: combinedBoards
         }
       }));
       
       toast({
         title: "Success",
-        description: `Updated Pinterest boards for ${roomName}`,
+        description: `Added ${uniqueNewBoards.length} new Pinterest board(s) for ${roomName}`,
       });
       
     } catch (error: any) {
