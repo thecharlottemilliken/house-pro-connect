@@ -1,14 +1,9 @@
-
 import React from "react";
 import { ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PropertyImageCarousel } from "@/components/property/PropertyImageCarousel";
-
-interface RenovationArea {
-  area: string;
-  location: string;
-}
+import { RenovationArea } from "@/hooks/useProjectData";
 
 interface PropertyCardProps {
   propertyDetails: {

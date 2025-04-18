@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useLocation, useParams } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
@@ -69,6 +68,18 @@ const ProjectDashboard = () => {
     console.log("Starting SOW creation...");
   };
 
+  // Filter and prepare data for the PropertyCard
+  const propertyCardData = {
+    id: propertyDetails.id,
+    property_name: propertyDetails.property_name,
+    image_url: propertyDetails.image_url,
+    home_photos: propertyDetails.home_photos,
+    address_line1: propertyDetails.address_line1,
+    city: propertyDetails.city,
+    state: propertyDetails.state,
+    zip_code: propertyDetails.zip_code
+  };
+
   return (
     <div className="flex flex-col bg-white min-h-screen">
       <DashboardNavbar />
@@ -96,16 +107,7 @@ const ProjectDashboard = () => {
             
             <div className="grid grid-cols-1 gap-3 sm:gap-4 md:gap-6 lg:grid-cols-2 2xl:grid-cols-3">
               <PropertyCard 
-                propertyDetails={{
-                  id: propertyDetails.id,
-                  property_name: propertyDetails.property_name,
-                  image_url: propertyDetails.image_url,
-                  home_photos: propertyDetails.home_photos,
-                  address_line1: propertyDetails.address_line1,
-                  city: propertyDetails.city,
-                  state: propertyDetails.state,
-                  zip_code: propertyDetails.zip_code
-                }} 
+                propertyDetails={propertyCardData}
                 renovationAreas={renovationAreas}
               />
               

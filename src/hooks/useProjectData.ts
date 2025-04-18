@@ -21,7 +21,7 @@ export interface ProjectData {
   created_at: string;
   title: string;
   description: string | null;
-  status: Enums<'project_status'> | string;
+  status: string;
   property_id: string;
   user_id: string;
   design_preferences: Json;
@@ -97,7 +97,7 @@ export const useProjectData = (projectId: string | undefined, locationState: any
           created_at: project.created_at,
           title: project.title,
           description: project.description || null,
-          status: project.status || 'active',
+          status: project.state || 'active',
           property_id: project.property_id,
           user_id: project.user_id,
           design_preferences: project.design_preferences,
