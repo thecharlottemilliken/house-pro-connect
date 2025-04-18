@@ -1,5 +1,6 @@
+
 import React from "react";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation, useParams, Navigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useProjectData, RenovationArea } from "@/hooks/useProjectData";
@@ -10,8 +11,9 @@ import MessagesCard from "@/components/project/MessagesCard";
 import EventsCard from "@/components/project/EventsCard";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { FileText, PenBox } from "lucide-react";
+import { FileText, PenBox, ShieldAlert } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useProjectAccess } from "@/hooks/useProjectAccess";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,10 +32,20 @@ const ProjectDashboard = () => {
   const { profile } = useAuth();
   const [showNoDesignDialog, setShowNoDesignDialog] = React.useState(false);
   
-  const { projectData, propertyDetails, isLoading } = useProjectData(
-    params.projectId,
+  const projectId = params.projectId || "";
+  const { hasAccess, isOwner, role, isLoading: isAccessLoading } = useProjectAccess(projectId);
+  
+  const { projectData, propertyDetails, isLoading: isProjectLoading } = useProjectData(
+    projectId,
     location.state
   );
+
+  const isLoading = isAccessLoading || isProjectLoading;
+
+  // If access check is complete and user doesn't have access, redirect to projects
+  if (!isAccessLoading && !hasAccess) {
+    return <Navigate to="/projects" replace />;
+  }
 
   if (isLoading || !propertyDetails) {
     return (
@@ -46,7 +58,6 @@ const ProjectDashboard = () => {
     );
   }
 
-  const projectId = projectData?.id || params.projectId || "";
   const projectTitle = projectData?.title || "Project Overview";
   // Type assertion for renovation areas
   const renovationAreas = (projectData?.renovation_areas as unknown as RenovationArea[]) || [];
@@ -80,6 +91,8 @@ const ProjectDashboard = () => {
     zip_code: propertyDetails.zip_code
   };
 
+  const userRole = isOwner ? "Owner" : role || "Team Member";
+
   return (
     <div className="flex flex-col bg-white min-h-screen">
       <DashboardNavbar />
@@ -94,9 +107,16 @@ const ProjectDashboard = () => {
           
           <div className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 bg-white overflow-y-auto">
             <div className="mb-3 sm:mb-4 md:mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center">
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2 sm:mb-0">
-                Project Overview
-              </h1>
+              <div>
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2 sm:mb-0">
+                  Project Overview
+                </h1>
+                <div className="flex items-center">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-2">
+                    {userRole}
+                  </span>
+                </div>
+              </div>
             </div>
             
             <div className="mb-3 sm:mb-4 md:mb-8">

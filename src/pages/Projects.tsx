@@ -21,6 +21,8 @@ interface Project {
     state: string;
     zip_code: string;
   };
+  is_owner: boolean;
+  team_role?: string;
 }
 
 const Projects = () => {
@@ -35,11 +37,16 @@ const Projects = () => {
     const fetchProjects = async () => {
       setIsLoading(true);
       try {
-        // Using untyped query to avoid TypeScript errors
-        const { data, error } = await supabase
+        console.log("Fetching projects for user:", user.id);
+        
+        // First, get projects the user created directly
+        const { data: ownedProjects, error: ownedError } = await supabase
           .from('projects')
           .select(`
-            *,
+            id,
+            title,
+            property_id,
+            created_at,
             property:properties(
               property_name,
               image_url,
@@ -52,10 +59,59 @@ const Projects = () => {
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
           
-        if (error) throw error;
+        if (ownedError) throw ownedError;
         
-        // Type assertion to match the expected Project[] type
-        setProjects(data as Project[] || []);
+        // Mark owned projects
+        const ownedProjectsWithRole = (ownedProjects || []).map(project => ({
+          ...project,
+          is_owner: true
+        }));
+        
+        // Then, get projects where the user is a team member but not the owner
+        const { data: teamProjects, error: teamError } = await supabase
+          .from('project_team_members')
+          .select(`
+            role,
+            project:projects(
+              id,
+              title,
+              property_id,
+              created_at,
+              property:properties(
+                property_name,
+                image_url,
+                address_line1,
+                city,
+                state,
+                zip_code
+              )
+            )
+          `)
+          .eq('user_id', user.id);
+        
+        if (teamError) throw teamError;
+
+        // Format team projects and filter out nulls (in case of deleted projects)
+        const formattedTeamProjects = (teamProjects || [])
+          .filter(item => item.project !== null)
+          .map(item => ({
+            ...item.project,
+            is_owner: false,
+            team_role: item.role
+          }));
+        
+        // Combine both sets of projects
+        const allProjects = [...ownedProjectsWithRole];
+        
+        // Add team projects if they're not already in the list (avoid duplicates)
+        formattedTeamProjects.forEach(teamProject => {
+          if (!allProjects.some(p => p.id === teamProject.id)) {
+            allProjects.push(teamProject);
+          }
+        });
+        
+        console.log(`Found ${allProjects.length} projects in total`);
+        setProjects(allProjects);
       } catch (error: any) {
         console.error('Error fetching projects:', error);
         toast({
@@ -123,7 +179,14 @@ const Projects = () => {
                   />
                 </div>
                 <div className="p-4">
-                  <h2 className="text-lg font-semibold mb-1">{project.title}</h2>
+                  <div className="flex justify-between mb-1">
+                    <h2 className="text-lg font-semibold">{project.title}</h2>
+                    {!project.is_owner && (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {project.team_role || 'Team Member'}
+                      </span>
+                    )}
+                  </div>
                   <h3 className="text-base text-gray-700 mb-2">{project.property.property_name}</h3>
                   <p className="text-sm text-gray-600 mb-4">{formatAddress(project)}</p>
                   <p className="text-xs text-gray-500 mb-3">

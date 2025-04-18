@@ -311,6 +311,10 @@ export type Database = {
         Args: { project_id_param: string }
         Returns: boolean
       }
+      check_team_membership: {
+        Args: { project_id_param: string; user_id_param: string }
+        Returns: boolean
+      }
       get_user_email: {
         Args: { user_id: string }
         Returns: {
