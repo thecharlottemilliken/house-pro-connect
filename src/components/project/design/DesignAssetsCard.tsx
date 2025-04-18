@@ -29,18 +29,20 @@ const DesignAssetsCard = ({
   const [isUploading, setIsUploading] = useState(false);
   const [pdfStatus, setPdfStatus] = useState<'unknown' | 'valid' | 'invalid'>('unknown');
   const [isCheckingPdf, setIsCheckingPdf] = useState(false);
-  const [blueprintFile, setBlueprintFile] = useState<{name: string; size: string; type: 'pdf'; url?: string} | null>(
+  const [blueprintFile, setBlueprintFile] = useState<{name: string; size: string; type: 'pdf' | 'xls' | 'jpg' | 'png'; url?: string} | null>(
     propertyBlueprint ? { name: "Blueprint.pdf", size: "1.2MB", type: 'pdf', url: propertyBlueprint } : null
   );
-  const [renderingFiles, setRenderingFiles] = useState<{name: string; size: string; type: 'pdf'; url?: string}[]>(
+  const [renderingFiles, setRenderingFiles] = useState<{name: string; size: string; type: 'jpg' | 'png' | 'pdf'; url?: string}[]>(
     renderingImages.map((url, index) => ({
       name: `Rendering_${index + 1}.jpg`,
       size: "1.5MB",
-      type: 'pdf',
+      type: 'jpg',
       url
     }))
   );
   
+  const [drawingFiles, setDrawingFiles] = useState<{name: string; size: string; type: 'jpg' | 'png' | 'pdf'; url?: string}[]>([]);
+
   const verifyBlueprintUrl = async () => {
     if (!propertyBlueprint) {
       setPdfStatus('invalid');
@@ -83,7 +85,6 @@ const DesignAssetsCard = ({
 
       if (error) throw error;
       
-      // Update local state to reflect the change
       setBlueprintFile({ name: "Blueprint.pdf", size: "1.2MB", type: 'pdf', url: urls[0] });
 
       toast({
@@ -122,7 +123,6 @@ const DesignAssetsCard = ({
 
       if (error) throw error;
       
-      // Update local state to reflect the change
       setBlueprintFile(null);
 
       toast({
@@ -151,15 +151,20 @@ const DesignAssetsCard = ({
   };
 
   const handleAddRenderings = (urls: string[]) => {
-    // Handle rendering uploads when implemented
     console.log("Rendering URLs:", urls);
     if (urls.length > 0) {
-      const newRenderings = urls.map((url, index) => ({
-        name: `New_Rendering_${index + 1}.jpg`,
-        size: "1.5MB",
-        type: 'pdf' as const,
-        url: url
-      }));
+      const newRenderings = urls.map((url, index) => {
+        const isJpg = url.toLowerCase().includes('.jpg') || url.toLowerCase().includes('.jpeg');
+        const isPng = url.toLowerCase().includes('.png');
+        const fileType = isJpg ? 'jpg' : (isPng ? 'png' : 'pdf');
+        
+        return {
+          name: `New_Rendering_${index + 1}.${fileType}`,
+          size: "1.5MB",
+          type: fileType as 'jpg' | 'png' | 'pdf',
+          url: url
+        }
+      });
       
       setRenderingFiles(prev => [...prev, ...newRenderings]);
     }
@@ -168,7 +173,6 @@ const DesignAssetsCard = ({
 
   const handleRemoveRenderings = async () => {
     try {
-      // Remove the rendering from state
       if (renderingFiles.length > 0) {
         setRenderingFiles(prev => prev.slice(0, -1));
       }
@@ -188,14 +192,39 @@ const DesignAssetsCard = ({
   };
 
   const handleAddDrawings = (urls: string[]) => {
-    // Handle drawings uploads when implemented
     console.log("Drawing URLs:", urls);
+    
+    if (urls.length > 0) {
+      const newDrawings = urls.map((url, index) => {
+        const isJpg = url.toLowerCase().includes('.jpg') || url.toLowerCase().includes('.jpeg');
+        const isPng = url.toLowerCase().includes('.png');
+        const fileType = isJpg ? 'jpg' : (isPng ? 'png' : 'pdf');
+        
+        return {
+          name: `Drawing_${drawingFiles.length + index + 1}.${fileType}`,
+          size: "1.2MB",
+          type: fileType as 'jpg' | 'png' | 'pdf',
+          url: url
+        };
+      });
+      
+      setDrawingFiles(prev => [...prev, ...newDrawings]);
+      
+      toast({
+        title: "Drawing Added",
+        description: "Your drawing has been successfully uploaded."
+      });
+    }
+    
     if (onAddDrawings) onAddDrawings();
   };
 
   const handleRemoveDrawings = async () => {
     try {
-      // This is a placeholder function for removing drawings
+      if (drawingFiles.length > 0) {
+        setDrawingFiles(prev => prev.slice(0, -1));
+      }
+      
       toast({
         title: "Drawing Removed",
         description: "The drawing has been removed successfully."
@@ -229,7 +258,7 @@ const DesignAssetsCard = ({
 
         <CategorySection
           title="Drawings"
-          files={[]}
+          files={drawingFiles}
           onUpload={handleAddDrawings}
           onDelete={handleRemoveDrawings}
         />
