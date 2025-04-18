@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import PinterestConnector from "./PinterestConnector";
 import { Button } from "@/components/ui/button";
@@ -55,15 +56,24 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
 
   const handleRemoveBoard = async (boardToRemove: PinterestBoard) => {
     try {
+      console.log("Removing board:", boardToRemove);
+      
+      // Filter out the board to remove
       const updatedBoards = pinterestBoards.filter(board => board.id !== boardToRemove.id);
       
+      // Find pin URLs from the board being removed
       const boardPinUrls = boardToRemove.pins?.map(pin => pin.imageUrl) || [];
+      
+      // Filter out inspiration images that came from the removed board
       const updatedInspiration = inspirationImages.filter(img => !boardPinUrls.includes(img));
       
+      // Update state via props
       onAddPinterestBoards(updatedBoards);
       onAddInspiration(updatedInspiration);
       
+      // Clear the board to delete state
       setBoardToDelete(null);
+      
       toast({
         title: "Board Removed",
         description: "Pinterest board has been removed successfully",
