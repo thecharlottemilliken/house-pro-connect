@@ -1,6 +1,6 @@
 
+import { useState, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useProjectData } from "@/hooks/useProjectData";
@@ -11,14 +11,28 @@ import ProjectSidebar from "@/components/project/ProjectSidebar";
 import { toast } from "@/hooks/use-toast";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import TeamMemberList from "@/components/project/team/TeamMemberList";
-import { addTeamMember } from "@/utils/team";
+import TeamMemberInviteDialog from "@/components/project/team/TeamMemberInviteDialog";
 
 const ProjectTeam = () => {
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const location = useLocation();
   const params = useParams();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { projectData, isLoading: isProjectLoading } = useProjectData(params.projectId, location.state);
+  
+  const { 
+    projectData, 
+    isLoading: isProjectLoading 
+  } = useProjectData(params.projectId, location.state);
+
+  const projectId = projectData?.id || params.projectId || "";
+  const projectTitle = projectData?.title || "Unknown Project";
+
+  const { 
+    teamMembers, 
+    isLoading: isTeamLoading, 
+    refetch: refetchTeamMembers 
+  } = useTeamMembers(projectId);
 
   useEffect(() => {
     if (!params.projectId) {
@@ -31,10 +45,13 @@ const ProjectTeam = () => {
     }
   }, [params.projectId, navigate]);
 
-  const projectId = projectData?.id || params.projectId || "";
-  const projectTitle = projectData?.title || "Unknown Project";
+  const openInviteDialog = () => {
+    setIsInviteDialogOpen(true);
+  };
 
-  const { teamMembers, loading: isTeamLoading } = useTeamMembers(projectId);
+  const closeInviteDialog = () => {
+    setIsInviteDialogOpen(false);
+  };
 
   if (!projectId) {
     return (
@@ -47,7 +64,7 @@ const ProjectTeam = () => {
     );
   }
 
-  if (isProjectLoading || isTeamLoading) {
+  if (isProjectLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-white">
         <DashboardNavbar />
@@ -71,35 +88,24 @@ const ProjectTeam = () => {
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-0">Project Team</h1>
               <Button 
                 className="bg-[#0f566c] hover:bg-[#0d4a5d] w-full sm:w-auto"
-                onClick={() => {
-                  const email = prompt("Enter team member's email:");
-                  if (email) {
-                    const role = prompt("Enter role (team_member, contractor, designer):", "team_member");
-                    addTeamMember(projectId, email, role || "team_member")
-                      .then(result => {
-                        if (result.success) {
-                          toast({
-                            title: "Success",
-                            description: "Team member added successfully",
-                          });
-                          window.location.reload();
-                        } else {
-                          toast({
-                            title: "Error",
-                            description: result.error || "Failed to add team member",
-                            variant: "destructive"
-                          });
-                        }
-                      });
-                  }
-                }}
+                onClick={openInviteDialog}
               >
                 <UserPlus className="mr-2 h-4 w-4" />
                 INVITE A TEAM MEMBER
               </Button>
             </div>
 
-            <TeamMemberList teamMembers={teamMembers} isLoading={isTeamLoading} />
+            <TeamMemberList 
+              teamMembers={teamMembers} 
+              isLoading={isTeamLoading} 
+              projectId={projectId}
+            />
+
+            <TeamMemberInviteDialog
+              projectId={projectId}
+              isOpen={isInviteDialogOpen}
+              onClose={closeInviteDialog}
+            />
           </div>
         </div>
       </SidebarProvider>
