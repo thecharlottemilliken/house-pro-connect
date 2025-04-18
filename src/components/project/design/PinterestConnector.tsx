@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
@@ -21,8 +22,6 @@ const PinterestConnector: React.FC<PinterestConnectorProps> = ({ onBoardsSelecte
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [boardUrl, setBoardUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [availableBoards, setAvailableBoards] = useState<PinterestBoard[]>([]);
-  const [selectedBoards, setSelectedBoards] = useState<Record<string, boolean>>({});
 
   const handleConnect = async () => {
     setIsLoading(true);
@@ -36,49 +35,47 @@ const PinterestConnector: React.FC<PinterestConnectorProps> = ({ onBoardsSelecte
         return;
       }
 
-      const boardId = boardUrl.split("/").filter(Boolean).pop() || "";
-      const boardName = boardId.replace(/-/g, " ");
+      // Validate Pinterest board URL format
+      const pinterestUrlRegex = /^https?:\/\/(?:www\.)?pinterest\.(?:\w+)\/([^\/]+)\/([^\/]+)/;
+      const match = boardUrl.match(pinterestUrlRegex);
+
+      if (!match) {
+        toast({
+          title: "Invalid URL",
+          description: "Please enter a valid Pinterest board URL",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const [, username, boardName] = match;
+      const boardId = `${username}-${boardName}`;
       
-      const mockedBoard: PinterestBoard = {
+      const board: PinterestBoard = {
         id: boardId,
-        name: boardName,
+        name: boardName.replace(/-/g, ' '),
         url: boardUrl,
-        imageUrl: "https://i.pinimg.com/236x/1e/3f/58/1e3f587572dd30f9d242b3674482503b.jpg"
+        imageUrl: "https://i.pinimg.com/236x/1e/3f/58/1e3f587572dd30f9d242b3674482503b.jpg" // Default Pinterest logo or preview
       };
       
-      setAvailableBoards([mockedBoard]);
-      setSelectedBoards({[boardId]: true});
+      onBoardsSelected([board]);
+      setIsDialogOpen(false);
+      setBoardUrl("");
+      
       toast({
         title: "Success",
-        description: "Pinterest board found!",
+        description: "Pinterest board added successfully!",
       });
     } catch (error) {
-      console.error("Error connecting to Pinterest:", error);
+      console.error("Error processing Pinterest board:", error);
       toast({
         title: "Error",
-        description: "Failed to connect to Pinterest",
+        description: "Failed to add Pinterest board",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleBoardSelection = (boardId: string) => {
-    setSelectedBoards(prev => ({
-      ...prev,
-      [boardId]: !prev[boardId]
-    }));
-  };
-
-  const handleImportBoards = () => {
-    const boards = availableBoards.filter(board => selectedBoards[board.id]);
-    onBoardsSelected(boards);
-    setIsDialogOpen(false);
-    toast({
-      title: "Boards imported",
-      description: `Successfully imported ${boards.length} Pinterest board(s)`,
-    });
   };
 
   return (
@@ -91,72 +88,33 @@ const PinterestConnector: React.FC<PinterestConnectorProps> = ({ onBoardsSelecte
         <div className="flex items-center justify-center w-5 h-5 rounded-full bg-pink-500 text-white">
           <PinterestLogo className="w-3 h-3" />
         </div>
-        Connect Pinterest
+        Add Pinterest Board
       </Button>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Connect Pinterest</DialogTitle>
+            <DialogTitle>Add Pinterest Board</DialogTitle>
             <DialogDescription>
-              Import inspiration from your Pinterest boards.
+              Share your Pinterest board by entering its URL.
+              <div className="mt-2 text-sm text-muted-foreground">
+                Example: https://pinterest.com/username/board-name
+              </div>
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Pinterest Board URL</label>
-              <div className="flex gap-2">
-                <Input 
-                  placeholder="https://pinterest.com/username/boardname" 
-                  value={boardUrl}
-                  onChange={(e) => setBoardUrl(e.target.value)}
-                />
-                <Button 
-                  onClick={handleConnect} 
-                  disabled={isLoading}
-                  className="bg-pink-500 hover:bg-pink-600 text-white"
-                >
-                  Find
-                </Button>
-              </div>
+              <Input 
+                placeholder="https://pinterest.com/username/board-name"
+                value={boardUrl}
+                onChange={(e) => setBoardUrl(e.target.value)}
+              />
               <p className="text-xs text-gray-500">
-                Enter the URL of your Pinterest board
+                Open your Pinterest board, copy the URL from your browser, and paste it here
               </p>
             </div>
-            
-            {availableBoards.length > 0 && (
-              <div className="space-y-2 mt-4">
-                <h3 className="text-sm font-medium">Available Boards</h3>
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {availableBoards.map(board => (
-                    <div 
-                      key={board.id}
-                      className={`p-2 border rounded flex items-center gap-3 cursor-pointer ${
-                        selectedBoards[board.id] ? 'border-pink-500 bg-pink-50' : 'border-gray-200'
-                      }`}
-                      onClick={() => handleBoardSelection(board.id)}
-                    >
-                      {board.imageUrl && (
-                        <div className="w-10 h-10 overflow-hidden rounded">
-                          <img 
-                            src={board.imageUrl} 
-                            alt={board.name} 
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-                      <div>
-                        <p className="font-medium text-sm">{board.name}</p>
-                        <p className="text-xs text-gray-500 truncate max-w-[200px]">
-                          {board.url}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
           
           <DialogFooter className="sm:justify-between">
@@ -164,11 +122,11 @@ const PinterestConnector: React.FC<PinterestConnectorProps> = ({ onBoardsSelecte
               Cancel
             </Button>
             <Button 
-              onClick={handleImportBoards}
-              disabled={!Object.values(selectedBoards).some(Boolean)}
-              className="bg-pink-500 hover:bg-pink-600"
+              onClick={handleConnect}
+              disabled={isLoading || !boardUrl}
+              className="bg-pink-500 hover:bg-pink-600 text-white"
             >
-              Import Selected
+              Add Board
             </Button>
           </DialogFooter>
         </DialogContent>
