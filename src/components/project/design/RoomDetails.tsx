@@ -3,7 +3,9 @@ import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import EmptyDesignState from "./EmptyDesignState";
-import { FileText } from "lucide-react";
+import { FileText, Upload, Image } from "lucide-react";
+import { FileUpload } from "@/components/ui/file-upload";
+import { PropertyImageCarousel } from "@/components/property/PropertyImageCarousel";
 
 interface RoomDetailsProps {
   area: string;
@@ -12,6 +14,10 @@ interface RoomDetailsProps {
   designAssets?: Array<{ name: string; url: string; }>;
   onAddDesigner?: () => void;
   onUploadAssets?: () => void;
+  propertyPhotos?: string[];
+  onSelectBeforePhotos?: (photos: string[]) => void;
+  onUploadBeforePhotos?: (photos: string[]) => void;
+  beforePhotos?: string[];
 }
 
 const RoomDetails = ({
@@ -20,9 +26,14 @@ const RoomDetails = ({
   designers,
   designAssets,
   onAddDesigner,
-  onUploadAssets
+  onUploadAssets,
+  propertyPhotos = [],
+  onSelectBeforePhotos,
+  onUploadBeforePhotos,
+  beforePhotos = []
 }: RoomDetailsProps) => {
   const hasDesigner = designers && designers.length > 0;
+  const hasBeforePhotos = beforePhotos.length > 0;
 
   return (
     <div className="col-span-1 lg:col-span-2">
@@ -39,6 +50,38 @@ const RoomDetails = ({
               <span>{location}</span>
             </div>
           )}
+
+          {/* Before Photos Section */}
+          <div className="mb-6">
+            <h3 className="font-semibold mb-3">Before Photos</h3>
+            {hasBeforePhotos ? (
+              <div className="mb-4">
+                <PropertyImageCarousel images={beforePhotos} />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {propertyPhotos.length > 0 && (
+                  <Button 
+                    variant="outline" 
+                    className="w-full flex items-center justify-center gap-2"
+                    onClick={() => onSelectBeforePhotos?.([])}
+                  >
+                    <Image className="h-4 w-4" />
+                    Select from Property Photos
+                  </Button>
+                )}
+                
+                <FileUpload
+                  label="Upload Before Photos"
+                  description="Upload photos of the room's current state"
+                  accept="image/*"
+                  multiple={true}
+                  onUploadComplete={onUploadBeforePhotos}
+                  uploadedFiles={beforePhotos}
+                />
+              </div>
+            )}
+          </div>
 
           {hasDesigner ? (
             <div className="space-y-4">
