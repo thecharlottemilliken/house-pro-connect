@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import PinterestConnector from "./PinterestConnector";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { type PinterestBoard } from "@/types/pinterest";
 import PinterestBoardCard from "./PinterestBoardCard";
 import InspirationImagesGrid from "./InspirationImagesGrid";
 import { supabase } from "@/integrations/supabase/client";
+import UploadInspirationModal from "./UploadInspirationModal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,6 +43,7 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
   const [expandedBoard, setExpandedBoard] = useState<string | null>(null);
   const [boardToDelete, setBoardToDelete] = useState<PinterestBoard | null>(null);
   const [localPinterestBoards, setLocalPinterestBoards] = useState<PinterestBoard[]>(pinterestBoards);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   useEffect(() => {
     console.log("Current Pinterest boards:", pinterestBoards);
@@ -179,19 +180,32 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
     );
   };
 
+  const handleUploadComplete = (uploadedUrls: string[]) => {
+    if (!roomId) {
+      toast({
+        title: "Error",
+        description: "Room ID is required to save inspiration images",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    onAddInspiration([...inspirationImages, ...uploadedUrls], roomId);
+    setIsUploadModalOpen(false);
+  };
+
   return (
     <div className="w-full">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">Inspiration for {currentRoom}</h2>
+        <h2 className="text-xl font-bold text-gray-900 mb-6">
+          Inspiration for {currentRoom}
+        </h2>
         <div className="flex items-center gap-2">
           <Button 
             variant="ghost" 
             size="sm" 
             className="uppercase text-xs flex items-center gap-1"
-            onClick={() => toast({
-              title: "Add Inspiration",
-              description: "Upload inspiration image functionality would be here"
-            })}
+            onClick={() => setIsUploadModalOpen(true)}
           >
             <Plus className="h-3.5 w-3.5" /> Add Images
           </Button>
@@ -231,6 +245,13 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
           {renderTabContent()}
         </>
       )}
+      
+      <UploadInspirationModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        onUploadComplete={handleUploadComplete}
+        roomName={currentRoom}
+      />
       
       <AlertDialog open={!!boardToDelete} onOpenChange={(open) => !open && setBoardToDelete(null)}>
         <AlertDialogContent>
