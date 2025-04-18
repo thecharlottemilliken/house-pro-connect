@@ -1,7 +1,6 @@
 
 import { useState } from "react";
 import {
-  BrowserRouter,
   Routes,
   Route,
   Navigate,
@@ -37,131 +36,129 @@ function App() {
   };
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route
-          path="/signin"
-          element={
-            <PublicRoute>
-              <SignIn />
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/signup"
-          element={
-            <PublicRoute>
-              <SignUp />
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/forgot-password"
-          element={
-            <PublicRoute>
-              <ForgotPassword />
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/dashboard"
-          element={
-            <RequireAuth>
-              <Dashboard />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/projects"
-          element={
-            <RequireAuth>
-              <Projects />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/project-dashboard/:projectId"
-          element={
-            <RequireAuth>
-              <ProjectDashboard />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/project-design/:projectId"
-          element={
-            <RequireAuth>
-              <ProjectDesign />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/project-documents/:projectId"
-          element={
-            <RequireAuth>
-              <ProjectDocuments />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/project-messages/:projectId"
-          element={
-            <RequireAuth>
-              <ProjectMessages />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/project-team/:projectId"
-          element={
-            <RequireAuth>
-              <ProjectTeam />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/project-materials/:projectId"
-          element={
-            <RequireAuth>
-              <ProjectMaterials />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/project-accounting/:projectId"
-          element={
-            <RequireAuth>
-              <ProjectAccounting />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/project-manage/:projectId"
-          element={
-            <RequireAuth>
-              <ProjectManage />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/project-bids-proposals/:projectId"
-          element={
-            <RequireAuth>
-              <ProjectBidsProposals />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/project-sow/:projectId"
-          element={
-            <RequireAuth>
-              <ProjectSOW />
-            </RequireAuth>
-          }
-        />
-      </Routes>
-    </BrowserRouter>
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route
+        path="/signin"
+        element={
+          <PublicRoute>
+            <SignIn />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/signup"
+        element={
+          <PublicRoute>
+            <SignUp />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/forgot-password"
+        element={
+          <PublicRoute>
+            <ForgotPassword />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/dashboard"
+        element={
+          <RequireAuth>
+            <Dashboard />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/projects"
+        element={
+          <RequireAuth>
+            <Projects />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/project-dashboard/:projectId"
+        element={
+          <RequireAuth>
+            <ProjectDashboard />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/project-design/:projectId"
+        element={
+          <RequireAuth>
+            <ProjectDesign />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/project-documents/:projectId"
+        element={
+          <RequireAuth>
+            <ProjectDocuments />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/project-messages/:projectId"
+        element={
+          <RequireAuth>
+            <ProjectMessages />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/project-team/:projectId"
+        element={
+          <RequireAuth>
+            <ProjectTeam />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/project-materials/:projectId"
+        element={
+          <RequireAuth>
+            <ProjectMaterials />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/project-accounting/:projectId"
+        element={
+          <RequireAuth>
+            <ProjectAccounting />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/project-manage/:projectId"
+        element={
+          <RequireAuth>
+            <ProjectManage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/project-bids-proposals/:projectId"
+        element={
+          <RequireAuth>
+            <ProjectBidsProposals />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/project-sow/:projectId"
+        element={
+          <RequireAuth>
+            <ProjectSOW />
+          </RequireAuth>
+        }
+      />
+    </Routes>
   );
 }
 
