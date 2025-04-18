@@ -8,13 +8,27 @@ import { FileUpload } from "@/components/ui/file-upload";
 
 interface CategorySectionProps {
   title: string;
-  files?: { name: string; size: string; type: 'pdf' | 'xls'; url?: string }[];
+  files?: { name: string; size: string; type: 'pdf' | 'xls' | 'jpg' | 'png'; url?: string }[];
   onUpload: (urls: string[]) => void;
   onDelete: () => void;
 }
 
 const CategorySection = ({ title, files = [], onUpload, onDelete }: CategorySectionProps) => {
   const [showUploadDialog, setShowUploadDialog] = React.useState(false);
+
+  // Determine accepted file types based on the section title
+  const getAcceptedFileTypes = () => {
+    switch (title.toLowerCase()) {
+      case 'blueprints':
+        return "application/pdf,image/jpeg,image/png";
+      case 'renderings':
+        return "image/jpeg,image/png";
+      case 'drawings':
+        return "image/jpeg,image/png,application/pdf";
+      default:
+        return "image/*,application/pdf,application/vnd.ms-excel";
+    }
+  };
 
   return (
     <div className="mb-6">
@@ -49,12 +63,12 @@ const CategorySection = ({ title, files = [], onUpload, onDelete }: CategorySect
           <DialogHeader>
             <DialogTitle>Upload {title}</DialogTitle>
             <DialogDescription>
-              Upload files for your property. Accepted formats: PDF, XLS
+              Upload files for {title}. Accepted formats: PDF, JPG, PNG
             </DialogDescription>
           </DialogHeader>
           
           <FileUpload
-            accept={title.toLowerCase() === 'blueprints' ? "application/pdf" : "application/pdf,application/vnd.ms-excel"}
+            accept={getAcceptedFileTypes()}
             multiple={false}
             onUploadComplete={(urls) => {
               onUpload(urls);

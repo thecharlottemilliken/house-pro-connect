@@ -15,7 +15,7 @@ interface FileUploadProps {
 }
 
 export function FileUpload({ 
-  accept = "image/*,application/pdf", 
+  accept = "image/*,application/pdf,image/jpeg,image/png,application/vnd.ms-excel", 
   multiple = false,
   onUploadComplete,
   label,
@@ -64,7 +64,7 @@ export function FileUpload({
         variant: "destructive"
       });
     } finally {
-      setIsUploading(false); // Fixed: using setIsUploading instead of setIsSubmitting
+      setIsUploading(false);
       // Reset the input
       event.target.value = '';
     }
