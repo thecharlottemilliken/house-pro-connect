@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -10,12 +10,14 @@ import AccountingSpecialtiesSidebar from "@/components/project/accounting/Accoun
 import AccountingTabs from "@/components/project/accounting/AccountingTabs";
 
 const ProjectAccounting = () => {
+  const location = useLocation();
   const params = useParams();
   const isMobile = useIsMobile();
   const [activeSpecialty, setActiveSpecialty] = useState("Tile");
   
   const { projectData, propertyDetails, isLoading } = useProjectData(
-    params.projectId
+    params.projectId,
+    location.state
   );
 
   if (isLoading || !propertyDetails) {
@@ -29,7 +31,7 @@ const ProjectAccounting = () => {
     );
   }
 
-  const projectId = projectData.id || params.projectId;
+  const projectId = projectData?.id || params.projectId || "";
 
   return (
     <div className="flex flex-col bg-white min-h-screen">

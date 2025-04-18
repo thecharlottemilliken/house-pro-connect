@@ -1,9 +1,8 @@
-
 import React from "react";
 import { useLocation, useParams } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useProjectData } from "@/hooks/useProjectData";
+import { useProjectData, RenovationArea } from "@/hooks/useProjectData";
 import ProjectSidebar from "@/components/project/ProjectSidebar";
 import PropertyCard from "@/components/project/PropertyCard";
 import TasksCard from "@/components/project/TasksCard";
@@ -49,7 +48,7 @@ const ProjectDashboard = () => {
 
   const projectId = projectData?.id || params.projectId || "";
   const projectTitle = projectData?.title || "Project Overview";
-  const renovationAreas = projectData?.renovation_areas || [];
+  const renovationAreas = projectData?.renovation_areas as RenovationArea[] || [];
   const hasSOW = false; // This should be updated to check actual SOW status once implemented
   const hasDesignPlan = false; // This should be updated to check actual design plan status once implemented
   const isCoach = profile?.role === 'coach';
@@ -95,7 +94,16 @@ const ProjectDashboard = () => {
             
             <div className="grid grid-cols-1 gap-3 sm:gap-4 md:gap-6 lg:grid-cols-2 2xl:grid-cols-3">
               <PropertyCard 
-                propertyDetails={propertyDetails} 
+                propertyDetails={{
+                  id: propertyDetails.id,
+                  property_name: propertyDetails.property_name,
+                  image_url: propertyDetails.image_url,
+                  home_photos: propertyDetails.home_photos,
+                  address_line1: propertyDetails.address_line1,
+                  city: propertyDetails.city,
+                  state: propertyDetails.state,
+                  zip_code: propertyDetails.zip_code
+                }} 
                 renovationAreas={renovationAreas}
               />
               

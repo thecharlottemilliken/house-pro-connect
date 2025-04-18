@@ -57,7 +57,6 @@ const DesignPreferences = () => {
     }
   }, [location.state, navigate]);
   
-  // Function to load existing design preferences
   const loadExistingPreferences = async (id: string) => {
     try {
       const { data, error } = await supabase
@@ -69,11 +68,11 @@ const DesignPreferences = () => {
       if (error) throw error;
       
       if (data && data.design_preferences) {
-        const prefs = data.design_preferences as DesignPreferencesType;
+        const prefs = data.design_preferences as any;
         
         if (prefs.hasDesigns !== undefined) setHasDesigns(prefs.hasDesigns);
         if (prefs.designers && Array.isArray(prefs.designers) && prefs.designers.length > 0) {
-          setDesigners(prefs.designers as any);
+          setDesigners(prefs.designers);
         }
       }
     } catch (error) {
@@ -82,14 +81,12 @@ const DesignPreferences = () => {
   };
 
   const savePreferences = async () => {
-    // Create design preferences object
     const designPreferences: Record<string, unknown> = {
       hasDesigns,
       designers: !hasDesigns ? designers : [],
-      beforePhotos: {} // Initialize beforePhotos as an empty object
+      beforePhotos: {}
     };
     
-    // If we already have a project ID, update it
     if (projectId) {
       try {
         const { error } = await supabase
@@ -115,11 +112,9 @@ const DesignPreferences = () => {
         return;
       }
     } else {
-      // Just log and continue if no project ID (project should have been created in Project Preferences)
       console.log("No project ID available, storing preferences in state only");
     }
     
-    // Update the project preferences state
     const updatedProjectPrefs = {
       ...projectPrefs,
       projectId,
@@ -129,7 +124,6 @@ const DesignPreferences = () => {
     
     setProjectPrefs(updatedProjectPrefs);
     
-    // Navigate to next step
     navigate("/management-preferences", {
       state: updatedProjectPrefs
     });

@@ -1,13 +1,11 @@
-
 import { useParams, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useProjectData, DesignPreferences } from "@/hooks/useProjectData";
+import { useProjectData, DesignPreferences, RenovationArea } from "@/hooks/useProjectData";
 import { Button } from "@/components/ui/button";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import ProjectSidebar from "@/components/project/ProjectSidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
 import EmptyDesignState from "@/components/project/design/EmptyDesignState";
 import RecommendedContent from "@/components/dashboard/RecommendedContent";
 import RoomDetails from "@/components/project/design/RoomDetails";
@@ -34,7 +32,7 @@ const ProjectDesign = () => {
     );
   }
 
-  const designPreferences: DesignPreferences = projectData.design_preferences || {
+  const designPreferences: DesignPreferences = (projectData.design_preferences as any) || {
     hasDesigns: false,
     designers: [],
     designAssets: [],
@@ -47,7 +45,7 @@ const ProjectDesign = () => {
   const hasDesigns = designPreferences.hasDesigns;
   const hasRenderings = designPreferences.renderingImages && designPreferences.renderingImages.length > 0;
   const hasInspiration = designPreferences.inspirationImages && designPreferences.inspirationImages.length > 0;
-  const defaultTab = projectData.renovation_areas?.[0]?.area.toLowerCase() || "kitchen";
+  const defaultTab = (projectData.renovation_areas as RenovationArea[])?.[0]?.area?.toLowerCase() || "kitchen";
   
   const propertyPhotos = propertyDetails?.home_photos || [];
 
@@ -63,7 +61,6 @@ const ProjectDesign = () => {
     try {
       const areaKey = area.toLowerCase().replace(/\s+/g, '_');
       
-      // Create a new object to avoid modifying the original reference
       const updatedBeforePhotos = { 
         ...(designPreferences.beforePhotos || {}),
         [areaKey]: selectedPhotos
@@ -104,7 +101,6 @@ const ProjectDesign = () => {
       
       const existingPhotos = designPreferences.beforePhotos?.[areaKey] || [];
       
-      // Create a new object to avoid modifying the original reference
       const updatedBeforePhotos = { 
         ...(designPreferences.beforePhotos || {}),
         [areaKey]: [...existingPhotos, ...uploadedPhotos]
@@ -143,7 +139,6 @@ const ProjectDesign = () => {
     try {
       const areaKey = area.toLowerCase().replace(/\s+/g, '_');
       
-      // Create a new object to avoid modifying the original reference
       const updatedMeasurements = { 
         ...(designPreferences.roomMeasurements || {}),
         [areaKey]: measurements
@@ -200,7 +195,7 @@ const ProjectDesign = () => {
                 <h2 className="text-lg font-medium mb-3">Select a room</h2>
                 <Tabs defaultValue={defaultTab} className="w-full">
                   <TabsList className="mb-4">
-                    {projectData.renovation_areas?.map((area, index) => (
+                    {(projectData.renovation_areas as RenovationArea[])?.map((area, index) => (
                       <TabsTrigger 
                         key={area.area} 
                         value={area.area.toLowerCase()}
@@ -214,7 +209,7 @@ const ProjectDesign = () => {
                     ))}
                   </TabsList>
 
-                  {projectData.renovation_areas?.map((area) => {
+                  {(projectData.renovation_areas as RenovationArea[])?.map((area) => {
                     const areaKey = area.area.toLowerCase().replace(/\s+/g, '_');
                     const beforePhotos = designPreferences.beforePhotos?.[areaKey] || [];
                     const measurements = designPreferences.roomMeasurements?.[areaKey];
@@ -230,8 +225,8 @@ const ProjectDesign = () => {
                                 designers={designPreferences.designers}
                                 designAssets={designPreferences.designAssets}
                                 measurements={measurements}
-                                onAddDesigner={handleAddDesigner}
-                                onUploadAssets={handleUploadAssets}
+                                onAddDesigner={() => console.log("Add designer clicked")}
+                                onUploadAssets={() => console.log("Upload assets clicked")}
                                 onSaveMeasurements={(newMeasurements) => handleSaveMeasurements(area.area, newMeasurements)}
                                 propertyPhotos={propertyPhotos}
                                 onSelectBeforePhotos={(photos) => handleSelectBeforePhotos(area.area, photos)}
@@ -244,16 +239,16 @@ const ProjectDesign = () => {
                               <DesignAssetsCard
                                 hasRenderings={hasRenderings}
                                 renderingImages={designPreferences.renderingImages}
-                                onAddRenderings={handleAddRenderings}
-                                onAddDrawings={handleAddDrawings}
-                                onAddBlueprints={handleAddBlueprints}
+                                onAddRenderings={() => console.log("Add renderings clicked")}
+                                onAddDrawings={() => console.log("Add drawings clicked")}
+                                onAddBlueprints={() => console.log("Add blueprints clicked")}
                               />
                             </div>
                           </div>
                         ) : (
                           <EmptyDesignState 
                             type="no-designs" 
-                            onAction={handleAddDesignPlans}
+                            onAction={() => console.log("Add design plans clicked")}
                           />
                         )}
                       </TabsContent>
@@ -269,7 +264,7 @@ const ProjectDesign = () => {
                     variant="ghost" 
                     size="sm" 
                     className="uppercase text-xs"
-                    onClick={handleAddInspiration}
+                    onClick={() => console.log("Add inspiration clicked")}
                   >
                     Add Inspiration
                   </Button>
@@ -278,7 +273,7 @@ const ProjectDesign = () => {
                 {!hasInspiration ? (
                   <EmptyDesignState 
                     type="inspiration" 
-                    onAction={handleAddInspiration}
+                    onAction={() => console.log("Add inspiration clicked")}
                   />
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
