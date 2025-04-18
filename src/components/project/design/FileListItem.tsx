@@ -1,6 +1,11 @@
-
 import React, { useState } from "react";
 import { Download, Eye, X } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,10 +28,16 @@ interface FileListItemProps {
 
 export const FileListItem = ({ name, size, type, onDownload, onView, onDelete }: FileListItemProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   const handleConfirmDelete = () => {
     onDelete();
     setShowDeleteDialog(false);
+  };
+
+  const handlePreview = () => {
+    onView();
+    setShowPreview(true);
   };
 
   return (
@@ -57,13 +68,34 @@ export const FileListItem = ({ name, size, type, onDownload, onView, onDelete }:
             <X className="w-4 h-4" />
           </button>
           <button 
-            onClick={onView}
+            onClick={handlePreview}
             className="p-1.5 text-gray-500 hover:text-gray-700"
           >
             <Eye className="w-4 h-4" />
           </button>
         </div>
       </div>
+
+      <Sheet open={showPreview} onOpenChange={setShowPreview}>
+        <SheetContent className="sm:max-w-2xl">
+          <SheetHeader>
+            <SheetTitle>{name}</SheetTitle>
+          </SheetHeader>
+          <div className="mt-6">
+            {type === 'pdf' ? (
+              <iframe
+                src={`https://docs.google.com/viewer?embedded=true&url=${encodeURIComponent(name)}`}
+                className="w-full h-[80vh]"
+                title="PDF Preview"
+              />
+            ) : (
+              <div className="flex items-center justify-center h-[80vh] bg-gray-100 rounded-lg">
+                <p className="text-gray-500">Preview not available for this file type</p>
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
