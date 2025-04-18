@@ -1,42 +1,37 @@
 
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { useIsMobile } from "@/hooks/use-mobile";
-import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
-import ProjectSidebar from "@/components/project/ProjectSidebar";
+import { useParams, useLocation } from "react-router-dom";
+import { ChevronLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { SOWWizard } from "@/components/project/sow/SOWWizard";
 import { useProjectData } from "@/hooks/useProjectData";
-import { useParams, useLocation } from "react-router-dom";
 
 const ProjectSOW = () => {
   const location = useLocation();
   const params = useParams();
-  const isMobile = useIsMobile();
   
   const { projectData } = useProjectData(
     params.projectId,
     location.state
   );
   
-  const projectId = projectData?.id || params.projectId || "";
   const projectTitle = projectData?.title || "Unknown Project";
 
   return (
-    <div className="flex flex-col bg-white min-h-screen">
-      <DashboardNavbar />
-      
-      <SidebarProvider defaultOpen={!isMobile}>
-        <div className="flex flex-1 h-[calc(100vh-64px)] w-full">
-          <ProjectSidebar 
-            projectId={projectId} 
-            projectTitle={projectTitle}
-            activePage="manage"
-          />
-          
-          <div className="flex-1 overflow-y-auto">
-            <SOWWizard />
-          </div>
+    <div className="min-h-screen bg-white">
+      <header className="h-14 border-b flex items-center px-4 bg-white">
+        <Button variant="ghost" size="sm" className="gap-2" onClick={() => window.history.back()}>
+          <ChevronLeft className="h-4 w-4" />
+          Back to Project
+        </Button>
+        <div className="flex-1 flex justify-center">
+          <h1 className="text-sm font-medium">{projectTitle} - Statement of Work</h1>
         </div>
-      </SidebarProvider>
+        <div className="w-[72px]" /> {/* Spacer to center the title */}
+      </header>
+      
+      <main className="px-4 py-6">
+        <SOWWizard />
+      </main>
     </div>
   );
 };
