@@ -34,7 +34,15 @@ const RoomMeasurementsCard = ({
 
   const calculateSquareFootage = () => {
     if (!measurements?.length || !measurements?.width) return null;
-    const area = measurements.length * measurements.width;
+    
+    // Ensure we're working with numbers
+    const length = Number(measurements.length);
+    const width = Number(measurements.width);
+    
+    if (isNaN(length) || isNaN(width)) return null;
+    
+    const area = length * width;
+    
     // Convert to square feet if measurements are in meters
     return measurements.unit === 'm' ? area * 10.764 : area;
   };
@@ -176,4 +184,3 @@ const RoomMeasurementsCard = ({
 };
 
 export default RoomMeasurementsCard;
-
