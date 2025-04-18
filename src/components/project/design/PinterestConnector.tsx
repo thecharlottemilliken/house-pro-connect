@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
@@ -21,17 +20,17 @@ interface PinterestConnectorProps {
 const mockPins = [
   {
     id: "1",
-    imageUrl: "https://i.pinimg.com/564x/a1/94/a5/a194a58ce675f39a3d74e9b41e6be00a.jpg",
+    imageUrl: "https://i.pinimg.com/236x/1e/3f/58/1e3f587572dd30f9d242b3674482503b.jpg",
     description: "Modern Living Room Design"
   },
   {
     id: "2",
-    imageUrl: "https://i.pinimg.com/564x/8e/bf/36/8ebf36a1f7f2c91c92b3bcf59be3c59.jpg",
+    imageUrl: "https://i.pinimg.com/236x/1e/3f/58/1e3f587572dd30f9d242b3674482503b.jpg",
     description: "Kitchen Renovation Inspiration"
   },
   {
     id: "3",
-    imageUrl: "https://i.pinimg.com/564x/5e/66/28/5e6628e606068dbeaa81e9dfbd489fe8.jpg",
+    imageUrl: "https://i.pinimg.com/236x/1e/3f/58/1e3f587572dd30f9d242b3674482503b.jpg",
     description: "Bathroom Design Ideas"
   }
 ];
@@ -71,7 +70,7 @@ const PinterestConnector: React.FC<PinterestConnectorProps> = ({ onBoardsSelecte
       const [, username, boardName] = match;
       const boardId = `${username}-${boardName}`;
       
-      // For demo purposes, use a fixed image from mockPins as the board cover
+      // For demo purposes, use a fixed image as the board cover
       const boardCoverImage = "https://i.pinimg.com/236x/1e/3f/58/1e3f587572dd30f9d242b3674482503b.jpg";
       
       const board: PinterestBoard = {
@@ -82,14 +81,12 @@ const PinterestConnector: React.FC<PinterestConnectorProps> = ({ onBoardsSelecte
         pins: mockPins
       };
       
+      // Pass the board to the parent component
       onBoardsSelected([board]);
       setIsDialogOpen(false);
       setBoardUrl("");
       
-      toast({
-        title: "Success",
-        description: "Pinterest board added successfully!",
-      });
+      // Success notification is handled in the parent component
     } catch (error) {
       console.error("Error processing Pinterest board:", error);
       toast({

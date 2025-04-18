@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PinterestConnector from "./PinterestConnector";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2 } from "lucide-react";
@@ -37,14 +36,17 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
   const [selectedTab, setSelectedTab] = useState<'images' | 'boards'>('images');
   const [expandedBoard, setExpandedBoard] = useState<string | null>(null);
   const [boardToDelete, setBoardToDelete] = useState<PinterestBoard | null>(null);
+  const [localPinterestBoards, setLocalPinterestBoards] = useState<PinterestBoard[]>(pinterestBoards);
 
+  useEffect(() => {
+    setLocalPinterestBoards(pinterestBoards);
+  }, [pinterestBoards]);
+  
   const handlePinterestBoardsSelected = (boards: PinterestBoard[]) => {
     console.log("Pinterest boards selected:", boards);
     
-    // Pass only the new boards to the parent component
     onAddPinterestBoards(boards);
     
-    // Extract image URLs from the new boards' pins and add them to inspiration
     const newImages = boards.flatMap(board => board.pins?.map(pin => pin.imageUrl) || []);
     if (newImages.length > 0) {
       onAddInspiration(newImages);
@@ -62,7 +64,7 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
         throw new Error("Could not determine project ID");
       }
       
-      const updatedBoards = pinterestBoards.filter(board => board.id !== boardToRemove.id);
+      const updatedBoards = localPinterestBoards.filter(board => board.id !== boardToRemove.id);
       
       const boardPinUrls = boardToRemove.pins?.map(pin => pin.imageUrl) || [];
       const updatedInspiration = inspirationImages.filter(img => !boardPinUrls.includes(img));
@@ -91,6 +93,7 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
       
       onAddPinterestBoards(updatedBoards);
       onAddInspiration(updatedInspiration);
+      setLocalPinterestBoards(updatedBoards);
       
       setBoardToDelete(null);
       
@@ -123,7 +126,7 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
 
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {pinterestBoards.map((board) => (
+        {localPinterestBoards.map((board) => (
           <PinterestBoardCard
             key={board.id}
             board={board}
@@ -183,7 +186,7 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
               }`}
               onClick={() => setSelectedTab('boards')}
             >
-              Pinterest Boards ({pinterestBoards.length})
+              Pinterest Boards ({localPinterestBoards.length})
             </button>
           </div>
           {renderTabContent()}

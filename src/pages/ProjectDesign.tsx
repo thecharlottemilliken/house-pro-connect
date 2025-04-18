@@ -368,7 +368,7 @@ const ProjectDesign = () => {
               <div className="mt-8 w-full">
                 <PinterestInspirationSection 
                   inspirationImages={designPreferences.inspirationImages || []}
-                  pinterestBoards={pinterestBoards}
+                  pinterestBoards={designPreferences.pinterestBoards || []}
                   onAddInspiration={handleAddInspirationImages}
                   onAddPinterestBoards={handleAddPinterestBoards}
                 />
