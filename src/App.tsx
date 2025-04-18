@@ -22,6 +22,7 @@ import ProjectAccounting from "./pages/ProjectAccounting";
 import ProjectManage from "./pages/ProjectManage";
 import ProjectBidsProposals from "./pages/ProjectBidsProposals";
 import ProjectSOW from "./pages/ProjectSOW";
+import ResidentDashboard from "./pages/ResidentDashboard";
 
 function App() {
   const { user } = useAuth();
@@ -67,6 +68,14 @@ function App() {
         element={
           <RequireAuth>
             <Dashboard />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/resident-dashboard"
+        element={
+          <RequireAuth>
+            <ResidentDashboard />
           </RequireAuth>
         }
       />
