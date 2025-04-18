@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useLocation, useParams } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
@@ -17,7 +18,7 @@ const ProjectDashboard = () => {
   const location = useLocation();
   const params = useParams();
   const isMobile = useIsMobile();
-  const { user } = useAuth();
+  const { profile } = useAuth();
   
   const { projectData, propertyDetails, isLoading } = useProjectData(
     params.projectId,
@@ -39,7 +40,10 @@ const ProjectDashboard = () => {
   const projectTitle = projectData?.title || "Project Overview";
   const renovationAreas = projectData?.renovation_areas || [];
   const hasSOW = false; // This should be updated to check actual SOW status once implemented
-  const isCoach = user?.role === 'coach';
+  const isCoach = profile?.role === 'coach';
+  
+  console.log("Current user profile:", profile);
+  console.log("Is coach:", isCoach);
 
   return (
     <div className="flex flex-col bg-white min-h-screen">
