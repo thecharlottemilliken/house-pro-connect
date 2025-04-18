@@ -24,6 +24,11 @@ interface FileListItemProps {
 export const FileListItem = ({ name, size, type, onDownload, onView, onDelete }: FileListItemProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
+  const handleConfirmDelete = () => {
+    onDelete();
+    setShowDeleteDialog(false);
+  };
+
   return (
     <>
       <div className="flex items-center justify-between py-2">
@@ -71,10 +76,7 @@ export const FileListItem = ({ name, size, type, onDownload, onView, onDelete }:
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction 
-              onClick={() => {
-                onDelete();
-                setShowDeleteDialog(false);
-              }}
+              onClick={handleConfirmDelete}
               className="bg-red-500 hover:bg-red-600"
             >
               Delete

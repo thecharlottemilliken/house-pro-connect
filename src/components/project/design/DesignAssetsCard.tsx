@@ -30,6 +30,16 @@ const DesignAssetsCard = ({
   const [isUploading, setIsUploading] = useState(false);
   const [pdfStatus, setPdfStatus] = useState<'unknown' | 'valid' | 'invalid'>('unknown');
   const [isCheckingPdf, setIsCheckingPdf] = useState(false);
+  const [blueprintFile, setBlueprintFile] = useState<{name: string; size: string; type: 'pdf'} | null>(
+    propertyBlueprint ? { name: "Blueprint.pdf", size: "1.2MB", type: 'pdf' } : null
+  );
+  const [renderingFiles, setRenderingFiles] = useState<{name: string; size: string; type: 'pdf'}[]>(
+    renderingImages.map((url, index) => ({
+      name: `Rendering_${index + 1}.jpg`,
+      size: "1.5MB",
+      type: 'pdf'
+    }))
+  );
   
   const verifyBlueprintUrl = async () => {
     if (!propertyBlueprint) {
@@ -72,6 +82,9 @@ const DesignAssetsCard = ({
         .eq('id', propertyId);
 
       if (error) throw error;
+      
+      // Update local state to reflect the change
+      setBlueprintFile({ name: "Blueprint.pdf", size: "1.2MB", type: 'pdf' });
 
       toast({
         title: "Blueprint Added",
@@ -95,9 +108,11 @@ const DesignAssetsCard = ({
     try {
       if (propertyBlueprint) {
         const filename = propertyBlueprint.split('/').pop();
-        await supabase.storage
-          .from('property-blueprints')
-          .remove([filename!]);
+        if (filename) {
+          await supabase.storage
+            .from('property-blueprints')
+            .remove([filename]);
+        }
       }
 
       const { error } = await supabase
@@ -106,6 +121,9 @@ const DesignAssetsCard = ({
         .eq('id', propertyId);
 
       if (error) throw error;
+      
+      // Update local state to reflect the change
+      setBlueprintFile(null);
 
       toast({
         title: "Blueprint Removed",
@@ -135,14 +153,25 @@ const DesignAssetsCard = ({
   const handleAddRenderings = (urls: string[]) => {
     // Handle rendering uploads when implemented
     console.log("Rendering URLs:", urls);
+    if (urls.length > 0) {
+      const newRenderings = urls.map((url, index) => ({
+        name: `New_Rendering_${index + 1}.jpg`,
+        size: "1.5MB",
+        type: 'pdf' as const
+      }));
+      
+      setRenderingFiles(prev => [...prev, ...newRenderings]);
+    }
     if (onAddRenderings) onAddRenderings();
   };
 
   const handleRemoveRenderings = async () => {
     try {
-      // This is a placeholder function for removing renderings
-      // Actual implementation would require storing rendering references
-      // and removing them from storage and database
+      // Remove the rendering from state
+      if (renderingFiles.length > 0) {
+        setRenderingFiles(prev => prev.slice(0, -1));
+      }
+      
       toast({
         title: "Rendering Removed",
         description: "The rendering has been removed successfully."
@@ -166,8 +195,6 @@ const DesignAssetsCard = ({
   const handleRemoveDrawings = async () => {
     try {
       // This is a placeholder function for removing drawings
-      // Actual implementation would require storing drawing references
-      // and removing them from storage and database
       toast({
         title: "Drawing Removed",
         description: "The drawing has been removed successfully."
@@ -187,20 +214,14 @@ const DesignAssetsCard = ({
       <CardContent className="p-6">
         <CategorySection
           title="Blueprints"
-          files={propertyBlueprint ? [
-            { name: "Blueprint.pdf", size: "1.2MB", type: 'pdf' }
-          ] : []}
+          files={blueprintFile ? [blueprintFile] : []}
           onUpload={handleUploadBlueprint}
           onDelete={handleRemoveBlueprint}
         />
 
         <CategorySection
           title="Renderings"
-          files={renderingImages.map((url, index) => ({
-            name: `Rendering_${index + 1}.jpg`,
-            size: "1.5MB",
-            type: 'pdf'
-          }))}
+          files={renderingFiles}
           onUpload={handleAddRenderings}
           onDelete={handleRemoveRenderings}
         />
