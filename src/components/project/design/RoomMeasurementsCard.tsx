@@ -39,7 +39,16 @@ const RoomMeasurementsCard = ({
     return measurements.unit === 'm' ? area * 10.764 : area;
   };
 
+  const formatSquareFootage = (sqft: number | null) => {
+    if (sqft === null) return null;
+    return sqft.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  };
+
   const squareFootage = calculateSquareFootage();
+  const formattedSquareFootage = formatSquareFootage(squareFootage);
   
   const handleSaveMeasurements = async (newMeasurements: any) => {
     try {
@@ -143,7 +152,7 @@ const RoomMeasurementsCard = ({
               {squareFootage && (
                 <div>
                   <p className="text-sm text-gray-500">Square Footage</p>
-                  <p className="font-medium">{squareFootage.toFixed(2)} ft²</p>
+                  <p className="font-medium">{formattedSquareFootage} SQFT</p>
                 </div>
               )}
             </div>
@@ -167,3 +176,4 @@ const RoomMeasurementsCard = ({
 };
 
 export default RoomMeasurementsCard;
+
