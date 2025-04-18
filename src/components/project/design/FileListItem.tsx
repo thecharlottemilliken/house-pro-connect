@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Download, Eye, X } from "lucide-react";
 
@@ -11,7 +10,7 @@ interface FileListItemProps {
   onDelete: () => void;
 }
 
-const FileListItem = ({ name, size, type, onDownload, onView, onDelete }: FileListItemProps) => {
+export const FileListItem = ({ name, size, type, onDownload, onView, onDelete }: FileListItemProps) => {
   return (
     <div className="flex items-center justify-between py-2">
       <div className="flex items-center gap-3">
@@ -48,5 +47,3 @@ const FileListItem = ({ name, size, type, onDownload, onView, onDelete }: FileLi
     </div>
   );
 };
-
-export default FileListItem;

@@ -26,7 +26,6 @@ const DesignAssetsCard = ({
   propertyBlueprint,
   propertyId
 }: DesignAssetsCardProps) => {
-  const [showUploadBlueprint, setShowUploadBlueprint] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [pdfStatus, setPdfStatus] = useState<'unknown' | 'valid' | 'invalid'>('unknown');
   const [isCheckingPdf, setIsCheckingPdf] = useState(false);
@@ -77,7 +76,6 @@ const DesignAssetsCard = ({
         title: "Blueprint Added",
         description: "Your blueprint has been successfully uploaded."
       });
-      setShowUploadBlueprint(false);
     } catch (error) {
       console.error('Error uploading blueprint:', error);
       toast({
@@ -94,7 +92,6 @@ const DesignAssetsCard = ({
     if (!propertyId) return;
 
     try {
-      // Remove the file from storage if it exists
       if (propertyBlueprint) {
         const filename = propertyBlueprint.split('/').pop();
         await supabase.storage
@@ -102,7 +99,6 @@ const DesignAssetsCard = ({
           .remove([filename!]);
       }
 
-      // Update the property record
       const { error } = await supabase
         .from('properties')
         .update({ blueprint_url: null })
@@ -141,16 +137,16 @@ const DesignAssetsCard = ({
         <CategorySection
           title="Blueprints"
           files={propertyBlueprint ? [
-            { name: "Biodata.pdf", size: "1.2MB / 1.2MB", type: 'pdf' }
+            { name: "Blueprint.pdf", size: "1.2MB", type: 'pdf' }
           ] : []}
-          onUpload={() => setShowUploadBlueprint(true)}
+          onUpload={handleUploadBlueprint}
         />
 
         <CategorySection
           title="Renderings"
           files={renderingImages.map((url, index) => ({
             name: `Rendering_${index + 1}.jpg`,
-            size: "1.5MB / 1.5MB",
+            size: "1.5MB",
             type: 'pdf'
           }))}
           onUpload={onAddRenderings}
@@ -162,32 +158,6 @@ const DesignAssetsCard = ({
           onUpload={onAddDrawings}
         />
       </CardContent>
-
-      {/* Upload Blueprint Dialog */}
-      <Dialog open={showUploadBlueprint} onOpenChange={setShowUploadBlueprint}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Upload Blueprint</DialogTitle>
-            <DialogDescription>
-              Upload a new blueprint PDF file for your property.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <FileUpload
-            accept="application/pdf"
-            multiple={false}
-            onUploadComplete={handleUploadBlueprint}
-            label="Blueprint PDF"
-            description="Upload a PDF file of your property blueprint"
-          />
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowUploadBlueprint(false)}>
-              Cancel
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </Card>
   );
 };
