@@ -50,8 +50,8 @@ const RoomMeasurementsCard = ({
   const formatSquareFootage = (sqft: number | null) => {
     if (sqft === null) return null;
     return sqft.toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
     });
   };
 
