@@ -1,6 +1,5 @@
-
 import React, { useEffect, useState } from 'react';
-import { FileImage, Download, Eye, Loader } from "lucide-react";
+import { FileImage, Download, Eye, Loader, Info, Building, MapPin, Tool } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   Select,
@@ -232,6 +231,51 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
     </div>
   );
 
+  // Project information blurbs
+  const ProjectInfo = () => (
+    <div className="px-4 py-3 border-b">
+      <div className="space-y-4">
+        <div className="flex items-start gap-3">
+          <Info className="w-5 h-5 text-gray-500 mt-0.5" />
+          <div>
+            <h3 className="text-sm font-medium text-gray-900">Project Description</h3>
+            <p className="text-sm text-gray-500">{projectData?.description || 'No description provided'}</p>
+          </div>
+        </div>
+
+        <div className="flex items-start gap-3">
+          <Building className="w-5 h-5 text-gray-500 mt-0.5" />
+          <div>
+            <h3 className="text-sm font-medium text-gray-900">Property</h3>
+            <p className="text-sm text-gray-500">{propertyDetails?.property_name}</p>
+          </div>
+        </div>
+
+        <div className="flex items-start gap-3">
+          <MapPin className="w-5 h-5 text-gray-500 mt-0.5" />
+          <div>
+            <h3 className="text-sm font-medium text-gray-900">Location</h3>
+            <p className="text-sm text-gray-500">{propertyDetails?.address}</p>
+          </div>
+        </div>
+
+        <div className="flex items-start gap-3">
+          <Tool className="w-5 h-5 text-gray-500 mt-0.5" />
+          <div>
+            <h3 className="text-sm font-medium text-gray-900">Renovation Areas</h3>
+            <div className="text-sm text-gray-500">
+              {projectData?.renovation_areas?.map((area: any, index: number) => (
+                <span key={index} className="inline-block mr-2 mb-1">
+                  {area.area}{index < (projectData?.renovation_areas?.length - 1) ? ',' : ''}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <>
       <div className="w-[320px] border-r bg-background h-[calc(100vh-56px)] flex flex-col">
@@ -239,7 +283,9 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
           <h1 className="text-2xl font-semibold mb-2">Build the SOW</h1>
           <p className="text-gray-500 mb-6">Create a detailed statement of work.</p>
           
-          <h2 className="text-lg font-semibold mb-4">Project Assets</h2>
+          <ProjectInfo />
+          
+          <h2 className="text-lg font-semibold mb-4 mt-6">Project Assets</h2>
           <Select value={selectedType} onValueChange={(value: AssetType) => setSelectedType(value)}>
             <SelectTrigger className="w-full bg-white">
               <SelectValue placeholder="Select asset type" />
