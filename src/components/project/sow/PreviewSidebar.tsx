@@ -26,6 +26,7 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
   const beforePhotos = designPreferences.beforePhotos || {};
   const blueprintUrl = propertyDetails?.blueprint_url;
   const inspirationImages = designPreferences.inspirationImages || [];
+  const drawings = designPreferences.drawings || [];
 
   const handlePreview = (url: string) => {
     setPreviewUrl(url);
@@ -47,6 +48,12 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
             url
           })) : []
         );
+      case 'drawings':
+        return drawings.map((url: string, index: number) => ({
+          name: `Drawing ${index + 1}`,
+          room: 'Design',
+          url
+        }));
       case 'renderings':
         return renderingImages.map((url: string, index: number) => ({
           name: `Rendering ${index + 1}`,
@@ -128,6 +135,11 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
                   url={asset.url}
                 />
               ))}
+              {getFilteredAssets().length === 0 && (
+                <p className="text-sm text-gray-500 py-4 text-center">
+                  No {selectedType.replace('-', ' ')} available
+                </p>
+              )}
             </div>
           </div>
         </div>
