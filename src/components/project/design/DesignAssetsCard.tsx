@@ -43,50 +43,88 @@ const DesignAssetsCard = ({
   );
   
   const [drawingFiles, setDrawingFiles] = useState<{name: string; size: string; type: 'jpg' | 'png' | 'pdf'; url?: string}[]>([]);
+  const [roomId, setRoomId] = useState<string | null>(null);
 
   // Effect to load drawings when component mounts
   useEffect(() => {
     if (propertyId) {
       fetchExistingDrawings();
+      fetchRoomId();
     }
   }, [propertyId]);
+
+  // Function to fetch room ID for the current property
+  const fetchRoomId = async () => {
+    if (!propertyId) return;
+    
+    try {
+      const { data: rooms, error } = await supabase
+        .from('property_rooms')
+        .select('id')
+        .eq('property_id', propertyId);
+        
+      if (error) {
+        console.error('Error fetching rooms:', error);
+        return;
+      }
+      
+      if (rooms && rooms.length > 0) {
+        // We'll use the first room for now
+        setRoomId(rooms[0].id);
+        console.log('Room ID set to:', rooms[0].id);
+      }
+    } catch (error) {
+      console.error('Error in fetchRoomId:', error);
+    }
+  };
 
   // Function to fetch existing drawings from the database
   const fetchExistingDrawings = async () => {
     if (!propertyId) return;
     
     try {
-      const { data: rooms } = await supabase
+      const { data: rooms, error: roomsError } = await supabase
         .from('property_rooms')
         .select('id')
-        .eq('property_id', propertyId)
-        .single();
+        .eq('property_id', propertyId);
         
-      if (rooms) {
-        const { data: preferences, error } = await supabase
-          .from('room_design_preferences')
-          .select('drawings')
-          .eq('room_id', rooms.id)
-          .single();
-          
-        if (error && error.code !== 'PGRST116') {
-          console.error('Error fetching drawings:', error);
-          return;
-        }
+      if (roomsError) {
+        console.error('Error fetching rooms:', roomsError);
+        return;
+      }
+      
+      if (!rooms || rooms.length === 0) {
+        console.log('No rooms found for property');
+        return;
+      }
+      
+      // For simplicity, we'll use the first room
+      const roomId = rooms[0].id;
+      console.log('Using room ID for fetching drawings:', roomId);
         
-        if (preferences?.drawings && preferences.drawings.length > 0) {
-          const files = preferences.drawings.map((url: string, index: number) => {
-            const fileType = url.toLowerCase().endsWith('.png') ? 'png' : 'jpg';
-            return {
-              name: `Drawing_${index + 1}.${fileType}`,
-              size: "1.2MB",
-              type: fileType as 'jpg' | 'png' | 'pdf',
-              url: url
-            };
-          });
+      const { data: preferences, error } = await supabase
+        .from('room_design_preferences')
+        .select('drawings')
+        .eq('room_id', roomId)
+        .maybeSingle();
           
-          setDrawingFiles(files);
-        }
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching drawings:', error);
+        return;
+      }
+      
+      if (preferences?.drawings && preferences.drawings.length > 0) {
+        const files = preferences.drawings.map((url: string, index: number) => {
+          const fileType = url.toLowerCase().endsWith('.png') ? 'png' : 'jpg';
+          return {
+            name: `Drawing_${index + 1}.${fileType}`,
+            size: "1.2MB",
+            type: fileType as 'jpg' | 'png' | 'pdf',
+            url: url
+          };
+        });
+        
+        setDrawingFiles(files);
       }
     } catch (error) {
       console.error('Error in fetchExistingDrawings:', error);
@@ -207,33 +245,21 @@ const DesignAssetsCard = ({
       return;
     }
     
-    try {
-      // First get the room ID from property ID
-      const { data: rooms, error: roomsError } = await supabase
-        .from('property_rooms')
-        .select('id')
-        .eq('property_id', propertyId)
-        .single();
-      
-      if (roomsError) {
-        console.error('Error fetching room:', roomsError);
-        throw roomsError;
-      }
-      
-      if (!rooms) {
-        console.error('No room found for property');
+    // Make sure we have a room ID
+    if (!roomId) {
+      await fetchRoomId();
+      if (!roomId) {
         toast({
-          title: "Room Not Found",
-          description: "Could not find a room associated with this property.",
+          title: "Error",
+          description: "Could not identify a room for this property.",
           variant: "destructive"
         });
         return;
       }
-      
-      const roomId = rooms.id;
-      console.log("Found room ID:", roomId);
-      
-      // Get existing renderings
+    }
+    
+    try {
+      // Get existing room design preferences
       const { data: existingPrefs, error: fetchError } = await supabase
         .from('room_design_preferences')
         .select('renderings')
@@ -329,24 +355,10 @@ const DesignAssetsCard = ({
 
   const handleRemoveRenderings = async () => {
     try {
-      if (renderingFiles.length === 0 || !propertyId) {
+      if (renderingFiles.length === 0 || !propertyId || !roomId) {
         return;
       }
       
-      // Get the room ID
-      const { data: room, error: roomError } = await supabase
-        .from('property_rooms')
-        .select('id')
-        .eq('property_id', propertyId)
-        .single();
-      
-      if (roomError) {
-        console.error('Error fetching room:', roomError);
-        throw roomError;
-      }
-      
-      const roomId = room.id;
-        
       const { data: existingPrefs, error: fetchError } = await supabase
         .from('room_design_preferences')
         .select('renderings')
@@ -395,31 +407,21 @@ const DesignAssetsCard = ({
       return;
     }
     
-    try {
-      // First get the room ID from property ID
-      const { data: rooms, error: roomsError } = await supabase
-        .from('property_rooms')
-        .select('id')
-        .eq('property_id', propertyId)
-        .single();
-      
-      if (roomsError) {
-        console.error('Error fetching room:', roomsError);
-        throw roomsError;
-      }
-      
-      if (!rooms) {
-        console.error('No room found for property');
+    // Make sure we have a room ID
+    if (!roomId) {
+      await fetchRoomId();
+      if (!roomId) {
         toast({
-          title: "Room Not Found", 
-          description: "Could not find a room associated with this property.",
+          title: "Error",
+          description: "Could not identify a room for this property.",
           variant: "destructive"
         });
         return;
       }
-      
-      const roomId = rooms.id;
-      console.log("Found room ID for drawings:", roomId);
+    }
+    
+    try {
+      console.log("Using room ID for drawings:", roomId);
       
       // Get existing room design preferences
       const { data: existingPrefs, error: fetchError } = await supabase
@@ -517,24 +519,10 @@ const DesignAssetsCard = ({
 
   const handleRemoveDrawings = async () => {
     try {
-      if (drawingFiles.length === 0 || !propertyId) {
+      if (drawingFiles.length === 0 || !propertyId || !roomId) {
         return;
       }
       
-      // Get the room ID
-      const { data: room, error: roomError } = await supabase
-        .from('property_rooms')
-        .select('id')
-        .eq('property_id', propertyId)
-        .single();
-      
-      if (roomError) {
-        console.error('Error fetching room:', roomError);
-        throw roomError;
-      }
-      
-      const roomId = room.id;
-        
       const { data: existingPrefs, error: fetchError } = await supabase
         .from('room_design_preferences')
         .select('drawings')
