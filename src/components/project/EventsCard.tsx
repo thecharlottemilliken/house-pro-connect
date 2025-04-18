@@ -3,7 +3,11 @@ import React from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-const EventsCard = () => {
+interface EventsCardProps {
+  projectId: string;
+}
+
+const EventsCard = ({ projectId }: EventsCardProps) => {
   return (
     <Card className="overflow-hidden rounded-lg shadow-[0_2px_10px_rgba(0,0,0,0.08)] border-0">
       <CardHeader className="flex flex-row items-center justify-between pb-3 pt-6 px-6">
