@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import { Search, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,12 +16,19 @@ import ActivityItem from "@/components/project/activity/ActivityItem";
 import TeamMemberFilter from "@/components/project/activity/TeamMemberFilter";
 import ProjectSidebar from "@/components/project/ProjectSidebar";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
+import { useProjectData } from "@/hooks/useProjectData";
 
 const ProjectActivityHistory = () => {
   const { projectId } = useParams<{ projectId: string }>();
+  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [teamMemberFilter, setTeamMemberFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("recent");
+  
+  const { projectData, isLoading } = useProjectData(
+    projectId,
+    location.state
+  );
 
   // Mock activity data
   const activities = [
@@ -81,13 +88,30 @@ const ProjectActivityHistory = () => {
     return matchesSearch && matchesTeamFilter;
   });
 
+  const projectTitle = projectData?.title || "Activity History";
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-white">
+        <DashboardNavbar />
+        <div className="flex-1 p-4 md:p-10">
+          <div className="text-center py-10">Loading project details...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <DashboardNavbar />
       
       <div className="flex flex-1">
         <SidebarProvider defaultOpen={true}>
-          <ProjectSidebar projectId={projectId || ""} activePage="activity" />
+          <ProjectSidebar 
+            projectId={projectId || ""} 
+            projectTitle={projectTitle}
+            activePage="activity" 
+          />
           
           <main className="flex-1 overflow-y-auto">
             <div className="container max-w-5xl mx-auto px-4 py-8">

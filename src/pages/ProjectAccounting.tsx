@@ -32,6 +32,7 @@ const ProjectAccounting = () => {
   }
 
   const projectId = projectData?.id || params.projectId || "";
+  const projectTitle = projectData?.title || "Accounting";
 
   return (
     <div className="flex flex-col bg-white min-h-screen">
@@ -41,6 +42,7 @@ const ProjectAccounting = () => {
         <div className="flex flex-1 h-[calc(100vh-64px)] w-full">
           <ProjectSidebar 
             projectId={projectId}
+            projectTitle={projectTitle}
             activePage="accounting"
           />
           

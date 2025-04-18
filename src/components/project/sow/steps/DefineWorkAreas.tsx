@@ -22,13 +22,18 @@ interface DefineWorkAreasProps {
   propertyDetails: PropertyDetails;
 }
 
+// Extended WorkArea type for form handling
+interface WorkAreaForm extends Partial<WorkArea> {
+  customName?: string;
+}
+
 const DefineWorkAreas: React.FC<DefineWorkAreasProps> = ({ 
   projectData, 
   propertyDetails 
 }) => {
   const { sowData, addWorkArea, updateWorkArea, removeWorkArea } = useSOW();
   
-  const [newWorkArea, setNewWorkArea] = useState<Partial<WorkArea>>({
+  const [newWorkArea, setNewWorkArea] = useState<WorkAreaForm>({
     name: '',
     type: 'primary',
     notes: ''
@@ -40,9 +45,12 @@ const DefineWorkAreas: React.FC<DefineWorkAreasProps> = ({
   const handleAddWorkArea = () => {
     if (!newWorkArea.name) return;
     
+    // If custom was selected, use the customName as the actual name
+    const actualName = newWorkArea.name === 'custom' && newWorkArea.customName ? newWorkArea.customName : newWorkArea.name;
+    
     const workArea: WorkArea = {
       id: uuidv4(),
-      name: newWorkArea.name,
+      name: actualName,
       type: newWorkArea.type as 'primary' | 'secondary',
       notes: newWorkArea.notes || ''
     };
@@ -53,7 +61,8 @@ const DefineWorkAreas: React.FC<DefineWorkAreasProps> = ({
     setNewWorkArea({
       name: '',
       type: 'primary',
-      notes: ''
+      notes: '',
+      customName: ''
     });
   };
 

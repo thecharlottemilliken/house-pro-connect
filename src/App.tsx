@@ -1,9 +1,10 @@
+
 import React, { useEffect } from "react";
 import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { useAuth } from "@/contexts/AuthContext";
-import Login from "@/pages/Login";
-import Register from "@/pages/Register";
+import SignIn from "@/pages/SignIn";
+import SignUp from "@/pages/SignUp";
 import ForgotPassword from "@/pages/ForgotPassword";
 import UpdateProfile from "@/pages/UpdateProfile";
 import Dashboard from "@/pages/Dashboard";
@@ -19,13 +20,12 @@ import ProjectAccounting from "@/pages/ProjectAccounting";
 import ProjectManage from "@/pages/ProjectManage";
 import ProjectActivityHistory from "@/pages/ProjectActivityHistory";
 import ProjectBidsProposals from "@/pages/ProjectBidsProposals";
-// Import the new ProjectSOW component
 import ProjectSOW from "@/pages/ProjectSOW";
-import PublicRoute from "./components/routes/PublicRoute";
-import PrivateRoute from "./components/routes/PrivateRoute";
+import PublicRoute from "@/components/routes/PublicRoute";
+import PrivateRoute from "@/components/routes/PrivateRoute";
 
 function App() {
-  const { currentUser, loading } = useAuth();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
     // You can add any global initialization logic here
@@ -44,8 +44,8 @@ function App() {
     <Router>
       <Routes>
         {/* Public Routes */}
-        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-        <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+        <Route path="/login" element={<PublicRoute><SignIn /></PublicRoute>} />
+        <Route path="/register" element={<PublicRoute><SignUp /></PublicRoute>} />
         <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
 
         {/* Private Routes */}
@@ -92,7 +92,7 @@ function App() {
         <Route path="/project-manage/:projectId" element={<ProjectManage />} />
         <Route path="/project-activity/:projectId" element={<ProjectActivityHistory />} />
         <Route path="/project-bids-proposals/:projectId" element={<ProjectBidsProposals />} />
-        <Route path="/project-sow/:projectId" element={<ProjectSOW />} /> {/* Added the SOW route */}
+        <Route path="/project-sow/:projectId" element={<ProjectSOW />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
       <Toaster />

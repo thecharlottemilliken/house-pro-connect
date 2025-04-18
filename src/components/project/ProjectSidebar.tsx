@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   Home,
@@ -17,7 +18,7 @@ import { useSidebar } from "@/components/ui/sidebar";
 
 interface ProjectSidebarProps {
   projectId: string;
-  projectTitle: string;
+  projectTitle?: string;
   activePage: string;
 }
 
@@ -36,15 +37,15 @@ const navItems = [
   { key: "bids-proposals", label: "Bids/Proposals", icon: LayoutDashboard, path: "project-bids-proposals" },
 ];
 
-const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ projectId, projectTitle, activePage }) => {
-  const { isopen } = useSidebar();
+const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ projectId, projectTitle = "Project", activePage }) => {
+  const { isOpen } = useSidebar();
   const location = useLocation();
 
   return (
     <aside
       className={cn(
         "flex flex-col border-r bg-secondary text-secondary-foreground w-60",
-        isopen ? "block" : "hidden"
+        isOpen ? "block" : "hidden"
       )}
     >
       <div className="px-6 py-4">

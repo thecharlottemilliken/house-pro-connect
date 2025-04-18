@@ -11,7 +11,7 @@ import MessagesCard from "@/components/project/MessagesCard";
 import EventsCard from "@/components/project/EventsCard";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { FileText, PenBox, ShieldAlert } from "lucide-react";
+import { FileText, PenBox } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProjectAccess } from "@/hooks/useProjectAccess";
 import {
@@ -62,8 +62,14 @@ const ProjectDashboard = () => {
   const projectTitle = projectData?.title || "Project Overview";
   // Type assertion for renovation areas
   const renovationAreas = (projectData?.renovation_areas as unknown as RenovationArea[]) || [];
-  const hasSOW = projectData?.statement_of_work !== undefined && projectData?.statement_of_work !== null; 
-  const hasDesignPlan = propertyDetails.blueprint_url || (projectData?.design_preferences?.designAssets?.length || 0) > 0;
+  
+  // Check if SOW data exists in design_preferences
+  const hasSOW = projectData?.design_preferences && 
+                 'statement_of_work' in (projectData.design_preferences || {});
+                 
+  const hasDesignPlan = propertyDetails.blueprint_url || 
+    (projectData?.design_preferences && projectData.design_preferences.designAssets?.length > 0);
+    
   const isCoach = profile?.role === 'coach';
 
   const handleStartSOW = () => {

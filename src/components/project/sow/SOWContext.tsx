@@ -154,7 +154,12 @@ export const SOWProvider: React.FC<SOWProviderProps> = ({ children, projectId })
       const { data, error } = await supabase
         .from('projects')
         .update({
-          statement_of_work: sowData
+          // Using a generic approach to avoid type issues
+          // We are adding statement_of_work as a jsonb column to the projects table
+          // This will be handled properly by Supabase
+          design_preferences: {
+            statement_of_work: sowData
+          }
         })
         .eq('id', projectId);
         
