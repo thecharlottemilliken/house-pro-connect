@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -107,8 +106,8 @@ export function WorkAreaForm({ onSave, initialData = [] }: WorkAreaFormProps) {
     setCurrentArea({ ...currentArea, additionalAreas: updatedAdditionalAreas });
   };
 
-  const handleEditArea = (index: number) => {
-    setCurrentArea(workAreas[index]);
+  const handleEditArea = (area: WorkArea, index: number) => {
+    setCurrentArea(area);
     setEditMode(true);
     setEditIndex(index);
   };
@@ -116,6 +115,10 @@ export function WorkAreaForm({ onSave, initialData = [] }: WorkAreaFormProps) {
   const handleDeleteArea = (index: number) => {
     const updatedAreas = workAreas.filter((_, i) => i !== index);
     setWorkAreas(updatedAreas);
+  };
+
+  const handleDuplicateArea = (area: WorkArea) => {
+    setWorkAreas([...workAreas, {...area, name: `${area.name} (Copy)`}]);
   };
 
   const handleSaveAreas = () => {
@@ -281,6 +284,7 @@ export function WorkAreaForm({ onSave, initialData = [] }: WorkAreaFormProps) {
             <WorkAreaTable
               workAreas={workAreas}
               onEdit={handleEditArea}
+              onDuplicate={handleDuplicateArea}
               onDelete={handleDeleteArea}
             />
             <div className="flex justify-end mt-6">
