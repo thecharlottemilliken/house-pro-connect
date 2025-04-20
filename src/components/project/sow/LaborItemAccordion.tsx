@@ -2,6 +2,8 @@
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 interface LaborItemAccordionProps {
   category: string;
@@ -18,32 +20,34 @@ export function LaborItemAccordion({
   selectedRooms,
   onUpdateRooms,
 }: LaborItemAccordionProps) {
+  const handleAreaToggle = (areaName: string, checked: boolean) => {
+    if (checked) {
+      // Add new area if not already selected
+      if (!selectedRooms.find(room => room.name === areaName)) {
+        onUpdateRooms([...selectedRooms, { name: areaName, notes: "" }]);
+      }
+    } else {
+      // Remove area if unchecked
+      onUpdateRooms(selectedRooms.filter(room => room.name !== areaName));
+    }
+  };
+
   return (
     <div className="px-6 pb-6 space-y-4 border-t">
       <div className="pt-4">
-        <h4 className="text-sm font-medium mb-2">Affected Areas</h4>
-        <Select
-          value={selectedRooms.map(r => r.name).join(", ")}
-          onValueChange={(value) => {
-            const selectedRoomNames = value.split(", ");
-            const updatedRooms = selectedRoomNames.map(name => ({
-              name,
-              notes: selectedRooms.find(r => r.name === name)?.notes || ""
-            }));
-            onUpdateRooms(updatedRooms);
-          }}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select rooms" />
-          </SelectTrigger>
-          <SelectContent>
-            {workAreas.map((area: any) => (
-              <SelectItem key={area.name} value={area.name}>
-                {area.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <h4 className="text-sm font-medium mb-4">Affected Areas</h4>
+        <div className="space-y-2">
+          {workAreas.map((area: any) => (
+            <div key={area.name} className="flex items-center space-x-2">
+              <Checkbox
+                id={`area-${area.name}`}
+                checked={selectedRooms.some(room => room.name === area.name)}
+                onCheckedChange={(checked) => handleAreaToggle(area.name, checked as boolean)}
+              />
+              <Label htmlFor={`area-${area.name}`}>{area.name}</Label>
+            </div>
+          ))}
+        </div>
       </div>
 
       {selectedRooms.map((room) => (
