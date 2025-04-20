@@ -37,7 +37,12 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
           .eq("project_id", projectId)
           .maybeSingle();
         if (error) throw error;
-        setSowData(data ? data : null);
+        // Confirm data shape before setting state
+        if (data && typeof data === "object") {
+          setSowData(data);
+        } else {
+          setSowData(null);
+        }
       } catch {
         setSowData(null);
       } finally {
@@ -59,7 +64,11 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
         .eq("project_id", projectId)
         .maybeSingle();
       if (error) throw error;
-      setSowData(data ? data : null);
+      if (data && typeof data === "object") {
+        setSowData(data);
+      } else {
+        setSowData(null);
+      }
     } catch {
       setSowData(null);
     } finally {

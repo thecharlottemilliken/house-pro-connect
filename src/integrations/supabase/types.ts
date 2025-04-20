@@ -378,6 +378,7 @@ export type Database = {
         Row: {
           bid_configuration: Json | null
           created_at: string
+          feedback: string | null
           id: string
           labor_items: Json | null
           material_items: Json | null
@@ -389,6 +390,7 @@ export type Database = {
         Insert: {
           bid_configuration?: Json | null
           created_at?: string
+          feedback?: string | null
           id?: string
           labor_items?: Json | null
           material_items?: Json | null
@@ -400,6 +402,7 @@ export type Database = {
         Update: {
           bid_configuration?: Json | null
           created_at?: string
+          feedback?: string | null
           id?: string
           labor_items?: Json | null
           material_items?: Json | null
