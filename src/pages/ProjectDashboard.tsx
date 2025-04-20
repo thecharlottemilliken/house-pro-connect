@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useLocation, useParams, Navigate, useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
@@ -121,6 +120,10 @@ const ProjectDashboard = () => {
               </div>
             </div>
             
+            <div className="mb-6">
+              <TasksCard />
+            </div>
+
             <div className="grid grid-cols-1 gap-3 sm:gap-4 md:gap-6 lg:grid-cols-2 2xl:grid-cols-3">
               <PropertyCard 
                 propertyDetails={propertyCardData}
@@ -162,7 +165,6 @@ const ProjectDashboard = () => {
                 </div>
               ) : (
                 <>
-                  <TasksCard />
                   <MessagesCard />
                   <EventsCard />
                 </>
