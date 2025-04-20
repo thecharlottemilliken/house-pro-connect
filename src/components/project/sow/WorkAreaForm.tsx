@@ -35,12 +35,13 @@ interface WorkArea {
 
 interface WorkAreaFormProps {
   onSave: (areas: WorkArea[]) => void;
+  workAreas?: WorkArea[];
   initialData?: WorkArea[];
 }
 
-export function WorkAreaForm({ onSave, initialData = [] }: WorkAreaFormProps) {
+export function WorkAreaForm({ onSave, workAreas = [], initialData = [] }: WorkAreaFormProps) {
   const [activeTab, setActiveTab] = useState("interior");
-  const [workAreas, setWorkAreas] = useState<WorkArea[]>([]);
+  const [workAreasState, setWorkAreasState] = useState<WorkArea[]>([]);
   const [currentArea, setCurrentArea] = useState<WorkArea>({
     name: '',
     notes: '',
@@ -57,10 +58,12 @@ export function WorkAreaForm({ onSave, initialData = [] }: WorkAreaFormProps) {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (initialData && initialData.length > 0) {
-      setWorkAreas(initialData);
+    if (workAreas && workAreas.length > 0) {
+      setWorkAreasState(workAreas);
+    } else if (initialData && initialData.length > 0) {
+      setWorkAreasState(initialData);
     }
-  }, [initialData]);
+  }, [workAreas, initialData]);
 
   const handleAddWorkArea = () => {
     if (!currentArea.name.trim()) {
@@ -71,7 +74,7 @@ export function WorkAreaForm({ onSave, initialData = [] }: WorkAreaFormProps) {
       });
       return;
     }
-    setWorkAreas([...workAreas, currentArea]);
+    setWorkAreasState([...workAreasState, currentArea]);
     setCurrentArea({
       name: '',
       notes: '',
@@ -111,7 +114,7 @@ export function WorkAreaForm({ onSave, initialData = [] }: WorkAreaFormProps) {
       ...area,
       name: `${area.name} (Copy)`,
     };
-    setWorkAreas([...workAreas, duplicatedArea]);
+    setWorkAreasState([...workAreasState, duplicatedArea]);
     toast({
       title: "Work Area Duplicated",
       description: "The work area has been duplicated successfully.",
@@ -119,8 +122,8 @@ export function WorkAreaForm({ onSave, initialData = [] }: WorkAreaFormProps) {
   };
 
   const handleDelete = (index: number) => {
-    const updatedAreas = workAreas.filter((_, i) => i !== index);
-    setWorkAreas(updatedAreas);
+    const updatedAreas = workAreasState.filter((_, i) => i !== index);
+    setWorkAreasState(updatedAreas);
     toast({
       title: "Work Area Deleted",
       description: "The work area has been deleted successfully.",
@@ -128,7 +131,7 @@ export function WorkAreaForm({ onSave, initialData = [] }: WorkAreaFormProps) {
   };
 
   const handleSave = () => {
-    if (workAreas.length === 0) {
+    if (workAreasState.length === 0) {
       toast({
         title: "No Work Areas",
         description: "Please add at least one work area before proceeding.",
@@ -137,10 +140,10 @@ export function WorkAreaForm({ onSave, initialData = [] }: WorkAreaFormProps) {
       return;
     }
     
-    onSave(workAreas);
+    onSave(workAreasState);
     toast({
       title: "Work Areas Saved",
-      description: `Successfully saved ${workAreas.length} work area(s).`,
+      description: `Successfully saved ${workAreasState.length} work area(s).`,
     });
   };
 
@@ -345,9 +348,9 @@ export function WorkAreaForm({ onSave, initialData = [] }: WorkAreaFormProps) {
         </Dialog>
       </div>
 
-      {workAreas.length > 0 ? (
+      {workAreasState.length > 0 ? (
         <WorkAreaTable 
-          workAreas={workAreas}
+          workAreas={workAreasState}
           onEdit={handleEdit}
           onDuplicate={handleDuplicate}
           onDelete={handleDelete}
