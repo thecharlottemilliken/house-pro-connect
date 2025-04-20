@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,18 @@ export function SOWWizard() {
     projectDescription: ''
   });
 
+  // Load existing SOW data if available
+  React.useEffect(() => {
+    if (projectData && projectData.sow_data) {
+      const sowData = projectData.sow_data as any;
+      
+      if (sowData.workAreas) setWorkAreas(sowData.workAreas);
+      if (sowData.laborItems) setLaborItems(sowData.laborItems);
+      if (sowData.materialItems) setMaterialItems(sowData.materialItems);
+      if (sowData.bidConfiguration) setBidConfig(sowData.bidConfiguration);
+    }
+  }, [projectData]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -62,7 +75,7 @@ export function SOWWizard() {
   const renderStepContent = () => {
     switch (currentStep) {
       case 0:
-        return <WorkAreaForm onSave={handleWorkAreasSubmit} />;
+        return <WorkAreaForm onSave={handleWorkAreasSubmit} initialData={workAreas} />;
       case 1:
         return (
           <LaborRequirementsForm 
@@ -71,6 +84,7 @@ export function SOWWizard() {
               setLaborItems(items);
               setCurrentStep(current => current + 1);
             }} 
+            initialData={laborItems}
           />
         );
       case 2:
@@ -81,6 +95,7 @@ export function SOWWizard() {
               setMaterialItems(items);
               setCurrentStep(current => current + 1);
             }}
+            initialData={materialItems}
           />
         );
       case 3:
@@ -90,6 +105,7 @@ export function SOWWizard() {
               setBidConfig(config);
               setCurrentStep(current => current + 1);
             }}
+            initialData={bidConfig}
           />
         );
       case 4:
@@ -99,6 +115,7 @@ export function SOWWizard() {
             laborItems={laborItems}
             materialItems={materialItems}
             bidConfiguration={bidConfig}
+            projectId={projectId || ''}
             onSave={(confirmed) => {
               if (confirmed) {
                 navigate(`/project-dashboard/${projectId}`);

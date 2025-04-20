@@ -1,5 +1,5 @@
 
-import { useParams, useLocation } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useProjectData } from "@/hooks/useProjectData";
@@ -11,11 +11,25 @@ import ProjectSidebar from "@/components/project/ProjectSidebar";
 const ProjectManage = () => {
   const location = useLocation();
   const params = useParams();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { projectData, isLoading } = useProjectData(params.projectId, location.state);
   
   const projectId = projectData?.id || params.projectId || "unknown";
   const projectTitle = projectData?.title || "Unknown Project";
+  const hasSOW = projectData?.sow_data !== undefined && projectData?.sow_data !== null;
+  
+  const handleViewSOW = () => {
+    if (hasSOW) {
+      navigate(`/project-sow/${projectId}?view=true`);
+    } else {
+      navigate(`/project-sow/${projectId}`);
+    }
+  };
+  
+  const handleRequestChanges = () => {
+    navigate(`/project-sow/${projectId}`);
+  };
   
   if (isLoading) {
     return (
@@ -46,12 +60,21 @@ const ProjectManage = () => {
                 Manage Project
               </h1>
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
-                <Button variant="outline" className="border border-gray-300 w-full sm:w-auto">
-                  VIEW SOW
+                <Button 
+                  variant="outline" 
+                  className="border border-gray-300 w-full sm:w-auto"
+                  onClick={handleViewSOW}
+                >
+                  {hasSOW ? "VIEW SOW" : "CREATE SOW"}
                 </Button>
-                <Button className="bg-[#0f566c] hover:bg-[#0d4a5d] w-full sm:w-auto">
-                  REQUEST CHANGES
-                </Button>
+                {hasSOW && (
+                  <Button 
+                    className="bg-[#0f566c] hover:bg-[#0d4a5d] w-full sm:w-auto"
+                    onClick={handleRequestChanges}
+                  >
+                    REQUEST CHANGES
+                  </Button>
+                )}
               </div>
             </div>
             
@@ -62,6 +85,6 @@ const ProjectManage = () => {
       </SidebarProvider>
     </div>
   );
-};
+}
 
 export default ProjectManage;

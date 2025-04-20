@@ -10,6 +10,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ProjectReviewFormProps {
   workAreas: any[];
@@ -19,6 +21,7 @@ interface ProjectReviewFormProps {
     bidDuration: string;
     projectDescription: string;
   };
+  projectId: string;
   onSave: (confirmed: boolean) => void;
 }
 
@@ -27,9 +30,53 @@ export function ProjectReviewForm({
   laborItems,
   materialItems,
   bidConfiguration,
+  projectId,
   onSave
 }: ProjectReviewFormProps) {
   const [confirmed, setConfirmed] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSaveSOW = async () => {
+    if (!confirmed) return;
+    
+    setIsSaving(true);
+    
+    try {
+      const sowData = {
+        workAreas,
+        laborItems,
+        materialItems,
+        bidConfiguration,
+        createdAt: new Date().toISOString(),
+        status: 'draft'
+      };
+      
+      const { error } = await supabase
+        .from('projects')
+        .update({
+          sow_data: sowData
+        })
+        .eq('id', projectId);
+        
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Statement of Work has been saved successfully",
+      });
+      
+      onSave(true);
+    } catch (error) {
+      console.error("Error saving SOW:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save the Statement of Work",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -171,10 +218,10 @@ export function ProjectReviewForm({
 
       <div className="flex justify-end">
         <Button 
-          onClick={() => onSave(confirmed)}
-          disabled={!confirmed}
+          onClick={handleSaveSOW} 
+          disabled={!confirmed || isSaving}
         >
-          Complete SOW
+          {isSaving ? "Saving..." : "Complete SOW"}
         </Button>
       </div>
     </div>

@@ -22,6 +22,7 @@ import {
 
 interface BidConfigurationFormProps {
   onSave: (data: BidConfiguration) => void;
+  initialData?: BidConfiguration;
 }
 
 interface BidConfiguration {
@@ -29,9 +30,9 @@ interface BidConfiguration {
   projectDescription: string;
 }
 
-export function BidConfigurationForm({ onSave }: BidConfigurationFormProps) {
+export function BidConfigurationForm({ onSave, initialData }: BidConfigurationFormProps) {
   const form = useForm<BidConfiguration>({
-    defaultValues: {
+    defaultValues: initialData || {
       bidDuration: '7',
       projectDescription: '',
     }
