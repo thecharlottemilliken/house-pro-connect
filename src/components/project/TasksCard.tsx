@@ -90,7 +90,8 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
             className="bg-orange-500 hover:bg-orange-600 font-medium flex items-center gap-1"
             size="sm"
             onClick={() =>
-              navigate(`/project-sow/${projectId}?review=true`)
+              // NOTE: update route to /project-sow/:projectId/review
+              navigate(`/project-sow/${projectId}/review`)
             }
           >
             REVIEW SOW <ArrowRight className="ml-1 h-4 w-4" />

@@ -8,7 +8,8 @@ import { ProjectReviewForm } from "@/components/project/sow/ProjectReviewForm";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import SOWReviewDialog from "@/components/project/sow/SOWReviewDialog";
+// Remove import of SOWReviewDialog
+// import SOWReviewDialog from "@/components/project/sow/SOWReviewDialog";
 
 const ProjectSOW = () => {
   const location = useLocation();
@@ -25,11 +26,9 @@ const ProjectSOW = () => {
 
   const [sowData, setSOWData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [showReviewDialog, setShowReviewDialog] = useState(false);
+  // Remove showReviewDialog and related state
 
   const { profile } = useAuth();
-  const userId = profile?.id;
-  const userRole = profile?.role;
 
   // Fetch SOW data from statement_of_work table
   useEffect(() => {
@@ -45,11 +44,6 @@ const ProjectSOW = () => {
 
         if (error) throw error;
         setSOWData(data);
-
-        // In review mode: open dialog after data loads for project owner
-        if (isReviewMode && data && profile?.role === 'resident') {
-          setShowReviewDialog(true);
-        }
       } catch (error) {
         console.error("Error fetching SOW data:", error);
       } finally {
@@ -58,28 +52,9 @@ const ProjectSOW = () => {
     };
 
     fetchSOWData();
-    // Re-run when projectId, isReviewMode, or profile changes
-  }, [params.projectId, isReviewMode, profile]);
+  }, [params.projectId, profile]);
 
   const projectTitle = projectData?.title || "Unknown Project";
-
-  // Approve, reject, and refresh logic for dialog
-  const handleDialogActionComplete = () => {
-    // Refresh SOW data
-    setShowReviewDialog(false);
-    // Automatically return to dashboard on completion for better UX
-    setTimeout(() => {
-      navigate(`/project-dashboard/${params.projectId}`);
-    }, 550);
-  };
-
-  // SOW review dialog for project owner in review mode
-  const showDialogForReview = !!(
-    isReviewMode &&
-    profile?.role === "resident" &&
-    sowData?.id &&
-    showReviewDialog
-  );
 
   // Function to render the SOW in view-only mode
   const renderSOWView = () => {
@@ -134,17 +109,6 @@ const ProjectSOW = () => {
       <main className="px-0 py-0">
         {isViewMode || isReviewMode ? renderSOWView() : <SOWWizard />}
       </main>
-
-      {/* Show dialog for SOW review if in review mode */}
-      {showDialogForReview && (
-        <SOWReviewDialog
-          open={showReviewDialog}
-          onOpenChange={(open) => setShowReviewDialog(open)}
-          projectId={params.projectId || ""}
-          sowId={sowData.id}
-          onActionComplete={handleDialogActionComplete}
-        />
-      )}
     </div>
   );
 };

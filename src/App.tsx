@@ -33,6 +33,7 @@ import CoachDashboard from "./pages/CoachDashboard";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import CoachRoute from "./components/auth/CoachRoute";
 import ProjectSOW from "./pages/ProjectSOW";
+import SOWReviewPage from "@/components/project/sow/SOWReviewPage";
 
 const App = () => {
   return (
@@ -206,6 +207,13 @@ const App = () => {
           <ProtectedRoute>
             <TooltipProvider>
               <ProjectSOW />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/project-sow/:projectId/review" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <SOWReviewPage />
             </TooltipProvider>
           </ProtectedRoute>
         } />
