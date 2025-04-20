@@ -147,32 +147,38 @@ export function MaterialRequirementsForm({ workAreas, onSave }: Props) {
             </div>
             
             {openCategory === category && items.map((item, itemIndex) => (
-              <MaterialItemAccordion
-                key={`${item.category}-${item.type}-${itemIndex}`}
-                category={item.category}
-                materialType={item.type}
-                workAreas={workAreas}
-                selectedRooms={item.rooms}
-                onUpdateRooms={(rooms) => {
-                  const updatedItems = [...selectedItems];
-                  const index = updatedItems.findIndex(
-                    i => i.category === item.category && i.type === item.type
-                  );
-                  updatedItems[index] = { ...updatedItems[index], rooms };
-                  setSelectedItems(updatedItems);
-                }}
-                onUpdateSpecifications={(specs) => {
-                  const updatedItems = [...selectedItems];
-                  const index = updatedItems.findIndex(
-                    i => i.category === item.category && i.type === item.type
-                  );
-                  updatedItems[index] = { 
-                    ...updatedItems[index], 
-                    specifications: specs 
-                  };
-                  setSelectedItems(updatedItems);
-                }}
-              />
+              <div key={`${item.category}-${item.type}-${itemIndex}`} className="border-t">
+                <div className="px-6 py-4 bg-gray-50">
+                  <h4 className="text-lg font-medium text-gray-700">
+                    {item.type} in {category}
+                  </h4>
+                </div>
+                <MaterialItemAccordion
+                  category={item.category}
+                  materialType={item.type}
+                  workAreas={workAreas}
+                  selectedRooms={item.rooms}
+                  onUpdateRooms={(rooms) => {
+                    const updatedItems = [...selectedItems];
+                    const index = updatedItems.findIndex(
+                      i => i.category === item.category && i.type === item.type
+                    );
+                    updatedItems[index] = { ...updatedItems[index], rooms };
+                    setSelectedItems(updatedItems);
+                  }}
+                  onUpdateSpecifications={(specs) => {
+                    const updatedItems = [...selectedItems];
+                    const index = updatedItems.findIndex(
+                      i => i.category === item.category && i.type === item.type
+                    );
+                    updatedItems[index] = { 
+                      ...updatedItems[index], 
+                      specifications: specs 
+                    };
+                    setSelectedItems(updatedItems);
+                  }}
+                />
+              </div>
             ))}
           </Card>
         ))}
