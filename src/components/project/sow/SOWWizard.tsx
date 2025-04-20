@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -17,6 +16,7 @@ import { PreviewSidebar } from "./PreviewSidebar";
 import { WorkAreaForm } from "./WorkAreaForm";
 import { LaborRequirementsForm } from "./LaborRequirementsForm";
 import { MaterialRequirementsForm } from "./MaterialRequirementsForm";
+import { BidConfigurationForm } from "./BidConfigurationForm";
 
 const steps = [
   { id: 'work-areas', title: 'Work Areas', description: 'Define specific areas requiring work' },
