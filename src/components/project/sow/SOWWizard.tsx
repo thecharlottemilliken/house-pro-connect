@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,8 @@ import { LaborRequirementsForm } from "./LaborRequirementsForm";
 import { MaterialRequirementsForm } from "./MaterialRequirementsForm";
 import { BidConfigurationForm } from "./BidConfigurationForm";
 import { ProjectReviewForm } from "./ProjectReviewForm";
+import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const steps = [
   { id: 'work-areas', title: 'Work Areas', description: 'Define specific areas requiring work' },
@@ -26,6 +29,25 @@ const steps = [
   { id: 'bid-config', title: 'Bid Configuration', description: 'Set bidding parameters and overview' },
   { id: 'project-review', title: 'Project Review', description: 'Review project details and requirements' }
 ];
+
+// Helper to update sow_data after each step (partial patch)
+async function saveSOWField(projectId: string, patch: Partial<any>) {
+  const { error } = await supabase
+    .from('projects')
+    .update({ sow_data: patch })
+    .eq('id', projectId);
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("Failed to save SOW field:", error);
+    toast({
+      title: "Error",
+      description: "Unable to save your changes to the database.",
+      variant: "destructive"
+    });
+    return false;
+  }
+  return true;
+}
 
 export function SOWWizard() {
   const { projectId } = useParams();
@@ -64,8 +86,40 @@ export function SOWWizard() {
 
   const progress = ((currentStep + 1) / steps.length) * 100;
 
-  const handleWorkAreasSubmit = (areas: any[]) => {
+  const handleWorkAreasSubmit = async (areas: any[]) => {
     setWorkAreas(areas);
+    setCurrentStep(current => current + 1);
+    // (optional) consider patching workAreas after this step as well
+    // await saveSOWField(projectId!, { ...projectData?.sow_data, workAreas: areas });
+  };
+
+  const handleLaborItemsSubmit = async (items: any[]) => {
+    setLaborItems(items);
+    // Persist laborItems to sow_data in the projects table
+    if (projectId) {
+      await saveSOWField(projectId, { ...projectData?.sow_data, laborItems: items, workAreas });
+      toast({
+        title: "Saved",
+        description: "Labor Requirements saved successfully."
+      });
+    }
+    setCurrentStep(current => current + 1);
+  };
+  const handleMaterialItemsSubmit = async (items: any[]) => {
+    setMaterialItems(items);
+    // Persist materialItems to sow_data in the projects table
+    if (projectId) {
+      await saveSOWField(projectId, { ...projectData?.sow_data, materialItems: items, laborItems, workAreas });
+      toast({
+        title: "Saved",
+        description: "Material Requirements saved successfully."
+      });
+    }
+    setCurrentStep(current => current + 1);
+  };
+  const handleBidConfigSubmit = async (config: any) => {
+    setBidConfig(config);
+    // It's optional to patch bidConfiguration here since final submit will always patch it
     setCurrentStep(current => current + 1);
   };
 
@@ -82,10 +136,7 @@ export function SOWWizard() {
         return (
           <LaborRequirementsForm 
             workAreas={workAreas} 
-            onSave={(items) => {
-              setLaborItems(items);
-              setCurrentStep(current => current + 1);
-            }}
+            onSave={handleLaborItemsSubmit}
             laborItems={laborItems}
           />
         );
@@ -93,20 +144,14 @@ export function SOWWizard() {
         return (
           <MaterialRequirementsForm
             workAreas={workAreas}
-            onSave={(items) => {
-              setMaterialItems(items);
-              setCurrentStep(current => current + 1);
-            }}
+            onSave={handleMaterialItemsSubmit}
             materialItems={materialItems}
           />
         );
       case 3:
         return (
           <BidConfigurationForm
-            onSave={(config) => {
-              setBidConfig(config);
-              setCurrentStep(current => current + 1);
-            }}
+            onSave={handleBidConfigSubmit}
             bidConfiguration={bidConfig}
           />
         );
