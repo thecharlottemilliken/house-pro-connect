@@ -15,6 +15,7 @@ import { Progress } from "@/components/ui/progress";
 import { PreviewSidebar } from "./PreviewSidebar";
 import { WorkAreaForm } from "./WorkAreaForm";
 import { LaborRequirementsForm } from "./LaborRequirementsForm";
+import { MaterialRequirementsForm } from "./MaterialRequirementsForm";
 
 const steps = [
   { id: 'work-areas', title: 'Work Areas', description: 'Define specific areas requiring work' },
@@ -61,6 +62,16 @@ export function SOWWizard() {
               console.log('Labor items:', laborItems);
               setCurrentStep(current => current + 1);
             }} 
+          />
+        );
+      case 2:
+        return (
+          <MaterialRequirementsForm
+            workAreas={workAreas}
+            onSave={(materialItems) => {
+              console.log('Material items:', materialItems);
+              setCurrentStep(current => current + 1);
+            }}
           />
         );
       default:
