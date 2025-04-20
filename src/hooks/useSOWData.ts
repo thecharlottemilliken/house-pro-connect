@@ -18,6 +18,19 @@ export interface SOWData {
   updated_at?: string;
 }
 
+function parseJsonField(field: any, defaultValue: any) {
+  if (!field) {
+    return defaultValue;
+  }
+  try {
+    // Sometimes Supabase returns JSON type as string, or as object directly
+    return typeof field === 'string' ? JSON.parse(field) : field;
+  } catch (e) {
+    console.warn('Failed to parse JSON field:', e);
+    return defaultValue;
+  }
+}
+
 export const useSOWData = (projectId: string | undefined) => {
   const [sowData, setSOWData] = useState<SOWData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,7 +54,13 @@ export const useSOWData = (projectId: string | undefined) => {
         if (fetchError) throw fetchError;
         
         if (data) {
-          setSOWData(data);
+          setSOWData({
+            ...data,
+            work_areas: parseJsonField(data.work_areas, []),
+            labor_items: parseJsonField(data.labor_items, []),
+            material_items: parseJsonField(data.material_items, []),
+            bid_configuration: parseJsonField(data.bid_configuration, { bidDuration: '7', projectDescription: '' }),
+          });
         } else {
           // Create an empty SOW record if none exists
           setSOWData({
@@ -95,7 +114,13 @@ export const useSOWData = (projectId: string | undefined) => {
         if (error) throw error;
         
         if (data) {
-          setSOWData(data);
+          setSOWData({
+            ...data,
+            work_areas: parseJsonField(data.work_areas, []),
+            labor_items: parseJsonField(data.labor_items, []),
+            material_items: parseJsonField(data.material_items, []),
+            bid_configuration: parseJsonField(data.bid_configuration, { bidDuration: '7', projectDescription: '' }),
+          });
         }
       }
       
@@ -120,3 +145,4 @@ export const useSOWData = (projectId: string | undefined) => {
     saveSOWField
   };
 };
+
