@@ -53,6 +53,16 @@ export function SOWWizard() {
     switch (currentStep) {
       case 0:
         return <WorkAreaForm onSave={handleWorkAreasSubmit} />;
+      case 1:
+        return (
+          <LaborRequirementsForm 
+            workAreas={workAreas} 
+            onSave={(laborItems) => {
+              console.log('Labor items:', laborItems);
+              setCurrentStep(current => current + 1);
+            }} 
+          />
+        );
       default:
         return (
           <p className="text-gray-600">Step content for {steps[currentStep].title} will be implemented here.</p>
