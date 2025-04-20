@@ -2,10 +2,16 @@
 import React, { useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Plus, Minus } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, Minus } from "lucide-react";
 
 interface WorkArea {
   name: string;
@@ -23,6 +29,12 @@ interface WorkArea {
   }>;
 }
 
+interface LaborCategory {
+  name: string;
+  items: string[];
+  expanded?: boolean;
+}
+
 interface LaborItem {
   category: string;
   name: string;
@@ -35,54 +47,44 @@ interface LaborRequirementsFormProps {
   onSave: (laborItems: LaborItem[]) => void;
 }
 
-const laborCategories = {
-  interior: [
-    {
-      category: "General Labor",
-      items: ["Demo", "Cleanup", "Hauling", "Site Protection"]
-    },
-    {
-      category: "Drywall",
-      items: ["Repair", "New Installation", "Texture", "Finishing"]
-    },
-    {
-      category: "Electrical",
-      items: ["Rough and Fixture", "Panel Upgrade", "New Circuits", "Lighting"]
-    },
-    {
-      category: "Plumbing",
-      items: ["Rough In", "Fixtures", "Water Heater", "Gas Lines"]
-    },
-    {
-      category: "Flooring",
-      items: ["Tile", "Hardwood", "Laminate", "Carpet"]
-    }
-  ],
-  exterior: [
-    {
-      category: "Landscaping",
-      items: ["Irrigation", "Planting", "Hardscape", "Fencing"]
-    },
-    {
-      category: "Roofing",
-      items: ["Repair", "Replacement", "Gutters", "Ventilation"]
-    }
-  ]
-};
+const laborCategories: LaborCategory[] = [
+  {
+    name: "Building",
+    items: ["Demolition", "Framing", "Insulation", "Drywall"],
+  },
+  {
+    name: "Electrical",
+    items: ["Wiring", "Panel Upgrade", "Fixtures", "Smart Home"],
+  },
+  {
+    name: "Plumbing",
+    items: ["Pipes", "Fixtures", "Water Heater", "Drain Lines"],
+  },
+  {
+    name: "HVAC",
+    items: ["Ductwork", "Installation", "Ventilation"],
+  }
+];
 
 export function LaborRequirementsForm({ workAreas, onSave }: LaborRequirementsFormProps) {
-  const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
   const [selectedItems, setSelectedItems] = useState<LaborItem[]>([]);
-  const [itemNotes, setItemNotes] = useState<Record<string, string>>({});
-  const [currentCategory, setCurrentCategory] = useState("General Labor");
+  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
 
-  const handleAddLaborItem = (itemName: string) => {
+  const toggleCategory = (categoryName: string) => {
+    setExpandedCategories(prev => 
+      prev.includes(categoryName) 
+        ? prev.filter(c => c !== categoryName)
+        : [...prev, categoryName]
+    );
+  };
+
+  const handleAddLaborItem = (category: string, itemName: string) => {
     if (!selectedItems.find(item => item.name === itemName)) {
       setSelectedItems([...selectedItems, {
-        category: currentCategory,
+        category,
         name: itemName,
-        affectedAreas: selectedAreas,
-        notes: itemNotes
+        affectedAreas: [],
+        notes: {}
       }]);
     }
   };
@@ -91,120 +93,128 @@ export function LaborRequirementsForm({ workAreas, onSave }: LaborRequirementsFo
     setSelectedItems(selectedItems.filter(item => item.name !== itemName));
   };
 
+  const updateItemAffectedAreas = (itemIndex: number, areas: string[]) => {
+    const updatedItems = [...selectedItems];
+    updatedItems[itemIndex] = {
+      ...updatedItems[itemIndex],
+      affectedAreas: areas,
+      notes: areas.reduce((acc, area) => ({
+        ...acc,
+        [area]: updatedItems[itemIndex].notes[area] || ""
+      }), {})
+    };
+    setSelectedItems(updatedItems);
+  };
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-12 gap-6">
-        <div className="col-span-3 space-y-6">
-          <Card className="p-6">
-            <div className="space-y-6">
-              <h3 className="font-semibold text-lg mb-4">Labor Categories</h3>
-              <RadioGroup 
-                defaultValue="General Labor"
-                onValueChange={setCurrentCategory}
-                className="space-y-3"
-              >
-                {laborCategories.interior.map(cat => (
-                  <div key={cat.category} className="flex items-center space-x-2">
-                    <RadioGroupItem value={cat.category} id={cat.category} />
-                    <Label htmlFor={cat.category}>{cat.category}</Label>
-                  </div>
-                ))}
-              </RadioGroup>
-            </div>
-          </Card>
+        <div className="col-span-3">
+          <Select defaultValue="Building">
+            <SelectTrigger>
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              {laborCategories.map(cat => (
+                <SelectItem key={cat.name} value={cat.name}>
+                  {cat.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        <div className="col-span-9 space-y-6">
-          <Card className="p-6">
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h3 className="font-semibold text-lg">{currentCategory} Items</h3>
+        <div className="col-span-9 space-y-4">
+          <h3 className="text-lg font-semibold mb-4">Select Items from the checklist</h3>
+
+          {laborCategories.map(category => (
+            <Card key={category.name} className="p-4">
+              <div 
+                className="flex items-center justify-between cursor-pointer"
+                onClick={() => toggleCategory(category.name)}
+              >
+                <div>
+                  <h4 className="font-medium text-lg">{category.name}</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {category.items.length} Labor Items
+                  </p>
+                </div>
+                {expandedCategories.includes(category.name) ? (
+                  <ChevronUp className="h-5 w-5" />
+                ) : (
+                  <ChevronDown className="h-5 w-5" />
+                )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                {laborCategories.interior
-                  .find(cat => cat.category === currentCategory)
-                  ?.items.map(item => (
-                    <Card key={item} className="p-4">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium">{item}</span>
-                        {selectedItems.some(si => si.name === item) ? (
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleRemoveLaborItem(item)}
-                          >
-                            <Minus className="h-4 w-4" />
-                          </Button>
-                        ) : (
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleAddLaborItem(item)}
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </Card>
-                  ))}
-              </div>
-            </div>
-          </Card>
-
-          {selectedItems.length > 0 && (
-            <Card className="p-6">
-              <h3 className="font-semibold text-lg mb-4">Selected Labor Items</h3>
-              <div className="space-y-4">
-                {selectedItems.map((item, index) => (
-                  <Card key={`${item.name}-${index}`} className="p-4">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">{item.category}</h4>
-                          <p className="text-sm text-muted-foreground">{item.name}</p>
-                        </div>
-                        <Button 
-                          variant="ghost" 
+              {expandedCategories.includes(category.name) && (
+                <div className="mt-4 space-y-3">
+                  {category.items.map(item => {
+                    const isSelected = selectedItems.some(si => si.name === item);
+                    return (
+                      <div key={item} className="flex items-center justify-between p-3 bg-muted/10 rounded-md">
+                        <span>{item}</span>
+                        <Button
+                          variant="ghost"
                           size="sm"
-                          onClick={() => handleRemoveLaborItem(item.name)}
+                          onClick={() => isSelected 
+                            ? handleRemoveLaborItem(item)
+                            : handleAddLaborItem(category.name, item)
+                          }
                         >
-                          <Minus className="h-4 w-4" />
+                          {isSelected ? (
+                            <Minus className="h-4 w-4" />
+                          ) : (
+                            <Plus className="h-4 w-4" />
+                          )}
                         </Button>
                       </div>
+                    );
+                  })}
+                </div>
+              )}
+            </Card>
+          ))}
 
-                      <div className="space-y-2">
-                        <Label>Select Affected Areas</Label>
-                        <div className="grid grid-cols-2 gap-2">
-                          {workAreas.map(area => (
-                            <div key={area.name} className="flex items-center space-x-2">
-                              <input
-                                type="checkbox"
-                                id={`${item.name}-${area.name}`}
-                                checked={item.affectedAreas.includes(area.name)}
-                                onChange={(e) => {
-                                  const newAreas = e.target.checked
-                                    ? [...item.affectedAreas, area.name]
-                                    : item.affectedAreas.filter(a => a !== area.name);
-                                  
-                                  const updatedItems = [...selectedItems];
-                                  updatedItems[index] = {
-                                    ...item,
-                                    affectedAreas: newAreas
-                                  };
-                                  setSelectedItems(updatedItems);
-                                }}
-                                className="rounded border-gray-300 text-primary focus:ring-primary"
-                              />
-                              <Label htmlFor={`${item.name}-${area.name}`}>{area.name}</Label>
-                            </div>
-                          ))}
-                        </div>
+          {selectedItems.length > 0 && (
+            <div className="space-y-6 mt-8">
+              {selectedItems.map((item, index) => (
+                <Card key={`${item.name}-${index}`} className="p-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium">{item.name}</h4>
+                        <p className="text-sm text-muted-foreground">{item.category}</p>
                       </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveLaborItem(item.name)}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    <div className="space-y-4">
+                      <Label>Affected Areas</Label>
+                      <Select
+                        defaultValue={item.affectedAreas.join(",")}
+                        onValueChange={(value) => updateItemAffectedAreas(index, value.split(",").filter(Boolean))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select affected areas" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {workAreas.map(area => (
+                            <SelectItem key={area.name} value={area.name}>
+                              {area.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
 
                       {item.affectedAreas.map(area => (
                         <div key={area} className="space-y-2">
-                          <Label>Notes for {area}</Label>
+                          <Label>{area} Notes</Label>
                           <Textarea
                             placeholder={`Enter notes for ${item.name} in ${area}...`}
                             value={item.notes[area] || ""}
@@ -223,10 +233,10 @@ export function LaborRequirementsForm({ workAreas, onSave }: LaborRequirementsFo
                         </div>
                       ))}
                     </div>
-                  </Card>
-                ))}
-              </div>
-            </Card>
+                  </div>
+                </Card>
+              ))}
+            </div>
           )}
         </div>
       </div>
