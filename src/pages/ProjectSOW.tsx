@@ -31,6 +31,8 @@ const ProjectSOW = () => {
 
     const sowData = projectData.sow_data as any;
     
+    console.log("Viewing SOW data:", sowData);
+    
     return (
       <div className="max-w-6xl mx-auto px-6 py-6">
         <h2 className="text-2xl font-semibold text-gray-900 mb-6">Statement of Work</h2>

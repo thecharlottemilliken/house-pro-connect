@@ -32,12 +32,36 @@ const steps = [
 
 // Helper to update sow_data after each step (partial patch)
 async function saveSOWField(projectId: string, patch: Record<string, any>) {
-  const { error } = await supabase
-    .from('projects')
-    .update({ sow_data: patch })
-    .eq('id', projectId);
-  if (error) {
-    // eslint-disable-next-line no-console
+  try {
+    // First, get the current sow_data
+    const { data: projectData, error: fetchError } = await supabase
+      .from('projects')
+      .select('sow_data')
+      .eq('id', projectId)
+      .single();
+    
+    if (fetchError) {
+      throw fetchError;
+    }
+    
+    // Merge the existing data with the new patch
+    const mergedData = { 
+      ...(projectData?.sow_data as Record<string, any> || {}),
+      ...patch 
+    };
+    
+    // Update with the merged data
+    const { error: updateError } = await supabase
+      .from('projects')
+      .update({ sow_data: mergedData })
+      .eq('id', projectId);
+      
+    if (updateError) {
+      throw updateError;
+    }
+    
+    return true;
+  } catch (error) {
     console.error("Failed to save SOW field:", error);
     toast({
       title: "Error",
@@ -46,7 +70,6 @@ async function saveSOWField(projectId: string, patch: Record<string, any>) {
     });
     return false;
   }
-  return true;
 }
 
 export function SOWWizard() {
@@ -63,13 +86,17 @@ export function SOWWizard() {
     projectDescription: ''
   });
 
+  // Load saved data when component mounts
   React.useEffect(() => {
     if (projectData?.sow_data) {
-      const sowData = projectData.sow_data as any;
+      const sowData = projectData.sow_data as Record<string, any>;
       if (sowData.workAreas) setWorkAreas(sowData.workAreas);
       if (sowData.laborItems) setLaborItems(sowData.laborItems);
       if (sowData.materialItems) setMaterialItems(sowData.materialItems);
       if (sowData.bidConfiguration) setBidConfig(sowData.bidConfiguration);
+      
+      // Log what we loaded for debugging
+      console.log("Loaded SOW data from database:", sowData);
     }
   }, [projectData]);
 
@@ -88,51 +115,69 @@ export function SOWWizard() {
 
   const handleWorkAreasSubmit = async (areas: any[]) => {
     setWorkAreas(areas);
+    
+    // Save work areas to the database
+    if (projectId) {
+      const success = await saveSOWField(projectId, { workAreas: areas });
+      if (success) {
+        toast({
+          title: "Saved",
+          description: "Work Areas saved successfully."
+        });
+      }
+    }
+    
     setCurrentStep(current => current + 1);
-    // (optional) consider patching workAreas after this step as well
-    // await saveSOWField(projectId!, { ...projectData?.sow_data, workAreas: areas });
   };
 
   const handleLaborItemsSubmit = async (items: any[]) => {
     setLaborItems(items);
-    // Persist laborItems to sow_data in the projects table
+    
+    // Save labor items to the database
     if (projectId) {
-      const currentSowData = (projectData?.sow_data as Record<string, any>) || {};
-      await saveSOWField(projectId, { 
-        ...currentSowData, 
-        laborItems: items, 
-        workAreas 
-      });
-      toast({
-        title: "Saved",
-        description: "Labor Requirements saved successfully."
-      });
+      const success = await saveSOWField(projectId, { laborItems: items });
+      if (success) {
+        toast({
+          title: "Saved",
+          description: "Labor Requirements saved successfully."
+        });
+      }
     }
+    
     setCurrentStep(current => current + 1);
   };
   
   const handleMaterialItemsSubmit = async (items: any[]) => {
     setMaterialItems(items);
-    // Persist materialItems to sow_data in the projects table
+    
+    // Save material items to the database
     if (projectId) {
-      const currentSowData = (projectData?.sow_data as Record<string, any>) || {};
-      await saveSOWField(projectId, { 
-        ...currentSowData, 
-        materialItems: items, 
-        laborItems, 
-        workAreas 
-      });
-      toast({
-        title: "Saved",
-        description: "Material Requirements saved successfully."
-      });
+      const success = await saveSOWField(projectId, { materialItems: items });
+      if (success) {
+        toast({
+          title: "Saved",
+          description: "Material Requirements saved successfully."
+        });
+      }
     }
+    
     setCurrentStep(current => current + 1);
   };
   
   const handleBidConfigSubmit = async (config: any) => {
     setBidConfig(config);
-    // It's optional to patch bidConfiguration here since final submit will always patch it
+    
+    // Save bid configuration to the database
+    if (projectId) {
+      const success = await saveSOWField(projectId, { bidConfiguration: config });
+      if (success) {
+        toast({
+          title: "Saved",
+          description: "Bid Configuration saved successfully."
+        });
+      }
+    }
+    
     setCurrentStep(current => current + 1);
   };
 
