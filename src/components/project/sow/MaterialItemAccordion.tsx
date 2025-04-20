@@ -1,10 +1,11 @@
-
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowRightFromLine, Plus } from "lucide-react";
+import { ArrowRightFromLine, Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface MaterialItemAccordionProps {
   category: string;
@@ -27,6 +28,14 @@ interface MaterialItemAccordionProps {
     }>;
   }>) => void;
   onUpdateSpecifications: (specifications: any) => void;
+}
+
+interface CabinetSpecification {
+  id: string;
+  type: string;
+  doors: number;
+  drawers: number;
+  size: string;
 }
 
 export function MaterialItemAccordion({
@@ -77,30 +86,306 @@ export function MaterialItemAccordion({
   const renderSpecificationsForm = () => {
     switch (materialType) {
       case "Cabinets":
+        const specifications = selectedRooms[0]?.specifications as { 
+          cabinets?: CabinetSpecification[];
+          status?: string;
+          preferredColor?: string;
+          preferredBrand?: string;
+          boxConstruction?: string;
+          frontStyle?: string;
+          woodType?: string;
+          boxThickness?: string;
+          boxMaterial?: string;
+          boxType?: string;
+          frameType?: string;
+          doorHingeType?: string;
+        } || {};
+
         return (
-          <div className="space-y-4 mt-4 p-4 bg-gray-50 rounded-md">
-            <h4 className="font-medium">Cabinet Specifications</h4>
-            <div className="grid grid-cols-4 gap-4">
+          <div className="space-y-6 mt-4 p-4 bg-gray-50 rounded-md">
+            <div>
+              <h4 className="font-medium mb-4">Cabinet Specifications</h4>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Cabinet Type</TableHead>
+                    <TableHead>Doors</TableHead>
+                    <TableHead>Drawers</TableHead>
+                    <TableHead>Size (L x W x D)</TableHead>
+                    <TableHead></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {specifications.cabinets?.map((cabinet, index) => (
+                    <TableRow key={cabinet.id}>
+                      <TableCell>
+                        <Input
+                          value={cabinet.type}
+                          onChange={(e) => {
+                            const updatedCabinets = [...(specifications.cabinets || [])];
+                            updatedCabinets[index] = { ...cabinet, type: e.target.value };
+                            onUpdateSpecifications({ ...specifications, cabinets: updatedCabinets });
+                          }}
+                          placeholder="Wall, Base, etc."
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          value={cabinet.doors}
+                          onChange={(e) => {
+                            const updatedCabinets = [...(specifications.cabinets || [])];
+                            updatedCabinets[index] = { ...cabinet, doors: parseInt(e.target.value) };
+                            onUpdateSpecifications({ ...specifications, cabinets: updatedCabinets });
+                          }}
+                          placeholder="Number of doors"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          value={cabinet.drawers}
+                          onChange={(e) => {
+                            const updatedCabinets = [...(specifications.cabinets || [])];
+                            updatedCabinets[index] = { ...cabinet, drawers: parseInt(e.target.value) };
+                            onUpdateSpecifications({ ...specifications, cabinets: updatedCabinets });
+                          }}
+                          placeholder="Number of drawers"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          value={cabinet.size}
+                          onChange={(e) => {
+                            const updatedCabinets = [...(specifications.cabinets || [])];
+                            updatedCabinets[index] = { ...cabinet, size: e.target.value };
+                            onUpdateSpecifications({ ...specifications, cabinets: updatedCabinets });
+                          }}
+                          placeholder="12x12x12"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const updatedCabinets = specifications.cabinets?.filter((_, i) => i !== index);
+                            onUpdateSpecifications({ ...specifications, cabinets: updatedCabinets });
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <Button
+                type="button"
+                size="sm"
+                className="mt-4"
+                onClick={() => {
+                  const newCabinet = {
+                    id: Math.random().toString(36).substr(2, 9),
+                    type: "",
+                    doors: 0,
+                    drawers: 0,
+                    size: ""
+                  };
+                  onUpdateSpecifications({
+                    ...specifications,
+                    cabinets: [...(specifications.cabinets || []), newCabinet]
+                  });
+                }}
+              >
+                <Plus className="w-4 h-4 mr-1" /> Add Cabinet
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <Label>Cabinet Type</Label>
-                <Input placeholder="Wall, Base, etc." />
+                <Label>Status</Label>
+                <Select
+                  value={specifications.status}
+                  onValueChange={(value) => onUpdateSpecifications({ ...specifications, status: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="needed">Needed</SelectItem>
+                    <SelectItem value="ordered">Ordered</SelectItem>
+                    <SelectItem value="received">Received</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
+
               <div>
-                <Label>Doors</Label>
-                <Input type="number" placeholder="Number of doors" />
+                <Label>Preferred Color</Label>
+                <Select
+                  value={specifications.preferredColor}
+                  onValueChange={(value) => onUpdateSpecifications({ ...specifications, preferredColor: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select color" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="navy">Navy</SelectItem>
+                    <SelectItem value="white">White</SelectItem>
+                    <SelectItem value="gray">Gray</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
+
               <div>
-                <Label>Drawers</Label>
-                <Input type="number" placeholder="Number of drawers" />
+                <Label>Preferred Brand</Label>
+                <Select
+                  value={specifications.preferredBrand}
+                  onValueChange={(value) => onUpdateSpecifications({ ...specifications, preferredBrand: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select brand" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="kraftmaid">KraftMaid</SelectItem>
+                    <SelectItem value="merillat">Merillat</SelectItem>
+                    <SelectItem value="american-woodmark">American Woodmark</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
+
               <div>
-                <Label>Size (L x W x D)</Label>
-                <Input placeholder="12x12x12" />
+                <Label>Box Construction</Label>
+                <Select
+                  value={specifications.boxConstruction}
+                  onValueChange={(value) => onUpdateSpecifications({ ...specifications, boxConstruction: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select construction" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="plywood">Plywood</SelectItem>
+                    <SelectItem value="particleboard">Particleboard</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Front Style</Label>
+                <Select
+                  value={specifications.frontStyle}
+                  onValueChange={(value) => onUpdateSpecifications({ ...specifications, frontStyle: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select style" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="raised-panel">Raised Panel</SelectItem>
+                    <SelectItem value="shaker">Shaker</SelectItem>
+                    <SelectItem value="flat-panel">Flat Panel</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Wood Type</Label>
+                <Select
+                  value={specifications.woodType}
+                  onValueChange={(value) => onUpdateSpecifications({ ...specifications, woodType: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select wood type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cherry">Cherry</SelectItem>
+                    <SelectItem value="maple">Maple</SelectItem>
+                    <SelectItem value="oak">Oak</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Box Thickness</Label>
+                <Select
+                  value={specifications.boxThickness}
+                  onValueChange={(value) => onUpdateSpecifications({ ...specifications, boxThickness: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select thickness" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="4">4"</SelectItem>
+                    <SelectItem value="3">3"</SelectItem>
+                    <SelectItem value="2">2"</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Box Material</Label>
+                <Select
+                  value={specifications.boxMaterial}
+                  onValueChange={(value) => onUpdateSpecifications({ ...specifications, boxMaterial: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select material" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="plywood">Plywood</SelectItem>
+                    <SelectItem value="mdf">MDF</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Box Type</Label>
+                <Select
+                  value={specifications.boxType}
+                  onValueChange={(value) => onUpdateSpecifications({ ...specifications, boxType: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select box type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="framed">Framed</SelectItem>
+                    <SelectItem value="frameless">Frameless</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Frame Type</Label>
+                <Select
+                  value={specifications.frameType}
+                  onValueChange={(value) => onUpdateSpecifications({ ...specifications, frameType: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select frame type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="partial-overlay">Partial Overlay</SelectItem>
+                    <SelectItem value="full-overlay">Full Overlay</SelectItem>
+                    <SelectItem value="inset">Inset</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Door Hinge Type</Label>
+                <Select
+                  value={specifications.doorHingeType}
+                  onValueChange={(value) => onUpdateSpecifications({ ...specifications, doorHingeType: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select hinge type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="concealed">Concealed</SelectItem>
+                    <SelectItem value="exposed">Exposed</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-            <Button type="button" size="sm" className="mt-2">
-              <Plus className="w-4 h-4 mr-1" /> Add Cabinet
-            </Button>
           </div>
         );
       // Add more cases for other material types
