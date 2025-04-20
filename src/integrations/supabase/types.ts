@@ -181,6 +181,7 @@ export type Database = {
           project_preferences: Json | null
           property_id: string
           renovation_areas: Json | null
+          sow_data: Json | null
           state: string
           title: string
           updated_at: string
@@ -196,6 +197,7 @@ export type Database = {
           project_preferences?: Json | null
           property_id: string
           renovation_areas?: Json | null
+          sow_data?: Json | null
           state?: string
           title: string
           updated_at?: string
@@ -211,6 +213,7 @@ export type Database = {
           project_preferences?: Json | null
           property_id?: string
           renovation_areas?: Json | null
+          sow_data?: Json | null
           state?: string
           title?: string
           updated_at?: string

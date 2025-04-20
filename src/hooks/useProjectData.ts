@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
@@ -32,7 +31,8 @@ export interface ProjectData {
   management_preferences: Json;
   project_preferences: Json;
   prior_experience: Json;
-  sow_data?: Json;
+  sow_data: Json | null;
+  state?: string;
 }
 
 export interface DesignPreferences {
@@ -117,7 +117,8 @@ export const useProjectData = (projectId: string | undefined, locationState: any
           management_preferences: project.management_preferences || {},
           project_preferences: project.project_preferences || {},
           prior_experience: project.prior_experience || {},
-          sow_data: project.sow_data || null
+          sow_data: project.sow_data || null,
+          state: project.state || 'active'
         };
 
         setProjectData(projectDataMapped);

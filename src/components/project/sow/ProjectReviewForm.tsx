@@ -12,6 +12,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { TablesUpdate } from "@/integrations/supabase/types";
 
 interface ProjectReviewFormProps {
   workAreas: any[];
@@ -54,7 +55,7 @@ export function ProjectReviewForm({
       const { error } = await supabase
         .from('projects')
         .update({
-          sow_data: sowData
+          sow_data: sowData as TablesUpdate<'projects'>['sow_data']
         })
         .eq('id', projectId);
         

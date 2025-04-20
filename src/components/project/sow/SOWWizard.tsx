@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -42,7 +41,6 @@ export function SOWWizard() {
     projectDescription: ''
   });
 
-  // Load existing SOW data if available
   React.useEffect(() => {
     if (projectData && projectData.sow_data) {
       const sowData = projectData.sow_data as any;
@@ -75,7 +73,10 @@ export function SOWWizard() {
   const renderStepContent = () => {
     switch (currentStep) {
       case 0:
-        return <WorkAreaForm onSave={handleWorkAreasSubmit} initialData={workAreas} />;
+        return <WorkAreaForm 
+          onSave={handleWorkAreasSubmit} 
+          workAreas={workAreas}
+        />;
       case 1:
         return (
           <LaborRequirementsForm 
@@ -84,7 +85,7 @@ export function SOWWizard() {
               setLaborItems(items);
               setCurrentStep(current => current + 1);
             }} 
-            initialData={laborItems}
+            laborItems={laborItems}
           />
         );
       case 2:
@@ -95,7 +96,7 @@ export function SOWWizard() {
               setMaterialItems(items);
               setCurrentStep(current => current + 1);
             }}
-            initialData={materialItems}
+            materialItems={materialItems}
           />
         );
       case 3:
@@ -105,7 +106,7 @@ export function SOWWizard() {
               setBidConfig(config);
               setCurrentStep(current => current + 1);
             }}
-            initialData={bidConfig}
+            bidConfiguration={bidConfig}
           />
         );
       case 4:
