@@ -18,6 +18,7 @@ interface MaterialItemAccordionProps {
       name: string;
       notes: string;
     }>;
+    specifications?: any; // Add specifications property to the room type
   }>;
   onUpdateRooms: (rooms: Array<{ 
     name: string;
@@ -26,6 +27,7 @@ interface MaterialItemAccordionProps {
       name: string;
       notes: string;
     }>;
+    specifications?: any; // Add specifications property to the room type
   }>) => void;
   onUpdateSpecifications: (specifications: any) => void;
 }
@@ -86,20 +88,7 @@ export function MaterialItemAccordion({
   const renderSpecificationsForm = () => {
     switch (materialType) {
       case "Cabinets":
-        const specifications = selectedRooms[0]?.specifications as { 
-          cabinets?: CabinetSpecification[];
-          status?: string;
-          preferredColor?: string;
-          preferredBrand?: string;
-          boxConstruction?: string;
-          frontStyle?: string;
-          woodType?: string;
-          boxThickness?: string;
-          boxMaterial?: string;
-          boxType?: string;
-          frameType?: string;
-          doorHingeType?: string;
-        } || {};
+        const specifications = selectedRooms[0]?.specifications || {};
 
         return (
           <div className="space-y-6 mt-4 p-4 bg-gray-50 rounded-md">
@@ -116,7 +105,7 @@ export function MaterialItemAccordion({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {specifications.cabinets?.map((cabinet, index) => (
+                  {specifications.cabinets?.map((cabinet: CabinetSpecification, index: number) => (
                     <TableRow key={cabinet.id}>
                       <TableCell>
                         <Input
