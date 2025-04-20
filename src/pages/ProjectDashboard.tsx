@@ -91,7 +91,6 @@ const ProjectDashboard = () => {
   return (
     <div className="flex flex-col bg-white min-h-screen">
       <DashboardNavbar />
-      
       <SidebarProvider defaultOpen={!isMobile}>
         <div className="flex flex-1 h-[calc(100vh-64px)] w-full">
           <ProjectSidebar 
@@ -99,7 +98,6 @@ const ProjectDashboard = () => {
             projectTitle={projectTitle}
             activePage="overview"
           />
-          
           <div className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 bg-white overflow-y-auto">
             <div className="mb-3 sm:mb-4 md:mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center">
               <div>
@@ -121,7 +119,7 @@ const ProjectDashboard = () => {
             </div>
             
             <div className="mb-6">
-              <TasksCard />
+              <TasksCard projectId={projectId} isOwner={isOwner} />
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:gap-4 md:gap-6 lg:grid-cols-2 2xl:grid-cols-3">
