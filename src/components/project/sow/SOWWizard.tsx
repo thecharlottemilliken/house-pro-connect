@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -21,8 +22,8 @@ const steps = [
   { id: 'work-areas', title: 'Work Areas', description: 'Define specific areas requiring work' },
   { id: 'labor-needs', title: 'Labor Requirements', description: 'Specify required labor and expertise' },
   { id: 'materials', title: 'Materials', description: 'List required materials and specifications' },
-  { id: 'project-review', title: 'Project Review', description: 'Review project details and requirements' },
-  { id: 'review', title: 'Final Review', description: 'Review and finalize SOW details' }
+  { id: 'bid-config', title: 'Bid Configuration', description: 'Set bidding parameters and overview' },
+  { id: 'project-review', title: 'Project Review', description: 'Review project details and requirements' }
 ];
 
 export function SOWWizard() {
@@ -70,6 +71,15 @@ export function SOWWizard() {
             workAreas={workAreas}
             onSave={(materialItems) => {
               console.log('Material items:', materialItems);
+              setCurrentStep(current => current + 1);
+            }}
+          />
+        );
+      case 3:
+        return (
+          <BidConfigurationForm
+            onSave={(config) => {
+              console.log('Bid configuration:', config);
               setCurrentStep(current => current + 1);
             }}
           />
