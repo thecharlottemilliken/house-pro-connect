@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -100,7 +99,7 @@ export function ProjectReviewForm({
   };
 
   // Helper function to format specifications object for display
-  const formatSpecifications = (specs: any) => {
+  const formatSpecifications = (specs: any): React.ReactNode => {
     if (!specs || Object.keys(specs).length === 0) return null;
 
     // Handle cabinet array specifically
@@ -128,7 +127,7 @@ export function ProjectReviewForm({
           return (
             <p key={key} className="text-xs">
               <span className="font-medium">{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: </span>
-              {value}
+              {String(value)}
             </p>
           );
         })}
