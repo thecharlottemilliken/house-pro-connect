@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -51,8 +50,6 @@ export function ProjectReviewForm({
         status: 'pending',
         updatedAt: new Date().toISOString()
       };
-      
-      console.log("Saving SOW data:", sowData);
       
       const { error } = await supabase
         .from('projects')

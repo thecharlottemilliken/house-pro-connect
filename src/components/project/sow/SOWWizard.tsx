@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -76,7 +75,7 @@ export function SOWWizard() {
         return (
           <WorkAreaForm 
             onSave={handleWorkAreasSubmit}
-            initialData={workAreas}
+            workAreas={workAreas}
           />
         );
       case 1:
@@ -87,7 +86,7 @@ export function SOWWizard() {
               setLaborItems(items);
               setCurrentStep(current => current + 1);
             }}
-            initialData={laborItems}
+            laborItems={laborItems}
           />
         );
       case 2:
@@ -98,7 +97,7 @@ export function SOWWizard() {
               setMaterialItems(items);
               setCurrentStep(current => current + 1);
             }}
-            initialData={materialItems}
+            materialItems={materialItems}
           />
         );
       case 3:
