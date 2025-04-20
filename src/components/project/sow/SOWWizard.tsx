@@ -14,12 +14,13 @@ import { useProjectData } from "@/hooks/useProjectData";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { PreviewSidebar } from "./PreviewSidebar";
+import { WorkAreaForm } from "./WorkAreaForm";
 
 const steps = [
-  { id: 'project-review', title: 'Project Review', description: 'Review project details and requirements' },
   { id: 'work-areas', title: 'Work Areas', description: 'Define specific areas requiring work' },
   { id: 'labor-needs', title: 'Labor Requirements', description: 'Specify required labor and expertise' },
   { id: 'materials', title: 'Materials', description: 'List required materials and specifications' },
+  { id: 'project-review', title: 'Project Review', description: 'Review project details and requirements' },
   { id: 'review', title: 'Final Review', description: 'Review and finalize SOW details' }
 ];
 
@@ -28,6 +29,7 @@ export function SOWWizard() {
   const navigate = useNavigate();
   const { projectData, propertyDetails, isLoading } = useProjectData(projectId);
   const [currentStep, setCurrentStep] = React.useState(0);
+  const [workAreas, setWorkAreas] = React.useState([]);
 
   if (isLoading) {
     return (
@@ -41,6 +43,22 @@ export function SOWWizard() {
   }
 
   const progress = ((currentStep + 1) / steps.length) * 100;
+
+  const handleWorkAreasSubmit = (areas: any[]) => {
+    setWorkAreas(areas);
+    setCurrentStep(current => current + 1);
+  };
+
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 0:
+        return <WorkAreaForm onSave={handleWorkAreasSubmit} />;
+      default:
+        return (
+          <p className="text-gray-600">Step content for {steps[currentStep].title} will be implemented here.</p>
+        );
+    }
+  };
 
   return (
     <div className="flex h-[calc(100vh-56px)]">
@@ -69,31 +87,33 @@ export function SOWWizard() {
               </CardHeader>
               <CardContent>
                 <div className="min-h-[400px]">
-                  <p className="text-gray-600">Step content for {steps[currentStep].title} will be implemented here.</p>
+                  {renderStepContent()}
                 </div>
                 
-                <div className="flex justify-between mt-6 pt-6 border-t">
-                  <Button
-                    variant="outline"
-                    onClick={() => setCurrentStep(current => Math.max(0, current - 1))}
-                    disabled={currentStep === 0}
-                  >
-                    Previous
-                  </Button>
-                  
-                  <Button
-                    onClick={() => {
-                      if (currentStep === steps.length - 1) {
-                        navigate(`/project-dashboard/${projectId}`);
-                      } else {
-                        setCurrentStep(current => current + 1);
-                      }
-                    }}
-                  >
-                    {currentStep === steps.length - 1 ? 'Complete' : 'Next'}
-                    {currentStep !== steps.length - 1 && <ChevronRight className="ml-2 h-4 w-4" />}
-                  </Button>
-                </div>
+                {currentStep !== 0 && (
+                  <div className="flex justify-between mt-6 pt-6 border-t">
+                    <Button
+                      variant="outline"
+                      onClick={() => setCurrentStep(current => Math.max(0, current - 1))}
+                      disabled={currentStep === 0}
+                    >
+                      Previous
+                    </Button>
+                    
+                    <Button
+                      onClick={() => {
+                        if (currentStep === steps.length - 1) {
+                          navigate(`/project-dashboard/${projectId}`);
+                        } else {
+                          setCurrentStep(current => current + 1);
+                        }
+                      }}
+                    >
+                      {currentStep === steps.length - 1 ? 'Complete' : 'Next'}
+                      {currentStep !== steps.length - 1 && <ChevronRight className="ml-2 h-4 w-4" />}
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
