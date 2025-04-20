@@ -34,6 +34,7 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import CoachRoute from "./components/auth/CoachRoute";
 import ProjectSOW from "./pages/ProjectSOW";
 import SOWReviewPage from "@/components/project/sow/SOWReviewPage";
+import Jobs from "./pages/Jobs";
 
 const App = () => {
   return (
@@ -214,6 +215,13 @@ const App = () => {
           <ProtectedRoute>
             <TooltipProvider>
               <SOWReviewPage />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/your-projects" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <Jobs />
             </TooltipProvider>
           </ProtectedRoute>
         } />
