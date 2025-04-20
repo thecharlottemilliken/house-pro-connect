@@ -40,6 +40,40 @@ interface CabinetSpecification {
   size: string;
 }
 
+interface FlooringSpecification {
+  materialType: string;
+  squareFootage: number;
+  color: string;
+  brand: string;
+  status: string;
+}
+
+interface PlumbingSpecification {
+  manufacturer: string;
+  model: string;
+  finish: string;
+  quantity: number;
+  status: string;
+}
+
+interface CountertopSpecification {
+  material: string;
+  squareFootage: number;
+  thickness: string;
+  edgeProfile: string;
+  color: string;
+  status: string;
+}
+
+interface ApplianceSpecification {
+  brand: string;
+  model: string;
+  color: string;
+  size: string;
+  quantity: number;
+  status: string;
+}
+
 export function MaterialItemAccordion({
   category,
   materialType,
@@ -86,112 +120,172 @@ export function MaterialItemAccordion({
   };
 
   const renderSpecificationsForm = () => {
+    const specifications = selectedRooms[0]?.specifications || {};
+
     switch (materialType) {
       case "Cabinets":
-        const specifications = selectedRooms[0]?.specifications || {};
-
         return (
           <div className="space-y-6 mt-4 p-4 bg-gray-50 rounded-md">
-            <div>
-              <h4 className="font-medium mb-4">Cabinet Specifications</h4>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Cabinet Type</TableHead>
-                    <TableHead>Doors</TableHead>
-                    <TableHead>Drawers</TableHead>
-                    <TableHead>Size (L x W x D)</TableHead>
-                    <TableHead></TableHead>
+            <h4 className="font-medium mb-4">Cabinet Specifications</h4>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Cabinet Type</TableHead>
+                  <TableHead>Doors</TableHead>
+                  <TableHead>Drawers</TableHead>
+                  <TableHead>Size (L x W x D)</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {specifications.cabinets?.map((cabinet: CabinetSpecification, index: number) => (
+                  <TableRow key={cabinet.id}>
+                    <TableCell>
+                      <Input
+                        value={cabinet.type}
+                        onChange={(e) => {
+                          const updatedCabinets = [...(specifications.cabinets || [])];
+                          updatedCabinets[index] = { ...cabinet, type: e.target.value };
+                          onUpdateSpecifications({ ...specifications, cabinets: updatedCabinets });
+                        }}
+                        placeholder="Wall, Base, etc."
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        value={cabinet.doors}
+                        onChange={(e) => {
+                          const updatedCabinets = [...(specifications.cabinets || [])];
+                          updatedCabinets[index] = { ...cabinet, doors: parseInt(e.target.value) };
+                          onUpdateSpecifications({ ...specifications, cabinets: updatedCabinets });
+                        }}
+                        placeholder="Number of doors"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        value={cabinet.drawers}
+                        onChange={(e) => {
+                          const updatedCabinets = [...(specifications.cabinets || [])];
+                          updatedCabinets[index] = { ...cabinet, drawers: parseInt(e.target.value) };
+                          onUpdateSpecifications({ ...specifications, cabinets: updatedCabinets });
+                        }}
+                        placeholder="Number of drawers"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        value={cabinet.size}
+                        onChange={(e) => {
+                          const updatedCabinets = [...(specifications.cabinets || [])];
+                          updatedCabinets[index] = { ...cabinet, size: e.target.value };
+                          onUpdateSpecifications({ ...specifications, cabinets: updatedCabinets });
+                        }}
+                        placeholder="12x12x12"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const updatedCabinets = specifications.cabinets?.filter((_, i) => i !== index);
+                          onUpdateSpecifications({ ...specifications, cabinets: updatedCabinets });
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {specifications.cabinets?.map((cabinet: CabinetSpecification, index: number) => (
-                    <TableRow key={cabinet.id}>
-                      <TableCell>
-                        <Input
-                          value={cabinet.type}
-                          onChange={(e) => {
-                            const updatedCabinets = [...(specifications.cabinets || [])];
-                            updatedCabinets[index] = { ...cabinet, type: e.target.value };
-                            onUpdateSpecifications({ ...specifications, cabinets: updatedCabinets });
-                          }}
-                          placeholder="Wall, Base, etc."
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          value={cabinet.doors}
-                          onChange={(e) => {
-                            const updatedCabinets = [...(specifications.cabinets || [])];
-                            updatedCabinets[index] = { ...cabinet, doors: parseInt(e.target.value) };
-                            onUpdateSpecifications({ ...specifications, cabinets: updatedCabinets });
-                          }}
-                          placeholder="Number of doors"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          value={cabinet.drawers}
-                          onChange={(e) => {
-                            const updatedCabinets = [...(specifications.cabinets || [])];
-                            updatedCabinets[index] = { ...cabinet, drawers: parseInt(e.target.value) };
-                            onUpdateSpecifications({ ...specifications, cabinets: updatedCabinets });
-                          }}
-                          placeholder="Number of drawers"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          value={cabinet.size}
-                          onChange={(e) => {
-                            const updatedCabinets = [...(specifications.cabinets || [])];
-                            updatedCabinets[index] = { ...cabinet, size: e.target.value };
-                            onUpdateSpecifications({ ...specifications, cabinets: updatedCabinets });
-                          }}
-                          placeholder="12x12x12"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            const updatedCabinets = specifications.cabinets?.filter((_, i) => i !== index);
-                            onUpdateSpecifications({ ...specifications, cabinets: updatedCabinets });
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              <Button
-                type="button"
-                size="sm"
-                className="mt-4"
-                onClick={() => {
-                  const newCabinet = {
-                    id: Math.random().toString(36).substr(2, 9),
-                    type: "",
-                    doors: 0,
-                    drawers: 0,
-                    size: ""
-                  };
-                  onUpdateSpecifications({
-                    ...specifications,
-                    cabinets: [...(specifications.cabinets || []), newCabinet]
-                  });
-                }}
-              >
-                <Plus className="w-4 h-4 mr-1" /> Add Cabinet
-              </Button>
-            </div>
+                ))}
+              </TableBody>
+            </Table>
+            <Button
+              type="button"
+              size="sm"
+              className="mt-4"
+              onClick={() => {
+                const newCabinet = {
+                  id: Math.random().toString(36).substr(2, 9),
+                  type: "",
+                  doors: 0,
+                  drawers: 0,
+                  size: ""
+                };
+                onUpdateSpecifications({
+                  ...specifications,
+                  cabinets: [...(specifications.cabinets || []), newCabinet]
+                });
+              }}
+            >
+              <Plus className="w-4 h-4 mr-1" /> Add Cabinet
+            </Button>
+          </div>
+        );
 
+      case "Flooring":
+        return (
+          <div className="space-y-6 mt-4 p-4 bg-gray-50 rounded-md">
+            <h4 className="font-medium mb-4">Flooring Specifications</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label>Material Type</Label>
+                <Select
+                  value={specifications.materialType}
+                  onValueChange={(value) => onUpdateSpecifications({ ...specifications, materialType: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select material type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="hardwood">Hardwood</SelectItem>
+                    <SelectItem value="tile">Tile</SelectItem>
+                    <SelectItem value="laminate">Laminate</SelectItem>
+                    <SelectItem value="vinyl">Vinyl</SelectItem>
+                    <SelectItem value="carpet">Carpet</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Square Footage</Label>
+                <Input
+                  type="number"
+                  value={specifications.squareFootage}
+                  onChange={(e) => onUpdateSpecifications({ 
+                    ...specifications, 
+                    squareFootage: parseFloat(e.target.value) 
+                  })}
+                  placeholder="Enter square footage"
+                />
+              </div>
+
+              <div>
+                <Label>Color/Pattern</Label>
+                <Input
+                  value={specifications.color}
+                  onChange={(e) => onUpdateSpecifications({ 
+                    ...specifications, 
+                    color: e.target.value 
+                  })}
+                  placeholder="Enter color or pattern"
+                />
+              </div>
+
+              <div>
+                <Label>Brand</Label>
+                <Input
+                  value={specifications.brand}
+                  onChange={(e) => onUpdateSpecifications({ 
+                    ...specifications, 
+                    brand: e.target.value 
+                  })}
+                  placeholder="Enter brand name"
+                />
+              </div>
+
               <div>
                 <Label>Status</Label>
                 <Select
@@ -208,176 +302,287 @@ export function MaterialItemAccordion({
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+          </div>
+        );
 
+      case "Countertops":
+        return (
+          <div className="space-y-6 mt-4 p-4 bg-gray-50 rounded-md">
+            <h4 className="font-medium mb-4">Countertop Specifications</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <Label>Preferred Color</Label>
+                <Label>Material</Label>
                 <Select
-                  value={specifications.preferredColor}
-                  onValueChange={(value) => onUpdateSpecifications({ ...specifications, preferredColor: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select color" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="navy">Navy</SelectItem>
-                    <SelectItem value="white">White</SelectItem>
-                    <SelectItem value="gray">Gray</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label>Preferred Brand</Label>
-                <Select
-                  value={specifications.preferredBrand}
-                  onValueChange={(value) => onUpdateSpecifications({ ...specifications, preferredBrand: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select brand" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="kraftmaid">KraftMaid</SelectItem>
-                    <SelectItem value="merillat">Merillat</SelectItem>
-                    <SelectItem value="american-woodmark">American Woodmark</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label>Box Construction</Label>
-                <Select
-                  value={specifications.boxConstruction}
-                  onValueChange={(value) => onUpdateSpecifications({ ...specifications, boxConstruction: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select construction" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="plywood">Plywood</SelectItem>
-                    <SelectItem value="particleboard">Particleboard</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label>Front Style</Label>
-                <Select
-                  value={specifications.frontStyle}
-                  onValueChange={(value) => onUpdateSpecifications({ ...specifications, frontStyle: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select style" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="raised-panel">Raised Panel</SelectItem>
-                    <SelectItem value="shaker">Shaker</SelectItem>
-                    <SelectItem value="flat-panel">Flat Panel</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label>Wood Type</Label>
-                <Select
-                  value={specifications.woodType}
-                  onValueChange={(value) => onUpdateSpecifications({ ...specifications, woodType: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select wood type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cherry">Cherry</SelectItem>
-                    <SelectItem value="maple">Maple</SelectItem>
-                    <SelectItem value="oak">Oak</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label>Box Thickness</Label>
-                <Select
-                  value={specifications.boxThickness}
-                  onValueChange={(value) => onUpdateSpecifications({ ...specifications, boxThickness: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select thickness" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="4">4"</SelectItem>
-                    <SelectItem value="3">3"</SelectItem>
-                    <SelectItem value="2">2"</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label>Box Material</Label>
-                <Select
-                  value={specifications.boxMaterial}
-                  onValueChange={(value) => onUpdateSpecifications({ ...specifications, boxMaterial: value })}
+                  value={specifications.material}
+                  onValueChange={(value) => onUpdateSpecifications({ ...specifications, material: value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select material" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="plywood">Plywood</SelectItem>
-                    <SelectItem value="mdf">MDF</SelectItem>
+                    <SelectItem value="granite">Granite</SelectItem>
+                    <SelectItem value="quartz">Quartz</SelectItem>
+                    <SelectItem value="marble">Marble</SelectItem>
+                    <SelectItem value="butcher-block">Butcher Block</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label>Box Type</Label>
+                <Label>Square Footage</Label>
+                <Input
+                  type="number"
+                  value={specifications.squareFootage}
+                  onChange={(e) => onUpdateSpecifications({ 
+                    ...specifications, 
+                    squareFootage: parseFloat(e.target.value) 
+                  })}
+                  placeholder="Enter square footage"
+                />
+              </div>
+
+              <div>
+                <Label>Thickness</Label>
                 <Select
-                  value={specifications.boxType}
-                  onValueChange={(value) => onUpdateSpecifications({ ...specifications, boxType: value })}
+                  value={specifications.thickness}
+                  onValueChange={(value) => onUpdateSpecifications({ ...specifications, thickness: value })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select box type" />
+                    <SelectValue placeholder="Select thickness" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="framed">Framed</SelectItem>
-                    <SelectItem value="frameless">Frameless</SelectItem>
+                    <SelectItem value="2cm">2cm</SelectItem>
+                    <SelectItem value="3cm">3cm</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label>Frame Type</Label>
+                <Label>Edge Profile</Label>
                 <Select
-                  value={specifications.frameType}
-                  onValueChange={(value) => onUpdateSpecifications({ ...specifications, frameType: value })}
+                  value={specifications.edgeProfile}
+                  onValueChange={(value) => onUpdateSpecifications({ ...specifications, edgeProfile: value })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select frame type" />
+                    <SelectValue placeholder="Select edge profile" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="partial-overlay">Partial Overlay</SelectItem>
-                    <SelectItem value="full-overlay">Full Overlay</SelectItem>
-                    <SelectItem value="inset">Inset</SelectItem>
+                    <SelectItem value="straight">Straight</SelectItem>
+                    <SelectItem value="beveled">Beveled</SelectItem>
+                    <SelectItem value="bullnose">Bullnose</SelectItem>
+                    <SelectItem value="ogee">Ogee</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label>Door Hinge Type</Label>
+                <Label>Color</Label>
+                <Input
+                  value={specifications.color}
+                  onChange={(e) => onUpdateSpecifications({ 
+                    ...specifications, 
+                    color: e.target.value 
+                  })}
+                  placeholder="Enter color name"
+                />
+              </div>
+
+              <div>
+                <Label>Status</Label>
                 <Select
-                  value={specifications.doorHingeType}
-                  onValueChange={(value) => onUpdateSpecifications({ ...specifications, doorHingeType: value })}
+                  value={specifications.status}
+                  onValueChange={(value) => onUpdateSpecifications({ ...specifications, status: value })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select hinge type" />
+                    <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="concealed">Concealed</SelectItem>
-                    <SelectItem value="exposed">Exposed</SelectItem>
+                    <SelectItem value="needed">Needed</SelectItem>
+                    <SelectItem value="ordered">Ordered</SelectItem>
+                    <SelectItem value="received">Received</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
           </div>
         );
-      // Add more cases for other material types
+
+      case "Appliances":
+        return (
+          <div className="space-y-6 mt-4 p-4 bg-gray-50 rounded-md">
+            <h4 className="font-medium mb-4">Appliance Specifications</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label>Brand</Label>
+                <Input
+                  value={specifications.brand}
+                  onChange={(e) => onUpdateSpecifications({ 
+                    ...specifications, 
+                    brand: e.target.value 
+                  })}
+                  placeholder="Enter brand name"
+                />
+              </div>
+
+              <div>
+                <Label>Model</Label>
+                <Input
+                  value={specifications.model}
+                  onChange={(e) => onUpdateSpecifications({ 
+                    ...specifications, 
+                    model: e.target.value 
+                  })}
+                  placeholder="Enter model number"
+                />
+              </div>
+
+              <div>
+                <Label>Color</Label>
+                <Select
+                  value={specifications.color}
+                  onValueChange={(value) => onUpdateSpecifications({ ...specifications, color: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select color" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="stainless-steel">Stainless Steel</SelectItem>
+                    <SelectItem value="black">Black</SelectItem>
+                    <SelectItem value="white">White</SelectItem>
+                    <SelectItem value="panel-ready">Panel Ready</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Size</Label>
+                <Input
+                  value={specifications.size}
+                  onChange={(e) => onUpdateSpecifications({ 
+                    ...specifications, 
+                    size: e.target.value 
+                  })}
+                  placeholder="Enter dimensions"
+                />
+              </div>
+
+              <div>
+                <Label>Quantity</Label>
+                <Input
+                  type="number"
+                  value={specifications.quantity}
+                  onChange={(e) => onUpdateSpecifications({ 
+                    ...specifications, 
+                    quantity: parseInt(e.target.value) 
+                  })}
+                  placeholder="Enter quantity"
+                />
+              </div>
+
+              <div>
+                <Label>Status</Label>
+                <Select
+                  value={specifications.status}
+                  onValueChange={(value) => onUpdateSpecifications({ ...specifications, status: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="needed">Needed</SelectItem>
+                    <SelectItem value="ordered">Ordered</SelectItem>
+                    <SelectItem value="received">Received</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+        );
+
+      case "Faucets":
+      case "Sinks":
+      case "Toilets":
+      case "Showers":
+        return (
+          <div className="space-y-6 mt-4 p-4 bg-gray-50 rounded-md">
+            <h4 className="font-medium mb-4">Plumbing Fixture Specifications</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label>Manufacturer</Label>
+                <Input
+                  value={specifications.manufacturer}
+                  onChange={(e) => onUpdateSpecifications({ 
+                    ...specifications, 
+                    manufacturer: e.target.value 
+                  })}
+                  placeholder="Enter manufacturer"
+                />
+              </div>
+
+              <div>
+                <Label>Model</Label>
+                <Input
+                  value={specifications.model}
+                  onChange={(e) => onUpdateSpecifications({ 
+                    ...specifications, 
+                    model: e.target.value 
+                  })}
+                  placeholder="Enter model number"
+                />
+              </div>
+
+              <div>
+                <Label>Finish</Label>
+                <Select
+                  value={specifications.finish}
+                  onValueChange={(value) => onUpdateSpecifications({ ...specifications, finish: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select finish" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="chrome">Chrome</SelectItem>
+                    <SelectItem value="brushed-nickel">Brushed Nickel</SelectItem>
+                    <SelectItem value="oil-rubbed-bronze">Oil Rubbed Bronze</SelectItem>
+                    <SelectItem value="matte-black">Matte Black</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Quantity</Label>
+                <Input
+                  type="number"
+                  value={specifications.quantity}
+                  onChange={(e) => onUpdateSpecifications({ 
+                    ...specifications, 
+                    quantity: parseInt(e.target.value) 
+                  })}
+                  placeholder="Enter quantity"
+                />
+              </div>
+
+              <div>
+                <Label>Status</Label>
+                <Select
+                  value={specifications.status}
+                  onValueChange={(value) => onUpdateSpecifications({ ...specifications, status: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="needed">Needed</SelectItem>
+                    <SelectItem value="ordered">Ordered</SelectItem>
+                    <SelectItem value="received">Received</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+        );
+
       default:
         return null;
     }
