@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,23 +20,37 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-interface BidConfigurationFormProps {
-  onSave: (data: BidConfiguration) => void;
-  initialData?: BidConfiguration;
-}
-
-interface BidConfiguration {
+export interface BidConfiguration {
   bidDuration: string;
   projectDescription: string;
 }
 
-export function BidConfigurationForm({ onSave, initialData }: BidConfigurationFormProps) {
+interface BidConfigurationFormProps {
+  onSave: (data: BidConfiguration) => void;
+  bidConfiguration?: BidConfiguration;
+  initialData?: BidConfiguration;
+}
+
+export function BidConfigurationForm({ onSave, bidConfiguration, initialData }: BidConfigurationFormProps) {
+  // Use bidConfiguration or initialData if provided, otherwise use default values
+  const defaultValues = bidConfiguration || initialData || {
+    bidDuration: '7',
+    projectDescription: '',
+  };
+
   const form = useForm<BidConfiguration>({
-    defaultValues: initialData || {
-      bidDuration: '7',
-      projectDescription: '',
-    }
+    defaultValues
   });
+
+  // Update form values if props change
+  useEffect(() => {
+    if (bidConfiguration || initialData) {
+      const values = bidConfiguration || initialData;
+      if (values) {
+        form.reset(values);
+      }
+    }
+  }, [bidConfiguration, initialData, form]);
 
   const onSubmit = (data: BidConfiguration) => {
     onSave(data);

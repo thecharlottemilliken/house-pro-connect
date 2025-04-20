@@ -55,8 +55,8 @@ export function ProjectReviewForm({
       const { error } = await supabase
         .from('projects')
         .update({
-          sow_data: sowData as TablesUpdate<'projects'>['sow_data']
-        })
+          sow_data: sowData
+        } as TablesUpdate<'projects'>)
         .eq('id', projectId);
         
       if (error) throw error;

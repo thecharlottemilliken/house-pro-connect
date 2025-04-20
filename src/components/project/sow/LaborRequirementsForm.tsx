@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,6 +17,8 @@ interface LaborItem {
 interface Props {
   workAreas: any[];
   onSave: (items: LaborItem[]) => void;
+  laborItems?: LaborItem[];
+  initialData?: LaborItem[];
 }
 
 const specialtyCategories = {
@@ -43,10 +44,18 @@ const specialtyCategories = {
   ]
 };
 
-export function LaborRequirementsForm({ workAreas, onSave }: Props) {
+export function LaborRequirementsForm({ workAreas, onSave, laborItems = [], initialData = [] }: Props) {
   const [selectedCategory, setSelectedCategory] = useState<string>("Building");
   const [selectedItems, setSelectedItems] = useState<LaborItem[]>([]);
   const [openCategory, setOpenCategory] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (initialData && initialData.length > 0) {
+      setSelectedItems(initialData);
+    } else if (laborItems && laborItems.length > 0) {
+      setSelectedItems(laborItems);
+    }
+  }, [initialData, laborItems]);
 
   const getItemsByCategory = (category: string) => {
     return [...specialtyCategories.interior, ...specialtyCategories.exterior]

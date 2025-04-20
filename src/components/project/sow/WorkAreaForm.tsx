@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -36,9 +35,10 @@ interface WorkArea {
 
 interface WorkAreaFormProps {
   onSave: (areas: WorkArea[]) => void;
+  initialData?: WorkArea[];
 }
 
-export function WorkAreaForm({ onSave }: WorkAreaFormProps) {
+export function WorkAreaForm({ onSave, initialData = [] }: WorkAreaFormProps) {
   const [activeTab, setActiveTab] = useState("interior");
   const [workAreas, setWorkAreas] = useState<WorkArea[]>([]);
   const [currentArea, setCurrentArea] = useState<WorkArea>({
@@ -55,6 +55,12 @@ export function WorkAreaForm({ onSave }: WorkAreaFormProps) {
   });
   const [isAddingArea, setIsAddingArea] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (initialData && initialData.length > 0) {
+      setWorkAreas(initialData);
+    }
+  }, [initialData]);
 
   const handleAddWorkArea = () => {
     if (!currentArea.name.trim()) {

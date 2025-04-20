@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { ChevronDown, ChevronUp, Plus } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -27,6 +26,8 @@ interface MaterialItem {
 interface Props {
   workAreas: any[];
   onSave: (items: MaterialItem[]) => void;
+  materialItems?: MaterialItem[];
+  initialData?: MaterialItem[];
 }
 
 const materialCategories = {
@@ -52,10 +53,18 @@ const materialCategories = {
   ]
 };
 
-export function MaterialRequirementsForm({ workAreas, onSave }: Props) {
+export function MaterialRequirementsForm({ workAreas, onSave, materialItems = [], initialData = [] }: Props) {
   const [selectedCategory, setSelectedCategory] = useState<string>("Finishes");
   const [selectedItems, setSelectedItems] = useState<MaterialItem[]>([]);
   const [openCategory, setOpenCategory] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (initialData && initialData.length > 0) {
+      setSelectedItems(initialData);
+    } else if (materialItems && materialItems.length > 0) {
+      setSelectedItems(materialItems);
+    }
+  }, [initialData, materialItems]);
 
   const getItemsByCategory = (category: string) => {
     return [...materialCategories.interior, ...materialCategories.exterior]
