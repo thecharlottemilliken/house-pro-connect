@@ -31,7 +31,7 @@ const steps = [
 ];
 
 // Helper to update sow_data after each step (partial patch)
-async function saveSOWField(projectId: string, patch: Partial<any>) {
+async function saveSOWField(projectId: string, patch: Record<string, any>) {
   const { error } = await supabase
     .from('projects')
     .update({ sow_data: patch })
@@ -97,7 +97,12 @@ export function SOWWizard() {
     setLaborItems(items);
     // Persist laborItems to sow_data in the projects table
     if (projectId) {
-      await saveSOWField(projectId, { ...projectData?.sow_data, laborItems: items, workAreas });
+      const currentSowData = (projectData?.sow_data as Record<string, any>) || {};
+      await saveSOWField(projectId, { 
+        ...currentSowData, 
+        laborItems: items, 
+        workAreas 
+      });
       toast({
         title: "Saved",
         description: "Labor Requirements saved successfully."
@@ -105,11 +110,18 @@ export function SOWWizard() {
     }
     setCurrentStep(current => current + 1);
   };
+  
   const handleMaterialItemsSubmit = async (items: any[]) => {
     setMaterialItems(items);
     // Persist materialItems to sow_data in the projects table
     if (projectId) {
-      await saveSOWField(projectId, { ...projectData?.sow_data, materialItems: items, laborItems, workAreas });
+      const currentSowData = (projectData?.sow_data as Record<string, any>) || {};
+      await saveSOWField(projectId, { 
+        ...currentSowData, 
+        materialItems: items, 
+        laborItems, 
+        workAreas 
+      });
       toast({
         title: "Saved",
         description: "Material Requirements saved successfully."
@@ -117,6 +129,7 @@ export function SOWWizard() {
     }
     setCurrentStep(current => current + 1);
   };
+  
   const handleBidConfigSubmit = async (config: any) => {
     setBidConfig(config);
     // It's optional to patch bidConfiguration here since final submit will always patch it
