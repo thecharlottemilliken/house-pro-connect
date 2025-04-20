@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -36,7 +37,7 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
           .eq("project_id", projectId)
           .maybeSingle();
         if (error) throw error;
-        setSowData(data ? { ...data } : null);
+        setSowData(data ? data : null);
       } catch {
         setSowData(null);
       } finally {
@@ -58,7 +59,7 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
         .eq("project_id", projectId)
         .maybeSingle();
       if (error) throw error;
-      setSowData(data ? { ...data } : null);
+      setSowData(data ? data : null);
     } catch {
       setSowData(null);
     } finally {
