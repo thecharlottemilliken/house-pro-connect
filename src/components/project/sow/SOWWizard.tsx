@@ -191,25 +191,6 @@ export function SOWWizard() {
                 <div className="min-h-[400px]">
                   {renderStepContent()}
                 </div>
-                
-                {currentStep !== 0 && currentStep !== 4 && (
-                  <div className="flex justify-between mt-6 pt-6 border-t">
-                    <Button
-                      variant="outline"
-                      onClick={() => setCurrentStep(current => Math.max(0, current - 1))}
-                      disabled={currentStep === 0}
-                    >
-                      Previous
-                    </Button>
-                    
-                    <Button
-                      onClick={() => setCurrentStep(current => current + 1)}
-                    >
-                      Next
-                      <ChevronRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
               </CardContent>
             </Card>
           </div>

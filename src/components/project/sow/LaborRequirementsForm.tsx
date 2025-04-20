@@ -1,9 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LaborItemAccordion } from './LaborItemAccordion';
 import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
 
 interface LaborItem {
   category: string;
@@ -85,90 +88,102 @@ export function LaborRequirementsForm({ workAreas, onSave, laborItems = [], init
     setSelectedItems(updatedItems);
   };
 
-  return (
-    <div className="flex gap-6 min-h-[600px]">
-      <div className="w-72 flex-shrink-0 bg-white rounded-lg border p-4">
-        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-          <SelectTrigger className="w-full">
-            <SelectValue>{selectedCategory}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {[...new Set([...specialtyCategories.interior, ...specialtyCategories.exterior].map(c => c.name))].map(category => (
-              <SelectItem key={category} value={category}>
-                {category}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+  const handleSave = () => {
+    onSave(selectedItems);
+  };
 
-        <div className="mt-6 space-y-2">
-          {getItemsByCategory(selectedCategory).map((item) => (
-            <div key={item} className="flex items-center space-x-2">
-              <Checkbox
-                id={item}
-                checked={selectedItems.some(
-                  si => si.category === selectedCategory && si.task === item
-                )}
-                onCheckedChange={() => handleCheckItem(selectedCategory, item)}
-              />
-              <label
-                htmlFor={item}
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+  return (
+    <div className="flex flex-col">
+      <div className="flex gap-6 min-h-[500px]">
+        <div className="w-72 flex-shrink-0 bg-white rounded-lg border p-4">
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-full">
+              <SelectValue>{selectedCategory}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {[...new Set([...specialtyCategories.interior, ...specialtyCategories.exterior].map(c => c.name))].map(category => (
+                <SelectItem key={category} value={category}>
+                  {category}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <div className="mt-6 space-y-2">
+            {getItemsByCategory(selectedCategory).map((item) => (
+              <div key={item} className="flex items-center space-x-2">
+                <Checkbox
+                  id={item}
+                  checked={selectedItems.some(
+                    si => si.category === selectedCategory && si.task === item
+                  )}
+                  onCheckedChange={() => handleCheckItem(selectedCategory, item)}
+                />
+                <label
+                  htmlFor={item}
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  {item}
+                </label>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex-1">
+          <h2 className="text-2xl font-semibold mb-6">Select Items from the checklist</h2>
+          
+          {Object.entries(
+            selectedItems.reduce((acc, item) => {
+              if (!acc[item.category]) {
+                acc[item.category] = [];
+              }
+              acc[item.category].push(item);
+              return acc;
+            }, {} as Record<string, LaborItem[]>)
+          ).map(([category, items], categoryIndex) => (
+            <Card key={category} className="mb-4">
+              <div 
+                className="p-6 cursor-pointer flex items-center justify-between"
+                onClick={() => setOpenCategory(openCategory === category ? null : category)}
               >
-                {item}
-              </label>
-            </div>
+                <div>
+                  <h3 className="text-xl font-medium">{category}</h3>
+                  <p className="text-gray-500">{items.length} Labor Items</p>
+                </div>
+                {openCategory === category ? (
+                  <ChevronUp className="h-6 w-6 text-gray-400" />
+                ) : (
+                  <ChevronDown className="h-6 w-6 text-gray-400" />
+                )}
+              </div>
+              
+              {openCategory === category && items.map((item, itemIndex) => (
+                <LaborItemAccordion
+                  key={`${item.category}-${item.task}-${itemIndex}`}
+                  category={item.category}
+                  itemCount={1}
+                  isOpen={true}
+                  onToggle={() => {}}
+                  workAreas={workAreas}
+                  selectedRooms={item.rooms}
+                  onUpdateRooms={(rooms) => {
+                    const globalIndex = selectedItems.findIndex(
+                      si => si.category === item.category && si.task === item.task
+                    );
+                    handleUpdateRooms(globalIndex, rooms);
+                  }}
+                />
+              ))}
+            </Card>
           ))}
         </div>
       </div>
 
-      <div className="flex-1">
-        <h2 className="text-2xl font-semibold mb-6">Select Items from the checklist</h2>
-        
-        {Object.entries(
-          selectedItems.reduce((acc, item) => {
-            if (!acc[item.category]) {
-              acc[item.category] = [];
-            }
-            acc[item.category].push(item);
-            return acc;
-          }, {} as Record<string, LaborItem[]>)
-        ).map(([category, items], categoryIndex) => (
-          <Card key={category} className="mb-4">
-            <div 
-              className="p-6 cursor-pointer flex items-center justify-between"
-              onClick={() => setOpenCategory(openCategory === category ? null : category)}
-            >
-              <div>
-                <h3 className="text-xl font-medium">{category}</h3>
-                <p className="text-gray-500">{items.length} Labor Items</p>
-              </div>
-              {openCategory === category ? (
-                <ChevronUp className="h-6 w-6 text-gray-400" />
-              ) : (
-                <ChevronDown className="h-6 w-6 text-gray-400" />
-              )}
-            </div>
-            
-            {openCategory === category && items.map((item, itemIndex) => (
-              <LaborItemAccordion
-                key={`${item.category}-${item.task}-${itemIndex}`}
-                category={item.category}
-                itemCount={1}
-                isOpen={true}
-                onToggle={() => {}}
-                workAreas={workAreas}
-                selectedRooms={item.rooms}
-                onUpdateRooms={(rooms) => {
-                  const globalIndex = selectedItems.findIndex(
-                    si => si.category === item.category && si.task === item.task
-                  );
-                  handleUpdateRooms(globalIndex, rooms);
-                }}
-              />
-            ))}
-          </Card>
-        ))}
+      <div className="flex justify-end mt-6 pt-6 border-t">
+        <Button onClick={handleSave}>
+          Save Labor Requirements
+        </Button>
       </div>
     </div>
   );

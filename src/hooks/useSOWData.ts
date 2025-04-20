@@ -91,6 +91,8 @@ export const useSOWData = (projectId: string | undefined) => {
     if (!projectId || !sowData) return false;
     
     try {
+      console.log(`Saving ${field} with value:`, value);
+      
       // Check if SOW exists
       if (sowData.id) {
         // Update existing SOW record
@@ -145,4 +147,3 @@ export const useSOWData = (projectId: string | undefined) => {
     saveSOWField
   };
 };
-
