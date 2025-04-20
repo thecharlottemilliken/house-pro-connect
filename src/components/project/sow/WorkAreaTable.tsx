@@ -9,7 +9,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Copy, Pencil, FileText } from "lucide-react";
+import { Copy, Pencil, Trash } from "lucide-react";
 
 interface WorkArea {
   name: string;
@@ -29,9 +29,12 @@ interface WorkArea {
 
 interface WorkAreaTableProps {
   workAreas: WorkArea[];
+  onEdit: (area: WorkArea, index: number) => void;
+  onDuplicate: (area: WorkArea) => void;
+  onDelete: (index: number) => void;
 }
 
-export function WorkAreaTable({ workAreas }: WorkAreaTableProps) {
+export function WorkAreaTable({ workAreas, onEdit, onDuplicate, onDelete }: WorkAreaTableProps) {
   return (
     <div className="rounded-md border">
       <Table>
@@ -49,14 +52,29 @@ export function WorkAreaTable({ workAreas }: WorkAreaTableProps) {
             <TableRow key={index}>
               <TableCell>
                 <div className="flex gap-1">
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => onDuplicate(area)}
+                  >
                     <Copy className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => onEdit(area, index)}
+                  >
                     <Pencil className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <FileText className="h-4 w-4" />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => onDelete(index)}
+                  >
+                    <Trash className="h-4 w-4" />
                   </Button>
                 </div>
               </TableCell>
