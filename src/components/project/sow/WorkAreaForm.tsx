@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
-import { Plus, Square, RulerSquare } from "lucide-react";
+import { Plus, Square, Ruler } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface WorkArea {
@@ -141,7 +140,7 @@ export function WorkAreaForm({ onSave }: WorkAreaFormProps) {
         <Card className="p-6">
           <div className="space-y-6">
             <div className="flex items-center gap-2">
-              <RulerSquare className="h-5 w-5 text-muted-foreground" />
+              <Ruler className="h-5 w-5 text-muted-foreground" />
               <h3 className="text-lg font-medium">Room Measurements</h3>
             </div>
             
