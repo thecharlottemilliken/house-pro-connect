@@ -1,23 +1,16 @@
-import React from "react";
+
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowRightFromLine, Plus, Trash2 } from "lucide-react";
+import { ArrowRightFromLine, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-
-interface CabinetSpecification {
-  cabinetType: string;
-  doors: number;
-  drawers: number;
-  size: string;
-}
 
 interface MaterialItemAccordionProps {
   category: string;
   materialType: string;
   workAreas: any[];
-  selectedRooms: Array<{
+  selectedRooms: Array<{ 
     name: string;
     notes: string;
     affectedAreas?: Array<{
@@ -25,7 +18,7 @@ interface MaterialItemAccordionProps {
       notes: string;
     }>;
   }>;
-  onUpdateRooms: (rooms: Array<{
+  onUpdateRooms: (rooms: Array<{ 
     name: string;
     notes: string;
     affectedAreas?: Array<{
@@ -44,8 +37,6 @@ export function MaterialItemAccordion({
   onUpdateRooms,
   onUpdateSpecifications
 }: MaterialItemAccordionProps) {
-  const [cabinetSpecs, setCabinetSpecs] = React.useState<CabinetSpecification[]>([]);
-
   const handleAreaToggle = (areaName: string, checked: boolean) => {
     if (checked) {
       if (!selectedRooms.find(room => room.name === areaName)) {
@@ -83,94 +74,36 @@ export function MaterialItemAccordion({
     onUpdateRooms(updatedRooms);
   };
 
-  const handleAddCabinetSpec = () => {
-    setCabinetSpecs([
-      ...cabinetSpecs,
-      { cabinetType: "", doors: 0, drawers: 0, size: "" }
-    ]);
-    onUpdateSpecifications({ cabinets: [...cabinetSpecs, { cabinetType: "", doors: 0, drawers: 0, size: "" }] });
-  };
-
-  const handleRemoveCabinetSpec = (index: number) => {
-    const updatedSpecs = cabinetSpecs.filter((_, i) => i !== index);
-    setCabinetSpecs(updatedSpecs);
-    onUpdateSpecifications({ cabinets: updatedSpecs });
-  };
-
-  const handleUpdateCabinetSpec = (index: number, field: keyof CabinetSpecification, value: string | number) => {
-    const updatedSpecs = cabinetSpecs.map((spec, i) => {
-      if (i === index) {
-        return { ...spec, [field]: value };
-      }
-      return spec;
-    });
-    setCabinetSpecs(updatedSpecs);
-    onUpdateSpecifications({ cabinets: updatedSpecs });
-  };
-
   const renderSpecificationsForm = () => {
     switch (materialType) {
       case "Cabinets":
         return (
-          <div className="space-y-4 mt-4">
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h4 className="font-medium mb-4">Cabinet Specifications</h4>
-              
-              <div className="grid grid-cols-[auto,1fr,1fr,1fr,auto] gap-4 items-center mb-2 text-sm font-medium text-gray-600">
-                <div></div>
-                <div>Cabinet Type</div>
-                <div>Doors</div>
-                <div>Drawers</div>
-                <div>Size (L x W x D)</div>
+          <div className="space-y-4 mt-4 p-4 bg-gray-50 rounded-md">
+            <h4 className="font-medium">Cabinet Specifications</h4>
+            <div className="grid grid-cols-4 gap-4">
+              <div>
+                <Label>Cabinet Type</Label>
+                <Input placeholder="Wall, Base, etc." />
               </div>
-
-              {cabinetSpecs.map((spec, index) => (
-                <div key={index} className="grid grid-cols-[auto,1fr,1fr,1fr,1fr,auto] gap-4 items-center mb-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => handleRemoveCabinetSpec(index)}
-                  >
-                    <Trash2 className="h-4 w-4 text-gray-500" />
-                  </Button>
-                  <Input
-                    placeholder="Wall, Base, etc."
-                    value={spec.cabinetType}
-                    onChange={(e) => handleUpdateCabinetSpec(index, "cabinetType", e.target.value)}
-                  />
-                  <Input
-                    type="number"
-                    min="0"
-                    value={spec.doors}
-                    onChange={(e) => handleUpdateCabinetSpec(index, "doors", parseInt(e.target.value) || 0)}
-                  />
-                  <Input
-                    type="number"
-                    min="0"
-                    value={spec.drawers}
-                    onChange={(e) => handleUpdateCabinetSpec(index, "drawers", parseInt(e.target.value) || 0)}
-                  />
-                  <Input
-                    placeholder="12x12x12"
-                    value={spec.size}
-                    onChange={(e) => handleUpdateCabinetSpec(index, "size", e.target.value)}
-                  />
-                </div>
-              ))}
-
-              <Button 
-                type="button" 
-                size="sm" 
-                variant="outline"
-                className="mt-4"
-                onClick={handleAddCabinetSpec}
-              >
-                <Plus className="w-4 h-4 mr-1" /> Add Cabinet
-              </Button>
+              <div>
+                <Label>Doors</Label>
+                <Input type="number" placeholder="Number of doors" />
+              </div>
+              <div>
+                <Label>Drawers</Label>
+                <Input type="number" placeholder="Number of drawers" />
+              </div>
+              <div>
+                <Label>Size (L x W x D)</Label>
+                <Input placeholder="12x12x12" />
+              </div>
             </div>
+            <Button type="button" size="sm" className="mt-2">
+              <Plus className="w-4 h-4 mr-1" /> Add Cabinet
+            </Button>
           </div>
         );
+      // Add more cases for other material types
       default:
         return null;
     }
