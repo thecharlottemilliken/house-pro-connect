@@ -1,12 +1,8 @@
 
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { LaborItemAccordion } from './LaborItemAccordion';
 
 interface LaborItem {
   category: string;
@@ -25,12 +21,12 @@ interface Props {
 const specialtyCategories = {
   interior: [
     {
-      name: "Building",
-      items: ["Wall construction", "Flooring installation", "Cabinet installation"]
-    },
-    {
       name: "Electrical",
       items: ["Install new outlets", "Upgrade electrical panel", "Install lighting fixtures"]
+    },
+    {
+      name: "Building",
+      items: ["Wall construction", "Flooring installation", "Cabinet installation"]
     }
   ],
   exterior: [
@@ -48,6 +44,7 @@ const specialtyCategories = {
 export function LaborRequirementsForm({ workAreas, onSave }: Props) {
   const [location, setLocation] = useState<"interior" | "exterior">("interior");
   const [selectedItems, setSelectedItems] = useState<LaborItem[]>([]);
+  const [openCategory, setOpenCategory] = useState<string | null>(null);
 
   const handleAddTask = (category: string, task: string) => {
     const newItem: LaborItem = {
@@ -72,7 +69,7 @@ export function LaborRequirementsForm({ workAreas, onSave }: Props) {
       <div>
         <h1 className="text-3xl font-semibold mb-2">Specify Labor</h1>
         <p className="text-gray-600">
-          To get started, fill out a high-level summary of the project so specialists can get an idea of the type of project underway. Next, select when you want your bids due by.
+          Select items from the checklist and specify which areas they affect.
         </p>
       </div>
 
@@ -86,99 +83,40 @@ export function LaborRequirementsForm({ workAreas, onSave }: Props) {
           </Tabs>
 
           <div className="mt-6">
-            <h3 className="text-lg font-semibold mb-4">Select Labor Items</h3>
+            <h3 className="text-lg font-semibold mb-4">Select Items from the checklist</h3>
             {specialtyCategories[location].map((category) => (
-              <Collapsible key={category.name}>
-                <CollapsibleTrigger className="flex w-full items-center justify-between p-4 hover:bg-gray-50 rounded-lg">
-                  <span>{category.name}</span>
-                  <ChevronDown className="h-5 w-5" />
-                </CollapsibleTrigger>
-                <CollapsibleContent className="px-4 pb-4">
-                  <div className="space-y-2">
-                    {category.items.map((item) => (
-                      <Button
-                        key={item}
-                        variant="ghost"
-                        className="w-full justify-start text-gray-700"
-                        onClick={() => handleAddTask(category.name, item)}
-                      >
-                        {item}
-                      </Button>
-                    ))}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
+              <div key={category.name} className="mb-4">
+                <h4 className="text-base font-medium mb-2">{category.name}</h4>
+                {category.items.map((item) => (
+                  <Button
+                    key={item}
+                    variant="ghost"
+                    className="w-full justify-start text-gray-700 mb-1"
+                    onClick={() => handleAddTask(category.name, item)}
+                  >
+                    {item}
+                  </Button>
+                ))}
+              </div>
             ))}
           </div>
         </div>
 
         <div className="flex-1">
-          <h2 className="text-xl font-semibold mb-6">Select Items from the checklist</h2>
+          <h2 className="text-xl font-semibold mb-6">Selected Labor Items</h2>
           {selectedItems.map((item, index) => (
-            <Card key={`${item.category}-${item.task}-${index}`} className="mb-4 p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-lg font-medium">{item.category}</h3>
-                  <p className="text-gray-600">{item.task}</p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    const filtered = selectedItems.filter((_, i) => i !== index);
-                    setSelectedItems(filtered);
-                  }}
-                >
-                  Remove
-                </Button>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Affected Areas</label>
-                  <Select
-                    value={item.rooms.map(r => r.name).join(", ")}
-                    onValueChange={(value) => {
-                      const selectedRooms = value.split(", ").map(name => ({
-                        name,
-                        notes: item.rooms.find(r => r.name === name)?.notes || ""
-                      }));
-                      handleUpdateRooms(index, selectedRooms);
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select rooms" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {workAreas.map((area: any) => (
-                        <SelectItem key={area.name} value={area.name}>
-                          {area.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {item.rooms.map((room) => (
-                  <div key={room.name} className="space-y-2">
-                    <label className="block text-sm font-medium">{room.name} Notes</label>
-                    <Textarea
-                      placeholder={`Notes for ${room.name}`}
-                      value={room.notes}
-                      onChange={(e) => {
-                        const updatedRooms = item.rooms.map(r => {
-                          if (r.name === room.name) {
-                            return { ...r, notes: e.target.value };
-                          }
-                          return r;
-                        });
-                        handleUpdateRooms(index, updatedRooms);
-                      }}
-                    />
-                  </div>
-                ))}
-              </div>
-            </Card>
+            <LaborItemAccordion
+              key={`${item.category}-${item.task}-${index}`}
+              category={item.category}
+              itemCount={1}
+              isOpen={openCategory === `${item.category}-${index}`}
+              onToggle={() => {
+                setOpenCategory(openCategory === `${item.category}-${index}` ? null : `${item.category}-${index}`);
+              }}
+              workAreas={workAreas}
+              selectedRooms={item.rooms}
+              onUpdateRooms={(rooms) => handleUpdateRooms(index, rooms)}
+            />
           ))}
 
           {selectedItems.length > 0 && (
