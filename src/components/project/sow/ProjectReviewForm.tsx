@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -12,7 +11,6 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { TablesUpdate } from "@/integrations/supabase/types";
 
 interface ProjectReviewFormProps {
   workAreas: any[];
@@ -49,21 +47,22 @@ export function ProjectReviewForm({
         materialItems,
         bidConfiguration,
         createdAt: new Date().toISOString(),
-        status: 'draft'
+        status: 'pending',
+        updatedAt: new Date().toISOString()
       };
       
       const { error } = await supabase
         .from('projects')
         .update({
-          sow_data: sowData
-        } as TablesUpdate<'projects'>)
+          sow_data: sowData,
+        })
         .eq('id', projectId);
         
       if (error) throw error;
       
       toast({
         title: "Success",
-        description: "Statement of Work has been saved successfully",
+        description: "Statement of Work has been saved and submitted for review",
       });
       
       onSave(true);
@@ -222,7 +221,7 @@ export function ProjectReviewForm({
           onClick={handleSaveSOW} 
           disabled={!confirmed || isSaving}
         >
-          {isSaving ? "Saving..." : "Complete SOW"}
+          {isSaving ? "Saving..." : "Submit SOW"}
         </Button>
       </div>
     </div>
