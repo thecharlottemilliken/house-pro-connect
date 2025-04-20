@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card } from "@/components/ui/card";
-import { ChevronDown, ChevronUp, Plus } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MaterialItemAccordion } from './MaterialItemAccordion';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { toast } from "@/hooks/use-toast";
 
 interface MaterialItem {
   category: string;
@@ -18,6 +19,9 @@ interface MaterialItem {
       name: string;
       notes: string;
     }>;
+    specifications?: {
+      [key: string]: any;
+    };
   }>;
   specifications?: {
     [key: string]: any;
@@ -92,7 +96,12 @@ export function MaterialRequirementsForm({ workAreas, onSave, materialItems = []
   };
 
   const handleSave = () => {
+    console.log("Saving material items:", selectedItems);
     onSave(selectedItems);
+    toast({
+      title: "Material requirements saved",
+      description: "Your material selections have been saved successfully."
+    });
   };
 
   return (
@@ -182,6 +191,7 @@ export function MaterialRequirementsForm({ workAreas, onSave, materialItems = []
                       setSelectedItems(updatedItems);
                     }}
                     onUpdateSpecifications={(specs) => {
+                      console.log("Updating specifications for", item.type, ":", specs);
                       const updatedItems = [...selectedItems];
                       const index = updatedItems.findIndex(
                         i => i.category === item.category && i.type === item.type

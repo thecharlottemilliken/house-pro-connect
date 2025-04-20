@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useEffect } from "react";
 
 interface MaterialItemAccordionProps {
   category: string;
@@ -18,7 +19,7 @@ interface MaterialItemAccordionProps {
       name: string;
       notes: string;
     }>;
-    specifications?: any; // Add specifications property to the room type
+    specifications?: any;
   }>;
   onUpdateRooms: (rooms: Array<{ 
     name: string;
@@ -27,7 +28,7 @@ interface MaterialItemAccordionProps {
       name: string;
       notes: string;
     }>;
-    specifications?: any; // Add specifications property to the room type
+    specifications?: any;
   }>) => void;
   onUpdateSpecifications: (specifications: any) => void;
 }
@@ -82,6 +83,79 @@ export function MaterialItemAccordion({
   onUpdateRooms,
   onUpdateSpecifications
 }: MaterialItemAccordionProps) {
+  useEffect(() => {
+    let initialSpecs = {};
+    
+    switch (materialType) {
+      case "Cabinets":
+        if (!selectedRooms[0]?.specifications?.cabinets) {
+          initialSpecs = {
+            cabinets: [{
+              id: Math.random().toString(36).substr(2, 9),
+              type: "",
+              doors: 0,
+              drawers: 0,
+              size: ""
+            }]
+          };
+        }
+        break;
+      case "Flooring":
+        if (!selectedRooms[0]?.specifications?.materialType) {
+          initialSpecs = {
+            materialType: "",
+            squareFootage: 0,
+            color: "",
+            brand: "",
+            status: "needed"
+          };
+        }
+        break;
+      case "Countertops":
+        if (!selectedRooms[0]?.specifications?.material) {
+          initialSpecs = {
+            material: "",
+            squareFootage: 0,
+            thickness: "",
+            edgeProfile: "",
+            color: "",
+            status: "needed"
+          };
+        }
+        break;
+      case "Appliances":
+        if (!selectedRooms[0]?.specifications?.brand) {
+          initialSpecs = {
+            brand: "",
+            model: "",
+            color: "",
+            size: "",
+            quantity: 1,
+            status: "needed"
+          };
+        }
+        break;
+      case "Faucets":
+      case "Sinks":
+      case "Toilets":
+      case "Showers":
+        if (!selectedRooms[0]?.specifications?.manufacturer) {
+          initialSpecs = {
+            manufacturer: "",
+            model: "",
+            finish: "",
+            quantity: 1,
+            status: "needed"
+          };
+        }
+        break;
+    }
+    
+    if (Object.keys(initialSpecs).length > 0) {
+      onUpdateSpecifications(initialSpecs);
+    }
+  }, [materialType]);
+
   const handleAreaToggle = (areaName: string, checked: boolean) => {
     if (checked) {
       if (!selectedRooms.find(room => room.name === areaName)) {
@@ -121,7 +195,7 @@ export function MaterialItemAccordion({
 
   const renderSpecificationsForm = () => {
     const specifications = selectedRooms[0]?.specifications || {};
-
+    
     switch (materialType) {
       case "Cabinets":
         return (
@@ -474,7 +548,7 @@ export function MaterialItemAccordion({
                   value={specifications.quantity}
                   onChange={(e) => onUpdateSpecifications({ 
                     ...specifications, 
-                    quantity: parseInt(e.target.value) 
+                    quantity: parseInt(e.target.value) || 1
                   })}
                   placeholder="Enter quantity"
                 />
@@ -557,7 +631,7 @@ export function MaterialItemAccordion({
                   value={specifications.quantity}
                   onChange={(e) => onUpdateSpecifications({ 
                     ...specifications, 
-                    quantity: parseInt(e.target.value) 
+                    quantity: parseInt(e.target.value) || 1
                   })}
                   placeholder="Enter quantity"
                 />

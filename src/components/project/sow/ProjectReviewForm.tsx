@@ -99,6 +99,43 @@ export function ProjectReviewForm({
     }
   };
 
+  // Helper function to format specifications object for display
+  const formatSpecifications = (specs: any) => {
+    if (!specs || Object.keys(specs).length === 0) return null;
+
+    // Handle cabinet array specifically
+    if (specs.cabinets && Array.isArray(specs.cabinets)) {
+      return (
+        <div>
+          <p className="font-medium">Cabinets:</p>
+          <ul className="list-disc pl-5 text-xs space-y-1">
+            {specs.cabinets.map((cab: any, i: number) => (
+              <li key={i}>
+                {cab.type} - {cab.doors} doors, {cab.drawers} drawers, {cab.size}
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
+
+    // Generic handling for all other specification types
+    return (
+      <div>
+        {Object.entries(specs).map(([key, value]) => {
+          // Skip empty values or complex objects
+          if (!value || typeof value === 'object') return null;
+          return (
+            <p key={key} className="text-xs">
+              <span className="font-medium">{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: </span>
+              {value}
+            </p>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div className="space-y-6">
@@ -186,11 +223,23 @@ export function ProjectReviewForm({
                     {items.map((item: any, index: number) => (
                       <li key={index} className="text-gray-600">
                         {item.type}
+                        {/* Display specifications if they exist */}
                         {item.specifications && Object.keys(item.specifications).length > 0 && (
+                          <div className="mt-1 ml-2 text-gray-500">
+                            {formatSpecifications(item.specifications)}
+                          </div>
+                        )}
+                        {item.rooms && item.rooms.length > 0 && (
                           <ul className="list-none pl-4 mt-1">
-                            {Object.entries(item.specifications).map(([key, value]: [string, any]) => (
-                              <li key={key} className="text-sm text-gray-500">
-                                {key}: {value}
+                            {item.rooms.map((room: any, roomIndex: number) => (
+                              <li key={roomIndex} className="text-sm text-gray-500">
+                                <span className="font-medium">{room.name}:</span> {room.notes}
+                                {/* Display specifications from the room if they exist */}
+                                {room.specifications && Object.keys(room.specifications).length > 0 && (
+                                  <div className="mt-1 ml-2">
+                                    {formatSpecifications(room.specifications)}
+                                  </div>
+                                )}
                               </li>
                             ))}
                           </ul>
