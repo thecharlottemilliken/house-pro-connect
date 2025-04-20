@@ -4,8 +4,8 @@ import { ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import SOWReviewDialog from "@/components/project/sow/SOWReviewDialog";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 interface TasksCardProps {
   projectId: string;
@@ -21,10 +21,9 @@ interface SOWData {
 const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
   const [sowData, setSowData] = useState<SOWData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [showSOWDialog, setShowSOWDialog] = useState(false);
-
   const { profile } = useAuth();
   const userRole = profile?.role;
+  const navigate = useNavigate();
 
   // Fetch SOW data
   useEffect(() => {
@@ -37,7 +36,6 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
           .eq("project_id", projectId)
           .maybeSingle();
         if (error) throw error;
-        // Confirm data shape before setting state
         if (data && typeof data === "object") {
           setSowData(data);
         } else {
@@ -91,7 +89,9 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
           <Button
             className="bg-orange-500 hover:bg-orange-600 font-medium flex items-center gap-1"
             size="sm"
-            onClick={() => setShowSOWDialog(true)}
+            onClick={() =>
+              navigate(`/project-sow/${projectId}?review=true`)
+            }
           >
             REVIEW SOW <ArrowRight className="ml-1 h-4 w-4" />
           </Button>
@@ -100,16 +100,6 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
           <div className="mt-2 text-red-500 text-sm">
             Coach's notes: {sowData.feedback}
           </div>
-        )}
-        {/* SOW Review modal/dialog */}
-        {sowData?.id && (
-          <SOWReviewDialog
-            open={showSOWDialog}
-            onOpenChange={setShowSOWDialog}
-            projectId={projectId}
-            sowId={sowData.id}
-            onActionComplete={refreshSOW}
-          />
         )}
       </div>
     );
