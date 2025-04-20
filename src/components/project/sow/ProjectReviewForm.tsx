@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -41,24 +42,44 @@ export function ProjectReviewForm({
     setIsSaving(true);
     
     try {
-      const sowData = {
-        workAreas,
-        laborItems,
-        materialItems,
-        bidConfiguration,
-        createdAt: new Date().toISOString(),
-        status: 'pending',
-        updatedAt: new Date().toISOString()
-      };
-      
-      const { error } = await supabase
-        .from('projects')
-        .update({
-          sow_data: sowData,
-        })
-        .eq('id', projectId);
+      // First check if SOW exists for this project
+      const { data: existingSOW, error: fetchError } = await supabase
+        .from('statement_of_work')
+        .select('id')
+        .eq('project_id', projectId)
+        .maybeSingle();
         
-      if (error) throw error;
+      if (fetchError) throw fetchError;
+      
+      if (existingSOW) {
+        // Update existing SOW record with completed status
+        const { error } = await supabase
+          .from('statement_of_work')
+          .update({
+            work_areas: workAreas,
+            labor_items: laborItems,
+            material_items: materialItems,
+            bid_configuration: bidConfiguration,
+            status: 'pending'
+          })
+          .eq('id', existingSOW.id);
+          
+        if (error) throw error;
+      } else {
+        // Create new SOW record with completed status
+        const { error } = await supabase
+          .from('statement_of_work')
+          .insert([{
+            project_id: projectId,
+            work_areas: workAreas,
+            labor_items: laborItems,
+            material_items: materialItems,
+            bid_configuration: bidConfiguration,
+            status: 'pending'
+          }]);
+          
+        if (error) throw error;
+      }
       
       toast({
         title: "Success",

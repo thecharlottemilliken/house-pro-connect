@@ -1,5 +1,6 @@
 
 import { useParams, useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useProjectData } from "@/hooks/useProjectData";
@@ -7,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import ProjectManageTabs from "@/components/project/manage/ProjectManageTabs";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import ProjectSidebar from "@/components/project/ProjectSidebar";
+import { supabase } from "@/integrations/supabase/client";
 
 const ProjectManage = () => {
   const location = useLocation();
@@ -14,10 +16,32 @@ const ProjectManage = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { projectData, isLoading } = useProjectData(params.projectId, location.state);
+  const [hasSOW, setHasSOW] = useState(false);
   
   const projectId = projectData?.id || params.projectId || "unknown";
   const projectTitle = projectData?.title || "Unknown Project";
-  const hasSOW = projectData?.sow_data !== undefined && projectData?.sow_data !== null;
+  
+  // Check if SOW exists in the new statement_of_work table
+  useEffect(() => {
+    const checkSOW = async () => {
+      if (!projectId) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('statement_of_work')
+          .select('id')
+          .eq('project_id', projectId)
+          .maybeSingle();
+          
+        if (error) throw error;
+        setHasSOW(!!data);
+      } catch (error) {
+        console.error("Error checking SOW:", error);
+      }
+    };
+    
+    checkSOW();
+  }, [projectId]);
   
   const handleViewSOW = () => {
     if (hasSOW) {

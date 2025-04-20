@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { ChevronRight } from "lucide-react";
 import { useProjectData } from "@/hooks/useProjectData";
+import { useSOWData } from "@/hooks/useSOWData";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { PreviewSidebar } from "./PreviewSidebar";
@@ -20,7 +21,6 @@ import { MaterialRequirementsForm } from "./MaterialRequirementsForm";
 import { BidConfigurationForm } from "./BidConfigurationForm";
 import { ProjectReviewForm } from "./ProjectReviewForm";
 import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 
 const steps = [
   { id: 'work-areas', title: 'Work Areas', description: 'Define specific areas requiring work' },
@@ -30,75 +30,70 @@ const steps = [
   { id: 'project-review', title: 'Project Review', description: 'Review project details and requirements' }
 ];
 
-// Helper to update sow_data after each step (partial patch)
-async function saveSOWField(projectId: string, patch: Record<string, any>) {
-  try {
-    // First, get the current sow_data
-    const { data: projectData, error: fetchError } = await supabase
-      .from('projects')
-      .select('sow_data')
-      .eq('id', projectId)
-      .single();
-    
-    if (fetchError) {
-      throw fetchError;
-    }
-    
-    // Merge the existing data with the new patch
-    const mergedData = { 
-      ...(projectData?.sow_data as Record<string, any> || {}),
-      ...patch 
-    };
-    
-    // Update with the merged data
-    const { error: updateError } = await supabase
-      .from('projects')
-      .update({ sow_data: mergedData })
-      .eq('id', projectId);
-      
-    if (updateError) {
-      throw updateError;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error("Failed to save SOW field:", error);
-    toast({
-      title: "Error",
-      description: "Unable to save your changes to the database.",
-      variant: "destructive"
-    });
-    return false;
-  }
-}
-
 export function SOWWizard() {
   const { projectId } = useParams();
   const navigate = useNavigate();
-  const { projectData, propertyDetails, isLoading } = useProjectData(projectId);
+  const { projectData, propertyDetails, isLoading: projectLoading } = useProjectData(projectId);
+  const { sowData, isLoading: sowLoading, saveSOWField } = useSOWData(projectId);
   const [currentStep, setCurrentStep] = React.useState(0);
   
-  const [workAreas, setWorkAreas] = React.useState([]);
-  const [laborItems, setLaborItems] = React.useState([]);
-  const [materialItems, setMaterialItems] = React.useState([]);
-  const [bidConfig, setBidConfig] = React.useState({
-    bidDuration: '7',
-    projectDescription: ''
-  });
+  const isLoading = projectLoading || sowLoading;
 
-  // Load saved data when component mounts
-  React.useEffect(() => {
-    if (projectData?.sow_data) {
-      const sowData = projectData.sow_data as Record<string, any>;
-      if (sowData.workAreas) setWorkAreas(sowData.workAreas);
-      if (sowData.laborItems) setLaborItems(sowData.laborItems);
-      if (sowData.materialItems) setMaterialItems(sowData.materialItems);
-      if (sowData.bidConfiguration) setBidConfig(sowData.bidConfiguration);
-      
-      // Log what we loaded for debugging
-      console.log("Loaded SOW data from database:", sowData);
+  // Save work areas
+  const handleWorkAreasSubmit = async (areas: any[]) => {
+    console.log("Saving work areas:", areas);
+    const success = await saveSOWField('work_areas', areas);
+    
+    if (success) {
+      toast({
+        title: "Saved",
+        description: "Work Areas saved successfully."
+      });
+      setCurrentStep(current => current + 1);
     }
-  }, [projectData]);
+  };
+
+  // Save labor items
+  const handleLaborItemsSubmit = async (items: any[]) => {
+    console.log("Saving labor items:", items);
+    const success = await saveSOWField('labor_items', items);
+    
+    if (success) {
+      toast({
+        title: "Saved",
+        description: "Labor Requirements saved successfully."
+      });
+      setCurrentStep(current => current + 1);
+    }
+  };
+  
+  // Save material items
+  const handleMaterialItemsSubmit = async (items: any[]) => {
+    console.log("Saving material items:", items);
+    const success = await saveSOWField('material_items', items);
+    
+    if (success) {
+      toast({
+        title: "Saved",
+        description: "Material Requirements saved successfully."
+      });
+      setCurrentStep(current => current + 1);
+    }
+  };
+  
+  // Save bid configuration
+  const handleBidConfigSubmit = async (config: any) => {
+    console.log("Saving bid configuration:", config);
+    const success = await saveSOWField('bid_configuration', config);
+    
+    if (success) {
+      toast({
+        title: "Saved",
+        description: "Bid Configuration saved successfully."
+      });
+      setCurrentStep(current => current + 1);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -113,113 +108,47 @@ export function SOWWizard() {
 
   const progress = ((currentStep + 1) / steps.length) * 100;
 
-  const handleWorkAreasSubmit = async (areas: any[]) => {
-    setWorkAreas(areas);
-    
-    // Save work areas to the database
-    if (projectId) {
-      const success = await saveSOWField(projectId, { workAreas: areas });
-      if (success) {
-        toast({
-          title: "Saved",
-          description: "Work Areas saved successfully."
-        });
-      }
-    }
-    
-    setCurrentStep(current => current + 1);
-  };
-
-  const handleLaborItemsSubmit = async (items: any[]) => {
-    setLaborItems(items);
-    
-    // Save labor items to the database
-    if (projectId) {
-      const success = await saveSOWField(projectId, { laborItems: items });
-      if (success) {
-        toast({
-          title: "Saved",
-          description: "Labor Requirements saved successfully."
-        });
-      }
-    }
-    
-    setCurrentStep(current => current + 1);
-  };
-  
-  const handleMaterialItemsSubmit = async (items: any[]) => {
-    setMaterialItems(items);
-    
-    // Save material items to the database
-    if (projectId) {
-      const success = await saveSOWField(projectId, { materialItems: items });
-      if (success) {
-        toast({
-          title: "Saved",
-          description: "Material Requirements saved successfully."
-        });
-      }
-    }
-    
-    setCurrentStep(current => current + 1);
-  };
-  
-  const handleBidConfigSubmit = async (config: any) => {
-    setBidConfig(config);
-    
-    // Save bid configuration to the database
-    if (projectId) {
-      const success = await saveSOWField(projectId, { bidConfiguration: config });
-      if (success) {
-        toast({
-          title: "Saved",
-          description: "Bid Configuration saved successfully."
-        });
-      }
-    }
-    
-    setCurrentStep(current => current + 1);
-  };
-
   const renderStepContent = () => {
+    if (!sowData) return null;
+    
     switch (currentStep) {
       case 0:
         return (
           <WorkAreaForm 
             onSave={handleWorkAreasSubmit}
-            workAreas={workAreas}
+            workAreas={sowData.work_areas || []}
           />
         );
       case 1:
         return (
           <LaborRequirementsForm 
-            workAreas={workAreas} 
+            workAreas={sowData.work_areas || []} 
             onSave={handleLaborItemsSubmit}
-            laborItems={laborItems}
+            laborItems={sowData.labor_items || []}
           />
         );
       case 2:
         return (
           <MaterialRequirementsForm
-            workAreas={workAreas}
+            workAreas={sowData.work_areas || []}
             onSave={handleMaterialItemsSubmit}
-            materialItems={materialItems}
+            materialItems={sowData.material_items || []}
           />
         );
       case 3:
         return (
           <BidConfigurationForm
             onSave={handleBidConfigSubmit}
-            bidConfiguration={bidConfig}
+            bidConfiguration={sowData.bid_configuration}
           />
         );
       case 4:
         return (
           <ProjectReviewForm
-            workAreas={workAreas}
-            laborItems={laborItems}
-            materialItems={materialItems}
-            bidConfiguration={bidConfig}
+            workAreas={sowData.work_areas || []}
+            laborItems={sowData.labor_items || []}
+            materialItems={sowData.material_items || []}
+            bidConfiguration={sowData.bid_configuration}
             projectId={projectId || ''}
             onSave={(confirmed) => {
               if (confirmed) {

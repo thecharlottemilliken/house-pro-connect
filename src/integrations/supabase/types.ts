@@ -377,6 +377,50 @@ export type Database = {
           },
         ]
       }
+      statement_of_work: {
+        Row: {
+          bid_configuration: Json | null
+          created_at: string
+          id: string
+          labor_items: Json | null
+          material_items: Json | null
+          project_id: string
+          status: string
+          updated_at: string
+          work_areas: Json | null
+        }
+        Insert: {
+          bid_configuration?: Json | null
+          created_at?: string
+          id?: string
+          labor_items?: Json | null
+          material_items?: Json | null
+          project_id: string
+          status?: string
+          updated_at?: string
+          work_areas?: Json | null
+        }
+        Update: {
+          bid_configuration?: Json | null
+          created_at?: string
+          id?: string
+          labor_items?: Json | null
+          material_items?: Json | null
+          project_id?: string
+          status?: string
+          updated_at?: string
+          work_areas?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "statement_of_work_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

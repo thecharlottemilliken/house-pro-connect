@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { SOWWizard } from "@/components/project/sow/SOWWizard";
 import { useProjectData } from "@/hooks/useProjectData";
 import { ProjectReviewForm } from "@/components/project/sow/ProjectReviewForm";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const ProjectSOW = () => {
   const location = useLocation();
@@ -12,24 +14,60 @@ const ProjectSOW = () => {
   const [searchParams] = useSearchParams();
   const isViewMode = searchParams.get("view") === "true";
   
-  const { projectData, isLoading } = useProjectData(
+  const { projectData, isLoading: projectLoading } = useProjectData(
     params.projectId,
     location.state
   );
+  
+  const [sowData, setSOWData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Fetch SOW data from the new statement_of_work table
+  useEffect(() => {
+    const fetchSOWData = async () => {
+      if (!params.projectId) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('statement_of_work')
+          .select('*')
+          .eq('project_id', params.projectId)
+          .maybeSingle();
+          
+        if (error) throw error;
+        setSOWData(data);
+      } catch (error) {
+        console.error("Error fetching SOW data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchSOWData();
+  }, [params.projectId]);
   
   const projectTitle = projectData?.title || "Unknown Project";
 
   // Function to render the SOW in view-only mode
   const renderSOWView = () => {
-    if (!projectData || !projectData.sow_data) {
+    if (isLoading) {
       return (
-        <div className="text-center py-10">
-          <p>No Statement of Work data found for this project.</p>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading Statement of Work...</p>
+          </div>
         </div>
       );
     }
-
-    const sowData = projectData.sow_data as any;
+    
+    if (!sowData) {
+      return (
+        <div className="text-center py-10">
+          <p>No Statement of Work found for this project.</p>
+        </div>
+      );
+    }
     
     console.log("Viewing SOW data:", sowData);
     
@@ -38,10 +76,10 @@ const ProjectSOW = () => {
         <h2 className="text-2xl font-semibold text-gray-900 mb-6">Statement of Work</h2>
         
         <ProjectReviewForm
-          workAreas={sowData.workAreas || []}
-          laborItems={sowData.laborItems || []}
-          materialItems={sowData.materialItems || []}
-          bidConfiguration={sowData.bidConfiguration || { bidDuration: '', projectDescription: '' }}
+          workAreas={sowData.work_areas || []}
+          laborItems={sowData.labor_items || []}
+          materialItems={sowData.material_items || []}
+          bidConfiguration={sowData.bid_configuration || { bidDuration: '', projectDescription: '' }}
           projectId={params.projectId || ''}
           onSave={() => {}}
         />
