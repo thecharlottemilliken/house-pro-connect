@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { ChevronDown, ChevronUp, Plus } from "lucide-react";
@@ -88,6 +89,11 @@ export function MaterialRequirementsForm({ workAreas, onSave, materialItems = []
         specifications: {}
       }]);
     }
+  };
+  
+  // Add a submit button handler that explicitly calls onSave with selectedItems
+  const handleSubmit = () => {
+    onSave(selectedItems);
   };
 
   return (
@@ -191,6 +197,15 @@ export function MaterialRequirementsForm({ workAreas, onSave, materialItems = []
             ))}
           </Card>
         ))}
+        
+        <div className="flex justify-end mt-6">
+          <Button 
+            onClick={handleSubmit}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            Save Material Requirements
+          </Button>
+        </div>
       </div>
     </div>
   );

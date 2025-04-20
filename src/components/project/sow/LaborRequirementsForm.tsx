@@ -1,9 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LaborItemAccordion } from './LaborItemAccordion';
 import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 
 interface LaborItem {
   category: string;
@@ -83,6 +85,11 @@ export function LaborRequirementsForm({ workAreas, onSave, laborItems = [], init
       rooms
     };
     setSelectedItems(updatedItems);
+  };
+
+  // Add a submit button handler that explicitly calls onSave with selectedItems
+  const handleSubmit = () => {
+    onSave(selectedItems);
   };
 
   return (
@@ -169,6 +176,15 @@ export function LaborRequirementsForm({ workAreas, onSave, laborItems = [], init
             ))}
           </Card>
         ))}
+        
+        <div className="flex justify-end mt-6">
+          <Button 
+            onClick={handleSubmit}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            Save Labor Requirements
+          </Button>
+        </div>
       </div>
     </div>
   );

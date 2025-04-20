@@ -87,7 +87,7 @@ export function SOWWizard() {
               setLaborItems(items);
               setCurrentStep(current => current + 1);
             }}
-            laborItems={laborItems}
+            initialData={laborItems}
           />
         );
       case 2:
@@ -98,7 +98,7 @@ export function SOWWizard() {
               setMaterialItems(items);
               setCurrentStep(current => current + 1);
             }}
-            materialItems={materialItems}
+            initialData={materialItems}
           />
         );
       case 3:

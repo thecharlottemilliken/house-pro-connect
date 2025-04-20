@@ -1,383 +1,296 @@
+
 import React, { useState, useEffect } from 'react';
+import { useForm } from "react-hook-form";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
+import { Plus, Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Card } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Square, Ruler } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 import { WorkAreaTable } from "./WorkAreaTable";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 
 interface WorkArea {
   name: string;
   notes: string;
   measurements: {
-    length: string;
     width: string;
     height: string;
+    length: string;
     totalSqft: string;
   };
-  affectsOtherAreas: boolean;
   additionalAreas: Array<{
     name: string;
     notes: string;
   }>;
+  affectsOtherAreas: boolean;
 }
 
 interface WorkAreaFormProps {
   onSave: (areas: WorkArea[]) => void;
-  workAreas?: WorkArea[];
   initialData?: WorkArea[];
 }
 
-export function WorkAreaForm({ onSave, workAreas = [], initialData = [] }: WorkAreaFormProps) {
-  const [activeTab, setActiveTab] = useState("interior");
-  const [workAreasState, setWorkAreasState] = useState<WorkArea[]>([]);
+export function WorkAreaForm({ onSave, initialData = [] }: WorkAreaFormProps) {
+  const [workAreas, setWorkAreas] = useState<WorkArea[]>(initialData || []);
   const [currentArea, setCurrentArea] = useState<WorkArea>({
-    name: '',
-    notes: '',
+    name: "",
+    notes: "",
     measurements: {
-      length: '',
-      width: '',
-      height: '',
-      totalSqft: ''
+      width: "",
+      height: "",
+      length: "",
+      totalSqft: "",
     },
+    additionalAreas: [],
     affectsOtherAreas: false,
-    additionalAreas: []
   });
-  const [isAddingArea, setIsAddingArea] = useState(false);
-  const { toast } = useToast();
+  const [currentAdditionalArea, setCurrentAdditionalArea] = useState({
+    name: "",
+    notes: "",
+  });
+  const [editMode, setEditMode] = useState(false);
+  const [editIndex, setEditIndex] = useState<number | null>(null);
 
   useEffect(() => {
-    if (workAreas && workAreas.length > 0) {
-      setWorkAreasState(workAreas);
-    } else if (initialData && initialData.length > 0) {
-      setWorkAreasState(initialData);
+    if (initialData && initialData.length > 0) {
+      setWorkAreas(initialData);
     }
-  }, [workAreas, initialData]);
+  }, [initialData]);
 
   const handleAddWorkArea = () => {
-    if (!currentArea.name.trim()) {
-      toast({
-        title: "Work Area Name Required",
-        description: "Please provide a name for the work area before adding it.",
-        variant: "destructive",
-      });
-      return;
+    if (!currentArea.name.trim()) return;
+
+    if (editMode && editIndex !== null) {
+      const updatedAreas = [...workAreas];
+      updatedAreas[editIndex] = currentArea;
+      setWorkAreas(updatedAreas);
+      setEditMode(false);
+      setEditIndex(null);
+    } else {
+      setWorkAreas([...workAreas, currentArea]);
     }
-    setWorkAreasState([...workAreasState, currentArea]);
+
     setCurrentArea({
-      name: '',
-      notes: '',
+      name: "",
+      notes: "",
       measurements: {
-        length: '',
-        width: '',
-        height: '',
-        totalSqft: ''
+        width: "",
+        height: "",
+        length: "",
+        totalSqft: "",
       },
+      additionalAreas: [],
       affectsOtherAreas: false,
-      additionalAreas: []
-    });
-    setIsAddingArea(false);
-    toast({
-      title: "Work Area Added",
-      description: "The work area has been added successfully.",
     });
   };
 
   const handleAddAdditionalArea = () => {
-    setCurrentArea({
+    if (!currentAdditionalArea.name.trim()) return;
+
+    const updatedArea = {
       ...currentArea,
       additionalAreas: [
         ...currentArea.additionalAreas,
-        { name: '', notes: '' }
-      ]
-    });
-  };
-
-  const handleEdit = (area: WorkArea, index: number) => {
-    setCurrentArea(area);
-    setIsAddingArea(true);
-  };
-
-  const handleDuplicate = (area: WorkArea) => {
-    const duplicatedArea = {
-      ...area,
-      name: `${area.name} (Copy)`,
+        currentAdditionalArea,
+      ],
     };
-    setWorkAreasState([...workAreasState, duplicatedArea]);
-    toast({
-      title: "Work Area Duplicated",
-      description: "The work area has been duplicated successfully.",
-    });
+
+    setCurrentArea(updatedArea);
+    setCurrentAdditionalArea({ name: "", notes: "" });
   };
 
-  const handleDelete = (index: number) => {
-    const updatedAreas = workAreasState.filter((_, i) => i !== index);
-    setWorkAreasState(updatedAreas);
-    toast({
-      title: "Work Area Deleted",
-      description: "The work area has been deleted successfully.",
-    });
+  const handleRemoveAdditionalArea = (index: number) => {
+    const updatedAdditionalAreas = currentArea.additionalAreas.filter(
+      (_, i) => i !== index
+    );
+    setCurrentArea({ ...currentArea, additionalAreas: updatedAdditionalAreas });
   };
 
-  const handleSave = () => {
-    if (workAreasState.length === 0) {
-      toast({
-        title: "No Work Areas",
-        description: "Please add at least one work area before proceeding.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    onSave(workAreasState);
-    toast({
-      title: "Work Areas Saved",
-      description: `Successfully saved ${workAreasState.length} work area(s).`,
-    });
+  const handleEditArea = (index: number) => {
+    setCurrentArea(workAreas[index]);
+    setEditMode(true);
+    setEditIndex(index);
+  };
+
+  const handleDeleteArea = (index: number) => {
+    const updatedAreas = workAreas.filter((_, i) => i !== index);
+    setWorkAreas(updatedAreas);
+  };
+
+  const handleSaveAreas = () => {
+    onSave(workAreas);
   };
 
   return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <Tabs defaultValue="interior" className="w-[400px]">
-          <TabsList>
-            <TabsTrigger 
-              value="interior" 
-              className="flex-1"
-              onClick={() => setActiveTab("interior")}
-            >
-              Interior
-            </TabsTrigger>
-            <TabsTrigger 
-              value="exterior" 
-              className="flex-1"
-              onClick={() => setActiveTab("exterior")}
-            >
-              Exterior
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-        <Dialog open={isAddingArea} onOpenChange={setIsAddingArea}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              ADD WORK AREA
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Define Work Area</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-6">
-              <Card className="p-6">
-                <div className="space-y-6">
-                  <div className="flex items-center gap-2">
-                    <Square className="h-5 w-5 text-muted-foreground" />
-                    <h3 className="text-lg font-medium">Work Area Details</h3>
-                  </div>
-
-                  <div className="grid gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="work-area-name">Work Area Name*</Label>
-                      <Input
-                        id="work-area-name"
-                        placeholder="e.g., Kitchen, Master Bathroom, Living Room"
-                        value={currentArea.name}
-                        onChange={(e) => setCurrentArea({ ...currentArea, name: e.target.value })}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="work-area-notes">Description & Scope</Label>
-                      <Textarea
-                        id="work-area-notes"
-                        placeholder="Describe the work to be done in this area..."
-                        value={currentArea.notes}
-                        onChange={(e) => setCurrentArea({ ...currentArea, notes: e.target.value })}
-                      />
-                    </div>
-                  </div>
+    <div className="flex flex-col space-y-8">
+      <div>
+        <h2 className="text-xl font-semibold mb-4">
+          {editMode ? "Edit Work Area" : "Add Work Area"}
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="areaName">Area Name</Label>
+                <Input
+                  id="areaName"
+                  value={currentArea.name}
+                  onChange={(e) =>
+                    setCurrentArea({ ...currentArea, name: e.target.value })
+                  }
+                  placeholder="e.g., Kitchen, Master Bathroom"
+                />
+              </div>
+              <div>
+                <Label htmlFor="areaNotes">Notes</Label>
+                <Textarea
+                  id="areaNotes"
+                  value={currentArea.notes}
+                  onChange={(e) =>
+                    setCurrentArea({ ...currentArea, notes: e.target.value })
+                  }
+                  placeholder="Additional details about the work area..."
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="totalSqft">Total Square Footage</Label>
+                  <Input
+                    id="totalSqft"
+                    value={currentArea.measurements.totalSqft}
+                    onChange={(e) =>
+                      setCurrentArea({
+                        ...currentArea,
+                        measurements: {
+                          ...currentArea.measurements,
+                          totalSqft: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder="e.g., 120"
+                  />
                 </div>
-              </Card>
-
-              <Card className="p-6">
-                <div className="space-y-6">
-                  <div className="flex items-center gap-2">
-                    <Ruler className="h-5 w-5 text-muted-foreground" />
-                    <h3 className="text-lg font-medium">Room Measurements</h3>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="total-sqft">Total SQFT</Label>
-                      <Input
-                        id="total-sqft"
-                        type="number"
-                        placeholder="0"
-                        value={currentArea.measurements.totalSqft}
-                        onChange={(e) => setCurrentArea({
-                          ...currentArea,
-                          measurements: { ...currentArea.measurements, totalSqft: e.target.value }
-                        })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="length">Length (inches)</Label>
-                      <Input
-                        id="length"
-                        type="number"
-                        placeholder="0"
-                        value={currentArea.measurements.length}
-                        onChange={(e) => setCurrentArea({
-                          ...currentArea,
-                          measurements: { ...currentArea.measurements, length: e.target.value }
-                        })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="width">Width (inches)</Label>
-                      <Input
-                        id="width"
-                        type="number"
-                        placeholder="0"
-                        value={currentArea.measurements.width}
-                        onChange={(e) => setCurrentArea({
-                          ...currentArea,
-                          measurements: { ...currentArea.measurements, width: e.target.value }
-                        })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="height">Height (inches)</Label>
-                      <Input
-                        id="height"
-                        type="number"
-                        placeholder="0"
-                        value={currentArea.measurements.height}
-                        onChange={(e) => setCurrentArea({
-                          ...currentArea,
-                          measurements: { ...currentArea.measurements, height: e.target.value }
-                        })}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-6">
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="affects-other-areas"
-                      checked={currentArea.affectsOtherAreas}
-                      onCheckedChange={(checked) => 
-                        setCurrentArea({ ...currentArea, affectsOtherAreas: checked as boolean })
-                      }
-                    />
-                    <Label htmlFor="affects-other-areas">This work will affect other areas of the property</Label>
-                  </div>
-
-                  {currentArea.affectsOtherAreas && (
-                    <div className="space-y-4 mt-4">
-                      <p className="text-sm text-muted-foreground">List any other areas that will be impacted by this work</p>
-                      {currentArea.additionalAreas.map((area, index) => (
-                        <Card key={index} className="p-4">
-                          <div className="space-y-4">
-                            <div className="space-y-2">
-                              <Label>Affected Area Name</Label>
-                              <Input
-                                placeholder="e.g., Hallway, Adjacent Room"
-                                value={area.name}
-                                onChange={(e) => {
-                                  const updatedAreas = [...currentArea.additionalAreas];
-                                  updatedAreas[index].name = e.target.value;
-                                  setCurrentArea({ ...currentArea, additionalAreas: updatedAreas });
-                                }}
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label>Impact Description</Label>
-                              <Textarea
-                                placeholder="Describe how this area will be affected..."
-                                value={area.notes}
-                                onChange={(e) => {
-                                  const updatedAreas = [...currentArea.additionalAreas];
-                                  updatedAreas[index].notes = e.target.value;
-                                  setCurrentArea({ ...currentArea, additionalAreas: updatedAreas });
-                                }}
-                              />
-                            </div>
-                          </div>
-                        </Card>
-                      ))}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleAddAdditionalArea}
-                        className="w-full mt-2"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add Another Affected Area
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </Card>
-              
-              <div className="flex justify-end space-x-4">
-                <Button variant="outline" onClick={() => setIsAddingArea(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleAddWorkArea}>
-                  Add Work Area
-                </Button>
+              </div>
+              <div className="flex items-start space-x-2 pt-2">
+                <Checkbox
+                  id="affectsOtherAreas"
+                  checked={currentArea.affectsOtherAreas}
+                  onCheckedChange={(checked) =>
+                    setCurrentArea({
+                      ...currentArea,
+                      affectsOtherAreas: checked as boolean,
+                    })
+                  }
+                />
+                <Label
+                  htmlFor="affectsOtherAreas"
+                  className="text-sm leading-relaxed cursor-pointer"
+                >
+                  This work area affects other areas of the property
+                </Label>
               </div>
             </div>
-          </DialogContent>
-        </Dialog>
-      </div>
+          </div>
 
-      {workAreasState.length > 0 ? (
-        <WorkAreaTable 
-          workAreas={workAreasState}
-          onEdit={handleEdit}
-          onDuplicate={handleDuplicate}
-          onDelete={handleDelete}
-        />
-      ) : null}
+          <div>
+            <h3 className="text-lg font-medium mb-3">Additional Affected Areas</h3>
+            <div className="space-y-3 mb-4">
+              <div>
+                <Label htmlFor="additionalAreaName">Area Name</Label>
+                <Input
+                  id="additionalAreaName"
+                  value={currentAdditionalArea.name}
+                  onChange={(e) =>
+                    setCurrentAdditionalArea({
+                      ...currentAdditionalArea,
+                      name: e.target.value,
+                    })
+                  }
+                  placeholder="e.g., Hallway, Living Room"
+                />
+              </div>
+              <div>
+                <Label htmlFor="additionalAreaNotes">Notes</Label>
+                <Input
+                  id="additionalAreaNotes"
+                  value={currentAdditionalArea.notes}
+                  onChange={(e) =>
+                    setCurrentAdditionalArea({
+                      ...currentAdditionalArea,
+                      notes: e.target.value,
+                    })
+                  }
+                  placeholder="How this area is affected..."
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAddAdditionalArea}
+                className="mt-2"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add Affected Area
+              </Button>
+            </div>
 
-      <div className="flex justify-between mt-6">
-        <Button
-          variant="outline"
-          onClick={() => window.history.back()}
-        >
-          BACK
-        </Button>
-        <div className="space-x-4">
-          <Button
-            variant="outline"
-            onClick={handleSave}
-          >
-            SAVE & EXIT
-          </Button>
-          <Button
-            onClick={handleSave}
-          >
-            NEXT
+            {currentArea.additionalAreas.length > 0 && (
+              <div className="border rounded-md p-3 bg-gray-50">
+                <h4 className="text-sm font-medium mb-2">Added Areas:</h4>
+                <ul className="space-y-2">
+                  {currentArea.additionalAreas.map((area, index) => (
+                    <li
+                      key={index}
+                      className="flex justify-between items-center text-sm"
+                    >
+                      <div>
+                        <span className="font-medium">{area.name}</span>
+                        {area.notes && (
+                          <span className="text-gray-500 ml-2">
+                            - {area.notes}
+                          </span>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveAdditionalArea(index)}
+                      >
+                        <Trash2 className="h-4 w-4 text-gray-500" />
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="flex justify-end mt-6">
+          <Button type="button" onClick={handleAddWorkArea}>
+            {editMode ? "Update Area" : "Add Area"}
           </Button>
         </div>
       </div>
+
+      {workAreas.length > 0 && (
+        <Card>
+          <CardContent className="p-6">
+            <h2 className="text-xl font-semibold mb-4">Work Areas</h2>
+            <WorkAreaTable
+              workAreas={workAreas}
+              onEdit={handleEditArea}
+              onDelete={handleDeleteArea}
+            />
+            <div className="flex justify-end mt-6">
+              <Button type="button" onClick={handleSaveAreas}>
+                Save Work Areas
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
