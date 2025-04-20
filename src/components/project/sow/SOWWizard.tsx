@@ -17,6 +17,7 @@ import { WorkAreaForm } from "./WorkAreaForm";
 import { LaborRequirementsForm } from "./LaborRequirementsForm";
 import { MaterialRequirementsForm } from "./MaterialRequirementsForm";
 import { BidConfigurationForm } from "./BidConfigurationForm";
+import { ProjectReviewForm } from "./ProjectReviewForm";
 
 const steps = [
   { id: 'work-areas', title: 'Work Areas', description: 'Define specific areas requiring work' },
@@ -31,7 +32,14 @@ export function SOWWizard() {
   const navigate = useNavigate();
   const { projectData, propertyDetails, isLoading } = useProjectData(projectId);
   const [currentStep, setCurrentStep] = React.useState(0);
+  
   const [workAreas, setWorkAreas] = React.useState([]);
+  const [laborItems, setLaborItems] = React.useState([]);
+  const [materialItems, setMaterialItems] = React.useState([]);
+  const [bidConfig, setBidConfig] = React.useState({
+    bidDuration: '7',
+    projectDescription: ''
+  });
 
   if (isLoading) {
     return (
@@ -59,8 +67,8 @@ export function SOWWizard() {
         return (
           <LaborRequirementsForm 
             workAreas={workAreas} 
-            onSave={(laborItems) => {
-              console.log('Labor items:', laborItems);
+            onSave={(items) => {
+              setLaborItems(items);
               setCurrentStep(current => current + 1);
             }} 
           />
@@ -69,8 +77,8 @@ export function SOWWizard() {
         return (
           <MaterialRequirementsForm
             workAreas={workAreas}
-            onSave={(materialItems) => {
-              console.log('Material items:', materialItems);
+            onSave={(items) => {
+              setMaterialItems(items);
               setCurrentStep(current => current + 1);
             }}
           />
@@ -79,15 +87,27 @@ export function SOWWizard() {
         return (
           <BidConfigurationForm
             onSave={(config) => {
-              console.log('Bid configuration:', config);
+              setBidConfig(config);
               setCurrentStep(current => current + 1);
             }}
           />
         );
-      default:
+      case 4:
         return (
-          <p className="text-gray-600">Step content for {steps[currentStep].title} will be implemented here.</p>
+          <ProjectReviewForm
+            workAreas={workAreas}
+            laborItems={laborItems}
+            materialItems={materialItems}
+            bidConfiguration={bidConfig}
+            onSave={(confirmed) => {
+              if (confirmed) {
+                navigate(`/project-dashboard/${projectId}`);
+              }
+            }}
+          />
         );
+      default:
+        return null;
     }
   };
 
@@ -121,7 +141,7 @@ export function SOWWizard() {
                   {renderStepContent()}
                 </div>
                 
-                {currentStep !== 0 && (
+                {currentStep !== 0 && currentStep !== 4 && (
                   <div className="flex justify-between mt-6 pt-6 border-t">
                     <Button
                       variant="outline"
@@ -132,16 +152,10 @@ export function SOWWizard() {
                     </Button>
                     
                     <Button
-                      onClick={() => {
-                        if (currentStep === steps.length - 1) {
-                          navigate(`/project-dashboard/${projectId}`);
-                        } else {
-                          setCurrentStep(current => current + 1);
-                        }
-                      }}
+                      onClick={() => setCurrentStep(current => current + 1)}
                     >
-                      {currentStep === steps.length - 1 ? 'Complete' : 'Next'}
-                      {currentStep !== steps.length - 1 && <ChevronRight className="ml-2 h-4 w-4" />}
+                      Next
+                      <ChevronRight className="ml-2 h-4 w-4" />
                     </Button>
                   </div>
                 )}
