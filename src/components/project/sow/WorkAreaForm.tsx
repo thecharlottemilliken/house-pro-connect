@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Square, Ruler } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { WorkAreaTable } from "./WorkAreaTable";
 
 interface WorkArea {
   name: string;
@@ -29,6 +31,7 @@ interface WorkAreaFormProps {
 }
 
 export function WorkAreaForm({ onSave }: WorkAreaFormProps) {
+  const [activeTab, setActiveTab] = useState("interior");
   const [workAreas, setWorkAreas] = useState<WorkArea[]>([]);
   const [currentArea, setCurrentArea] = useState<WorkArea>({
     name: '',
@@ -105,6 +108,34 @@ export function WorkAreaForm({ onSave }: WorkAreaFormProps) {
 
   return (
     <div className="space-y-8">
+      <div className="flex justify-between items-center">
+        <Tabs defaultValue="interior" className="w-[400px]">
+          <TabsList>
+            <TabsTrigger 
+              value="interior" 
+              className="flex-1"
+              onClick={() => setActiveTab("interior")}
+            >
+              Interior
+            </TabsTrigger>
+            <TabsTrigger 
+              value="exterior" 
+              className="flex-1"
+              onClick={() => setActiveTab("exterior")}
+            >
+              Exterior
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <Button onClick={handleAddWorkArea} className="ml-auto">
+          ADD WORK AREA
+        </Button>
+      </div>
+
+      {workAreas.length > 0 ? (
+        <WorkAreaTable workAreas={workAreas} />
+      ) : null}
+
       <div className="space-y-6">
         <Card className="p-6">
           <div className="space-y-6">
@@ -260,58 +291,29 @@ export function WorkAreaForm({ onSave }: WorkAreaFormProps) {
             )}
           </div>
         </Card>
+      </div>
 
-        <div className="flex gap-4">
+      <div className="flex justify-between mt-6">
+        <Button
+          variant="outline"
+          onClick={() => window.history.back()}
+        >
+          BACK
+        </Button>
+        <div className="space-x-4">
           <Button
-            type="button"
-            onClick={handleAddWorkArea}
-            className="flex-1"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Work Area
-          </Button>
-
-          <Button
-            type="button"
+            variant="outline"
             onClick={handleSave}
-            className="flex-1"
-            variant="default"
           >
-            Save & Continue
+            SAVE & EXIT
+          </Button>
+          <Button
+            onClick={handleSave}
+          >
+            NEXT
           </Button>
         </div>
       </div>
-
-      {workAreas.length > 0 && (
-        <div className="space-y-4">
-          <h4 className="font-medium text-lg">Added Work Areas</h4>
-          <div className="grid gap-4">
-            {workAreas.map((area, index) => (
-              <Card key={index} className="p-4">
-                <div className="space-y-2">
-                  <h5 className="font-medium text-base">{area.name}</h5>
-                  {area.notes && (
-                    <p className="text-sm text-muted-foreground">{area.notes}</p>
-                  )}
-                  <div className="text-sm text-muted-foreground">
-                    <span className="font-medium">Dimensions:</span> {area.measurements.length}"x{area.measurements.width}"x{area.measurements.height}"
-                  </div>
-                  {area.affectsOtherAreas && area.additionalAreas.length > 0 && (
-                    <div className="mt-2">
-                      <p className="text-sm font-medium">Affected Areas:</p>
-                      <ul className="list-disc list-inside text-sm text-muted-foreground">
-                        {area.additionalAreas.map((affected, i) => (
-                          <li key={i}>{affected.name}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
