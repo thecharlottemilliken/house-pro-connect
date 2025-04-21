@@ -5,20 +5,24 @@ import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useProjectData } from "@/hooks/useProjectData";
 import { Button } from "@/components/ui/button";
-import { UserPlus } from "lucide-react";
+import { UserPlus, RefreshCw } from "lucide-react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import ProjectSidebar from "@/components/project/ProjectSidebar";
 import { toast } from "@/hooks/use-toast";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import TeamMemberList from "@/components/project/team/TeamMemberList";
 import TeamMemberInviteDialog from "@/components/project/team/TeamMemberInviteDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const ProjectTeam = () => {
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const location = useLocation();
   const params = useParams();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { user } = useAuth();
   
   const { 
     projectData, 
@@ -44,6 +48,92 @@ const ProjectTeam = () => {
       navigate("/projects");
     }
   }, [params.projectId, navigate]);
+
+  // Add a function to ensure the project owner is in the team
+  const ensureOwnerInTeam = async () => {
+    if (!projectId || !user || isRefreshing) return;
+    
+    setIsRefreshing(true);
+    
+    try {
+      // First check if project exists and who the owner is
+      const { data: projectData, error: projectError } = await supabase
+        .from('projects')
+        .select('user_id')
+        .eq('id', projectId)
+        .maybeSingle();
+        
+      if (projectError) {
+        throw projectError;
+      }
+      
+      if (!projectData) {
+        toast({
+          title: "Project Not Found",
+          description: "Could not find the specified project.",
+          variant: "destructive"
+        });
+        setIsRefreshing(false);
+        return;
+      }
+      
+      const projectOwnerId = projectData.user_id;
+      console.log("Project owner ID:", projectOwnerId);
+      
+      // Check if owner is already in team
+      const { data: existingMember, error: checkError } = await supabase
+        .from('project_team_members')
+        .select('id')
+        .eq('project_id', projectId)
+        .eq('user_id', projectOwnerId)
+        .eq('role', 'owner')
+        .maybeSingle();
+        
+      if (checkError) {
+        throw checkError;
+      }
+      
+      // If owner is not in team, add them
+      if (!existingMember) {
+        console.log("Owner not found in team, adding...");
+        const { error: insertError } = await supabase
+          .from('project_team_members')
+          .insert({
+            project_id: projectId,
+            user_id: projectOwnerId,
+            role: 'owner',
+            added_by: user.id
+          });
+          
+        if (insertError) {
+          throw insertError;
+        }
+        
+        toast({
+          title: "Owner Added",
+          description: "Project owner has been added to the team."
+        });
+      } else {
+        toast({
+          title: "Team Verified",
+          description: "Project owner is already a team member."
+        });
+      }
+      
+      // Refresh the team list
+      await refetchTeamMembers();
+      
+    } catch (error: any) {
+      console.error("Error ensuring owner in team:", error);
+      toast({
+        title: "Error",
+        description: `Failed to verify team: ${error.message || 'Unknown error'}`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const openInviteDialog = () => {
     setIsInviteDialogOpen(true);
@@ -86,13 +176,24 @@ const ProjectTeam = () => {
           <div className="flex-1 p-4 sm:p-6 md:p-8 bg-white overflow-y-auto">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-8">
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-0">Project Team</h1>
-              <Button 
-                className="bg-[#0f566c] hover:bg-[#0d4a5d] w-full sm:w-auto"
-                onClick={openInviteDialog}
-              >
-                <UserPlus className="mr-2 h-4 w-4" />
-                INVITE A TEAM MEMBER
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-3">
+                <Button 
+                  variant="outline"
+                  onClick={ensureOwnerInTeam}
+                  disabled={isRefreshing}
+                  className="flex items-center"
+                >
+                  <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  {isRefreshing ? 'REFRESHING...' : 'REFRESH TEAM'}
+                </Button>
+                <Button 
+                  className="bg-[#0f566c] hover:bg-[#0d4a5d]"
+                  onClick={openInviteDialog}
+                >
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  INVITE A TEAM MEMBER
+                </Button>
+              </div>
             </div>
 
             <TeamMemberList 
