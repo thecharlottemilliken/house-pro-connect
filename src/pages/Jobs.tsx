@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { Home as HomeIcon, Hammer, MapPin, Smile, Search, ChevronDown } from "lucide-react";
@@ -25,7 +26,30 @@ import { toast } from "@/components/ui/use-toast";
 import JobsFilterBar from "@/components/jobs/JobsFilterBar";
 import { differenceInSeconds, addDays, formatDuration, intervalToDuration } from "date-fns";
 
-const jobsList = [
+// Define the job interface to match the structure returned from the API
+interface Job {
+  id: string;
+  status: string;
+  work_areas: any[];
+  labor_items: any[];
+  material_items: any[];
+  bid_configuration: {
+    bidDuration: string;
+    projectDescription?: string;
+    type?: string;
+  };
+  approved_at: string;
+  project: {
+    id: string;
+    title: string;
+  };
+  property: {
+    id: string;
+    image: string | null;
+  };
+}
+
+const staticJobsList = [
   {
     id: "1",
     title: "Kitchen Renovation in Sugarhouse",
@@ -94,14 +118,13 @@ const jobsList = [
 ];
 
 const Jobs: React.FC = () => {
-  const [jobs, setJobs] = useState<any[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedPrice, setSelectedPrice] = useState<string | null>(null);
   const [selectedDistance, setSelectedDistance] = useState<string | null>(null);
-  const [filteredJobs, setFilteredJobs] = useState(jobsList);
   const [mapboxToken, setMapboxToken] = useState<string>("");
 
   useEffect(() => {
@@ -170,13 +193,14 @@ const Jobs: React.FC = () => {
     fetchJobs();
   }, []);
 
+  // Apply filters to the jobs
   const filteredJobs = jobs.filter(job => {
     if (searchQuery && !job.project.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     if (selectedType && (!job.bid_configuration?.type || job.bid_configuration.type !== selectedType)) return false;
     return true;
   });
 
-  const getBidCountdown = (job) => {
+  const getBidCountdown = (job: Job) => {
     if (!job.approved_at || !job.bid_configuration?.bidDuration) return null;
     const approved = new Date(job.approved_at);
     const durationDays = parseInt(job.bid_configuration.bidDuration, 10) || 0;
@@ -198,6 +222,13 @@ const Jobs: React.FC = () => {
   const handleCardHover = (jobId: string) => {
     setActiveJobId(jobId);
   };
+
+  // For map display, we need to transform the jobs to include lat/lng
+  const mapJobs = filteredJobs.map(job => ({
+    id: job.id,
+    lat: 40.7608, // Using default coordinates since we don't have real ones
+    lng: -111.8910
+  }));
 
   return (
     <div className="relative w-full min-h-screen bg-[#F5F8FA] flex flex-col">
@@ -230,7 +261,7 @@ const Jobs: React.FC = () => {
               </div>
             ) : (
               <MapboxMap
-                jobs={filteredJobs.map(j => ({ id: j.id, lat: 40.7608, lng: -111.8910 }))}
+                jobs={mapJobs}
                 activeJobId={activeJobId}
                 onPinClick={handlePinClick}
                 mapboxToken={mapboxToken}
