@@ -56,7 +56,6 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ jobs, activeJobId, onPinClick, ma
       el.style.border = `3px solid ${activeJobId === job.id ? pinActiveColor : pinColor}`;
       el.style.cursor = "pointer";
       
-      // Fixed template literal syntax
       el.innerHTML = `
         <svg width="${activeJobId === job.id ? 24 : 20}" height="${activeJobId === job.id ? 24 : 20}" fill="none" viewBox="0 0 24 24" stroke-width="2.4" stroke="${pinColor}">
           <circle cx="12" cy="12" r="9" fill="#FFEDD5" stroke="${pinColor}"/>
@@ -92,16 +91,21 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ jobs, activeJobId, onPinClick, ma
       if (!el) return;
       el.style.width = activeJobId === id ? "38px" : "28px";
       el.style.height = activeJobId === id ? "38px" : "28px";
-      // Fixed template literal syntax
       el.style.border = `3px solid ${activeJobId === id ? pinActiveColor : pinColor}`;
       el.style.boxShadow = activeJobId === id
         ? "0 2px 12px 2px rgba(249,115,22,0.25)"
         : "0 2px 8px 0 rgba(0,0,0,0.12)";
     });
 
-    // pan/zoom to active marker
-    if (activeJobId && markerRefs.current[activeJobId]) {
-      markerRefs.current[activeJobId].getMap()?.flyTo({center: markerRefs.current[activeJobId].getLngLat(), zoom: 12, speed: 0.8, essential: true });
+    // pan/zoom to active marker - FIX HERE
+    if (activeJobId && markerRefs.current[activeJobId] && mapRef.current) {
+      // Instead of calling getMap() on the marker, we use the mapRef directly
+      mapRef.current.flyTo({
+        center: markerRefs.current[activeJobId].getLngLat(),
+        zoom: 12,
+        speed: 0.8,
+        essential: true
+      });
     }
   }, [activeJobId]);
 
