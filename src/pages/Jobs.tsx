@@ -126,6 +126,7 @@ const Jobs: React.FC = () => {
   const [selectedPrice, setSelectedPrice] = useState<string | null>(null);
   const [selectedDistance, setSelectedDistance] = useState<string | null>(null);
   const [mapboxToken, setMapboxToken] = useState<string>("");
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadMapboxToken() {
@@ -168,27 +169,46 @@ const Jobs: React.FC = () => {
   useEffect(() => {
     async function fetchJobs() {
       setIsLoading(true);
+      setFetchError(null);
+      
       try {
+        console.log("Fetching approved jobs...");
         const { data, error } = await supabase.functions.invoke('get-approved-jobs');
+        
         if (error) {
+          console.error("Error from get-approved-jobs function:", error);
+          setFetchError("Could not fetch approved jobs");
           toast({
             title: "Error loading jobs",
-            description: "Could not fetch approved jobs.",
+            description: "Could not fetch approved jobs: " + error.message,
+            variant: "destructive",
+          });
+          setJobs([]);
+        } else if (!data || !data.jobs) {
+          console.error("Invalid response format from get-approved-jobs:", data);
+          setFetchError("Invalid response from server");
+          toast({
+            title: "Error loading jobs",
+            description: "Received invalid data format from the server",
             variant: "destructive",
           });
           setJobs([]);
         } else {
-          setJobs(data?.jobs ?? []);
+          console.log("Received jobs data:", data.jobs);
+          setJobs(data.jobs);
         }
       } catch (e) {
+        console.error("Exception when fetching jobs:", e);
+        setFetchError("Network error");
         toast({
           title: "Network Error",
-          description: "Failed to fetch jobs.",
+          description: "Failed to fetch jobs: " + (e.message || "Unknown error"),
           variant: "destructive"
         });
         setJobs([]);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     }
     fetchJobs();
   }, []);
@@ -281,51 +301,67 @@ const Jobs: React.FC = () => {
           style={{ backdropFilter: "blur(8px)" }}
         >
           <div className="flex-1 overflow-y-auto px-4 pb-6 custom-scrollbar mt-2">
-            <ul className="space-y-4">
-              {filteredJobs.map((job) => (
-                <li
-                  key={job.id}
-                  id={`job-card-${job.id}`}
-                  onMouseEnter={() => handleCardHover(job.id)}
-                  onMouseLeave={() => setActiveJobId(null)}
-                  className="relative"
-                >
-                  <Card
-                    className={`flex flex-row p-2 bg-white rounded-lg ${
-                      activeJobId === job.id
-                        ? "ring-2 ring-[#9b87f5] shadow-lg"
-                        : "shadow-sm border-none hover:ring-2 hover:ring-[#9b87f5]/50"
-                    } overflow-hidden transition-all duration-200 cursor-pointer`}
-                    onClick={() => handlePinClick(job.id)}
+            {isLoading ? (
+              <div className="flex justify-center items-center h-40">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : fetchError ? (
+              <div className="p-4 text-center">
+                <p className="text-red-500 font-medium">{fetchError}</p>
+                <p className="text-sm text-gray-600 mt-2">Please try again later or contact support</p>
+              </div>
+            ) : filteredJobs.length === 0 ? (
+              <div className="p-4 text-center">
+                <p className="font-medium text-gray-700">No approved jobs found</p>
+                <p className="text-sm text-gray-600 mt-2">There are no SOWs with approved status</p>
+              </div>
+            ) : (
+              <ul className="space-y-4">
+                {filteredJobs.map((job) => (
+                  <li
+                    key={job.id}
+                    id={`job-card-${job.id}`}
+                    onMouseEnter={() => handleCardHover(job.id)}
+                    onMouseLeave={() => setActiveJobId(null)}
+                    className="relative"
                   >
-                    <img
-                      src={job.property.image || "/placeholder.svg"}
-                      alt=""
-                      className="h-[78px] w-[106px] object-cover object-center rounded-[8px] shadow"
-                    />
-                    <div className="flex-1 pl-3 pr-2 flex flex-col justify-between">
-                      <div className="flex items-center mb-1 gap-2">
-                        <span className="inline-block rounded px-2 py-0.5 bg-[#FEF7CD] text-xs text-[#c8763b] font-semibold">
-                          {job.status}
-                        </span>
-                        <span className="flex items-center gap-1 text-[#a0afbb] text-xs ml-auto">
-                          <span>{getBidCountdown(job)}</span>
-                        </span>
+                    <Card
+                      className={`flex flex-row p-2 bg-white rounded-lg ${
+                        activeJobId === job.id
+                          ? "ring-2 ring-[#9b87f5] shadow-lg"
+                          : "shadow-sm border-none hover:ring-2 hover:ring-[#9b87f5]/50"
+                      } overflow-hidden transition-all duration-200 cursor-pointer`}
+                      onClick={() => handlePinClick(job.id)}
+                    >
+                      <img
+                        src={job.property.image || "/placeholder.svg"}
+                        alt=""
+                        className="h-[78px] w-[106px] object-cover object-center rounded-[8px] shadow"
+                      />
+                      <div className="flex-1 pl-3 pr-2 flex flex-col justify-between">
+                        <div className="flex items-center mb-1 gap-2">
+                          <span className="inline-block rounded px-2 py-0.5 bg-[#FEF7CD] text-xs text-[#c8763b] font-semibold">
+                            {job.status}
+                          </span>
+                          <span className="flex items-center gap-1 text-[#a0afbb] text-xs ml-auto">
+                            <span>{getBidCountdown(job)}</span>
+                          </span>
+                        </div>
+                        <div className="text-[17px] text-[#1A1F2C] font-semibold leading-tight mb-1">
+                          {job.project.title}
+                        </div>
+                        <div className="flex gap-6 mt-1 text-sm text-[#1EAEDB] items-center font-semibold">
+                          <span className="flex items-center gap-1 text-[#1EAEDB]">
+                            <HomeIcon className="w-4 h-4 mr-1 text-[#1EAEDB]" />
+                            {(job.work_areas?.length || 0)} Rooms
+                          </span>
+                        </div>
                       </div>
-                      <div className="text-[17px] text-[#1A1F2C] font-semibold leading-tight mb-1">
-                        {job.project.title}
-                      </div>
-                      <div className="flex gap-6 mt-1 text-sm text-[#1EAEDB] items-center font-semibold">
-                        <span className="flex items-center gap-1 text-[#1EAEDB]">
-                          <HomeIcon className="w-4 h-4 mr-1 text-[#1EAEDB]" />
-                          {(job.work_areas?.length || 0)} Rooms
-                        </span>
-                      </div>
-                    </div>
-                  </Card>
-                </li>
-              ))}
-            </ul>
+                    </Card>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </aside>
       </div>
