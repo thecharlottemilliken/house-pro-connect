@@ -1,11 +1,18 @@
 
 import React from "react";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
-import { Filter, Home, MapPin } from "lucide-react";
+import { Filter, Home as HomeIcon, Hammer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import MapPinsOverlay from "@/components/jobs/MapPinsOverlay";
 
 const jobsList = [
   {
@@ -57,66 +64,96 @@ const jobsList = [
 
 const Jobs: React.FC = () => {
   return (
-    <div className="w-full min-h-screen bg-[#f5f7fb] flex flex-col">
+    <div className="w-full min-h-screen bg-[#F5F8FA] flex flex-col">
       <DashboardNavbar />
-      <div className="flex-1 flex flex-row h-[calc(100vh-56px)]">
-        {/* Left panel - Filters and job list */}
-        <aside className="w-full md:w-[410px] xl:max-w-sm bg-[#ECF5FB]/60 border-r border-[#e1e5ec] p-6 pt-4 flex flex-col">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-            <Select>
-              <option>Project Underway Est.</option>
-            </Select>
-            <Select>
-              <option>Project Type</option>
-            </Select>
-            <Select>
-              <option>Speciality</option>
-            </Select>
-            <Select>
-              <option>Project Size</option>
-            </Select>
-          </div>
-          <div className="flex items-center justify-between mb-2 mt-1">
-            <div className="text-xl font-semibold text-[#222]">
-              Projects <span className="font-normal text-[#657080]">{jobsList.length}</span>
+      <div className="flex-1 flex flex-row h-[calc(100vh-56px)] overflow-hidden">
+        {/* Left Sidebar & Filters */}
+        <aside className="w-full md:w-[390px] xl:max-w-sm bg-transparent p-0 pt-0 flex flex-col border-r-0">
+          {/* Filters */}
+          <div className="px-6 pt-6 pb-4 flex flex-col gap-3 bg-[#F5F8FA] sticky top-0 z-10">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div>
-              <Button variant="outline" className="rounded-md text-[#393f49] gap-2 px-2 py-1 text-sm font-normal border-[#ced5e1]">
-                Sort By <span className="ml-1 text-[#0f3a4d]/70">Recent</span>
-              </Button>
+            <div className="flex items-center justify-between mt-2">
+              <div className="text-[22px] font-semibold text-[#222]">
+                Projects <span className="font-normal text-[#657080] text-lg ml-1">{jobsList.length}</span>
+              </div>
+              <Select>
+                <SelectTrigger className="w-[140px] h-[42px] border-[#ced5e1] rounded-md text-[#222] text-[16px] font-medium shadow">
+                  <SelectValue placeholder="Sort By: Recent" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recent">Recent</SelectItem>
+                  <SelectItem value="oldest">Oldest</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+            <button
+              className="flex items-center self-end mt-0 mb-0 mr-1 text-[#213447] text-[15px] font-semibold gap-2 uppercase tracking-wide hover:text-[#1A1F2C]"
+              style={{ letterSpacing: 1.6 }}
+            >
+              <Filter className="w-4 h-4" />
+              <span>Advanced Filters</span>
+            </button>
           </div>
-          <button className="flex items-center self-end mt-0 mb-4 mr-1 text-[#213447] text-sm font-semibold gap-2 uppercase tracking-wide">
-            <Filter className="w-4 h-4" /> Advanced Filters
-          </button>
-          <div className="flex-1 overflow-y-auto pr-2 mt-2 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto px-4 pb-6 custom-scrollbar mt-2">
             <ul className="space-y-4">
               {jobsList.map((job) => (
                 <li key={job.id}>
-                  <Card className="flex flex-row p-0 bg-white rounded-xl shadow-md border-[1.5px] border-[#DBE8EF] overflow-hidden hover:ring-2 hover:ring-[#9b87f5]/70 transition-shadow duration-200">
+                  <Card className="flex flex-row p-2 bg-white rounded-lg shadow-sm border-none overflow-hidden hover:ring-2 hover:ring-[#9b87f5]/50 transition-shadow duration-200">
                     <img
                       src={job.image}
                       alt=""
-                      className="h-[85px] w-[110px] object-cover object-center rounded-l-lg"
+                      className="h-[78px] w-[106px] object-cover object-center rounded-[8px]"
                     />
-                    <div className="flex-1 py-3 pl-4 pr-2 flex flex-col justify-between">
+                    <div className="flex-1 pl-3 pr-2 flex flex-col justify-between">
                       <div className="flex items-center mb-1 gap-2">
-                        <span className="inline-block rounded px-2 py-0.5 bg-[#fff5e6] text-xs text-[#c8763b] font-medium">
+                        <span className="inline-block rounded px-2 py-0.5 bg-[#FEF7CD] text-xs text-[#c8763b] font-semibold">
                           {job.status}
                         </span>
                         <span className="flex items-center gap-1 text-[#a0afbb] text-xs ml-auto">
                           <span>{job.timeLeft}</span>
                         </span>
                       </div>
-                      <div className="text-[16px] text-[#1A1F2C] font-semibold">{job.title}</div>
-                      <div className="flex gap-4 mt-2 text-xs text-[#5a6d7d] items-center font-medium">
-                        <span className="flex items-center gap-1">
-                          <Home className="w-4 h-4 mr-0.5 text-[#5a6d7d]" /> 
+                      <div className="text-[17px] text-[#1A1F2C] font-semibold leading-tight mb-1">{job.title}</div>
+                      <div className="flex gap-6 mt-1 text-sm text-[#1EAEDB] items-center font-semibold">
+                        <span className="flex items-center gap-1 text-[#1EAEDB]">
+                          <HomeIcon className="w-4 h-4 mr-1 text-[#1EAEDB]" />
                           {job.rooms} Rooms
                         </span>
-                        <span className="flex items-center gap-1 text-[#1b8fb8]">
-                          <MapPin className="w-4 h-4 mr-0.5 text-[#1b8fb8]" />
-                          {job.distance}
+                        <span className="flex items-center gap-1 text-[#1EAEDB]">
+                          <span className="ml-2 underline underline-offset-2">{job.distance}</span>
                         </span>
                       </div>
                     </div>
@@ -126,21 +163,22 @@ const Jobs: React.FC = () => {
             </ul>
           </div>
         </aside>
-        {/* Right panel - Map area */}
-        <div className="w-[calc(100%-410px)] overflow-hidden relative flex-1 flex items-stretch">
+
+        {/* Map Panel */}
+        <div className="flex-1 relative bg-[#F5F8FA] overflow-hidden flex items-stretch min-h-0">
           <div className="absolute inset-0">
-            <img 
-              src="/lovable-uploads/51078945-7086-4860-bd68-bc61f9eb8ae6.png"
+            {/* Main map image */}
+            <img
+              src="/lovable-uploads/599d758f-5824-4a69-aeb6-c5f25567e454.png"
               alt="Map"
-              className="w-full h-full object-cover object-center"
+              className="w-full h-full object-cover object-center pointer-events-none"
               draggable={false}
-              style={{ opacity: 0.97 }}
+              style={{ opacity: 1 }}
             />
-            {/* Map pins could be drawn absolutely in future */}
-            {/* For now, just render as in mockup for static image */}
+            {/* Custom overlay pins + circle */}
+            <MapPinsOverlay />
           </div>
-          {/* Overlay to soften the edges */}
-          <div className="absolute inset-0 bg-gradient-to-b from-white/90 to-[#dee4ed]/80 pointer-events-none" />
+          <div className="absolute inset-0 pointer-events-none" />
         </div>
       </div>
     </div>
@@ -148,3 +186,4 @@ const Jobs: React.FC = () => {
 };
 
 export default Jobs;
+
