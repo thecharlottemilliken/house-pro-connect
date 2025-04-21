@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Check, Info } from "lucide-react";
@@ -119,35 +120,29 @@ const ProjectPreferences = () => {
             user_id: user.id,
             title: `${propertyName || 'New'} Renovation Project`,
             project_preferences: projectPreferences,
-            renovation_areas: renovationAreas,
-            prior_experience: {}
+            renovation_areas: renovationAreas
           });
           
-          const { data, error } = await supabase
-            .from('projects')
-            .insert({
-              property_id: propertyId,
-              user_id: user.id,
-              title: `${propertyName || 'New'} Renovation Project`,
-              project_preferences: projectPreferences,
-              renovation_areas: renovationAreas,
-              prior_experience: {}
-            })
-            .select('id')
-            .single();
+          const { data, error } = await supabase.rpc('handle_project_update', {
+            p_project_id: null,
+            p_property_id: propertyId,
+            p_user_id: user.id,
+            p_title: `${propertyName || 'New'} Renovation Project`,
+            p_renovation_areas: renovationAreas,
+            p_project_preferences: projectPreferences,
+            p_construction_preferences: {},
+            p_design_preferences: {},
+            p_management_preferences: {},
+            p_prior_experience: {}
+          });
 
           if (error) {
             console.error('Supabase error creating project:', error);
             throw error;
           }
           
-          console.log('Project created successfully:', data);
-          newProjectId = data.id;
+          newProjectId = data;
           setProjectId(newProjectId);
-          
-          setTimeout(() => {
-            console.log('Checking if owner was added to team for project:', newProjectId);
-          }, 500);
           
           toast({
             title: "Success",
@@ -167,12 +162,18 @@ const ProjectPreferences = () => {
         try {
           console.log('Updating project with ID:', projectId);
           
-          const { error } = await supabase
-            .from('projects')
-            .update({
-              project_preferences: projectPreferences
-            })
-            .eq('id', projectId);
+          const { data, error } = await supabase.rpc('handle_project_update', {
+            p_project_id: projectId,
+            p_property_id: propertyId,
+            p_user_id: user?.id,
+            p_title: `${propertyName || 'New'} Renovation Project`,
+            p_renovation_areas: renovationAreas,
+            p_project_preferences: projectPreferences,
+            p_construction_preferences: {},
+            p_design_preferences: {},
+            p_management_preferences: {},
+            p_prior_experience: {}
+          });
 
           if (error) {
             console.error('Supabase error updating project:', error);

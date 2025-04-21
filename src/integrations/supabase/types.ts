@@ -448,6 +448,21 @@ export type Database = {
         Args: { uid: string }
         Returns: undefined
       }
+      handle_project_update: {
+        Args: {
+          p_project_id: string
+          p_property_id: string
+          p_user_id: string
+          p_title: string
+          p_renovation_areas?: Json
+          p_project_preferences?: Json
+          p_construction_preferences?: Json
+          p_design_preferences?: Json
+          p_management_preferences?: Json
+          p_prior_experience?: Json
+        }
+        Returns: string
+      }
       set_coach_claim: {
         Args: { uid: string }
         Returns: undefined
