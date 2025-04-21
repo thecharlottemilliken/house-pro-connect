@@ -242,13 +242,10 @@ const JobDetails = () => {
       <div className="min-h-screen bg-[#F5F8FA]">
         
 
-        <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="max-w-7xl mx-auto px-4 py-0">
           <div className="mb-8">
             <Button variant="ghost" className="flex items-center text-[#1A1F2C]" asChild>
-              <Link to="/jobs">
-                <ChevronLeft className="mr-2 h-4 w-4" />
-                RETURN TO LISTINGS
-              </Link>
+              
             </Button>
           </div>
 
