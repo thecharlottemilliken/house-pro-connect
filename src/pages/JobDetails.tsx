@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ChevronLeft, MapPin, Eye, FileText, Plus, Trash } from "lucide-react";
@@ -47,6 +48,7 @@ interface JobDetails {
     id: string;
     title: string;
     description?: string;
+    property_id?: string; // Add property_id to the project interface
   };
   property: {
     id: string;
@@ -96,7 +98,7 @@ const JobDetails = () => {
       
       setIsLoading(true);
       try {
-        // Fetch the specific SOW data
+        // Fetch the specific SOW data - fixing the query structure
         const { data: sow, error: sowError } = await supabase
           .from('statement_of_work')
           .select(`
@@ -106,7 +108,7 @@ const JobDetails = () => {
             labor_items,
             material_items,
             bid_configuration,
-            updated_at as approved_at,
+            updated_at,
             project_id
           `)
           .eq('id', jobId)
@@ -125,7 +127,7 @@ const JobDetails = () => {
         // Fetch the related project
         const { data: project, error: projectError } = await supabase
           .from('projects')
-          .select('id, title')
+          .select('id, title, property_id')
           .eq('id', sow.project_id)
           .single();
 
@@ -135,7 +137,7 @@ const JobDetails = () => {
         const { data: property, error: propertyError } = await supabase
           .from('properties')
           .select('id, home_photos, image_url, address_line1, city, state')
-          .eq('id', project?.property_id || '')
+          .eq('id', project.property_id)
           .single();
 
         if (propertyError) throw propertyError;
@@ -150,10 +152,11 @@ const JobDetails = () => {
           bid_configuration: typeof sow.bid_configuration === 'string'
             ? JSON.parse(sow.bid_configuration)
             : sow.bid_configuration || { bidDuration: "7" },
-          approved_at: sow.approved_at,
+          approved_at: sow.updated_at, // Use updated_at as approved_at
           project: {
             id: project.id,
             title: project.title,
+            property_id: project.property_id
           },
           property: {
             id: property.id,
