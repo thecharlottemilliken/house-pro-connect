@@ -23,6 +23,7 @@ import MapboxMap from "@/components/jobs/MapboxMap";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import JobsFilterBar from "@/components/jobs/JobsFilterBar";
+import { differenceInSeconds, addDays, formatDuration, intervalToDuration } from "date-fns";
 
 const jobsList = [
   {
@@ -93,6 +94,8 @@ const jobsList = [
 ];
 
 const Jobs: React.FC = () => {
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState<string | null>(null);
@@ -100,7 +103,6 @@ const Jobs: React.FC = () => {
   const [selectedDistance, setSelectedDistance] = useState<string | null>(null);
   const [filteredJobs, setFilteredJobs] = useState(jobsList);
   const [mapboxToken, setMapboxToken] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function loadMapboxToken() {
@@ -141,32 +143,52 @@ const Jobs: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    let results = jobsList;
-
-    if (searchQuery) {
-      results = results.filter(job =>
-        job.title.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+    async function fetchJobs() {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('get-approved-jobs');
+        if (error) {
+          toast({
+            title: "Error loading jobs",
+            description: "Could not fetch approved jobs.",
+            variant: "destructive",
+          });
+          setJobs([]);
+        } else {
+          setJobs(data?.jobs ?? []);
+        }
+      } catch (e) {
+        toast({
+          title: "Network Error",
+          description: "Failed to fetch jobs.",
+          variant: "destructive"
+        });
+        setJobs([]);
+      }
+      setIsLoading(false);
     }
+    fetchJobs();
+  }, []);
 
-    if (selectedType) {
-      results = results.filter(job => job.type === selectedType);
-    }
+  const filteredJobs = jobs.filter(job => {
+    if (searchQuery && !job.project.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    if (selectedType && (!job.bid_configuration?.type || job.bid_configuration.type !== selectedType)) return false;
+    return true;
+  });
 
-    if (selectedPrice) {
-      results = results;
-    }
-
-    if (selectedDistance) {
-      results = results;
-    }
-
-    setFilteredJobs(results);
-  }, [searchQuery, selectedType, selectedPrice, selectedDistance]);
+  const getBidCountdown = (job) => {
+    if (!job.approved_at || !job.bid_configuration?.bidDuration) return null;
+    const approved = new Date(job.approved_at);
+    const durationDays = parseInt(job.bid_configuration.bidDuration, 10) || 0;
+    const deadline = addDays(approved, durationDays);
+    const diffSec = differenceInSeconds(deadline, new Date());
+    if (diffSec <= 0) return 'Expired';
+    const parts = intervalToDuration({ start: new Date(), end: deadline });
+    return formatDuration(parts, { format: ['days', 'hours', 'minutes', 'seconds'] });
+  };
 
   const handlePinClick = (jobId: string) => {
     setActiveJobId(jobId);
-
     const jobCard = document.getElementById(`job-card-${jobId}`);
     if (jobCard) {
       jobCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -181,8 +203,8 @@ const Jobs: React.FC = () => {
     <div className="relative w-full min-h-screen bg-[#F5F8FA] flex flex-col">
       <DashboardNavbar />
 
-      {/* Sticky, full-width filter bar */}
-      <div className="sticky top-0 z-30 w-full bg-white/90 border-b border-gray-200">
+      {/* Full-width filter bar */}
+      <div className="sticky top-0 z-30 w-screen left-0 bg-white/90 border-b border-gray-200" style={{width:"100vw", marginLeft:"calc(-50vw + 50%)"}}>
         <JobsFilterBar
           selectedType={selectedType}
           setSelectedType={setSelectedType}
@@ -195,7 +217,7 @@ const Jobs: React.FC = () => {
         />
       </div>
       
-      <div className="relative flex-1 min-h-0 flex">
+      <div className="relative flex-1 min-h-0 flex max-w-screen">
         {/* Map */}
         <div className="relative flex-1 h-[calc(100vh-126px)] min-h-0">
           <div className="absolute inset-0 z-0">
@@ -206,26 +228,17 @@ const Jobs: React.FC = () => {
                   <p className="text-gray-600">Loading map...</p>
                 </div>
               </div>
-            ) : mapboxToken ? (
+            ) : (
               <MapboxMap
-                jobs={jobsList.map(j => ({ id: j.id, lat: j.lat, lng: j.lng }))}
+                jobs={filteredJobs.map(j => ({ id: j.id, lat: 40.7608, lng: -111.8910 }))}
                 activeJobId={activeJobId}
                 onPinClick={handlePinClick}
                 mapboxToken={mapboxToken}
               />
-            ) : (
-              <div className="flex items-center justify-center w-full h-full bg-gray-100">
-                <div className="bg-white p-8 rounded-xl shadow-lg space-y-4 border text-center max-w-md">
-                  <h2 className="text-xl font-semibold text-gray-700 mb-2">Could Not Load Map</h2>
-                  <p className="mb-2 text-gray-500">
-                    We encountered an error loading the map. Please try refreshing the page or contact support.
-                  </p>
-                </div>
-              </div>
             )}
           </div>
         </div>
-        {/* Aside job list */}
+        {/* Side rail */}
         <aside
           className="
             relative h-auto w-full md:w-[400px] xl:w-[430px] z-20
@@ -255,7 +268,7 @@ const Jobs: React.FC = () => {
                     onClick={() => handlePinClick(job.id)}
                   >
                     <img
-                      src={job.image}
+                      src={job.property.image || "/placeholder.svg"}
                       alt=""
                       className="h-[78px] w-[106px] object-cover object-center rounded-[8px] shadow"
                     />
@@ -265,17 +278,16 @@ const Jobs: React.FC = () => {
                           {job.status}
                         </span>
                         <span className="flex items-center gap-1 text-[#a0afbb] text-xs ml-auto">
-                          <span>{job.timeLeft}</span>
+                          <span>{getBidCountdown(job)}</span>
                         </span>
                       </div>
-                      <div className="text-[17px] text-[#1A1F2C] font-semibold leading-tight mb-1">{job.title}</div>
+                      <div className="text-[17px] text-[#1A1F2C] font-semibold leading-tight mb-1">
+                        {job.project.title}
+                      </div>
                       <div className="flex gap-6 mt-1 text-sm text-[#1EAEDB] items-center font-semibold">
                         <span className="flex items-center gap-1 text-[#1EAEDB]">
                           <HomeIcon className="w-4 h-4 mr-1 text-[#1EAEDB]" />
-                          {job.rooms} Rooms
-                        </span>
-                        <span className="flex items-center gap-1 text-[#1EAEDB]">
-                          <span className="ml-2 underline underline-offset-2">{job.distance}</span>
+                          {(job.work_areas?.length || 0)} Rooms
                         </span>
                       </div>
                     </div>
