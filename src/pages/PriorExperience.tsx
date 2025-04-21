@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import CreateProjectSteps from "@/components/project/create/CreateProjectSteps";
 
 const PriorExperience = () => {
   const navigate = useNavigate();
@@ -69,7 +70,10 @@ const PriorExperience = () => {
           })
           .eq('id', projectId);
 
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error('Error updating project:', updateError);
+          throw updateError;
+        }
         
         toast({
           title: "Success",
@@ -78,6 +82,17 @@ const PriorExperience = () => {
         
         return projectId;
       }
+
+      console.log('Creating new project with preferences:', {
+        propertyId,
+        userId: user.id,
+        title: `${propertyName || 'New'} Renovation`,
+        renovationAreas: projectPrefs?.renovationAreas || [],
+        projectPreferences: projectPrefs?.projectPreferences || null,
+        constructionPreferences: projectPrefs?.constructionPreferences || null,
+        designPreferences: projectPrefs?.designPreferences || null,
+        managementPreferences: projectPrefs?.managementPreferences || null
+      });
 
       // Create new project with all collected preferences
       const { data: project, error: projectError } = await supabase
@@ -100,8 +115,13 @@ const PriorExperience = () => {
         .select()
         .single();
 
-      if (projectError) throw projectError;
+      if (projectError) {
+        console.error('Error creating project:', projectError);
+        throw projectError;
+      }
 
+      console.log('Project created successfully:', project);
+      
       toast({
         title: "Success",
         description: "Your project has been created successfully!",
@@ -174,48 +194,19 @@ const PriorExperience = () => {
       <DashboardNavbar />
       
       <div className="flex flex-col md:flex-row flex-1">
-        <div className={`${isMobile ? 'w-full' : 'w-80'} bg-[#EFF3F7] p-4 md:p-8`}>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">Create a Project</h1>
-          <p className="text-sm md:text-base text-gray-600 mb-6 md:mb-8">
-            Lorem ipsum dolor sit amet consectetur.
-          </p>
-          
-          <div className="space-y-4 md:space-y-6">
-            {steps.map((step) => (
-              <div key={step.number} className="flex items-start">
-                <div className={`w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center mr-2 md:mr-3 ${
-                  step.current ? "bg-[#174c65] text-white" : "bg-gray-200 text-gray-500"
-                }`}>
-                  {step.number}
-                </div>
-                <div>
-                  <h3 className={`text-sm md:text-base font-medium ${
-                    step.current ? "text-[#174c65]" : "text-gray-500"
-                  }`}>
-                    Step {step.number}
-                  </h3>
-                  <p className={`text-xs md:text-sm ${
-                    step.current ? "text-black" : "text-gray-500"
-                  }`}>
-                    {step.title}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <CreateProjectSteps steps={steps} />
         
         <div className="flex-1 p-4 md:p-10 overflow-auto">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-4">Prior Experience</h2>
           <p className="text-sm md:text-base text-gray-700 mb-6 md:mb-8 max-w-3xl">
-            To get started, fill out a high-level summary of the project so specialists can get an idea of the type of project underway. Next, select when you want your bids due by.
+            Tell us about your previous experience with renovation projects to help us provide better guidance.
           </p>
           
           <div className="space-y-8 mb-10">
             <div>
               <h3 className="text-lg font-medium mb-2">Last question</h3>
               <p className="text-gray-600 text-sm mb-6">
-                This range will help us understand what you are prepared to invest in this renovation. The final quote will be dependent on the final project specs.
+                Your previous experience helps us understand how to better assist you throughout your renovation journey.
               </p>
               
               <div className="space-y-6">
@@ -240,7 +231,7 @@ const PriorExperience = () => {
                     <div>
                       <p className="mb-2 font-medium">What aspects did you like?</p>
                       <Textarea 
-                        placeholder="Placeholder text" 
+                        placeholder="Share aspects of previous renovations you enjoyed" 
                         className="min-h-[160px]"
                         value={positiveAspects}
                         onChange={(e) => setPositiveAspects(e.target.value)}
@@ -249,7 +240,7 @@ const PriorExperience = () => {
                     <div>
                       <p className="mb-2 font-medium">Are there any aspects you disliked?</p>
                       <Textarea 
-                        placeholder="Placeholder text" 
+                        placeholder="Share aspects of previous renovations you didn't enjoy" 
                         className="min-h-[160px]"
                         value={negativeAspects}
                         onChange={(e) => setNegativeAspects(e.target.value)}
