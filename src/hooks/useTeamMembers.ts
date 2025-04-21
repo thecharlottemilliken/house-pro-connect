@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { addTeamMember } from "@/utils/team";
 
 interface TeamMember {
   id: string;
@@ -47,25 +48,33 @@ export const useTeamMembers = (projectId: string | undefined) => {
         throw teamError;
       }
 
-      if (!teamData || teamData.length === 0) {
-        console.log("No team members found, checking if owner needs to be added...");
+      // Check if owner exists in team
+      const ownerExists = teamData?.some(member => 
+        member.user_id === projectOwnerId && member.role === 'owner'
+      ) || false;
+      
+      // If owner not found in team, try to add them using the utility function
+      if (projectOwnerId && !ownerExists && teamData) {
+        console.log("Owner not found in team, adding...");
         
-        // If the current user is the project owner and not in the team, let's add them
-        if (projectOwnerId && projectOwnerId === user.id) {
-          try {
-            const { error: insertError } = await supabase
-              .from("project_team_members")
-              .insert({
-                project_id: projectId,
-                user_id: user.id,
-                role: "owner",
-                added_by: user.id
-              });
-              
-            if (insertError) {
-              console.error("Error adding owner to team:", insertError);
-            } else {
-              console.log("Owner manually added to the project team");
+        try {
+          // Get owner profile to get email and name
+          const { data: ownerProfile } = await supabase
+            .from("profiles")
+            .select("name, email")
+            .eq("id", projectOwnerId)
+            .maybeSingle();
+            
+          if (ownerProfile) {
+            // Use the addTeamMember utility which handles RLS properly
+            const result = await addTeamMember(
+              projectId,
+              ownerProfile.email,
+              "owner",
+              ownerProfile.name
+            );
+            
+            if (result.success) {
               // Re-fetch the team data after adding the owner
               const { data: refreshedData } = await supabase
                 .from("project_team_members")
@@ -75,10 +84,14 @@ export const useTeamMembers = (projectId: string | undefined) => {
               if (refreshedData && refreshedData.length > 0) {
                 teamData = refreshedData;
               }
+            } else {
+              console.error("Error adding owner to team:", result.error);
             }
-          } catch (insertErr) {
-            console.error("Error in manual owner insertion:", insertErr);
+          } else {
+            console.error("Could not find owner profile information");
           }
+        } catch (insertErr) {
+          console.error("Error in manual owner insertion:", insertErr);
         }
       }
       

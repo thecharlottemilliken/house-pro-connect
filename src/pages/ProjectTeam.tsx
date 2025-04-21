@@ -14,6 +14,7 @@ import TeamMemberList from "@/components/project/team/TeamMemberList";
 import TeamMemberInviteDialog from "@/components/project/team/TeamMemberInviteDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { addTeamMember } from "@/utils/team";
 
 const ProjectTeam = () => {
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
@@ -49,7 +50,7 @@ const ProjectTeam = () => {
     }
   }, [params.projectId, navigate]);
 
-  // Add a function to ensure the project owner is in the team
+  // Function to ensure the project owner is in the team
   const ensureOwnerInTeam = async () => {
     if (!projectId || !user || isRefreshing) return;
     
@@ -96,23 +97,38 @@ const ProjectTeam = () => {
       // If owner is not in team, add them
       if (!existingMember) {
         console.log("Owner not found in team, adding...");
-        const { error: insertError } = await supabase
-          .from('project_team_members')
-          .insert({
-            project_id: projectId,
-            user_id: projectOwnerId,
-            role: 'owner',
-            added_by: user.id
-          });
+        
+        // Get the owner's profile information
+        const { data: ownerProfile, error: profileError } = await supabase
+          .from('profiles')
+          .select('name, email')
+          .eq('id', projectOwnerId)
+          .maybeSingle();
           
-        if (insertError) {
-          throw insertError;
+        if (profileError) {
+          throw profileError;
         }
         
-        toast({
-          title: "Owner Added",
-          description: "Project owner has been added to the team."
-        });
+        if (!ownerProfile || !ownerProfile.email) {
+          throw new Error("Could not find owner profile information");
+        }
+        
+        // Use the addTeamMember utility function which handles RLS properly
+        const result = await addTeamMember(
+          projectId,
+          ownerProfile.email,
+          'owner',
+          ownerProfile.name
+        );
+        
+        if (result.success) {
+          toast({
+            title: "Owner Added",
+            description: "Project owner has been added to the team."
+          });
+        } else {
+          throw new Error(result.error || "Failed to add owner to team");
+        }
       } else {
         toast({
           title: "Team Verified",

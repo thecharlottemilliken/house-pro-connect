@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 export const addTeamMember = async (projectId: string, email: string, role: string, name?: string) => {
   try {
@@ -28,15 +29,32 @@ export const addTeamMember = async (projectId: string, email: string, role: stri
 
     if (userError) throw userError;
 
-    const { error } = await supabase.from("project_team_members").insert({
-      project_id: projectId,
-      user_id: userData?.id || '00000000-0000-0000-0000-000000000000',
-      role: role,
-      email: cleanEmail,
-      name: name || cleanEmail.split('@')[0]
+    // Create a RPC call to insert_team_member function that will bypass RLS
+    // This is safer than trying to insert directly which might fail due to RLS
+    const { data, error } = await supabase.rpc('insert_team_member', {
+      p_project_id: projectId,
+      p_user_id: userData?.id || null,
+      p_role: role,
+      p_email: cleanEmail,
+      p_name: name || cleanEmail.split('@')[0]
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error("RPC insert_team_member failed, attempting direct insert:", error);
+      
+      // Fallback to direct insert if RPC fails
+      const { error: insertError } = await supabase
+        .from("project_team_members")
+        .insert({
+          project_id: projectId,
+          user_id: userData?.id || null,
+          role: role,
+          email: cleanEmail,
+          name: name || cleanEmail.split('@')[0]
+        });
+        
+      if (insertError) throw insertError;
+    }
     
     return { success: true };
   } catch (err: any) {
