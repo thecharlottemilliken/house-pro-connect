@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -35,6 +36,7 @@ import CoachRoute from "./components/auth/CoachRoute";
 import ProjectSOW from "./pages/ProjectSOW";
 import SOWReviewPage from "@/components/project/sow/SOWReviewPage";
 import Jobs from "./pages/Jobs";
+import JobDetails from "./pages/JobDetails";
 
 const App = () => {
   return (
@@ -222,6 +224,13 @@ const App = () => {
           <ProtectedRoute>
             <TooltipProvider>
               <Jobs />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/job-details/:jobId" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <JobDetails />
             </TooltipProvider>
           </ProtectedRoute>
         } />

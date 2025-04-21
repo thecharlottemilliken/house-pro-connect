@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { Home as HomeIcon, Hammer, MapPin, Smile, Search, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -49,75 +50,8 @@ interface Job {
   };
 }
 
-const staticJobsList = [
-  {
-    id: "1",
-    title: "Kitchen Renovation in Sugarhouse",
-    status: "Partial Remodel",
-    rooms: 5,
-    timeLeft: "2 days 4:00:12",
-    distance: "1 mile from base",
-    image: "/lovable-uploads/2ec4131e-e56c-4581-855e-2e1c9ec52254.png",
-    price: "$15,000 - $25,000",
-    type: "Kitchen",
-    lat: 40.7259,
-    lng: -111.8563
-  },
-  {
-    id: "2",
-    title: "Revamping the Bathroom in Maplewood",
-    status: "Partial Remodel",
-    rooms: 5,
-    timeLeft: "5 days 5:15:30",
-    distance: "2 miles from base",
-    image: "/lovable-uploads/8c4d6248-faa6-4667-85d0-58814934baa3.png",
-    price: "$8,000 - $12,000",
-    type: "Bathroom",
-    lat: 40.7538,
-    lng: -111.8717
-  },
-  {
-    id: "3",
-    title: "Living Room Makeover in Oakridge",
-    status: "Partial Remodel",
-    rooms: 6,
-    timeLeft: "6 days 6:45:45",
-    distance: "2 miles from base",
-    image: "/lovable-uploads/2069326c-e836-4307-bba2-93ef8b361ae6.png",
-    price: "$10,000 - $18,000",
-    type: "Living Room",
-    lat: 40.7678,
-    lng: -111.8315
-  },
-  {
-    id: "4",
-    title: "Home Office Renovation in Pine Valley",
-    status: "Partial Remodel",
-    rooms: 5,
-    timeLeft: "7 days 3:30:10",
-    distance: "2 miles from base",
-    image: "/lovable-uploads/b1b634cc-fc1b-43cb-86e5-d9576db2461c.png",
-    price: "$7,500 - $12,000",
-    type: "Office",
-    lat: 40.7384,
-    lng: -111.8017
-  },
-  {
-    id: "5",
-    title: "Updating the Dining Room in Cedar Grove",
-    status: "Partial Remodel",
-    rooms: 5,
-    timeLeft: "8 days 7:20:55",
-    distance: "2 miles from base",
-    image: "/lovable-uploads/51078945-7086-4860-bd68-bc61f9eb8ae6.png",
-    price: "$9,000 - $15,000",
-    type: "Dining Room",
-    lat: 40.7425,
-    lng: -111.8832
-  },
-];
-
 const Jobs: React.FC = () => {
+  const navigate = useNavigate();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
@@ -242,6 +176,10 @@ const Jobs: React.FC = () => {
   const handleCardHover = (jobId: string) => {
     setActiveJobId(jobId);
   };
+  
+  const handleCardClick = (jobId: string) => {
+    navigate(`/job-details/${jobId}`);
+  };
 
   // For map display, we need to transform the jobs to include lat/lng
   const mapJobs = filteredJobs.map(job => ({
@@ -331,7 +269,7 @@ const Jobs: React.FC = () => {
                           ? "ring-2 ring-[#9b87f5] shadow-lg"
                           : "shadow-sm border-none hover:ring-2 hover:ring-[#9b87f5]/50"
                       } overflow-hidden transition-all duration-200 cursor-pointer`}
-                      onClick={() => handlePinClick(job.id)}
+                      onClick={() => handleCardClick(job.id)}
                     >
                       <img
                         src={job.property.image || "/placeholder.svg"}
