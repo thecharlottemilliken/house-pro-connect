@@ -1,4 +1,3 @@
-
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -38,8 +37,8 @@ const DashboardNavbar = () => {
             <NavItem label="COACH DASHBOARD" path="/coach-dashboard" isActive={isCoachDashboardActive} />
           )}
           <NavItem label="PROJECTS" path="/projects" isActive={isProjectsActive} />
+          <NavItem label="JOBS" path="/jobs" isActive={currentPath === '/jobs'} />
           <NavItem label="REAL ESTATE" path="/real-estate" isActive={currentPath === '/real-estate'} />
-          <NavItem label="JOBS" path="/your-projects" isActive={currentPath === '/your-projects'} />
           <NavItem label="YOUR PROPERTIES" path="/your-properties" isActive={currentPath === '/your-properties'} />
           <NavItem label="MESSAGES" path="/messages" isActive={currentPath === '/messages'} />
         </div>
@@ -87,8 +86,8 @@ const DashboardNavbar = () => {
               <MobileNavItem label="COACH DASHBOARD" path="/coach-dashboard" isActive={isCoachDashboardActive} onClick={() => setMobileMenuOpen(false)} />
             )}
             <MobileNavItem label="PROJECTS" path="/projects" isActive={isProjectsActive} onClick={() => setMobileMenuOpen(false)} />
+            <MobileNavItem label="JOBS" path="/jobs" isActive={currentPath === '/jobs'} onClick={() => setMobileMenuOpen(false)} />
             <MobileNavItem label="REAL ESTATE" path="/real-estate" isActive={currentPath === '/real-estate'} onClick={() => setMobileMenuOpen(false)} />
-            <MobileNavItem label="JOBS" path="/your-projects" isActive={currentPath === '/your-projects'} onClick={() => setMobileMenuOpen(false)} />
             <MobileNavItem label="YOUR PROPERTIES" path="/your-properties" isActive={currentPath === '/your-properties'} onClick={() => setMobileMenuOpen(false)} />
             <MobileNavItem label="MESSAGES" path="/messages" isActive={currentPath === '/messages'} onClick={() => setMobileMenuOpen(false)} />
             
