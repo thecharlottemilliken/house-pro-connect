@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ChevronLeft, Eye, FileText, Plus, Trash } from "lucide-react";
@@ -117,15 +118,32 @@ const JobDetails = () => {
         if (propertyError) throw propertyError;
         if (!property) throw new Error("Property not found");
 
+        // Parse JSON fields if they are stored as strings
+        const parseJsonField = (field: any, defaultValue: any) => {
+          if (!field) return defaultValue;
+          try {
+            return typeof field === 'string' ? JSON.parse(field) : field;
+          } catch (e) {
+            console.error(`Error parsing field:`, e);
+            return defaultValue;
+          }
+        };
+
+        // Extract labor items from the SOW
+        const laborItems = parseJsonField(sow.labor_items, []);
+        console.log("Labor items:", laborItems);
+        
+        // Extract material items from the SOW
+        const materialItems = parseJsonField(sow.material_items, []);
+        console.log("Material items:", materialItems);
+
         const jobDetailsObj: JobDetails = {
           id: sow.id,
           status: sow.status,
-          work_areas: typeof sow.work_areas === 'string' ? JSON.parse(sow.work_areas) : sow.work_areas || [],
-          labor_items: typeof sow.labor_items === 'string' ? JSON.parse(sow.labor_items) : sow.labor_items || [],
-          material_items: typeof sow.material_items === 'string' ? JSON.parse(sow.material_items) : sow.material_items || [],
-          bid_configuration: typeof sow.bid_configuration === 'string'
-            ? JSON.parse(sow.bid_configuration)
-            : (sow.bid_configuration || { bidDuration: "7" }),
+          work_areas: parseJsonField(sow.work_areas, []),
+          labor_items: laborItems,
+          material_items: materialItems,
+          bid_configuration: parseJsonField(sow.bid_configuration, { bidDuration: "7" }),
           approved_at: sow.updated_at,
           project: {
             id: project.id,
@@ -140,6 +158,7 @@ const JobDetails = () => {
             state: property.state
           }
         };
+        
         setJobDetails(jobDetailsObj);
         if (jobDetailsObj.work_areas?.length > 0 && jobDetailsObj.work_areas[0].name) {
           setNewItem(prev => ({
@@ -261,10 +280,13 @@ const JobDetails = () => {
     <>
       <DashboardNavbar />
       <div className="min-h-screen bg-[#F5F8FA]">
-        <div className="max-w-7xl mx-auto px-4 py-0">
+        <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="mb-8">
             <Button variant="ghost" className="flex items-center text-[#1A1F2C]" asChild>
-              
+              <Link to="/jobs">
+                <ChevronLeft size={16} className="mr-2" />
+                Back to Jobs
+              </Link>
             </Button>
           </div>
 
@@ -352,16 +374,25 @@ const JobDetails = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {jobDetails.work_areas && jobDetails.work_areas.length > 0 ? jobDetails.work_areas.map((area, index) => <TableRow key={index}>
+                      {jobDetails.work_areas && jobDetails.work_areas.length > 0 ? (
+                        jobDetails.work_areas.map((area, index) => (
+                          <TableRow key={index}>
                             <TableCell>{area.name || "N/A"}</TableCell>
-                            <TableCell>{area.size || "2050"} SQFT</TableCell>
+                            <TableCell>{(area.measurements?.totalSqft || area.size || "2050")} SQFT</TableCell>
                             <TableCell>{area.dimensions || "50 X 13 X 20"}</TableCell>
-                            <TableCell>{area.affected_areas?.join(", ") || "N/A"}</TableCell>
-                          </TableRow>) : <TableRow>
+                            <TableCell>
+                              {area.additionalAreas?.map(a => a.name).join(", ") || 
+                               area.affectedAreas?.map(a => a.name).join(", ") || "N/A"}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
                           <TableCell colSpan={4} className="text-center py-4">
                             No work areas defined
                           </TableCell>
-                        </TableRow>}
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -374,36 +405,52 @@ const JobDetails = () => {
                       Select Labor Items to Bid On
                     </AccordionTrigger>
                     <AccordionContent className="px-6 pb-4">
-                      {jobDetails.labor_items && jobDetails.labor_items.length > 0 ? <div className="space-y-4">
-                          {jobDetails.labor_items.map((item, index) => <Card key={index} className="p-4 border-l-4 border-blue-500">
+                      {jobDetails.labor_items && jobDetails.labor_items.length > 0 ? (
+                        <div className="space-y-4">
+                          {jobDetails.labor_items.map((item, index) => (
+                            <Card key={index} className="p-4 border-l-4 border-blue-500">
                               <div className="flex justify-between">
                                 <div>
-                                  <h3 className="font-medium">{item.name || `Item ${index + 1}`}</h3>
-                                  <p className="text-sm text-gray-500">{item.description || "No description provided"}</p>
+                                  <h3 className="font-medium">{item.task || item.name || `Item ${index + 1}`}</h3>
+                                  <p className="text-sm text-gray-500">
+                                    {item.description || "Part of the bathroom renovation project"}
+                                  </p>
                                   <div className="mt-2">
                                     <span className="text-xs bg-gray-100 px-2 py-1 rounded">
-                                      Area: {item.area || "All"}
+                                      Area: {item.rooms?.[0]?.name || item.area || "All"}
                                     </span>
+                                    {item.category && (
+                                      <span className="text-xs bg-gray-100 px-2 py-1 rounded ml-2">
+                                        Category: {item.category}
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
-                                <Button size="sm" onClick={() => {
-                            setNewItem({
-                              ...newItem,
-                              category: "labor",
-                              type: "Labor",
-                              description: item.name || `Labor Item ${index + 1}`,
-                              area: item.area || "All"
-                            });
-                            window.scrollTo({
-                              top: document.body.scrollHeight,
-                              behavior: 'smooth'
-                            });
-                          }}>
+                                <Button 
+                                  size="sm" 
+                                  onClick={() => {
+                                    setNewItem({
+                                      ...newItem,
+                                      category: "labor",
+                                      type: "Labor",
+                                      description: item.task || item.name || `Labor Item ${index + 1}`,
+                                      area: item.rooms?.[0]?.name || item.area || "All"
+                                    });
+                                    window.scrollTo({
+                                      top: document.body.scrollHeight,
+                                      behavior: 'smooth'
+                                    });
+                                  }}
+                                >
                                   Add to Bid
                                 </Button>
                               </div>
-                            </Card>)}
-                        </div> : <p className="text-gray-500 py-2">No labor items defined</p>}
+                            </Card>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-gray-500 py-2">No labor items defined</p>
+                      )}
                     </AccordionContent>
                   </AccordionItem>
 
@@ -412,36 +459,57 @@ const JobDetails = () => {
                       Select Material Items to Bid On
                     </AccordionTrigger>
                     <AccordionContent className="px-6 pb-4">
-                      {jobDetails.material_items && jobDetails.material_items.length > 0 ? <div className="space-y-4">
-                          {jobDetails.material_items.map((item, index) => <Card key={index} className="p-4 border-l-4 border-green-500">
+                      {jobDetails.material_items && jobDetails.material_items.length > 0 ? (
+                        <div className="space-y-4">
+                          {jobDetails.material_items.map((item, index) => (
+                            <Card key={index} className="p-4 border-l-4 border-green-500">
                               <div className="flex justify-between">
                                 <div>
-                                  <h3 className="font-medium">{item.name || `Material ${index + 1}`}</h3>
-                                  <p className="text-sm text-gray-500">{item.description || "No description provided"}</p>
+                                  <h3 className="font-medium">{item.type || item.name || `Material ${index + 1}`}</h3>
+                                  <p className="text-sm text-gray-500">
+                                    {item.description || `${item.category || 'General'} material needed for the project`}
+                                  </p>
                                   <div className="mt-2">
                                     <span className="text-xs bg-gray-100 px-2 py-1 rounded">
                                       Type: {item.type || "Standard"}
                                     </span>
+                                    {item.category && (
+                                      <span className="text-xs bg-gray-100 px-2 py-1 rounded ml-2">
+                                        Category: {item.category}
+                                      </span>
+                                    )}
+                                    {item.rooms && item.rooms.length > 0 && (
+                                      <span className="text-xs bg-gray-100 px-2 py-1 rounded ml-2">
+                                        Room: {item.rooms[0].name}
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
-                                <Button size="sm" onClick={() => {
-                            setNewItem({
-                              ...newItem,
-                              category: "material",
-                              type: "Material",
-                              description: item.name || `Material Item ${index + 1}`,
-                              area: item.area || "All"
-                            });
-                            window.scrollTo({
-                              top: document.body.scrollHeight,
-                              behavior: 'smooth'
-                            });
-                          }}>
+                                <Button 
+                                  size="sm" 
+                                  onClick={() => {
+                                    setNewItem({
+                                      ...newItem,
+                                      category: "material",
+                                      type: "Material",
+                                      description: item.type || item.name || `Material Item ${index + 1}`,
+                                      area: item.rooms?.[0]?.name || item.area || "All"
+                                    });
+                                    window.scrollTo({
+                                      top: document.body.scrollHeight,
+                                      behavior: 'smooth'
+                                    });
+                                  }}
+                                >
                                   Add to Bid
                                 </Button>
                               </div>
-                            </Card>)}
-                        </div> : <p className="text-gray-500 py-2">No material items defined</p>}
+                            </Card>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-gray-500 py-2">No material items defined</p>
+                      )}
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
