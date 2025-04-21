@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Check, Info } from "lucide-react";
@@ -44,7 +43,6 @@ const ProjectPreferences = () => {
   const [propertyName, setPropertyName] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   
-  // Create an object to store all project preferences data that will be passed to next steps
   const [projectPrefs, setProjectPrefs] = useState<any>({});
 
   useEffect(() => {
@@ -66,7 +64,6 @@ const ProjectPreferences = () => {
         setPropertyName(location.state.propertyName);
       }
       
-      // Set project preferences from location state
       setProjectPrefs(location.state);
     } else {
       navigate("/create-project");
@@ -103,7 +100,6 @@ const ProjectPreferences = () => {
     setIsSubmitting(true);
     
     try {
-      // Create project preferences object
       const projectPreferences = {
         budget,
         useFinancing,
@@ -116,7 +112,6 @@ const ProjectPreferences = () => {
       
       let newProjectId = projectId;
       
-      // If we don't have a project ID yet, create a new project
       if (!projectId && propertyId && user) {
         try {
           console.log('Creating new project with data:', {
@@ -125,7 +120,7 @@ const ProjectPreferences = () => {
             title: `${propertyName || 'New'} Renovation Project`,
             project_preferences: projectPreferences,
             renovation_areas: renovationAreas,
-            prior_experience: {} // Add empty object for prior_experience to satisfy RLS
+            prior_experience: {}
           });
           
           const { data, error } = await supabase
@@ -136,7 +131,7 @@ const ProjectPreferences = () => {
               title: `${propertyName || 'New'} Renovation Project`,
               project_preferences: projectPreferences,
               renovation_areas: renovationAreas,
-              prior_experience: {} // Add empty object for prior_experience
+              prior_experience: {}
             })
             .select('id')
             .single();
@@ -149,6 +144,10 @@ const ProjectPreferences = () => {
           console.log('Project created successfully:', data);
           newProjectId = data.id;
           setProjectId(newProjectId);
+          
+          setTimeout(() => {
+            console.log('Checking if owner was added to team for project:', newProjectId);
+          }, 500);
           
           toast({
             title: "Success",
@@ -164,9 +163,7 @@ const ProjectPreferences = () => {
           setIsSubmitting(false);
           return;
         }
-      } 
-      // If we already have a project ID, update it
-      else if (projectId) {
+      } else if (projectId) {
         try {
           console.log('Updating project with ID:', projectId);
           
@@ -197,7 +194,6 @@ const ProjectPreferences = () => {
           return;
         }
       } else {
-        // If we don't have a user or property ID, show an error
         console.error('Missing required information:', { user, propertyId });
         toast({
           title: "Error",
@@ -208,7 +204,6 @@ const ProjectPreferences = () => {
         return;
       }
       
-      // Update the state with the new preferences
       const updatedProjectPrefs = {
         ...projectPrefs,
         propertyId,
@@ -220,7 +215,6 @@ const ProjectPreferences = () => {
       
       setProjectPrefs(updatedProjectPrefs);
       
-      // Navigate to the next step
       navigate("/construction-preferences", {
         state: updatedProjectPrefs
       });
