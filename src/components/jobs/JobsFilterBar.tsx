@@ -17,13 +17,13 @@ interface JobsFilterBarProps {
 
 const projectTypes = ["Kitchen", "Bathroom", "Living Room", "Office", "Dining Room"];
 const priceRanges = [
-  { label: "Any", value: "" },
+  { label: "Any", value: "any" },
   { label: "$7k-$11k", value: "7000-11000" },
   { label: "$11k-$15k", value: "11000-15000" },
   { label: "$15k-$25k", value: "15000-25000" },
 ];
 const distances = [
-  { label: "Any", value: "" },
+  { label: "Any", value: "any" },
   { label: "1 mile", value: "1" },
   { label: "2 miles", value: "2" },
 ];
@@ -52,19 +52,19 @@ export function JobsFilterBar({
           className="w-[170px] bg-[#F5F8FA] text-[#1A1F2C] border-gray-300"
         />
         {/* Type */}
-        <Select value={selectedType ?? ""} onValueChange={val => setSelectedType(val || null)}>
+        <Select value={selectedType ?? "all"} onValueChange={val => setSelectedType(val === "all" ? null : val)}>
           <SelectTrigger className="w-[120px] bg-[#F5F8FA] border-gray-300">
             <SelectValue placeholder="Type" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Types</SelectItem>
+            <SelectItem value="all">All Types</SelectItem>
             {projectTypes.map(type => (
               <SelectItem value={type} key={type}>{type}</SelectItem>
             ))}
           </SelectContent>
         </Select>
         {/* Price */}
-        <Select value={selectedPrice ?? ""} onValueChange={val => setSelectedPrice(val || null)}>
+        <Select value={selectedPrice ?? "any"} onValueChange={val => setSelectedPrice(val === "any" ? null : val)}>
           <SelectTrigger className="w-[120px] bg-[#F5F8FA] border-gray-300">
             <SelectValue placeholder="Price" />
           </SelectTrigger>
@@ -75,7 +75,7 @@ export function JobsFilterBar({
           </SelectContent>
         </Select>
         {/* Distance */}
-        <Select value={selectedDistance ?? ""} onValueChange={val => setSelectedDistance(val || null)}>
+        <Select value={selectedDistance ?? "any"} onValueChange={val => setSelectedDistance(val === "any" ? null : val)}>
           <SelectTrigger className="w-[120px] bg-[#F5F8FA] border-gray-300">
             <SelectValue placeholder="Distance" />
           </SelectTrigger>
