@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { Filter, Home as HomeIcon, Hammer, MapPin, Smile, Search, ChevronDown } from "lucide-react";
@@ -22,6 +21,7 @@ import {
 import MapPinsOverlay from "@/components/jobs/MapPinsOverlay";
 import MapboxMap from "@/components/jobs/MapboxMap";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/components/ui/use-toast";
 
 const jobsList = [
   {
@@ -99,29 +99,43 @@ const Jobs: React.FC = () => {
   const [selectedDistance, setSelectedDistance] = useState<string | null>(null);
   const [filteredJobs, setFilteredJobs] = useState(jobsList);
   const [mapboxToken, setMapboxToken] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch Mapbox token securely from Supabase secrets
     async function loadMapboxToken() {
-      // Supabase provides secrets as environment variables via Edge Functions, but
-      // from the client, there is no direct way to get secrets.
-      // However, as per the instructions, we'll assume Lovable is managing to expose the secret securely.
-      // For this project, we'll call an edge function or a secure API endpoint to retrieve the secret.
-      // If no edge function is available, consider asking the user to create it or set it manually.
-      // For now, let's simulate fetching from an edge function called "get-mapbox-token".
+      setIsLoading(true);
       try {
-        const { data, error } = await supabase.functions.invoke('get-mapbox-token');
+        const { data, error } = await supabase.functions.invoke("get-mapbox-token");
+        
         if (error) {
-          console.error("Failed to load the Mapbox token from Supabase functions", error);
+          console.error("Failed to load the Mapbox token:", error);
+          toast({
+            title: "Error loading map",
+            description: "Could not load the map configuration. Please try again later.",
+            variant: "destructive",
+          });
         } else if (data?.token) {
           setMapboxToken(data.token);
         } else {
           console.warn("No token received from get-mapbox-token");
+          toast({
+            title: "Map configuration error",
+            description: "Map token is missing. Please contact support.",
+            variant: "destructive",
+          });
         }
       } catch (err) {
-        console.error("Error invoking get-mapbox-token function", err);
+        console.error("Error invoking get-mapbox-token function:", err);
+        toast({
+          title: "Connection error",
+          description: "Could not connect to the map service. Please check your internet connection.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
       }
     }
+    
     loadMapboxToken();
   }, []);
 
@@ -166,31 +180,31 @@ const Jobs: React.FC = () => {
     <div className="relative w-full min-h-screen bg-[#F5F8FA] flex flex-col">
       <DashboardNavbar />
 
-      {!mapboxToken && (
-        <div className="flex items-center justify-center absolute inset-0 z-50 bg-white/80 backdrop-blur">
-          <div className="bg-white p-8 rounded-xl shadow-lg space-y-4 border text-center">
-            <h2 className="text-xl font-semibold text-gray-700 mb-2">Add Mapbox Public Token</h2>
-            <p className="mb-2 text-gray-500">To view the interactive map, please paste your Mapbox public token here.<br />You can get your token at <a href='https://mapbox.com/' target='_blank' className="underline font-semibold">mapbox.com</a>.</p>
-            <input
-              type="text"
-              className="px-3 py-2 border rounded w-full outline-none"
-              placeholder="pk.abcdefghijklmnopqrstuvwxyz..."
-              value={mapboxToken}
-              onChange={(e) => setMapboxToken(e.target.value)}
-            />
-          </div>
-        </div>
-      )}
-
       <div className="relative flex-1 h-[calc(100vh-126px)] min-h-0">
         <div className="absolute inset-0 z-0">
-          {mapboxToken && (
+          {isLoading ? (
+            <div className="flex items-center justify-center w-full h-full bg-gray-100">
+              <div className="text-center">
+                <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite] mb-3"></div>
+                <p className="text-gray-600">Loading map...</p>
+              </div>
+            </div>
+          ) : mapboxToken ? (
             <MapboxMap
               jobs={jobsList.map(j => ({ id: j.id, lat: j.lat, lng: j.lng }))}
               activeJobId={activeJobId}
               onPinClick={handlePinClick}
               mapboxToken={mapboxToken}
             />
+          ) : (
+            <div className="flex items-center justify-center w-full h-full bg-gray-100">
+              <div className="bg-white p-8 rounded-xl shadow-lg space-y-4 border text-center max-w-md">
+                <h2 className="text-xl font-semibold text-gray-700 mb-2">Could Not Load Map</h2>
+                <p className="mb-2 text-gray-500">
+                  We encountered an error loading the map. Please try refreshing the page or contact support.
+                </p>
+              </div>
+            </div>
           )}
         </div>
 
@@ -278,4 +292,3 @@ const Jobs: React.FC = () => {
 };
 
 export default Jobs;
-

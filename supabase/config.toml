@@ -6,3 +6,6 @@ verify_jwt = true
 
 [functions.get-user-data]
 verify_jwt = true
+
+[functions.get-mapbox-token]
+verify_jwt = false
