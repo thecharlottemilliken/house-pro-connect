@@ -37,7 +37,7 @@ export function JobsFilterBar({
   searchQuery, setSearchQuery
 }: JobsFilterBarProps) {
   return (
-    <div className={`flex flex-col gap-3 md:flex-row md:items-center md:justify-between px-4 pb-2 pt-4 ${barBg} sticky top-0 z-30 rounded-tl-xl w-full`}>
+    <div className={`flex flex-col gap-3 md:flex-row md:items-center md:justify-between px-4 py-3 ${barBg} w-full`}>
       <div className="flex items-center gap-2 flex-shrink-0">
         <Filter className="w-5 h-5 text-[#9b87f5]" />
         <span className="font-semibold text-[#222] text-base">Filter Projects</span>
@@ -91,4 +91,3 @@ export function JobsFilterBar({
 }
 
 export default JobsFilterBar;
-

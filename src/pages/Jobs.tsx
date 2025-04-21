@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
-import { Filter, Home as HomeIcon, Hammer, MapPin, Smile, Search, ChevronDown } from "lucide-react";
+import { Home as HomeIcon, Hammer, MapPin, Smile, Search, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -181,54 +181,61 @@ const Jobs: React.FC = () => {
     <div className="relative w-full min-h-screen bg-[#F5F8FA] flex flex-col">
       <DashboardNavbar />
 
-      <div className="relative flex-1 h-[calc(100vh-126px)] min-h-0">
-        <div className="absolute inset-0 z-0">
-          {isLoading ? (
-            <div className="flex items-center justify-center w-full h-full bg-gray-100">
-              <div className="text-center">
-                <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite] mb-3"></div>
-                <p className="text-gray-600">Loading map...</p>
+      {/* Sticky, full-width filter bar */}
+      <div className="sticky top-0 z-30 w-full bg-white/90 border-b border-gray-200">
+        <JobsFilterBar
+          selectedType={selectedType}
+          setSelectedType={setSelectedType}
+          selectedPrice={selectedPrice}
+          setSelectedPrice={setSelectedPrice}
+          selectedDistance={selectedDistance}
+          setSelectedDistance={setSelectedDistance}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+        />
+      </div>
+      
+      <div className="relative flex-1 min-h-0 flex">
+        {/* Map */}
+        <div className="relative flex-1 h-[calc(100vh-126px)] min-h-0">
+          <div className="absolute inset-0 z-0">
+            {isLoading ? (
+              <div className="flex items-center justify-center w-full h-full bg-gray-100">
+                <div className="text-center">
+                  <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite] mb-3"></div>
+                  <p className="text-gray-600">Loading map...</p>
+                </div>
               </div>
-            </div>
-          ) : mapboxToken ? (
-            <MapboxMap
-              jobs={jobsList.map(j => ({ id: j.id, lat: j.lat, lng: j.lng }))}
-              activeJobId={activeJobId}
-              onPinClick={handlePinClick}
-              mapboxToken={mapboxToken}
-            />
-          ) : (
-            <div className="flex items-center justify-center w-full h-full bg-gray-100">
-              <div className="bg-white p-8 rounded-xl shadow-lg space-y-4 border text-center max-w-md">
-                <h2 className="text-xl font-semibold text-gray-700 mb-2">Could Not Load Map</h2>
-                <p className="mb-2 text-gray-500">
-                  We encountered an error loading the map. Please try refreshing the page or contact support.
-                </p>
+            ) : mapboxToken ? (
+              <MapboxMap
+                jobs={jobsList.map(j => ({ id: j.id, lat: j.lat, lng: j.lng }))}
+                activeJobId={activeJobId}
+                onPinClick={handlePinClick}
+                mapboxToken={mapboxToken}
+              />
+            ) : (
+              <div className="flex items-center justify-center w-full h-full bg-gray-100">
+                <div className="bg-white p-8 rounded-xl shadow-lg space-y-4 border text-center max-w-md">
+                  <h2 className="text-xl font-semibold text-gray-700 mb-2">Could Not Load Map</h2>
+                  <p className="mb-2 text-gray-500">
+                    We encountered an error loading the map. Please try refreshing the page or contact support.
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-
+        {/* Aside job list */}
         <aside
           className="
-          absolute top-0 right-0 h-full w-full md:w-[400px] xl:w-[430px] z-20
-          bg-gradient-to-l from-white/98 via-white/80 to-white/10
-          shadow-2xl border-l border-gray-200
-          flex flex-col transition-all duration-300
-          pointer-events-auto
+            relative h-auto w-full md:w-[400px] xl:w-[430px] z-20
+            bg-gradient-to-l from-white/98 via-white/80 to-white/10
+            shadow-2xl border-l border-gray-200
+            flex flex-col transition-all duration-300
+            pointer-events-auto
           "
           style={{ backdropFilter: "blur(8px)" }}
         >
-          <JobsFilterBar
-            selectedType={selectedType}
-            setSelectedType={setSelectedType}
-            selectedPrice={selectedPrice}
-            setSelectedPrice={setSelectedPrice}
-            selectedDistance={selectedDistance}
-            setSelectedDistance={setSelectedDistance}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-          />
           <div className="flex-1 overflow-y-auto px-4 pb-6 custom-scrollbar mt-2">
             <ul className="space-y-4">
               {filteredJobs.map((job) => (
