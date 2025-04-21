@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { Filter, Home as HomeIcon, Hammer, MapPin, Smile, Search, ChevronDown } from "lucide-react";
@@ -20,6 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import MapPinsOverlay from "@/components/jobs/MapPinsOverlay";
 import MapboxMap from "@/components/jobs/MapboxMap";
+import { supabase } from "@/integrations/supabase/client";
 
 const jobsList = [
   {
@@ -99,32 +101,57 @@ const Jobs: React.FC = () => {
   const [mapboxToken, setMapboxToken] = useState<string>("");
 
   useEffect(() => {
+    // Fetch Mapbox token securely from Supabase secrets
+    async function loadMapboxToken() {
+      // Supabase provides secrets as environment variables via Edge Functions, but
+      // from the client, there is no direct way to get secrets.
+      // However, as per the instructions, we'll assume Lovable is managing to expose the secret securely.
+      // For this project, we'll call an edge function or a secure API endpoint to retrieve the secret.
+      // If no edge function is available, consider asking the user to create it or set it manually.
+      // For now, let's simulate fetching from an edge function called "get-mapbox-token".
+      try {
+        const { data, error } = await supabase.functions.invoke('get-mapbox-token');
+        if (error) {
+          console.error("Failed to load the Mapbox token from Supabase functions", error);
+        } else if (data?.token) {
+          setMapboxToken(data.token);
+        } else {
+          console.warn("No token received from get-mapbox-token");
+        }
+      } catch (err) {
+        console.error("Error invoking get-mapbox-token function", err);
+      }
+    }
+    loadMapboxToken();
+  }, []);
+
+  useEffect(() => {
     let results = jobsList;
-    
+
     if (searchQuery) {
-      results = results.filter(job => 
+      results = results.filter(job =>
         job.title.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
-    
+
     if (selectedType) {
       results = results.filter(job => job.type === selectedType);
     }
-    
+
     if (selectedPrice) {
       results = results;
     }
-    
+
     if (selectedDistance) {
       results = results;
     }
-    
+
     setFilteredJobs(results);
   }, [searchQuery, selectedType, selectedPrice, selectedDistance]);
 
   const handlePinClick = (jobId: string) => {
     setActiveJobId(jobId);
-    
+
     const jobCard = document.getElementById(`job-card-${jobId}`);
     if (jobCard) {
       jobCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -143,7 +170,7 @@ const Jobs: React.FC = () => {
         <div className="flex items-center justify-center absolute inset-0 z-50 bg-white/80 backdrop-blur">
           <div className="bg-white p-8 rounded-xl shadow-lg space-y-4 border text-center">
             <h2 className="text-xl font-semibold text-gray-700 mb-2">Add Mapbox Public Token</h2>
-            <p className="mb-2 text-gray-500">To view the interactive map, please paste your Mapbox public token here.<br/>You can get your token at <a href='https://mapbox.com/' target='_blank' className="underline font-semibold">mapbox.com</a>.</p>
+            <p className="mb-2 text-gray-500">To view the interactive map, please paste your Mapbox public token here.<br />You can get your token at <a href='https://mapbox.com/' target='_blank' className="underline font-semibold">mapbox.com</a>.</p>
             <input
               type="text"
               className="px-3 py-2 border rounded w-full outline-none"
@@ -167,13 +194,15 @@ const Jobs: React.FC = () => {
           )}
         </div>
 
-        <aside className="
+        <aside
+          className="
           absolute top-0 right-0 h-full w-full md:w-[400px] xl:w-[430px] z-20
           bg-gradient-to-l from-white/98 via-white/80 to-white/10
           shadow-2xl border-l border-gray-200
           flex flex-col transition-all duration-300
           pointer-events-auto
-          " style={{backdropFilter: "blur(8px)"}}
+          "
+          style={{ backdropFilter: "blur(8px)" }}
         >
           <div className="px-6 pt-5 pb-3 flex flex-col gap-3 bg-white/95 sticky top-0 z-10 border-b border-gray-200 rounded-tl-xl">
             <div className="flex items-center justify-between mb-1">
@@ -197,17 +226,17 @@ const Jobs: React.FC = () => {
           <div className="flex-1 overflow-y-auto px-4 pb-6 custom-scrollbar mt-2">
             <ul className="space-y-4">
               {filteredJobs.map((job) => (
-                <li 
-                  key={job.id} 
+                <li
+                  key={job.id}
                   id={`job-card-${job.id}`}
                   onMouseEnter={() => handleCardHover(job.id)}
                   onMouseLeave={() => setActiveJobId(null)}
                   className="relative"
                 >
-                  <Card 
+                  <Card
                     className={`flex flex-row p-2 bg-white rounded-lg ${
-                      activeJobId === job.id 
-                        ? "ring-2 ring-[#9b87f5] shadow-lg" 
+                      activeJobId === job.id
+                        ? "ring-2 ring-[#9b87f5] shadow-lg"
                         : "shadow-sm border-none hover:ring-2 hover:ring-[#9b87f5]/50"
                     } overflow-hidden transition-all duration-200 cursor-pointer`}
                     onClick={() => handlePinClick(job.id)}
@@ -249,3 +278,4 @@ const Jobs: React.FC = () => {
 };
 
 export default Jobs;
+
