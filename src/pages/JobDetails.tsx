@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ChevronLeft, MapPin, Eye, FileText, Plus, Trash } from "lucide-react";
+import { ChevronLeft, Eye, FileText, Plus, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 import DashboardNavbar from '@/components/dashboard/DashboardNavbar';
+
 interface JobDetails {
   id: string;
   status: string;
@@ -27,8 +28,7 @@ interface JobDetails {
   project: {
     id: string;
     title: string;
-    description?: string;
-    property_id?: string;
+    property_id: string;
   };
   property: {
     id: string;
@@ -47,12 +47,9 @@ interface BidItem {
   unitRate: number;
   area: string;
 }
+
 const JobDetails = () => {
-  const {
-    jobId
-  } = useParams<{
-    jobId: string;
-  }>();
+  const { jobId } = useParams<{ jobId: string }>();
   const [jobDetails, setJobDetails] = useState<JobDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [workDescription, setWorkDescription] = useState("");
@@ -72,15 +69,15 @@ const JobDetails = () => {
     unitRate: 0,
     area: ""
   });
+
   useEffect(() => {
     const fetchJobDetails = async () => {
       if (!jobId) return;
       setIsLoading(true);
       try {
-        const {
-          data: sow,
-          error: sowError
-        } = await supabase.from('statement_of_work').select(`
+        const { data: sow, error: sowError } = await supabase
+          .from('statement_of_work')
+          .select(`
             id,
             status,
             work_areas,
@@ -89,7 +86,10 @@ const JobDetails = () => {
             bid_configuration,
             updated_at,
             project_id
-          `).eq('id', jobId).single();
+          `)
+          .eq('id', jobId)
+          .maybeSingle();
+
         if (sowError) throw sowError;
         if (!sow) {
           toast({
@@ -97,27 +97,35 @@ const JobDetails = () => {
             description: "The requested job details could not be found.",
             variant: "destructive"
           });
+          setIsLoading(false);
           return;
         }
-        const {
-          data: project,
-          error: projectError
-        } = await supabase.from('projects').select('id, title, property_id').eq('id', sow.project_id).single();
+
+        const { data: project, error: projectError } = await supabase
+          .from('projects')
+          .select('id, title, property_id')
+          .eq('id', sow.project_id)
+          .maybeSingle();
         if (projectError) throw projectError;
-        const {
-          data: property,
-          error: propertyError
-        } = await supabase.from('properties').select('id, home_photos, image_url, address_line1, city, state').eq('id', project.property_id).single();
+        if (!project) throw new Error("Project not found");
+
+        const { data: property, error: propertyError } = await supabase
+          .from('properties')
+          .select('id, home_photos, image_url, address_line1, city, state')
+          .eq('id', project.property_id)
+          .maybeSingle();
         if (propertyError) throw propertyError;
+        if (!property) throw new Error("Property not found");
+
         const jobDetailsObj: JobDetails = {
           id: sow.id,
           status: sow.status,
           work_areas: typeof sow.work_areas === 'string' ? JSON.parse(sow.work_areas) : sow.work_areas || [],
           labor_items: typeof sow.labor_items === 'string' ? JSON.parse(sow.labor_items) : sow.labor_items || [],
           material_items: typeof sow.material_items === 'string' ? JSON.parse(sow.material_items) : sow.material_items || [],
-          bid_configuration: typeof sow.bid_configuration === 'string' ? JSON.parse(sow.bid_configuration) : sow.bid_configuration || {
-            bidDuration: "7"
-          },
+          bid_configuration: typeof sow.bid_configuration === 'string'
+            ? JSON.parse(sow.bid_configuration)
+            : (sow.bid_configuration || { bidDuration: "7" }),
           approved_at: sow.updated_at,
           project: {
             id: project.id,
@@ -152,9 +160,11 @@ const JobDetails = () => {
     };
     fetchJobDetails();
   }, [jobId]);
+
   const calculateTotal = () => {
     return bidItems.reduce((sum, item) => sum + item.quantity * item.unitRate, 0);
   };
+
   const addItemToBid = () => {
     if (!newItem.description || newItem.unitRate <= 0) {
       toast({
@@ -176,9 +186,11 @@ const JobDetails = () => {
       unitRate: 0
     });
   };
+
   const removeItem = (id: string) => {
     setBidItems(bidItems.filter(item => item.id !== id));
   };
+
   const handleSubmitBid = () => {
     if (!workDescription) {
       toast({
@@ -202,6 +214,7 @@ const JobDetails = () => {
       variant: "default"
     });
   };
+
   const getDeadlineDate = () => {
     if (!jobDetails?.approved_at || !jobDetails?.bid_configuration?.bidDuration) {
       return "No deadline set";
@@ -212,8 +225,10 @@ const JobDetails = () => {
     deadlineDate.setDate(deadlineDate.getDate() + durationDays);
     return format(deadlineDate, "MMMM d, yyyy");
   };
+
   if (isLoading) {
-    return <>
+    return (
+      <>
         <DashboardNavbar />
         <div className="min-h-screen bg-[#F5F8FA] flex flex-col items-center justify-center">
           <div className="text-center">
@@ -221,10 +236,13 @@ const JobDetails = () => {
             <p className="text-gray-600">Loading job details...</p>
           </div>
         </div>
-      </>;
+      </>
+    );
   }
+
   if (!jobDetails) {
-    return <>
+    return (
+      <>
         <DashboardNavbar />
         <div className="min-h-screen bg-[#F5F8FA] flex flex-col items-center justify-center">
           <div className="text-center">
@@ -235,13 +253,14 @@ const JobDetails = () => {
             </Button>
           </div>
         </div>
-      </>;
+      </>
+    );
   }
-  return <>
+
+  return (
+    <>
       <DashboardNavbar />
       <div className="min-h-screen bg-[#F5F8FA]">
-        
-
         <div className="max-w-7xl mx-auto px-4 py-0">
           <div className="mb-8">
             <Button variant="ghost" className="flex items-center text-[#1A1F2C]" asChild>
@@ -586,6 +605,8 @@ const JobDetails = () => {
           </div>
         </div>
       </div>
-    </>;
+    </>
+  );
 };
+
 export default JobDetails;
