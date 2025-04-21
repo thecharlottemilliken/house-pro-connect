@@ -55,14 +55,16 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ jobs, activeJobId, onPinClick, ma
         : "0 2px 8px 0 rgba(0,0,0,0.12)";
       el.style.border = `3px solid ${activeJobId === job.id ? pinActiveColor : pinColor}`;
       el.style.cursor = "pointer";
-      el.innerHTML = \`
-        <svg width="\${activeJobId === job.id ? 24 : 20}" height="\${activeJobId === job.id ? 24 : 20}" fill="none" viewBox="0 0 24 24" stroke-width="2.4" stroke="\${pinColor}">
-          <circle cx="12" cy="12" r="9" fill="#FFEDD5" stroke="\${pinColor}"/>
+      
+      // Fixed template literal syntax
+      el.innerHTML = `
+        <svg width="${activeJobId === job.id ? 24 : 20}" height="${activeJobId === job.id ? 24 : 20}" fill="none" viewBox="0 0 24 24" stroke-width="2.4" stroke="${pinColor}">
+          <circle cx="12" cy="12" r="9" fill="#FFEDD5" stroke="${pinColor}"/>
           <svg x="4" y="3" width="16" height="18">
-            <path d="M10.32 17.195a2.397 2.397 0 0 1 3.36 0m-1.68-13.41V3.25m7.86 7.33c.122.436.26.913.26 1.42C20.76 15.628 12 20.75 12 20.75s-8.76-5.123-8.76-8.747c0-.507.138-.985.26-1.42m7.86-7.33c.276.003.553.01.83.026m-1.66 0c.277-.016.554-.024.83-.026" stroke="\${pinColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M10.32 17.195a2.397 2.397 0 0 1 3.36 0m-1.68-13.41V3.25m7.86 7.33c.122.436.26.913.26 1.42C20.76 15.628 12 20.75 12 20.75s-8.76-5.123-8.76-8.747c0-.507.138-.985.26-1.42m7.86-7.33c.276.003.553.01.83.026m-1.66 0c.277-.016.554-.024.83-.026" stroke="${pinColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </svg>
-      \`;
+      `;
 
       el.onclick = () => {
         onPinClick(job.id);
@@ -90,7 +92,8 @@ const MapboxMap: React.FC<MapboxMapProps> = ({ jobs, activeJobId, onPinClick, ma
       if (!el) return;
       el.style.width = activeJobId === id ? "38px" : "28px";
       el.style.height = activeJobId === id ? "38px" : "28px";
-      el.style.border = \`3px solid \${activeJobId === id ? pinActiveColor : pinColor}\`;
+      // Fixed template literal syntax
+      el.style.border = `3px solid ${activeJobId === id ? pinActiveColor : pinColor}`;
       el.style.boxShadow = activeJobId === id
         ? "0 2px 12px 2px rgba(249,115,22,0.25)"
         : "0 2px 8px 0 rgba(0,0,0,0.12)";
