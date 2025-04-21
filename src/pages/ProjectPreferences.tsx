@@ -124,7 +124,8 @@ const ProjectPreferences = () => {
             user_id: user.id,
             title: `${propertyName || 'New'} Renovation Project`,
             project_preferences: projectPreferences,
-            renovation_areas: renovationAreas
+            renovation_areas: renovationAreas,
+            prior_experience: {} // Add empty object for prior_experience to satisfy RLS
           });
           
           const { data, error } = await supabase
@@ -134,7 +135,8 @@ const ProjectPreferences = () => {
               user_id: user.id,
               title: `${propertyName || 'New'} Renovation Project`,
               project_preferences: projectPreferences,
-              renovation_areas: renovationAreas
+              renovation_areas: renovationAreas,
+              prior_experience: {} // Add empty object for prior_experience
             })
             .select('id')
             .single();
