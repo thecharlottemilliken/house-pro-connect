@@ -42,16 +42,29 @@ const CreateProject = () => {
     const fetchProperties = async () => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
+        const { data: directData, error: directError } = await supabase
           .from('properties')
           .select('*')
+          .eq('user_id', user.id)
           .order('created_at', { ascending: false });
         
-        if (error) {
-          throw error;
+        if (directError) {
+          console.warn('Direct query failed, trying alternate method:', directError);
+          
+          const { data: allData, error: allError } = await supabase
+            .from('properties')
+            .select('*')
+            .order('created_at', { ascending: false });
+          
+          if (allError) {
+            throw allError;
+          }
+          
+          const filteredData = allData.filter(prop => prop.user_id === user.id);
+          setProperties(filteredData || []);
+        } else {
+          setProperties(directData || []);
         }
-        
-        setProperties(data || []);
       } catch (error: any) {
         console.error('Error fetching properties:', error);
         toast({
@@ -59,6 +72,7 @@ const CreateProject = () => {
           description: "Failed to load your properties. Please try again.",
           variant: "destructive"
         });
+        setProperties([]);
       } finally {
         setIsLoading(false);
       }
