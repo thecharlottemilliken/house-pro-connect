@@ -37,7 +37,7 @@ export const useTeamMembers = (projectId: string | undefined) => {
       console.log("Project owner ID:", projectOwnerId);
       
       // Get team members including their roles
-      const { data: teamData, error: teamError } = await supabase
+      let { data: teamData, error: teamError } = await supabase
         .from("project_team_members")
         .select("id, role, email, name, user_id")
         .eq("project_id", projectId);
