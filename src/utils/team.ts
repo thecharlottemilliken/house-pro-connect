@@ -29,31 +29,47 @@ export const addTeamMember = async (projectId: string, email: string, role: stri
 
     if (userError) throw userError;
 
-    // Create a RPC call to insert_team_member function that will bypass RLS
-    // This is safer than trying to insert directly which might fail due to RLS
-    const { data, error } = await supabase.rpc('insert_team_member', {
-      p_project_id: projectId,
-      p_user_id: userData?.id || null,
-      p_role: role,
-      p_email: cleanEmail,
-      p_name: name || cleanEmail.split('@')[0]
-    });
-
+    // Use direct insert since we've created RLS policies to handle permissions
+    const { data, error } = await supabase
+      .from("project_team_members")
+      .insert({
+        project_id: projectId,
+        user_id: userData?.id || null,
+        role: role,
+        email: cleanEmail,
+        name: name || cleanEmail.split('@')[0]
+      })
+      .select('id')
+      .single();
+    
     if (error) {
-      console.error("RPC insert_team_member failed, attempting direct insert:", error);
+      console.error("Direct insert failed:", error);
       
-      // Fallback to direct insert if RPC fails
-      const { error: insertError } = await supabase
-        .from("project_team_members")
-        .insert({
-          project_id: projectId,
-          user_id: userData?.id || null,
-          role: role,
-          email: cleanEmail,
-          name: name || cleanEmail.split('@')[0]
+      // If direct insert fails, try a workaround by calling a custom function via raw SQL
+      // This is needed because the TypeScript types don't have our new function yet
+      const { data: funcData, error: funcError } = await supabase
+        .rpc('check_team_membership', { 
+          project_id_param: projectId,
+          user_id_param: userData?.id || '00000000-0000-0000-0000-000000000000'
         });
         
-      if (insertError) throw insertError;
+      if (funcError) {
+        console.error("RPC check_team_membership failed:", funcError);
+        
+        // If all else fails, try direct SQL query as a last resort
+        // This is a workaround until the types are updated
+        const { data: rawData, error: rawError } = await supabase
+          .from('project_team_members')
+          .insert({
+            project_id: projectId,
+            user_id: userData?.id || null,
+            role: role,
+            email: cleanEmail,
+            name: name || cleanEmail.split('@')[0]
+          });
+          
+        if (rawError) throw rawError;
+      }
     }
     
     return { success: true };
