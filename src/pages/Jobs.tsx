@@ -22,6 +22,7 @@ import MapPinsOverlay from "@/components/jobs/MapPinsOverlay";
 import MapboxMap from "@/components/jobs/MapboxMap";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
+import JobsFilterBar from "@/components/jobs/JobsFilterBar";
 
 const jobsList = [
   {
@@ -218,25 +219,16 @@ const Jobs: React.FC = () => {
           "
           style={{ backdropFilter: "blur(8px)" }}
         >
-          <div className="px-6 pt-5 pb-3 flex flex-col gap-3 bg-white/95 sticky top-0 z-10 border-b border-gray-200 rounded-tl-xl">
-            <div className="flex items-center justify-between mb-1">
-              <div className="text-[22px] font-semibold text-[#222]">
-                Projects <span className="font-normal text-[#657080] text-lg ml-1">{filteredJobs.length}</span>
-              </div>
-              <Select defaultValue="recent">
-                <SelectTrigger className="w-[140px] h-[42px] border-[#ced5e1] rounded-md text-[#222] text-[16px] font-medium shadow">
-                  <SelectValue placeholder="Sort By: Recent" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="recent">Recent</SelectItem>
-                  <SelectItem value="oldest">Oldest</SelectItem>
-                  <SelectItem value="distance">Distance</SelectItem>
-                  <SelectItem value="price-low">Price (Low-High)</SelectItem>
-                  <SelectItem value="price-high">Price (High-Low)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          <JobsFilterBar
+            selectedType={selectedType}
+            setSelectedType={setSelectedType}
+            selectedPrice={selectedPrice}
+            setSelectedPrice={setSelectedPrice}
+            selectedDistance={selectedDistance}
+            setSelectedDistance={setSelectedDistance}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+          />
           <div className="flex-1 overflow-y-auto px-4 pb-6 custom-scrollbar mt-2">
             <ul className="space-y-4">
               {filteredJobs.map((job) => (
