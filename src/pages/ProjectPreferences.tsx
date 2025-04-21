@@ -30,7 +30,7 @@ const ProjectPreferences = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
-  const { user } = useAuth();  // Add this to get the authenticated user
+  const { user } = useAuth();
   const [propertyId, setPropertyId] = useState<string | null>(null);
   const [projectId, setProjectId] = useState<string | null>(null);
   const [renovationAreas, setRenovationAreas] = useState<any[]>([]);
@@ -42,6 +42,7 @@ const ProjectPreferences = () => {
   const [eventDate, setEventDate] = useState<string>("");
   const [eventName, setEventName] = useState<string>("");
   const [propertyName, setPropertyName] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   
   // Create an object to store all project preferences data that will be passed to next steps
   const [projectPrefs, setProjectPrefs] = useState<any>({});
@@ -99,103 +100,138 @@ const ProjectPreferences = () => {
   };
 
   const savePreferences = async () => {
-    // Create project preferences object
-    const projectPreferences = {
-      budget,
-      useFinancing,
-      completionDate,
-      readiness,
-      isLifeEventDependent,
-      eventDate,
-      eventName
-    };
+    setIsSubmitting(true);
     
-    let newProjectId = projectId;
-    
-    // If we don't have a project ID yet, create a new project
-    if (!projectId && propertyId && user) {
-      try {
-        const { data, error } = await supabase
-          .from('projects')
-          .insert({
+    try {
+      // Create project preferences object
+      const projectPreferences = {
+        budget,
+        useFinancing,
+        completionDate,
+        readiness,
+        isLifeEventDependent,
+        eventDate,
+        eventName
+      };
+      
+      let newProjectId = projectId;
+      
+      // If we don't have a project ID yet, create a new project
+      if (!projectId && propertyId && user) {
+        try {
+          console.log('Creating new project with data:', {
             property_id: propertyId,
-            user_id: user.id,  // Add the user_id from the auth context
+            user_id: user.id,
             title: `${propertyName || 'New'} Renovation Project`,
             project_preferences: projectPreferences,
             renovation_areas: renovationAreas
-          })
-          .select('id')
-          .single();
+          });
+          
+          const { data, error } = await supabase
+            .from('projects')
+            .insert({
+              property_id: propertyId,
+              user_id: user.id,
+              title: `${propertyName || 'New'} Renovation Project`,
+              project_preferences: projectPreferences,
+              renovation_areas: renovationAreas
+            })
+            .select('id')
+            .single();
 
-        if (error) throw error;
-        
-        newProjectId = data.id;
-        setProjectId(newProjectId);
-        
-        toast({
-          title: "Success",
-          description: "Project created successfully",
-        });
-      } catch (error) {
-        console.error('Error creating project:', error);
+          if (error) {
+            console.error('Supabase error creating project:', error);
+            throw error;
+          }
+          
+          console.log('Project created successfully:', data);
+          newProjectId = data.id;
+          setProjectId(newProjectId);
+          
+          toast({
+            title: "Success",
+            description: "Project created successfully",
+          });
+        } catch (error: any) {
+          console.error('Error creating project:', error);
+          toast({
+            title: "Error",
+            description: `Failed to create project: ${error.message || 'Unknown error'}`,
+            variant: "destructive"
+          });
+          setIsSubmitting(false);
+          return;
+        }
+      } 
+      // If we already have a project ID, update it
+      else if (projectId) {
+        try {
+          console.log('Updating project with ID:', projectId);
+          
+          const { error } = await supabase
+            .from('projects')
+            .update({
+              project_preferences: projectPreferences
+            })
+            .eq('id', projectId);
+
+          if (error) {
+            console.error('Supabase error updating project:', error);
+            throw error;
+          }
+          
+          toast({
+            title: "Success",
+            description: "Project preferences saved successfully",
+          });
+        } catch (error: any) {
+          console.error('Error saving project preferences:', error);
+          toast({
+            title: "Error",
+            description: `Failed to save project preferences: ${error.message || 'Unknown error'}`,
+            variant: "destructive"
+          });
+          setIsSubmitting(false);
+          return;
+        }
+      } else {
+        // If we don't have a user or property ID, show an error
+        console.error('Missing required information:', { user, propertyId });
         toast({
           title: "Error",
-          description: "Failed to create project",
+          description: "Missing required information to save preferences",
           variant: "destructive"
         });
+        setIsSubmitting(false);
         return;
       }
-    } 
-    // If we already have a project ID, update it
-    else if (projectId) {
-      try {
-        const { error } = await supabase
-          .from('projects')
-          .update({
-            project_preferences: projectPreferences
-          })
-          .eq('id', projectId);
-
-        if (error) throw error;
-        
-        toast({
-          title: "Success",
-          description: "Project preferences saved successfully",
-        });
-      } catch (error) {
-        console.error('Error saving project preferences:', error);
-        toast({
-          title: "Error",
-          description: "Failed to save project preferences",
-          variant: "destructive"
-        });
-        return;
-      }
-    } else {
-      // If we don't have a user or property ID, show an error
+      
+      // Update the state with the new preferences
+      const updatedProjectPrefs = {
+        ...projectPrefs,
+        propertyId,
+        propertyName,
+        projectId: newProjectId,
+        projectPreferences,
+        renovationAreas
+      };
+      
+      setProjectPrefs(updatedProjectPrefs);
+      
+      // Navigate to the next step
+      navigate("/construction-preferences", {
+        state: updatedProjectPrefs
+      });
+    } catch (error: any) {
+      console.error('Unexpected error in savePreferences:', error);
       toast({
         title: "Error",
-        description: "Missing required information to save preferences",
+        description: `An unexpected error occurred: ${error.message || 'Unknown error'}`,
         variant: "destructive"
       });
-      return;
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    // Update the state with the new preferences
-    const updatedProjectPrefs = {
-      ...projectPrefs,
-      propertyId,
-      propertyName,
-      projectId: newProjectId,
-      projectPreferences
-    };
-    
-    setProjectPrefs(updatedProjectPrefs);
-    
-    // Navigate to the next step
-    navigate("/construction-preferences", {
-      state: updatedProjectPrefs
-    });
   };
 
   const goToNextStep = async () => {
@@ -206,6 +242,7 @@ const ProjectPreferences = () => {
     navigate("/renovation-areas", {
       state: { 
         propertyId,
+        propertyName,
         projectId 
       }
     });
@@ -421,6 +458,7 @@ const ProjectPreferences = () => {
               variant="outline" 
               className="flex items-center text-[#174c65] order-2 sm:order-1 w-full sm:w-auto"
               onClick={goBack}
+              disabled={isSubmitting}
             >
               <ArrowLeft className="mr-2 h-4 w-4" /> BACK
             </Button>
@@ -430,14 +468,16 @@ const ProjectPreferences = () => {
                 variant="outline"
                 className="text-[#174c65] border-[#174c65] w-full sm:w-auto"
                 onClick={() => navigate("/dashboard")}
+                disabled={isSubmitting}
               >
                 SAVE & EXIT
               </Button>
               <Button
                 className="flex items-center bg-[#174c65] hover:bg-[#174c65]/90 text-white w-full sm:w-auto justify-center"
                 onClick={goToNextStep}
+                disabled={isSubmitting}
               >
-                NEXT <ArrowRight className="ml-2 h-4 w-4" />
+                {isSubmitting ? "SAVING..." : "NEXT"} {!isSubmitting && <ArrowRight className="ml-2 h-4 w-4" />}
               </Button>
             </div>
           </div>
