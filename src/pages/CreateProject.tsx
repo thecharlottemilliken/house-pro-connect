@@ -44,25 +44,21 @@ const CreateProject = () => {
       try {
         console.log("Fetching properties for user:", user.id);
         
-        // Try to use a raw SQL query via the REST API to bypass RLS issues 
-        // instead of using RPC which has TypeScript compatibility issues
+        // Try using the new get_user_properties function via a direct call
         try {
           const { data, error } = await supabase
-            .from('properties')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false });
+            .rpc('get_user_properties', { p_user_id: user.id });
           
           if (!error && data) {
-            console.log("Properties fetched directly:", data.length);
-            setProperties(data);
+            console.log("Properties fetched via security definer function:", data.length);
+            setProperties(data as Property[]);
             setIsLoading(false);
             return;
           } else {
-            console.warn('Direct query failed, trying alternate method:', error);
+            console.warn('Function call failed, trying alternate method:', error);
           }
         } catch (err) {
-          console.warn("Direct query failed:", err);
+          console.warn("Function call failed:", err);
         }
         
         // As a fallback, try to fetch all properties and filter client-side

@@ -444,6 +444,32 @@ export type Database = {
           email: string
         }[]
       }
+      get_user_properties: {
+        Args: { p_user_id: string }
+        Returns: {
+          address_line1: string
+          address_line2: string | null
+          bathrooms: string | null
+          bedrooms: string | null
+          blueprint_url: string | null
+          city: string
+          created_at: string
+          exterior_attributes: string[] | null
+          home_photos: string[] | null
+          home_purpose: string | null
+          home_type: string | null
+          id: string
+          image_url: string | null
+          interior_attributes: string[] | null
+          property_name: string
+          sqft: string | null
+          state: string
+          updated_at: string
+          user_id: string
+          working_on_behalf: boolean | null
+          zip_code: string
+        }[]
+      }
       handle_coach_claim: {
         Args: { uid: string }
         Returns: undefined
