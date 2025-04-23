@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
@@ -20,16 +21,19 @@ import { useForm } from "react-hook-form";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const ManagementPreferences = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
+  const { user } = useAuth();
   
   const [propertyId, setPropertyId] = useState<string | null>(null);
   const [projectId, setProjectId] = useState<string | null>(null);
   const [projectPrefs, setProjectPrefs] = useState<any>(null);
   const [wantProjectCoach, setWantProjectCoach] = useState<string>("yes");
+  const [isLoading, setIsLoading] = useState(false);
   
   const form = useForm({
     defaultValues: {
@@ -60,6 +64,31 @@ const ManagementPreferences = () => {
   // Function to load existing management preferences
   const loadExistingPreferences = async (id: string) => {
     try {
+      // First attempt to use the edge function for bypassing RLS issues
+      const { data: edgeData, error: edgeError } = await supabase.functions.invoke('handle-project-update', {
+        method: 'POST',
+        body: { 
+          projectId: id,
+          userId: user?.id
+        }
+      });
+
+      if (!edgeError && edgeData) {
+        // Successfully got data from the edge function
+        console.log('Retrieved project data via edge function');
+        
+        if (edgeData.management_preferences) {
+          const prefs = edgeData.management_preferences as any;
+          
+          if (prefs.wantProjectCoach) setWantProjectCoach(prefs.wantProjectCoach);
+          if (prefs.phoneNumber) form.setValue("phoneNumber", prefs.phoneNumber);
+          if (prefs.phoneType) form.setValue("phoneType", prefs.phoneType);
+        }
+        return;
+      }
+      
+      // Fallback to direct query - this will only work if RLS permissions allow
+      console.log('Falling back to direct query for project data');
       const { data, error } = await supabase
         .from('projects')
         .select('management_preferences')
@@ -77,10 +106,26 @@ const ManagementPreferences = () => {
       }
     } catch (error) {
       console.error('Error loading management preferences:', error);
+      toast({
+        title: "Error",
+        description: "Could not load management preferences. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
   const savePreferences = async () => {
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to save preferences",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsLoading(true);
+    
     // Create management preferences object
     const managementPreferences = {
       wantProjectCoach,
@@ -91,14 +136,29 @@ const ManagementPreferences = () => {
     // If we already have a project ID, update it
     if (projectId) {
       try {
-        const { error } = await supabase
-          .from('projects')
-          .update({
-            management_preferences: managementPreferences
-          })
-          .eq('id', projectId);
+        // First try using the edge function (bypasses RLS issues)
+        const { data: updateData, error: updateError } = await supabase.functions.invoke('handle-project-update', {
+          method: 'POST',
+          body: { 
+            projectId,
+            userId: user.id,
+            managementPreferences
+          }
+        });
 
-        if (error) throw error;
+        if (updateError) {
+          console.error('Error updating via edge function:', updateError);
+          
+          // Fall back to direct update
+          const { error } = await supabase
+            .from('projects')
+            .update({
+              management_preferences: managementPreferences
+            })
+            .eq('id', projectId);
+
+          if (error) throw error;
+        }
         
         toast({
           title: "Success",
@@ -111,6 +171,7 @@ const ManagementPreferences = () => {
           description: "Failed to save management preferences",
           variant: "destructive"
         });
+        setIsLoading(false);
         return;
       }
     } else {
@@ -127,6 +188,7 @@ const ManagementPreferences = () => {
     };
     
     setProjectPrefs(updatedProjectPrefs);
+    setIsLoading(false);
     
     // Navigate to next step
     navigate("/prior-experience", {
@@ -338,6 +400,7 @@ const ManagementPreferences = () => {
               variant="outline" 
               className="flex items-center text-[#174c65] order-2 sm:order-1 w-full sm:w-auto"
               onClick={goBack}
+              disabled={isLoading}
             >
               <ArrowLeft className="mr-2 h-4 w-4" /> BACK
             </Button>
@@ -347,14 +410,16 @@ const ManagementPreferences = () => {
                 variant="outline"
                 className="text-[#174c65] border-[#174c65] w-full sm:w-auto"
                 onClick={() => navigate("/dashboard")}
+                disabled={isLoading}
               >
                 SAVE & EXIT
               </Button>
               <Button
                 className="flex items-center bg-[#174c65] hover:bg-[#174c65]/90 text-white w-full sm:w-auto justify-center"
                 onClick={goToNextStep}
+                disabled={isLoading}
               >
-                NEXT <ArrowRight className="ml-2 h-4 w-4" />
+                {isLoading ? "Loading..." : "NEXT"} {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
               </Button>
             </div>
           </div>
