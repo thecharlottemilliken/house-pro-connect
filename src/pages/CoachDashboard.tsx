@@ -4,18 +4,44 @@ import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, UserPlus } from "lucide-react";
 import ProjectList from "@/components/coach/ProjectList";
 import MessageCenter from "@/components/coach/MessageCenter";
 import JWTDebugger from "@/components/debug/JWTDebugger";
 import { useCoachProjects } from "@/hooks/useCoachProjects";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const CoachDashboard = () => {
   const [activeTab, setActiveTab] = useState("projects");
   const { fetchProjects } = useCoachProjects();
+  const [isAddingCoaches, setIsAddingCoaches] = useState(false);
 
   const handleRefresh = () => {
     fetchProjects();
+  };
+
+  const handleAddCoachesToProjects = async () => {
+    try {
+      setIsAddingCoaches(true);
+      const { data, error } = await supabase.functions.invoke(
+        'add-coaches-to-projects',
+        { method: 'POST' }
+      );
+      
+      if (error) {
+        console.error("Error adding coaches to projects:", error);
+        toast.error("Failed to add coaches to projects. Please try again.");
+      } else {
+        toast.success("Coaches have been added to all projects");
+        fetchProjects();
+      }
+    } catch (error: any) {
+      console.error("Error:", error);
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsAddingCoaches(false);
+    }
   };
 
   return (
@@ -30,14 +56,25 @@ const CoachDashboard = () => {
               Monitor projects, communicate with residents, and provide assistance.
             </p>
           </div>
-          <Button 
-            onClick={handleRefresh} 
-            variant="outline" 
-            className="flex items-center gap-2"
-          >
-            <RefreshCw size={16} />
-            Refresh Data
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleAddCoachesToProjects}
+              variant="outline" 
+              className="flex items-center gap-2"
+              disabled={isAddingCoaches}
+            >
+              <UserPlus size={16} />
+              {isAddingCoaches ? "Adding..." : "Add Coaches to Projects"}
+            </Button>
+            <Button 
+              onClick={handleRefresh} 
+              variant="outline" 
+              className="flex items-center gap-2"
+            >
+              <RefreshCw size={16} />
+              Refresh Data
+            </Button>
+          </div>
         </div>
         
         <Tabs defaultValue="projects" value={activeTab} onValueChange={setActiveTab}>

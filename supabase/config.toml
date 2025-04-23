@@ -38,3 +38,5 @@ verify_jwt = true
 verify_jwt = true
 [functions.get-coach-projects]
 verify_jwt = true
+[functions.add-coaches-to-projects]
+verify_jwt = true
