@@ -10,10 +10,12 @@ import { Json } from "@/integrations/supabase/types";
 import CreateProjectSteps from "@/components/project/create/CreateProjectSteps";
 import HelpLevelSelector from "@/components/project/create/HelpLevelSelector";
 import ProInformationForm from "@/components/project/create/ProInformationForm";
+import { useAuth } from "@/contexts/AuthContext";
 
 const ConstructionPreferences = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
   const [propertyId, setPropertyId] = useState<string | null>(null);
   const [projectId, setProjectId] = useState<string | null>(null);
   const [renovationAreas, setRenovationAreas] = useState<any[]>([]);
@@ -23,6 +25,7 @@ const ConstructionPreferences = () => {
   const [pros, setPros] = useState([
     { businessName: "", contactName: "", email: "", phone: "", speciality: "" }
   ]);
+  const [isCreationMode, setIsCreationMode] = useState(false);
 
   useEffect(() => {
     if (location.state) {
@@ -31,26 +34,95 @@ const ConstructionPreferences = () => {
       if (location.state.renovationAreas) setRenovationAreas(location.state.renovationAreas);
       setProjectPrefs(location.state);
       
-      if (location.state.projectId) {
-        loadExistingPreferences(location.state.projectId);
-      }
+      const checkProjectExists = async () => {
+        if (location.state.projectId) {
+          try {
+            const { data: projectData, error: projectError } = await supabase
+              .from('projects')
+              .select('id, user_id')
+              .eq('id', location.state.projectId)
+              .maybeSingle();
+              
+            if (projectError) {
+              console.error("Error checking project:", projectError);
+              setIsCreationMode(true);
+            } else if (projectData) {
+              if (projectData.user_id === user?.id) {
+                setIsCreationMode(false);
+                loadExistingPreferences(location.state.projectId);
+              } else {
+                try {
+                  const { data: isMember, error: memberError } = await supabase.functions.invoke(
+                    'check-team-membership', {
+                      body: { projectId: location.state.projectId, userId: user?.id }
+                    }
+                  );
+                  
+                  if (memberError) {
+                    console.error("Error checking team membership:", memberError);
+                    setIsCreationMode(true);
+                  } else if (isMember) {
+                    setIsCreationMode(false);
+                    loadExistingPreferences(location.state.projectId);
+                  } else {
+                    setIsCreationMode(true);
+                  }
+                } catch (error) {
+                  console.error("Error calling membership function:", error);
+                  setIsCreationMode(true);
+                }
+              }
+            } else {
+              setIsCreationMode(true);
+            }
+          } catch (error) {
+            console.error("Error in project check:", error);
+            setIsCreationMode(true);
+          }
+        } else {
+          setIsCreationMode(true);
+        }
+      };
+      
+      checkProjectExists();
+      
     } else {
       navigate("/create-project");
     }
-  }, [location.state, navigate]);
+  }, [location.state, navigate, user?.id]);
 
   const loadExistingPreferences = async (id: string) => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabase.rpc(
+        'handle_project_update',
+        {
+          p_project_id: id,
+          p_property_id: null,
+          p_user_id: null,
+          p_title: '',
+          p_renovation_areas: null,
+          p_project_preferences: null,
+          p_construction_preferences: null,
+          p_design_preferences: null,
+          p_management_preferences: null,
+          p_prior_experience: null
+        }
+      );
+      
+      if (error) {
+        throw error;
+      }
+      
+      const { data: projectData, error: fetchError } = await supabase
         .from('projects')
         .select('construction_preferences')
         .eq('id', id)
-        .single();
+        .maybeSingle();
         
-      if (error) throw error;
+      if (fetchError) throw fetchError;
       
-      if (data && data.construction_preferences) {
-        const prefs = data.construction_preferences as any;
+      if (projectData && projectData.construction_preferences) {
+        const prefs = projectData.construction_preferences as any;
         
         if (prefs.helpLevel) setHelpLevel(prefs.helpLevel);
         if (prefs.hasSpecificPros !== undefined) setHasSpecificPros(prefs.hasSpecificPros);
@@ -68,16 +140,56 @@ const ConstructionPreferences = () => {
       pros: hasSpecificPros ? pros : []
     };
 
-    if (projectId) {
+    if (projectId && !isCreationMode) {
       try {
-        const { error } = await supabase
-          .from('projects')
-          .update({
-            construction_preferences: constructionPreferences
-          })
-          .eq('id', projectId);
+        try {
+          const { data: projectData, error: projectError } = await supabase
+            .from('projects')
+            .select('user_id')
+            .eq('id', projectId)
+            .maybeSingle();
+            
+          if (projectError) throw projectError;
+          
+          if (projectData && projectData.user_id === user?.id) {
+            const { error } = await supabase
+              .from('projects')
+              .update({
+                construction_preferences: constructionPreferences
+              })
+              .eq('id', projectId);
 
-        if (error) throw error;
+            if (error) throw error;
+          } else {
+            const { error } = await supabase.rpc(
+              'handle_project_update',
+              {
+                p_project_id: projectId,
+                p_property_id: null,
+                p_user_id: user?.id,
+                p_title: '',
+                p_renovation_areas: null,
+                p_project_preferences: null,
+                p_construction_preferences: constructionPreferences,
+                p_design_preferences: null,
+                p_management_preferences: null,
+                p_prior_experience: null
+              }
+            );
+            
+            if (error) throw error;
+          }
+        } catch (error) {
+          console.error('Error saving via preferred method:', error);
+          const { error: directError } = await supabase
+            .from('projects')
+            .update({
+              construction_preferences: constructionPreferences
+            })
+            .eq('id', projectId);
+
+          if (directError) throw directError;
+        }
         
         toast({
           title: "Success",

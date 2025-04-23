@@ -1,36 +1,33 @@
 
-# This file is used by Supabase to deploy edge functions
-# DO NOT EDIT DIRECTLY!
-
 project_id = "gluggyghzalabvlvwqqk"
 
 [api]
+enabled = true
 port = 54321
 schemas = ["public", "storage", "graphql_public"]
-extra_search_path = ["public", "extensions"]
-max_rows = 1000
-
-[[publications]]
-publication = "supabase_realtime"
-tables = []
 
 [db]
 port = 54322
-major_version = 15
+shadow_port = 54320
+
+[realtime]
+enabled = true
 
 [studio]
+enabled = true
 port = 54323
+api_url = "http://localhost"
+
+[inbucket]
+enabled = true
+port = 54324
 
 [storage]
-file_size_limit = "50MiB"
+enabled = true
 
 [auth]
+enabled = true
 site_url = "http://localhost:3000"
-additional_redirect_urls = ["https://localhost:3000"]
-jwt_expiry = 3600
-enable_refresh_token_rotation = true
-refresh_token_reuse_interval = 10
-enable_signup = true
 
 [auth.email]
 enable_signup = true
@@ -41,28 +38,24 @@ enable_confirmations = false
 enabled = false
 client_id = ""
 secret = ""
-redirect_uri = ""
-url = ""
 
 [auth.external.google]
 enabled = false
 client_id = ""
 secret = ""
-redirect_uri = ""
-url = ""
+
+[analytics]
+enabled = false
+port = 54327
+vector_port = 54328
+
+[experimental]
+events_enabled = false
 
 [functions]
-[functions.check-existing-team-member]
-verify_jwt = true
-
-[functions.add-team-member]
-verify_jwt = true
-
-[functions.remove-team-member]
-verify_jwt = true
-
-[functions.get-project-team-members]
-verify_jwt = true
-
 [functions.check-team-membership]
+verify_jwt = true
+[functions.handle-project-update]
+verify_jwt = true
+[functions.get-project-team-members]
 verify_jwt = true
