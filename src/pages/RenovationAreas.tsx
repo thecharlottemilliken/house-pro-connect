@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Json } from "@/integrations/supabase/types";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface RenovationArea {
   area: string;
@@ -34,6 +35,7 @@ const RenovationAreas = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
+  const { user } = useAuth();
   const [selectedArea, setSelectedArea] = useState<string>("");
   const [selectedLocation, setSelectedLocation] = useState<string>("");
   const [renovationAreas, setRenovationAreas] = useState<RenovationArea[]>([]);
@@ -63,13 +65,68 @@ const RenovationAreas = () => {
 
   const fetchPropertyDetails = async (id: string) => {
     try {
+      // First try using the security definer function
+      try {
+        const { data, error } = await supabase.rpc('get_property_details', { p_property_id: id });
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          const propertyData: Property = {
+            id: data[0].id,
+            property_name: data[0].property_name,
+            bedrooms: data[0].bedrooms,
+            bathrooms: data[0].bathrooms,
+            living_rooms: 1,
+            dining_rooms: 1
+          };
+          
+          setPropertyDetails(propertyData);
+          if (!propertyName) {
+            setPropertyName(data[0].property_name);
+          }
+          return;
+        }
+      } catch (funcError) {
+        console.warn("Function approach failed, trying direct query:", funcError);
+      }
+      
+      // Fall back to direct query if function fails
       const { data, error } = await supabase
         .from('properties')
         .select('*')
         .eq('id', id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // If we hit an RLS error, it might be that this is a new project creation flow
+        // In that case, the user should still own the property
+        if (error.message.includes('policy') && user) {
+          const { data: directData, error: directError } = await supabase
+            .from('properties')
+            .select('*')
+            .eq('id', id)
+            .eq('user_id', user.id)
+            .single();
+            
+          if (directError) throw directError;
+          
+          const propertyData: Property = {
+            id: directData.id,
+            property_name: directData.property_name,
+            bedrooms: directData.bedrooms,
+            bathrooms: directData.bathrooms,
+            living_rooms: 1,
+            dining_rooms: 1
+          };
+          
+          setPropertyDetails(propertyData);
+          if (!propertyName) {
+            setPropertyName(directData.property_name);
+          }
+          return;
+        }
+        throw error;
+      }
       
       const propertyData: Property = {
         id: data.id,
@@ -84,11 +141,11 @@ const RenovationAreas = () => {
       if (!propertyName) {
         setPropertyName(data.property_name);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching property details:', error);
       toast({
         title: "Error",
-        description: "Failed to load property details.",
+        description: "Failed to load property details. Please try again.",
         variant: "destructive"
       });
     } finally {

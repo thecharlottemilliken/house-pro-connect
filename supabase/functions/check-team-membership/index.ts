@@ -1,4 +1,3 @@
-
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.29.0';
 
@@ -24,14 +23,37 @@ serve(async (req) => {
       );
     }
 
-    // Create Supabase client
+    // Create Supabase client with service role key to bypass RLS
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       { auth: { persistSession: false } }
     );
 
-    // Check if user is a member of the project
+    // First check if the user is the project owner
+    const { data: projectData, error: projectError } = await supabaseClient
+      .from('projects')
+      .select('user_id')
+      .eq('id', projectId)
+      .maybeSingle();
+      
+    if (projectError) {
+      console.error('Error checking project ownership:', projectError);
+      return new Response(
+        JSON.stringify({ error: projectError.message }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // If user is the owner of the project, they automatically have access
+    if (projectData && projectData.user_id === userId) {
+      return new Response(
+        JSON.stringify(true),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Otherwise, check if they're a team member
     const { data, error } = await supabaseClient
       .from('project_team_members')
       .select('id')
@@ -47,6 +69,7 @@ serve(async (req) => {
       );
     }
 
+    // Return true if the user is a team member, false otherwise
     return new Response(
       JSON.stringify(!!data),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
