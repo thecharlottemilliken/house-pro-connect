@@ -14,16 +14,16 @@ interface TeamMember {
   isCurrentUser: boolean;
 }
 
-// Define the team member data structure from RPC
+// Define the team member data structure that can come from different sources
 interface TeamMemberData {
   id: string;
-  project_id: string;
+  project_id?: string;
   user_id: string;
   role: string;
   email: string;
   name: string;
-  added_by: string;
-  added_at: string;
+  added_by?: string;
+  added_at?: string;
 }
 
 export const useTeamMembers = (projectId: string | undefined) => {
@@ -38,7 +38,7 @@ export const useTeamMembers = (projectId: string | undefined) => {
       // Use the security definer function to get team members
       let teamMemberData: TeamMemberData[] = [];
       
-      // First try using the security definer function
+      // First try using the edge function
       const { data, error: fnError } = await supabase.functions.invoke(
         'get-project-team-members', {
           body: { projectId }
