@@ -77,7 +77,7 @@ export const useTeamMembers = (projectId: string | undefined) => {
               if (result.success) {
                 // Return the owner as the only team member for now
                 return [{
-                  id: result.memberId || 'temp-id',
+                  id: result.memberId || 'temp-id', // Use memberId if available, otherwise use a temporary ID
                   role: "owner",
                   name: ownerProfile.name || "Project Owner",
                   email: ownerProfile.email || "No email",

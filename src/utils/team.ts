@@ -69,10 +69,15 @@ export const addTeamMember = async (projectId: string, email: string, role: stri
           });
           
         if (rawError) throw rawError;
+        
+        // Since we don't have an ID from the insert operation for these fallbacks,
+        // return success without the ID
+        return { success: true };
       }
     }
     
-    return { success: true };
+    // Return success with member ID if available from the initial insert
+    return { success: true, memberId: data?.id };
   } catch (err: any) {
     console.error("Error adding team member:", err);
     return { success: false, error: err.message };
