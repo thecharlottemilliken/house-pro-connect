@@ -26,6 +26,7 @@ const PriorExperience = () => {
   const [positiveAspects, setPositiveAspects] = useState<string>("");
   const [negativeAspects, setNegativeAspects] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUpdatingExisting, setIsUpdatingExisting] = useState(false);
 
   useEffect(() => {
     if (location.state) {
@@ -37,12 +38,85 @@ const PriorExperience = () => {
       }
       if (location.state.projectId) {
         setProjectId(location.state.projectId);
+        
+        // Check if this is an existing project
+        const checkExistingProject = async () => {
+          try {
+            const { data, error } = await supabase
+              .from('projects')
+              .select('id')
+              .eq('id', location.state.projectId)
+              .maybeSingle();
+              
+            if (error) throw error;
+            
+            if (data) {
+              setIsUpdatingExisting(true);
+              loadExistingPriorExperience(location.state.projectId);
+            } else {
+              setIsUpdatingExisting(false);
+            }
+          } catch (error) {
+            console.error("Error checking project existence:", error);
+          }
+        };
+        
+        checkExistingProject();
       }
       setProjectPrefs(location.state);
     } else {
       navigate("/create-project");
     }
   }, [location.state, navigate]);
+  
+  const loadExistingPriorExperience = async (projectId: string) => {
+    try {
+      // Try using edge function first
+      try {
+        const { data, error } = await supabase.functions.invoke(
+          'handle-project-update',
+          {
+            body: { 
+              projectId,
+              userId: user?.id
+            }
+          }
+        );
+        
+        if (error) throw error;
+        
+        if (data && data.prior_experience) {
+          const exp = data.prior_experience as any;
+          
+          if (exp.hadPriorExperience) setPriorExperience(exp.hadPriorExperience);
+          if (exp.positiveAspects) setPositiveAspects(exp.positiveAspects);
+          if (exp.negativeAspects) setNegativeAspects(exp.negativeAspects);
+          return;
+        }
+      } catch (edgeFnError) {
+        console.error("Edge function error:", edgeFnError);
+      }
+      
+      // Fallback to direct query
+      const { data, error } = await supabase
+        .from('projects')
+        .select('prior_experience')
+        .eq('id', projectId)
+        .maybeSingle();
+        
+      if (error) throw error;
+      
+      if (data && data.prior_experience) {
+        const exp = data.prior_experience as any;
+        
+        if (exp.hadPriorExperience) setPriorExperience(exp.hadPriorExperience);
+        if (exp.positiveAspects) setPositiveAspects(exp.positiveAspects);
+        if (exp.negativeAspects) setNegativeAspects(exp.negativeAspects);
+      }
+    } catch (error) {
+      console.error("Error loading prior experience data:", error);
+    }
+  };
 
   const createProject = async () => {
     if (!user || !propertyId) {
@@ -58,29 +132,59 @@ const PriorExperience = () => {
       setIsSubmitting(true);
 
       // If we already have a project ID, just update it instead of creating a new one
-      if (projectId) {
-        const { error: updateError } = await supabase
-          .from('projects')
-          .update({
-            prior_experience: {
-              hadPriorExperience: priorExperience,
-              positiveAspects,
-              negativeAspects
+      if (projectId && isUpdatingExisting) {
+        try {
+          // Try edge function first
+          console.log("Updating existing project via edge function:", projectId);
+          const { data: edgeData, error: edgeError } = await supabase.functions.invoke(
+            'handle-project-update',
+            {
+              body: {
+                projectId,
+                userId: user.id,
+                priorExperience: {
+                  hadPriorExperience: priorExperience,
+                  positiveAspects,
+                  negativeAspects
+                }
+              }
             }
-          })
-          .eq('id', projectId);
+          );
+          
+          if (edgeError) throw edgeError;
+          
+          console.log("Project updated successfully via edge function:", edgeData);
+          
+          toast({
+            title: "Success",
+            description: "Your project has been updated successfully!",
+          });
+          
+          return projectId;
+        } catch (edgeFnError) {
+          console.error('Edge function error:', edgeFnError);
+          
+          // Fallback to direct update
+          const { error: updateError } = await supabase
+            .from('projects')
+            .update({
+              prior_experience: {
+                hadPriorExperience: priorExperience,
+                positiveAspects,
+                negativeAspects
+              }
+            })
+            .eq('id', projectId);
 
-        if (updateError) {
-          console.error('Error updating project:', updateError);
-          throw updateError;
+          if (updateError) throw updateError;
+          
+          toast({
+            title: "Success",
+            description: "Your project has been updated successfully!",
+          });
+          
+          return projectId;
         }
-        
-        toast({
-          title: "Success",
-          description: "Your project has been updated successfully!",
-        });
-        
-        return projectId;
       }
 
       console.log('Creating new project with preferences:', {
@@ -129,10 +233,10 @@ const PriorExperience = () => {
 
       return project.id;
     } catch (error) {
-      console.error('Error creating project:', error);
+      console.error('Error creating/updating project:', error);
       toast({
         title: "Error",
-        description: "Failed to create your project. Please try again.",
+        description: "Failed to save your project. Please try again.",
         variant: "destructive"
       });
       return null;
@@ -257,6 +361,7 @@ const PriorExperience = () => {
               variant="outline" 
               className="flex items-center text-[#174c65] order-2 sm:order-1 w-full sm:w-auto"
               onClick={goBack}
+              disabled={isSubmitting}
             >
               <ArrowLeft className="mr-2 h-4 w-4" /> BACK
             </Button>

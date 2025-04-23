@@ -24,29 +24,91 @@ serve(async (req) => {
       );
     }
 
-    // Create Supabase client
+    // Create Supabase client with service role key to bypass RLS
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       { auth: { persistSession: false } }
     );
 
-    // Get team members
-    const { data, error } = await supabaseClient
-      .from('project_team_members')
-      .select('*')
-      .eq('project_id', projectId);
+    // Get the project owner first
+    const { data: projectData, error: projectError } = await supabaseClient
+      .from('projects')
+      .select('user_id')
+      .eq('id', projectId)
+      .maybeSingle();
 
-    if (error) {
-      console.error('Error fetching team members:', error);
+    if (projectError) {
+      console.error("Error fetching project owner:", projectError);
       return new Response(
-        JSON.stringify({ error: error.message }),
+        JSON.stringify({ error: projectError.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    if (!projectData) {
+      return new Response(
+        JSON.stringify({ error: "Project not found" }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // First get the project owner's profile information
+    let teamMembers = [];
+    
+    // Get owner's profile from profiles table
+    const { data: ownerProfile, error: ownerError } = await supabaseClient
+      .from('profiles')
+      .select('id, name, email')
+      .eq('id', projectData.user_id)
+      .maybeSingle();
+    
+    if (ownerError) {
+      console.error("Error fetching owner profile:", ownerError);
+    } else if (ownerProfile) {
+      // Add owner to team members list with direct profile data
+      teamMembers.push({
+        id: 'owner',
+        role: 'owner',
+        user_id: ownerProfile.id,
+        name: ownerProfile.name,
+        email: ownerProfile.email
+      });
+    } else {
+      // Fallback if profile not found - get email from auth.users
+      const { data: ownerAuth, error: authError } = await supabaseClient.auth.admin.getUserById(
+        projectData.user_id
+      );
+      
+      if (authError) {
+        console.error("Error fetching owner auth data:", authError);
+      } else if (ownerAuth && ownerAuth.user) {
+        teamMembers.push({
+          id: 'owner', 
+          role: 'owner',
+          user_id: projectData.user_id,
+          name: ownerAuth.user.user_metadata?.name || 'Project Owner',
+          email: ownerAuth.user.email || 'No email'
+        });
+      }
+    }
+
+    // Now get other team members if any
+    const { data: otherMembers, error: membersError } = await supabaseClient
+      .from('project_team_members')
+      .select('id, role, user_id, name, email')
+      .eq('project_id', projectId)
+      .neq('role', 'owner'); // Exclude owner as we've already added them
+    
+    if (membersError) {
+      console.error("Error fetching team members:", membersError);
+    } else if (otherMembers && otherMembers.length > 0) {
+      // Merge other team members into the list
+      teamMembers = [...teamMembers, ...otherMembers];
+    }
+
     return new Response(
-      JSON.stringify(data),
+      JSON.stringify(teamMembers),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {

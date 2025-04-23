@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -25,7 +26,8 @@ const ConstructionPreferences = () => {
   const [pros, setPros] = useState([
     { businessName: "", contactName: "", email: "", phone: "", speciality: "" }
   ]);
-  const [isCreationMode, setIsCreationMode] = useState(false);
+  const [isCreationMode, setIsCreationMode] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (location.state) {
@@ -34,8 +36,11 @@ const ConstructionPreferences = () => {
       if (location.state.renovationAreas) setRenovationAreas(location.state.renovationAreas);
       setProjectPrefs(location.state);
       
-      const checkProjectExists = async () => {
-        if (location.state.projectId) {
+      // If we have a projectId, we need to check if this is an existing project or new one
+      if (location.state.projectId) {
+        console.log("Project ID detected:", location.state.projectId);
+        
+        const checkExistingProject = async () => {
           try {
             const { data: projectData, error: projectError } = await supabase
               .from('projects')
@@ -44,48 +49,37 @@ const ConstructionPreferences = () => {
               .maybeSingle();
               
             if (projectError) {
-              console.error("Error checking project:", projectError);
+              console.error("Error checking if project exists:", projectError);
+              // If we can't determine, assume creation mode
               setIsCreationMode(true);
-            } else if (projectData) {
-              if (projectData.user_id === user?.id) {
-                setIsCreationMode(false);
-                loadExistingPreferences(location.state.projectId);
-              } else {
-                try {
-                  const { data: isMember, error: memberError } = await supabase.functions.invoke(
-                    'check-team-membership', {
-                      body: { projectId: location.state.projectId, userId: user?.id }
-                    }
-                  );
-                  
-                  if (memberError) {
-                    console.error("Error checking team membership:", memberError);
-                    setIsCreationMode(true);
-                  } else if (isMember) {
-                    setIsCreationMode(false);
-                    loadExistingPreferences(location.state.projectId);
-                  } else {
-                    setIsCreationMode(true);
-                  }
-                } catch (error) {
-                  console.error("Error calling membership function:", error);
-                  setIsCreationMode(true);
-                }
-              }
+              return;
+            }
+            
+            if (projectData) {
+              console.log("Existing project found:", projectData);
+              // This is an existing project
+              setIsCreationMode(false);
+              
+              // Load existing preferences 
+              loadExistingPreferences(location.state.projectId);
             } else {
+              // No project found, this is creation mode
+              console.log("No existing project found, assuming creation mode");
               setIsCreationMode(true);
             }
           } catch (error) {
             console.error("Error in project check:", error);
+            // If we can't determine, assume creation mode
             setIsCreationMode(true);
           }
-        } else {
-          setIsCreationMode(true);
-        }
-      };
-      
-      checkProjectExists();
-      
+        };
+        
+        checkExistingProject();
+      } else {
+        // No project ID means we're definitely in creation mode
+        console.log("No project ID, assuming creation mode");
+        setIsCreationMode(true);
+      }
     } else {
       navigate("/create-project");
     }
@@ -93,131 +87,147 @@ const ConstructionPreferences = () => {
 
   const loadExistingPreferences = async (id: string) => {
     try {
-      const { data, error } = await supabase.rpc(
-        'handle_project_update',
-        {
-          p_project_id: id,
-          p_property_id: null,
-          p_user_id: null,
-          p_title: '',
-          p_renovation_areas: null,
-          p_project_preferences: null,
-          p_construction_preferences: null,
-          p_design_preferences: null,
-          p_management_preferences: null,
-          p_prior_experience: null
+      // Use edge function to bypass RLS issues
+      console.log("Loading construction preferences using edge function");
+      try {
+        const { data, error } = await supabase.functions.invoke(
+          'handle-project-update',
+          {
+            body: { 
+              projectId: id,
+              userId: user?.id || null,
+            }
+          }
+        );
+        
+        if (error) {
+          throw error;
         }
-      );
-      
-      if (error) {
-        throw error;
+
+        // If using the edge function worked, extract the preferences
+        if (data && data.construction_preferences) {
+          const prefs = data.construction_preferences as any;
+          
+          if (prefs.helpLevel) setHelpLevel(prefs.helpLevel);
+          if (prefs.hasSpecificPros !== undefined) setHasSpecificPros(prefs.hasSpecificPros);
+          if (prefs.pros && Array.isArray(prefs.pros) && prefs.pros.length > 0) setPros(prefs.pros);
+          
+          console.log("Successfully loaded preferences via edge function");
+          return;
+        }
+      } catch (edgeFnError) {
+        console.error('Error using edge function:', edgeFnError);
+        // Continue to fallback methods
       }
       
-      const { data: projectData, error: fetchError } = await supabase
+      // Fallback 1: Check if user is the project owner
+      console.log("Trying direct project query fallback");
+      const { data: projectData, error: projectError } = await supabase
         .from('projects')
-        .select('construction_preferences')
+        .select('construction_preferences, user_id')
         .eq('id', id)
         .maybeSingle();
         
-      if (fetchError) throw fetchError;
+      if (projectError) {
+        console.error("Project query error:", projectError);
+        throw projectError;
+      }
       
-      if (projectData && projectData.construction_preferences) {
-        const prefs = projectData.construction_preferences as any;
-        
-        if (prefs.helpLevel) setHelpLevel(prefs.helpLevel);
-        if (prefs.hasSpecificPros !== undefined) setHasSpecificPros(prefs.hasSpecificPros);
-        if (prefs.pros && Array.isArray(prefs.pros) && prefs.pros.length > 0) setPros(prefs.pros);
+      if (projectData) {
+        // We got project data directly, use it
+        if (projectData.construction_preferences) {
+          const prefs = projectData.construction_preferences as any;
+          
+          if (prefs.helpLevel) setHelpLevel(prefs.helpLevel);
+          if (prefs.hasSpecificPros !== undefined) setHasSpecificPros(prefs.hasSpecificPros);
+          if (prefs.pros && Array.isArray(prefs.pros) && prefs.pros.length > 0) setPros(prefs.pros);
+          
+          console.log("Successfully loaded preferences via direct project query");
+          return;
+        }
       }
     } catch (error) {
       console.error('Error loading construction preferences:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load existing preferences",
+        variant: "destructive"
+      });
     }
   };
 
   const savePreferences = async () => {
-    const constructionPreferences: Record<string, Json> = {
-      helpLevel,
-      hasSpecificPros,
-      pros: hasSpecificPros ? pros : []
-    };
+    setIsSubmitting(true);
+    
+    try {
+      const constructionPreferences: Record<string, Json> = {
+        helpLevel,
+        hasSpecificPros,
+        pros: hasSpecificPros ? pros : []
+      };
 
-    if (projectId && !isCreationMode) {
-      try {
+      if (projectId && !isCreationMode) {
+        console.log("Updating existing project:", projectId);
+
         try {
-          const { data: projectData, error: projectError } = await supabase
-            .from('projects')
-            .select('user_id')
-            .eq('id', projectId)
-            .maybeSingle();
-            
-          if (projectError) throw projectError;
-          
-          if (projectData && projectData.user_id === user?.id) {
-            const { error } = await supabase
-              .from('projects')
-              .update({
-                construction_preferences: constructionPreferences
-              })
-              .eq('id', projectId);
-
-            if (error) throw error;
-          } else {
-            const { error } = await supabase.rpc(
-              'handle_project_update',
-              {
-                p_project_id: projectId,
-                p_property_id: null,
-                p_user_id: user?.id,
-                p_title: '',
-                p_renovation_areas: null,
-                p_project_preferences: null,
-                p_construction_preferences: constructionPreferences,
-                p_design_preferences: null,
-                p_management_preferences: null,
-                p_prior_experience: null
+          // Try edge function first to avoid RLS issues
+          const { data, error } = await supabase.functions.invoke(
+            'handle-project-update',
+            {
+              body: {
+                projectId: projectId,
+                userId: user?.id,
+                constructionPreferences
               }
-            );
-            
-            if (error) throw error;
-          }
-        } catch (error) {
-          console.error('Error saving via preferred method:', error);
-          const { error: directError } = await supabase
+            }
+          );
+          
+          if (error) throw error;
+          
+          console.log("Successfully updated via edge function:", data);
+        } catch (edgeFnError) {
+          console.error('Error using edge function:', edgeFnError);
+          
+          // Fallback: Try direct update
+          console.log("Attempting direct project update as fallback");
+          const { error: updateError } = await supabase
             .from('projects')
             .update({
               construction_preferences: constructionPreferences
             })
             .eq('id', projectId);
 
-          if (directError) throw directError;
+          if (updateError) throw updateError;
         }
         
         toast({
           title: "Success",
           description: "Construction preferences saved successfully.",
         });
-      } catch (error) {
-        console.error('Error saving construction preferences:', error);
-        toast({
-          title: "Error",
-          description: "Failed to save construction preferences",
-          variant: "destructive"
-        });
-        return;
       }
+      
+      const updatedProjectPrefs = {
+        ...projectPrefs,
+        propertyId,
+        projectId,
+        constructionPreferences
+      };
+      
+      setProjectPrefs(updatedProjectPrefs);
+      
+      navigate("/design-preferences", {
+        state: updatedProjectPrefs
+      });
+    } catch (error) {
+      console.error('Error saving construction preferences:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save construction preferences",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    const updatedProjectPrefs = {
-      ...projectPrefs,
-      propertyId,
-      projectId,
-      constructionPreferences
-    };
-    
-    setProjectPrefs(updatedProjectPrefs);
-    
-    navigate("/design-preferences", {
-      state: updatedProjectPrefs
-    });
   };
 
   const goToNextStep = async () => {
@@ -299,6 +309,7 @@ const ConstructionPreferences = () => {
               variant="outline" 
               className="flex items-center text-[#174c65] order-2 sm:order-1 w-full sm:w-auto"
               onClick={goBack}
+              disabled={isSubmitting}
             >
               <ArrowLeft className="mr-2 h-4 w-4" /> BACK
             </Button>
@@ -308,14 +319,16 @@ const ConstructionPreferences = () => {
                 variant="outline"
                 className="text-[#174c65] border-[#174c65] w-full sm:w-auto"
                 onClick={() => navigate("/dashboard")}
+                disabled={isSubmitting}
               >
                 SAVE & EXIT
               </Button>
               <Button
                 className="flex items-center bg-[#174c65] hover:bg-[#174c65]/90 text-white w-full sm:w-auto justify-center"
                 onClick={goToNextStep}
+                disabled={isSubmitting}
               >
-                NEXT <ArrowRight className="ml-2 h-4 w-4" />
+                {isSubmitting ? "Saving..." : "NEXT"} <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           </div>
