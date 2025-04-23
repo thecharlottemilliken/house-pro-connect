@@ -23,36 +23,45 @@ export const useTeamMembers = (projectId: string | undefined) => {
     try {
       console.log("Fetching team members for project:", projectId);
       
-      // First, check if the user is the project owner using a direct query
-      const { data: projectData, error: projectError } = await supabase
-        .from("projects")
-        .select("user_id")
-        .eq("id", projectId)
-        .maybeSingle();
+      // Use the security definer function to get team members
+      const { data: teamData, error: fnError } = await supabase
+        .rpc('get_project_team_members', { 
+          p_project_id: projectId 
+        });
+      
+      if (fnError) {
+        console.error("Error using team members function:", fnError);
         
-      if (projectError) {
-        console.error("Error checking project owner:", projectError);
-        // Continue execution to try other methods
+        // Fallback: Try direct query
+        const { data: directTeamData, error: directError } = await supabase
+          .from("project_team_members")
+          .select("id, role, email, name, user_id")
+          .eq("project_id", projectId);
+          
+        if (directError) {
+          console.error("Direct team query failed:", directError);
+          throw directError;
+        }
+        
+        teamData = directTeamData;
       }
       
-      const projectOwnerId = projectData?.user_id;
-      console.log("Project owner ID:", projectOwnerId);
-      
-      // Get team members with a direct query rather than using policies
-      // that might cause recursion
-      const { data: teamData, error: teamError } = await supabase
-        .from("project_team_members")
-        .select("id, role, email, name, user_id")
-        .eq("project_id", projectId);
-        
-      if (teamError) {
-        console.error("Error in fetching team data:", teamError);
-        throw teamError;
-      }
-
-      // If no team data or empty, return empty array
+      // If no team data or empty, check if owner needs to be added
       if (!teamData || teamData.length === 0) {
         console.log("No team members found, checking if owner needs to be added");
+        
+        // Get project owner
+        const { data: projectData, error: projectError } = await supabase
+          .from("projects")
+          .select("user_id")
+          .eq("id", projectId)
+          .maybeSingle();
+          
+        if (projectError) {
+          console.error("Error checking project owner:", projectError);
+        }
+        
+        const projectOwnerId = projectData?.user_id;
         
         // Add the owner if they're not already a team member
         if (projectOwnerId) {
@@ -96,7 +105,7 @@ export const useTeamMembers = (projectId: string | undefined) => {
         return [];
       }
       
-      // Get profile data using direct ID lookups rather than joins
+      // Get profile data for user_ids (if available)
       const userIds = teamData
         .map(member => member.user_id)
         .filter(Boolean);
