@@ -147,7 +147,7 @@ const CreateProject = () => {
                 ))}
                 
                 <div 
-                  className="border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center p-6 hover:border-[#174c65] transition-colors cursor-pointer h-full"
+                  className="border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center p-6 hover:border-[#174c65] transition-colors cursor-pointer h-full min-h-[220px]"
                   onClick={addNewProperty}
                 >
                   <div className="h-12 w-12 rounded-full bg-[#174c65]/10 flex items-center justify-center mb-4">
