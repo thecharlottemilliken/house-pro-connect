@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Plus } from "lucide-react";
@@ -42,15 +43,48 @@ const CreateProject = () => {
     const fetchProperties = async () => {
       setIsLoading(true);
       try {
-        const { data: directData, error: directError } = await supabase
-          .from('properties')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
+        console.log("Fetching properties for user:", user.id);
         
-        if (directError) {
-          console.warn('Direct query failed, trying alternate method:', directError);
+        // First try using a stored procedure (if available) to bypass RLS issues
+        try {
+          const { data: rpcData, error: rpcError } = await supabase.rpc('get_user_properties', {
+            p_user_id: user.id
+          });
           
+          if (!rpcError && rpcData) {
+            console.log("Properties fetched via RPC:", rpcData.length);
+            setProperties(rpcData);
+            setIsLoading(false);
+            return;
+          } else {
+            console.warn("RPC method failed or not available, trying direct query");
+          }
+        } catch (rpcErr) {
+          console.warn("RPC method not available:", rpcErr);
+        }
+        
+        // Next try direct query with user filter
+        try {
+          const { data: directData, error: directError } = await supabase
+            .from('properties')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+          
+          if (!directError && directData) {
+            console.log("Properties fetched via direct query:", directData.length);
+            setProperties(directData);
+            setIsLoading(false);
+            return;
+          } else {
+            console.warn('Direct query failed, trying alternate method:', directError);
+          }
+        } catch (directErr) {
+          console.warn("Direct query failed:", directErr);
+        }
+        
+        // As last resort, try to fetch all properties and filter client-side
+        try {
           const { data: allData, error: allError } = await supabase
             .from('properties')
             .select('*')
@@ -60,10 +94,16 @@ const CreateProject = () => {
             throw allError;
           }
           
-          const filteredData = allData.filter(prop => prop.user_id === user.id);
-          setProperties(filteredData || []);
-        } else {
-          setProperties(directData || []);
+          if (allData) {
+            const filteredData = allData.filter(prop => prop.user_id === user.id);
+            console.log("Properties filtered client-side:", filteredData.length);
+            setProperties(filteredData);
+          } else {
+            setProperties([]);
+          }
+        } catch (allErr) {
+          console.error("All queries failed:", allErr);
+          throw allErr;
         }
       } catch (error: any) {
         console.error('Error fetching properties:', error);
