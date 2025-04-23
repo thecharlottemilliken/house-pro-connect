@@ -1,150 +1,269 @@
 
-import { serve } from 'https://deno.land/std@0.208.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.29.0';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+interface WebhookPayload {
+  type: string;
+  table: string;
+  record: {
+    [key: string]: any;
+  };
+  schema: string;
+  old_record: null | {
+    [key: string]: any;
+  };
+}
 
 serve(async (req) => {
   // Handle CORS preflight request
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
   }
-  
+
   try {
-    // Get request body
-    const { 
-      projectId, 
-      userId, 
-      propertyId, 
-      title,
-      renovationAreas,
-      projectPreferences,
-      constructionPreferences,
-      designPreferences,
-      managementPreferences,
-      priorExperience
-    } = await req.json();
-    
-    if (!projectId || !userId) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required parameters' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Create Supabase client with service role key to bypass RLS
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      { auth: { persistSession: false } }
-    );
+    // Get the request body
+    const body = await req.json();
     
-    // First check if the project exists and if the user is authorized to update it
-    const { data: projectData, error: projectError } = await supabaseClient
-      .from('projects')
-      .select('id, user_id')
-      .eq('id', projectId)
-      .maybeSingle();
+    // Extract specific operation if provided
+    const operation = body.operation;
+    
+    // Handle getting all user projects
+    if (operation === "get-user-projects" && body.userId) {
+      const userId = body.userId;
       
-    if (projectError) {
-      console.error('Error checking project:', projectError);
-      return new Response(
-        JSON.stringify({ error: projectError.message }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    // Check if the user is the project owner
-    let canUpdate = false;
-    if (projectData) {
-      if (projectData.user_id === userId) {
-        canUpdate = true;
-      } else {
-        // Check if user is a team member
-        const { data: isMember, error: membershipError } = await supabaseClient
-          .from('project_team_members')
-          .select('id')
-          .eq('project_id', projectId)
-          .eq('user_id', userId)
-          .maybeSingle();
+      // Get projects owned by user
+      const { data: ownedProjects, error: ownedError } = await supabase
+        .from('projects')
+        .select(`
+          id,
+          title,
+          property_id,
+          created_at,
+          property:properties(
+            property_name,
+            image_url,
+            address_line1,
+            city,
+            state,
+            zip_code
+          )
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+        
+      if (ownedError) {
+        throw ownedError;
+      }
+      
+      // Mark owned projects
+      const ownedProjectsWithRole = (ownedProjects || []).map(project => ({
+        ...project,
+        is_owner: true
+      }));
+      
+      // Get team memberships
+      const { data: teamMemberships, error: teamError } = await supabase
+        .from('project_team_members')
+        .select(`
+          role,
+          project_id
+        `)
+        .eq('user_id', userId);
+      
+      if (teamError) {
+        throw teamError;
+      }
+
+      let teamProjects = [];
+      
+      // If user is a team member on any projects, fetch those projects
+      if (teamMemberships && teamMemberships.length > 0) {
+        const projectIds = teamMemberships.map(member => member.project_id);
+        
+        const { data: teamProjectsData, error: projectsError } = await supabase
+          .from('projects')
+          .select(`
+            id,
+            title,
+            property_id,
+            created_at,
+            property:properties(
+              property_name,
+              image_url,
+              address_line1,
+              city,
+              state,
+              zip_code
+            )
+          `)
+          .in('id', projectIds);
           
-        if (membershipError) {
-          console.error('Error checking team membership:', membershipError);
-        } else {
-          canUpdate = !!isMember;
+        if (projectsError) {
+          throw projectsError;
         }
-      }
-    }
-    
-    if (!canUpdate) {
-      return new Response(
-        JSON.stringify({ error: 'Not authorized to update this project' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    // Prepare the update object with only fields that have values
-    const updateObject: any = {};
-    
-    if (propertyId !== undefined && propertyId !== null) updateObject.property_id = propertyId;
-    if (title) updateObject.title = title;
-    if (renovationAreas) updateObject.renovation_areas = renovationAreas;
-    if (projectPreferences) updateObject.project_preferences = projectPreferences;
-    if (constructionPreferences) updateObject.construction_preferences = constructionPreferences;
-    if (designPreferences) updateObject.design_preferences = designPreferences;
-    if (managementPreferences) updateObject.management_preferences = managementPreferences;
-    if (priorExperience) updateObject.prior_experience = priorExperience;
-    
-    // Only update if there are changes to make
-    if (Object.keys(updateObject).length > 0) {
-      const { data, error } = await supabaseClient
-        .from('projects')
-        .update(updateObject)
-        .eq('id', projectId)
-        .select('*')
-        .single();
-
-      if (error) {
-        console.error('Error updating project:', error);
-        return new Response(
-          JSON.stringify({ error: error.message }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        
+        // Match projects with their roles from teamMemberships
+        teamProjects = (teamProjectsData || []).map(project => {
+          const membership = teamMemberships.find(m => m.project_id === project.id);
+          return {
+            ...project,
+            is_owner: false,
+            team_role: membership?.role || 'Team Member'
+          };
+        });
       }
       
-      return new Response(
-        JSON.stringify(data),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    } else {
-      // If no updates, just return the current project data
-      const { data: currentProject, error: fetchError } = await supabaseClient
+      // Combine and deduplicate the results
+      const projectMap = new Map();
+      
+      // Add owned projects to the map first (they take precedence)
+      ownedProjectsWithRole.forEach(project => {
+        projectMap.set(project.id, project);
+      });
+      
+      // Add team projects only if not already in the map
+      teamProjects.forEach(project => {
+        if (!projectMap.has(project.id)) {
+          projectMap.set(project.id, project);
+        }
+      });
+      
+      // Convert map back to array
+      const allProjects = Array.from(projectMap.values());
+      
+      return new Response(JSON.stringify({ projects: allProjects }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    // Handle project update or creation
+    if (body.projectId || (body.propertyId && body.userId)) {
+      const projectId = body.projectId;
+      const userId = body.userId;
+      const propertyId = body.propertyId;
+      const title = body.title || "";
+      const renovationAreas = body.renovationAreas || [];
+      const projectPreferences = body.projectPreferences || {};
+      const constructionPreferences = body.constructionPreferences || {};
+      const designPreferences = body.designPreferences || {};
+      const managementPreferences = body.managementPreferences || {};
+      const prior_experience = body.prior_experience || {};
+
+      if (projectId) {
+        // First get the existing project to verify ownership
+        const { data: existingProject, error: fetchError } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('id', projectId)
+          .single();
+          
+        if (fetchError) {
+          console.error("Error fetching project:", fetchError);
+          throw new Error("Error fetching project");
+        }
+        
+        // Update the project with the provided data
+        const updateData: any = {};
+        
+        // Only update fields that are provided in the request
+        if (propertyId) updateData.property_id = propertyId;
+        if (title) updateData.title = title;
+        if (renovationAreas.length > 0 || body.renovationAreas !== undefined) updateData.renovation_areas = renovationAreas;
+        if (Object.keys(projectPreferences).length > 0 || body.projectPreferences !== undefined) updateData.project_preferences = projectPreferences;
+        if (Object.keys(constructionPreferences).length > 0 || body.constructionPreferences !== undefined) updateData.construction_preferences = constructionPreferences;
+        if (Object.keys(designPreferences).length > 0 || body.designPreferences !== undefined) updateData.design_preferences = designPreferences;
+        if (Object.keys(managementPreferences).length > 0 || body.managementPreferences !== undefined) updateData.management_preferences = managementPreferences;
+        if (Object.keys(prior_experience).length > 0 || body.prior_experience !== undefined) updateData.prior_experience = prior_experience;
+        
+        const { data, error } = await supabase
+          .from('projects')
+          .update(updateData)
+          .eq('id', projectId)
+          .select()
+          .single();
+
+        if (error) {
+          console.error("Error updating project:", error);
+          throw new Error("Error updating project");
+        }
+
+        return new Response(JSON.stringify(data), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      } else if (propertyId && userId) {
+        // Create a new project
+        const { data, error } = await supabase
+          .from('projects')
+          .insert({
+            property_id: propertyId,
+            user_id: userId,
+            title: title || "New Project",
+            renovation_areas: renovationAreas,
+            project_preferences: projectPreferences,
+            construction_preferences: constructionPreferences,
+            design_preferences: designPreferences,
+            management_preferences: managementPreferences,
+            prior_experience: prior_experience
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error("Error creating project:", error);
+          throw new Error("Error creating project");
+        }
+
+        return new Response(JSON.stringify(data), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+    }
+    
+    // If projectId is provided but no specific fields to update, return the project data
+    if (body.projectId && body.userId) {
+      const { data, error } = await supabase
         .from('projects')
         .select('*')
-        .eq('id', projectId)
+        .eq('id', body.projectId)
         .single();
         
-      if (fetchError) {
-        console.error('Error fetching current project:', fetchError);
-        return new Response(
-          JSON.stringify({ error: fetchError.message }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+      if (error) {
+        console.error("Error fetching project:", error);
+        throw new Error("Error fetching project");
       }
       
-      return new Response(
-        JSON.stringify(currentProject),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify(data), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
     }
-  } catch (error) {
-    console.error('Unexpected error:', error);
+
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: "Invalid request parameters" }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      }
+    );
+  } catch (error) {
+    return new Response(
+      JSON.stringify({ error: error.message || "Internal Server Error" }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      }
     );
   }
 });

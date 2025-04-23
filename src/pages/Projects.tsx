@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -34,217 +33,146 @@ const Projects = () => {
   useEffect(() => {
     if (!user) return;
     
-    const fetchProjects = async () => {
-      setIsLoading(true);
-      try {
-        console.log("Fetching projects for user:", user.id);
-        
-        // First try to use RPC to bypass RLS issues
-        const { data: rpcData, error: rpcError } = await supabase.rpc('handle_project_update', {
-          p_project_id: null, // Just retrieving, not updating
-          p_property_id: null,
-          p_user_id: user.id,
-          p_title: '',
-          p_renovation_areas: null,
-          p_project_preferences: null,
-          p_construction_preferences: null,
-          p_design_preferences: null,
-          p_management_preferences: null,
-          p_prior_experience: null
-        });
-        
-        if (rpcError) {
-          console.warn('RPC method failed, trying direct query:', rpcError);
-          
-          // If RPC fails, try direct query for user's owned projects
-          const { data: ownedProjects, error: ownedError } = await supabase
-            .from('projects')
-            .select(`
-              id,
-              title,
-              property_id,
-              created_at,
-              user_id
-            `)
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false });
-            
-          if (ownedError) {
-            console.error('Direct query failed:', ownedError);
-            throw ownedError;
-          }
-          
-          // Process the projects data
-          if (ownedProjects && ownedProjects.length > 0) {
-            const projectIds = ownedProjects.map(project => project.property_id);
-            
-            // Fetch properties data
-            const { data: propertiesData, error: propertiesError } = await supabase
-              .from('properties')
-              .select(`
-                id,
-                property_name,
-                image_url,
-                address_line1,
-                city,
-                state,
-                zip_code
-              `)
-              .in('id', projectIds);
-            
-            if (propertiesError) {
-              console.error('Error fetching properties:', propertiesError);
-              throw propertiesError;
-            }
-            
-            // Create a map for easy property lookup
-            const propertiesMap = new Map();
-            if (propertiesData) {
-              propertiesData.forEach(property => {
-                propertiesMap.set(property.id, property);
-              });
-            }
-            
-            // Map projects with their properties
-            const processedProjects = ownedProjects.map(project => {
-              const property = propertiesMap.get(project.property_id) || {
-                property_name: "Unknown Property",
-                image_url: "",
-                address_line1: "Address not available",
-                city: "Unknown",
-                state: "Unknown",
-                zip_code: ""
-              };
-              
-              return {
-                id: project.id,
-                title: project.title,
-                property_id: project.property_id,
-                created_at: project.created_at,
-                property,
-                is_owner: true
-              };
-            });
-            
-            setProjects(processedProjects);
-          } else {
-            setProjects([]);
-          }
-        } else {
-          // If RPC was successful, continue with original logic
-          // First, get projects the user created directly
-          const { data: ownedProjects, error: ownedError } = await supabase
-            .from('projects')
-            .select(`
-              id,
-              title,
-              property_id,
-              created_at,
-              property:properties(
-                property_name,
-                image_url,
-                address_line1,
-                city,
-                state,
-                zip_code
-              )
-            `)
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false });
-            
-          if (ownedError) throw ownedError;
-          
-          // Mark owned projects
-          const ownedProjectsWithRole = (ownedProjects || []).map(project => ({
-            ...project,
-            is_owner: true
-          }));
-          
-          // Then, get projects where the user is a team member but not the owner
-          // Fix: Query project_team_members first, then join with projects table
-          const { data: teamMemberships, error: teamError } = await supabase
-            .from('project_team_members')
-            .select(`
-              role,
-              project_id
-            `)
-            .eq('user_id', user.id);
-          
-          if (teamError) throw teamError;
-
-          let teamProjects: Project[] = [];
-          
-          // If user is a team member on any projects, fetch those projects
-          if (teamMemberships && teamMemberships.length > 0) {
-            const projectIds = teamMemberships.map(member => member.project_id);
-            
-            const { data: teamProjectsData, error: projectsError } = await supabase
-              .from('projects')
-              .select(`
-                id,
-                title,
-                property_id,
-                created_at,
-                property:properties(
-                  property_name,
-                  image_url,
-                  address_line1,
-                  city,
-                  state,
-                  zip_code
-                )
-              `)
-              .in('id', projectIds);
-              
-            if (projectsError) throw projectsError;
-            
-            // Match projects with their roles from teamMemberships
-            teamProjects = (teamProjectsData || []).map(project => {
-              const membership = teamMemberships.find(m => m.project_id === project.id);
-              return {
-                ...project,
-                is_owner: false,
-                team_role: membership?.role || 'Team Member'
-              };
-            });
-          }
-          
-          // Create a Map to store unique projects by ID
-          const projectMap = new Map<string, Project>();
-          
-          // Add owned projects to the map first (they take precedence)
-          ownedProjectsWithRole.forEach(project => {
-            projectMap.set(project.id, project);
-          });
-          
-          // Add team projects only if not already in the map
-          teamProjects.forEach(project => {
-            if (!projectMap.has(project.id)) {
-              projectMap.set(project.id, project);
-            }
-          });
-          
-          // Convert map back to array for state
-          const allProjects = Array.from(projectMap.values());
-          
-          console.log(`Found ${allProjects.length} projects in total`);
-          setProjects(allProjects);
-        }
-      } catch (error: any) {
-        console.error('Error fetching projects:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load your projects. Please try again.",
-          variant: "destructive"
-        });
-        setProjects([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
     fetchProjects();
   }, [user]);
+
+  const fetchProjects = async () => {
+    setIsLoading(true);
+    try {
+      console.log("Fetching projects for user:", user?.id);
+      
+      // First try using the edge function to bypass RLS issues
+      const { data: edgeData, error: edgeError } = await supabase.functions.invoke('handle-project-update', {
+        method: 'POST',
+        body: { 
+          userId: user?.id,
+          operation: "get-user-projects"
+        }
+      });
+      
+      if (edgeError) {
+        console.error("Error using edge function:", edgeError);
+        throw edgeError;
+      }
+      
+      if (edgeData && Array.isArray(edgeData.projects)) {
+        console.log(`Found ${edgeData.projects.length} projects via edge function`);
+        setProjects(edgeData.projects);
+        setIsLoading(false);
+        return;
+      }
+      
+      // If edge function doesn't return expected data, try direct query
+      console.warn("Edge function did not return expected data, trying direct query");
+      
+      // First, get projects the user created directly
+      const { data: ownedProjects, error: ownedError } = await supabase
+        .from('projects')
+        .select(`
+          id,
+          title,
+          property_id,
+          created_at,
+          property:properties(
+            property_name,
+            image_url,
+            address_line1,
+            city,
+            state,
+            zip_code
+          )
+        `)
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false });
+        
+      if (ownedError) throw ownedError;
+      
+      // Mark owned projects
+      const ownedProjectsWithRole = (ownedProjects || []).map(project => ({
+        ...project,
+        is_owner: true
+      }));
+      
+      // Then, get projects where the user is a team member but not the owner
+      const { data: teamMemberships, error: teamError } = await supabase
+        .from('project_team_members')
+        .select(`
+          role,
+          project_id
+        `)
+        .eq('user_id', user?.id);
+      
+      if (teamError) throw teamError;
+
+      let teamProjects: Project[] = [];
+      
+      // If user is a team member on any projects, fetch those projects
+      if (teamMemberships && teamMemberships.length > 0) {
+        const projectIds = teamMemberships.map(member => member.project_id);
+        
+        const { data: teamProjectsData, error: projectsError } = await supabase
+          .from('projects')
+          .select(`
+            id,
+            title,
+            property_id,
+            created_at,
+            property:properties(
+              property_name,
+              image_url,
+              address_line1,
+              city,
+              state,
+              zip_code
+            )
+          `)
+          .in('id', projectIds);
+          
+        if (projectsError) throw projectsError;
+        
+        // Match projects with their roles from teamMemberships
+        teamProjects = (teamProjectsData || []).map(project => {
+          const membership = teamMemberships.find(m => m.project_id === project.id);
+          return {
+            ...project,
+            is_owner: false,
+            team_role: membership?.role || 'Team Member'
+          };
+        });
+      }
+      
+      // Combine and deduplicate the results
+      const projectMap = new Map<string, Project>();
+      
+      // Add owned projects to the map first (they take precedence)
+      ownedProjectsWithRole.forEach(project => {
+        projectMap.set(project.id, project);
+      });
+      
+      // Add team projects only if not already in the map
+      teamProjects.forEach(project => {
+        if (!projectMap.has(project.id)) {
+          projectMap.set(project.id, project);
+        }
+      });
+      
+      // Convert map back to array for state
+      const allProjects = Array.from(projectMap.values());
+      
+      console.log(`Found ${allProjects.length} projects in total`);
+      setProjects(allProjects);
+    } catch (error: any) {
+      console.error('Error fetching projects:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load your projects. Please try again.",
+        variant: "destructive"
+      });
+      setProjects([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const goToProjectDashboard = (projectId: string) => {
     navigate(`/project-dashboard/${projectId}`);
