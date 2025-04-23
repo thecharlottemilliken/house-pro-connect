@@ -49,22 +49,60 @@ export const useProjectAccess = (projectId: string | undefined): ProjectAccessRe
         };
       }
 
-      // If not owner, check if the user is a team member
-      const { data: teamMember, error: teamError } = await supabase
-        .from('project_team_members')
-        .select('role')
-        .eq('project_id', projectId)
-        .eq('user_id', user.id)
-        .maybeSingle();
+      // Use the security definer function to check team membership
+      const { data: isMember, error: membershipError } = await supabase
+        .rpc('safe_check_team_membership', { 
+          p_project_id: projectId, 
+          p_user_id: user.id 
+        });
 
-      if (teamError) {
-        throw teamError;
+      if (membershipError) {
+        console.warn("Membership function call failed:", membershipError);
+        
+        // Fallback to direct check
+        const { data: teamMember, error: teamError } = await supabase
+          .from('project_team_members')
+          .select('role')
+          .eq('project_id', projectId)
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (teamError) {
+          throw teamError;
+        }
+
+        return {
+          hasAccess: !!teamMember,
+          isOwner: false,
+          role: teamMember?.role || null
+        };
+      }
+
+      // If using the function was successful
+      if (isMember) {
+        // We know they're a member, but we need to get their role
+        const { data: teamMember, error: teamError } = await supabase
+          .from('project_team_members')
+          .select('role')
+          .eq('project_id', projectId)
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (teamError) {
+          throw teamError;
+        }
+
+        return {
+          hasAccess: true,
+          isOwner: false,
+          role: teamMember?.role || null
+        };
       }
 
       return {
-        hasAccess: !!teamMember,
+        hasAccess: false,
         isOwner: false,
-        role: teamMember?.role || null
+        role: null
       };
     } catch (error) {
       console.error('Error checking project access:', error);

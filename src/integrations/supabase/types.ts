@@ -438,6 +438,32 @@ export type Database = {
         Args: { project_id_param: string; user_id_param: string }
         Returns: boolean
       }
+      get_property_details: {
+        Args: { p_property_id: string }
+        Returns: {
+          address_line1: string
+          address_line2: string | null
+          bathrooms: string | null
+          bedrooms: string | null
+          blueprint_url: string | null
+          city: string
+          created_at: string
+          exterior_attributes: string[] | null
+          home_photos: string[] | null
+          home_purpose: string | null
+          home_type: string | null
+          id: string
+          image_url: string | null
+          interior_attributes: string[] | null
+          property_name: string
+          sqft: string | null
+          state: string
+          updated_at: string
+          user_id: string
+          working_on_behalf: boolean | null
+          zip_code: string
+        }[]
+      }
       get_user_email: {
         Args: { user_id: string }
         Returns: {
@@ -488,6 +514,10 @@ export type Database = {
           p_prior_experience?: Json
         }
         Returns: string
+      }
+      safe_check_team_membership: {
+        Args: { p_project_id: string; p_user_id: string }
+        Returns: boolean
       }
       set_coach_claim: {
         Args: { uid: string }

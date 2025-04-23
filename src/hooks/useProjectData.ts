@@ -138,36 +138,62 @@ export const useProjectData = (projectId: string | undefined, locationState: any
 
           setProjectData(projectDataMapped);
 
-          // Fetch property using direct query
-          const { data: property, error: propertyError } = await supabase
-            .from('properties')
-            .select('*')
-            .eq('id', directProject.property_id)
-            .single();
+          // Use the security definer function to fetch property details
+          const { data: propertyData, error: propertyFnError } = await supabase
+            .rpc('get_property_details', { p_property_id: directProject.property_id });
 
-          if (propertyError) {
-            throw propertyError;
+          if (propertyFnError) {
+            console.warn("Property function call failed:", propertyFnError);
+            
+            // Fallback to direct query
+            const { data: property, error: propertyError } = await supabase
+              .from('properties')
+              .select('*')
+              .eq('id', directProject.property_id)
+              .single();
+
+            if (propertyError) {
+              throw propertyError;
+            }
+
+            if (!property) {
+              throw new Error("Property not found");
+            }
+
+            const propertyDetailsMapped: PropertyDetails = {
+              id: property.id,
+              property_name: property.property_name,
+              address: `${property.address_line1}, ${property.city}, ${property.state} ${property.zip_code}`,
+              address_line1: property.address_line1,
+              city: property.city,
+              state: property.state,
+              zip: property.zip_code,
+              zip_code: property.zip_code,
+              home_photos: property.home_photos || [],
+              image_url: property.image_url || '',
+              blueprint_url: property.blueprint_url
+            };
+
+            setPropertyDetails(propertyDetailsMapped);
+          } else if (propertyData && propertyData.length > 0) {
+            const property = propertyData[0];
+            
+            const propertyDetailsMapped: PropertyDetails = {
+              id: property.id,
+              property_name: property.property_name,
+              address: `${property.address_line1}, ${property.city}, ${property.state} ${property.zip_code}`,
+              address_line1: property.address_line1,
+              city: property.city,
+              state: property.state,
+              zip: property.zip_code,
+              zip_code: property.zip_code,
+              home_photos: property.home_photos || [],
+              image_url: property.image_url || '',
+              blueprint_url: property.blueprint_url
+            };
+
+            setPropertyDetails(propertyDetailsMapped);
           }
-
-          if (!property) {
-            throw new Error("Property not found");
-          }
-
-          const propertyDetailsMapped: PropertyDetails = {
-            id: property.id,
-            property_name: property.property_name,
-            address: `${property.address_line1}, ${property.city}, ${property.state} ${property.zip_code}`,
-            address_line1: property.address_line1,
-            city: property.city,
-            state: property.state,
-            zip: property.zip_code,
-            zip_code: property.zip_code,
-            home_photos: property.home_photos || [],
-            image_url: property.image_url || '',
-            blueprint_url: property.blueprint_url
-          };
-
-          setPropertyDetails(propertyDetailsMapped);
         } else {
           // If RPC was successful, fetch project details normally
           const { data: projectDetails, error: projectDetailsError } = await supabase

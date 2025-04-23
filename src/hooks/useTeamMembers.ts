@@ -23,7 +23,8 @@ export const useTeamMembers = (projectId: string | undefined) => {
     try {
       console.log("Fetching team members for project:", projectId);
       
-      // First, check if the user is the project owner
+      // First, check if the user is the project owner using a direct query
+      // This is less likely to cause recursion issues
       const { data: projectData, error: projectError } = await supabase
         .from("projects")
         .select("user_id")
@@ -37,7 +38,8 @@ export const useTeamMembers = (projectId: string | undefined) => {
       const projectOwnerId = projectData?.user_id;
       console.log("Project owner ID:", projectOwnerId);
       
-      // Get team members including their roles
+      // Get team members with a direct query rather than using policies
+      // that might cause recursion
       let { data: teamData, error: teamError } = await supabase
         .from("project_team_members")
         .select("id, role, email, name, user_id")
@@ -98,7 +100,7 @@ export const useTeamMembers = (projectId: string | undefined) => {
       // If still no team data, return empty array
       if (!teamData || teamData.length === 0) return [];
 
-      // Get profile data for all team members who have accounts
+      // Get profile data using direct ID lookups rather than joins
       const userIds = teamData
         .map(member => member.user_id)
         .filter(Boolean);
