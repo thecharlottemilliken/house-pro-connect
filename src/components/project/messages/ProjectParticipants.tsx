@@ -20,35 +20,71 @@ interface ProjectParticipantsProps {
 const ProjectParticipants = ({ projectId, onSelectParticipant }: ProjectParticipantsProps) => {
   const { user } = useAuth();
   const [participants, setParticipants] = useState<ProjectParticipant[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchParticipants = async () => {
       if (!projectId || !user) return;
       
       try {
-        const { data: teamMembers, error: teamError } = await supabase
-          .from('project_team_members')
-          .select('id, name, email, role, user_id')
-          .eq('project_id', projectId)
-          .neq('user_id', user.id); // Exclude current user
+        // Use the edge function to avoid recursion issues with RLS
+        const { data: teamMembers, error } = await supabase.functions.invoke(
+          'get-project-team-members',
+          {
+            body: { projectId }
+          }
+        );
           
-        if (teamError) throw teamError;
+        if (error) {
+          console.error("Error fetching team members:", error);
+          throw error;
+        }
 
-        // Format the participants data
-        const formattedParticipants = teamMembers.map(member => ({
-          id: member.user_id,
-          name: member.name || 'Unknown User',
-          email: member.email || '',
-          role: member.role
-        }));
+        if (teamMembers && Array.isArray(teamMembers)) {
+          // Format the participants data and exclude current user
+          const formattedParticipants = teamMembers
+            .filter(member => member.user_id !== user.id) // Exclude current user
+            .map(member => ({
+              id: member.user_id,
+              name: member.name || 'Unknown User',
+              email: member.email || '',
+              role: member.role
+            }));
 
-        setParticipants(formattedParticipants);
-        console.log('Participants found:', formattedParticipants);
+          setParticipants(formattedParticipants);
+          console.log('Participants found:', formattedParticipants);
+        } else {
+          setParticipants([]);
+        }
       } catch (error) {
         console.error('Error fetching participants:', error);
+        
+        // Fallback to direct query as last resort
+        try {
+          const { data: directMembers, error: directError } = await supabase
+            .from('project_team_members')
+            .select('id, user_id, name, email, role')
+            .eq('project_id', projectId)
+            .neq('user_id', user.id);
+            
+          if (directError) throw directError;
+          
+          if (directMembers) {
+            const formattedParticipants = directMembers.map(member => ({
+              id: member.user_id,
+              name: member.name || 'Unknown User',
+              email: member.email || '',
+              role: member.role
+            }));
+            
+            setParticipants(formattedParticipants);
+          }
+        } catch (fallbackError) {
+          console.error('Fallback fetch also failed:', fallbackError);
+          setParticipants([]);
+        }
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 

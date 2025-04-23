@@ -5,7 +5,7 @@ import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useProjectData } from "@/hooks/useProjectData";
 import { Button } from "@/components/ui/button";
-import { UserPlus, RefreshCw } from "lucide-react";
+import { UserPlus, RefreshCw, UserCheck } from "lucide-react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import ProjectSidebar from "@/components/project/ProjectSidebar";
 import { toast } from "@/hooks/use-toast";
@@ -19,6 +19,7 @@ import { addTeamMember } from "@/utils/team";
 const ProjectTeam = () => {
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isAddingCoach, setIsAddingCoach] = useState(false);
   const location = useLocation();
   const params = useParams();
   const navigate = useNavigate();
@@ -151,6 +152,45 @@ const ProjectTeam = () => {
     }
   };
 
+  // Function to add coaches to this specific project
+  const addCoachesToProject = async () => {
+    if (!projectId || isAddingCoach) return;
+    
+    setIsAddingCoach(true);
+    
+    try {
+      // Call the database function to add coaches to the project
+      const { error } = await supabase.functions.invoke(
+        'add-coaches-to-projects',
+        {
+          body: { projectId }  // Passing project ID to only update this specific project
+        }
+      );
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "Coaches Added",
+        description: "Coaches have been added to this project."
+      });
+      
+      // Refresh the team list to show the newly added coaches
+      refetchTeamMembers();
+      
+    } catch (error: any) {
+      console.error("Error adding coaches:", error);
+      toast({
+        title: "Error",
+        description: `Failed to add coaches: ${error.message || 'Unknown error'}`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsAddingCoach(false);
+    }
+  };
+
   const openInviteDialog = () => {
     setIsInviteDialogOpen(true);
   };
@@ -193,6 +233,15 @@ const ProjectTeam = () => {
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-8">
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-0">Project Team</h1>
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-3">
+                <Button 
+                  variant="outline"
+                  onClick={addCoachesToProject}
+                  disabled={isAddingCoach}
+                  className="flex items-center"
+                >
+                  <UserCheck className={`mr-2 h-4 w-4 ${isAddingCoach ? 'animate-spin' : ''}`} />
+                  {isAddingCoach ? 'ADDING COACHES...' : 'ADD COACHES'}
+                </Button>
                 <Button 
                   variant="outline"
                   onClick={ensureOwnerInTeam}

@@ -27,7 +27,7 @@ serve(async (req) => {
       });
     }
 
-    // Check if user is authenticated and is a coach
+    // Check if user is authenticated
     const { data: { user }, error: authError } = await supabase.auth.getUser(
       authHeader.replace('Bearer ', '')
     );
@@ -39,35 +39,82 @@ serve(async (req) => {
       });
     }
 
-    // Verify the user is a coach
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+    // Parse request body for optional projectId parameter
+    const { projectId } = await req.json();
+    let result;
+    
+    // If projectId is provided, add coaches to just this project
+    if (projectId) {
+      console.log(`Adding coaches to specific project: ${projectId}`);
+      
+      // Get coaches from profiles
+      const { data: coaches, error: coachError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('role', 'coach');
+      
+      if (coachError) {
+        throw coachError;
+      }
+      
+      if (!coaches || coaches.length === 0) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          message: "No coaches found in the system" 
+        }), { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        });
+      }
+      
+      // Get project owner
+      const { data: project, error: projectError } = await supabase
+        .from('projects')
+        .select('user_id')
+        .eq('id', projectId)
+        .single();
+      
+      if (projectError) {
+        throw projectError;
+      }
+      
+      if (!project) {
+        return new Response(JSON.stringify({ error: "Project not found" }), { 
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        });
+      }
+      
+      // Add each coach to the project
+      for (const coach of coaches) {
+        await supabase
+          .from('project_team_members')
+          .insert({
+            project_id: projectId,
+            user_id: coach.id,
+            role: 'coach',
+            added_by: project.user_id
+          })
+          .on_conflict(['project_id', 'user_id'])
+          .ignore();
+      }
+      
+      result = { success: true, message: `Coaches added to project ${projectId}` };
+    } else {
+      // Call the database function to add coaches to all projects
+      const { data, error } = await supabase.rpc('add_coaches_to_all_projects');
 
-    if (profileError || !profileData || profileData.role !== 'coach') {
-      return new Response(JSON.stringify({ error: 'Access denied - coach role required' }), { 
-        status: 403, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
-      });
+      if (error) {
+        console.error("Error adding coaches to projects:", error);
+        return new Response(JSON.stringify({ error: error.message }), { 
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        });
+      }
+      
+      result = { success: true, message: "Coaches have been added to all projects" };
     }
 
-    // Call the database function to add coaches to all projects
-    const { data, error } = await supabase.rpc('add_coaches_to_all_projects');
-
-    if (error) {
-      console.error("Error adding coaches to projects:", error);
-      return new Response(JSON.stringify({ error: error.message }), { 
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
-      });
-    }
-
-    return new Response(JSON.stringify({ 
-      success: true, 
-      message: "Coaches have been added to all projects"
-    }), { 
+    return new Response(JSON.stringify(result), { 
       headers: { ...corsHeaders, "Content-Type": "application/json" } 
     });
   } catch (err) {

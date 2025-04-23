@@ -50,7 +50,7 @@ BEGIN
             -- Add each coach to each project team
             INSERT INTO public.project_team_members (project_id, user_id, role, added_by)
             VALUES (project_record.id, coach_record.id, 'coach', project_record.user_id)
-            ON CONFLICT DO NOTHING; -- Avoid duplicates
+            ON CONFLICT (project_id, user_id) DO NOTHING; -- Avoid duplicates
         END LOOP;
     END LOOP;
 END;
