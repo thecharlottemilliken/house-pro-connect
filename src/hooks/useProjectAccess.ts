@@ -25,71 +25,50 @@ export const useProjectAccess = (projectId: string): UseProjectAccessResult => {
       }
 
       try {
-        // First, check using the edge function
-        const { data: isTeamMember, error: teamMemberError } = await supabase.functions.invoke(
+        // Always use edge function to bypass RLS issues
+        const { data: accessData, error: accessError } = await supabase.functions.invoke(
           'check-team-membership',
           {
             body: { projectId, userId: user.id }
           }
         );
 
-        if (teamMemberError) {
-          console.error("Error checking team membership:", teamMemberError);
+        if (accessError) {
+          console.error("Error checking access:", accessError);
           setHasAccess(false);
           setIsLoading(false);
           return;
         }
 
-        if (isTeamMember) {
-          setHasAccess(true);
-          
-          // Try to get the role from team members
-          try {
-            // Try direct query first
-            const { data: memberData, error: memberError } = await supabase
-              .from('project_team_members')
-              .select('role')
-              .eq('project_id', projectId)
-              .eq('user_id', user.id);
-              
-            if (memberError) {
-              console.error("Error getting role:", memberError);
-              throw memberError;
-            }
-            
-            if (memberData && memberData.length > 0) {
-              const userRole = memberData[0].role;
-              setRole(userRole);
-              setIsOwner(userRole === 'owner');
-            }
-          } catch (roleError) {
-            console.error("Error getting role, using fallback:", roleError);
-            
-            // Try getting the project directly to check owner
-            try {
-              const { data: projectData, error: projectError } = await supabase
-                .from('projects')
-                .select('user_id')
-                .eq('id', projectId);
-                
-              if (projectError) {
-                throw projectError;
+        // Set access based on the response from the edge function
+        setHasAccess(!!accessData);
+        
+        if (accessData) {
+          // If user has access, get their role using handle-project-update
+          const { data: projectData, error: projectError } = await supabase.functions.invoke(
+            'handle-project-update',
+            {
+              body: { 
+                operation: "get-project-owner", 
+                projectId, 
+                userId: user.id 
               }
-              
-              if (projectData && projectData.length > 0) {
-                const isProjectOwner = projectData[0].user_id === user.id;
-                setIsOwner(isProjectOwner);
-                setRole(isProjectOwner ? 'owner' : 'team');
-              } else {
-                setRole('team'); // Default to team member if we can't verify ownership
-              }
-            } catch (projectError) {
-              console.error("Error getting project data:", projectError);
-              setRole('team'); // Default to team member if all checks fail
             }
+          );
+
+          if (projectError) {
+            console.error("Error getting project data:", projectError);
+          } else if (projectData) {
+            // Check if user is the owner
+            const isProjectOwner = projectData.isOwner || projectData.user_id === user.id;
+            setIsOwner(isProjectOwner);
+            setRole(isProjectOwner ? 'owner' : projectData.role || 'team');
           }
-        } else {
-          setHasAccess(false);
+          
+          // If we couldn't determine the role, default to team member
+          if (!role) {
+            setRole('team');
+          }
         }
       } catch (error) {
         console.error("Error checking project access:", error);

@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -35,6 +34,51 @@ serve(async (req) => {
     
     // Extract specific operation if provided
     const operation = body.operation;
+    
+    // Handle getting project owner info
+    if (operation === "get-project-owner" && body.projectId && body.userId) {
+      const projectId = body.projectId;
+      const userId = body.userId;
+      
+      // First check if user is the project owner
+      const { data: projectData, error: projectError } = await supabase
+        .from('projects')
+        .select('user_id')
+        .eq('id', projectId)
+        .single();
+        
+      if (projectError) {
+        console.error("Error fetching project:", projectError);
+        throw projectError;
+      }
+      
+      const isOwner = projectData.user_id === userId;
+      
+      // If not owner, get their role from team members
+      let role = null;
+      
+      if (!isOwner) {
+        const { data: roleData, error: roleError } = await supabase
+          .from('project_team_members')
+          .select('role')
+          .eq('project_id', projectId)
+          .eq('user_id', userId)
+          .maybeSingle();
+          
+        if (!roleError && roleData) {
+          role = roleData.role;
+        }
+      }
+      
+      return new Response(JSON.stringify({
+        isOwner,
+        role: isOwner ? 'owner' : role,
+        user_id: projectData.user_id
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
     
     // Handle getting all user projects
     if (operation === "get-user-projects" && body.userId) {
