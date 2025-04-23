@@ -65,10 +65,49 @@ const RenovationAreas = () => {
 
   const fetchPropertyDetails = async (id: string) => {
     try {
-      // First try using the security definer function
-      try {
+      // For new project creation, don't check team membership, just fetch property details
+      const isNewProject = !projectId;
+      
+      if (isNewProject && user) {
+        // For new projects, only check if the user owns the property
         const { data, error } = await supabase.rpc('get_property_details', { p_property_id: id });
-        if (error) throw error;
+        
+        if (error) {
+          console.error("Error using property details function:", error);
+          
+          // Fallback to direct query for owner
+          const { data: directData, error: directError } = await supabase
+            .from('properties')
+            .select('*')
+            .eq('id', id)
+            .eq('user_id', user.id)
+            .single();
+            
+          if (directError) {
+            console.error("Error in direct property query:", directError);
+            toast({
+              title: "Access Error",
+              description: "Unable to access this property. Please try again or select another property.",
+              variant: "destructive"
+            });
+            navigate("/create-project");
+            return;
+          }
+          
+          setPropertyDetails({
+            id: directData.id,
+            property_name: directData.property_name,
+            bedrooms: directData.bedrooms,
+            bathrooms: directData.bathrooms,
+            living_rooms: 1,
+            dining_rooms: 1
+          });
+          
+          if (!propertyName) {
+            setPropertyName(directData.property_name);
+          }
+          return;
+        }
         
         if (data && data.length > 0) {
           const propertyData: Property = {
@@ -86,47 +125,62 @@ const RenovationAreas = () => {
           }
           return;
         }
-      } catch (funcError) {
-        console.warn("Function approach failed, trying direct query:", funcError);
+      } else {
+        // For existing projects, check team membership
+        try {
+          // Use edge function to check team membership without causing recursion
+          if (projectId && user) {
+            const { data: hasAccess, error: accessError } = await supabase.functions.invoke(
+              'check-team-membership', {
+                body: { projectId, userId: user.id }
+              }
+            );
+            
+            if (accessError || !hasAccess) {
+              console.error("Team membership check failed:", accessError);
+              toast({
+                title: "Access Error",
+                description: "You don't have access to this project.",
+                variant: "destructive"
+              });
+              navigate("/dashboard");
+              return;
+            }
+          }
+          
+          // Use the security definer function
+          const { data, error } = await supabase.rpc('get_property_details', { p_property_id: id });
+          if (error) throw error;
+          
+          if (data && data.length > 0) {
+            const propertyData: Property = {
+              id: data[0].id,
+              property_name: data[0].property_name,
+              bedrooms: data[0].bedrooms,
+              bathrooms: data[0].bathrooms,
+              living_rooms: 1,
+              dining_rooms: 1
+            };
+            
+            setPropertyDetails(propertyData);
+            if (!propertyName) {
+              setPropertyName(data[0].property_name);
+            }
+            return;
+          }
+        } catch (funcError) {
+          console.warn("Function approach failed, trying direct query:", funcError);
+        }
       }
       
-      // Fall back to direct query if function fails
+      // Last resort: direct query
       const { data, error } = await supabase
         .from('properties')
         .select('*')
         .eq('id', id)
         .single();
 
-      if (error) {
-        // If we hit an RLS error, it might be that this is a new project creation flow
-        // In that case, the user should still own the property
-        if (error.message.includes('policy') && user) {
-          const { data: directData, error: directError } = await supabase
-            .from('properties')
-            .select('*')
-            .eq('id', id)
-            .eq('user_id', user.id)
-            .single();
-            
-          if (directError) throw directError;
-          
-          const propertyData: Property = {
-            id: directData.id,
-            property_name: directData.property_name,
-            bedrooms: directData.bedrooms,
-            bathrooms: directData.bathrooms,
-            living_rooms: 1,
-            dining_rooms: 1
-          };
-          
-          setPropertyDetails(propertyData);
-          if (!propertyName) {
-            setPropertyName(directData.property_name);
-          }
-          return;
-        }
-        throw error;
-      }
+      if (error) throw error;
       
       const propertyData: Property = {
         id: data.id,

@@ -35,143 +35,95 @@ export const useTeamMembers = (projectId: string | undefined) => {
     try {
       console.log("Fetching team members for project:", projectId);
       
-      // Use the security definer function to get team members
+      // First, check if we're in project creation mode
+      // In creation mode, we just treat current user as owner without querying the database
+      // This requires checking if the project exists
+      const { data: projectExists, error: projectCheckError } = await supabase
+        .from("projects")
+        .select("id, user_id")
+        .eq("id", projectId)
+        .maybeSingle();
+        
+      // If the project doesn't exist or this is a new project
+      // or we couldn't verify existence, just return the current user as the owner
+      if (projectCheckError || !projectExists) {
+        console.log("Project in creation mode or check error, returning current user as owner");
+        return [{
+          id: 'owner-provisional',
+          role: "owner",
+          name: user.user_metadata?.name || "Project Owner",
+          email: user.email || "No email",
+          avatarUrl: `https://i.pravatar.cc/150?u=${user.email}`,
+          isCurrentUser: true
+        }];
+      }
+      
+      // Check if current user is the project owner
+      if (projectExists && projectExists.user_id === user.id) {
+        console.log("User is project owner");
+        
+        // Add the user as owner immediately to avoid team members query
+        return [{
+          id: 'owner',
+          role: "owner",
+          name: user.user_metadata?.name || "Project Owner",
+          email: user.email || "No email",
+          avatarUrl: `https://i.pravatar.cc/150?u=${user.email}`,
+          isCurrentUser: true
+        }];
+      }
+      
+      // If we reach here, we're dealing with an existing project
+      // First try using the edge function
       let teamMemberData: TeamMemberData[] = [];
       
-      // First try using the edge function
-      const { data, error: fnError } = await supabase.functions.invoke(
-        'get-project-team-members', {
-          body: { projectId }
-        }
-      );
-      
-      if (fnError || !data) {
-        console.error("Error using team members function:", fnError);
-        
-        // Fallback: Try direct query
-        const { data: directTeamData, error: directError } = await supabase
-          .from("project_team_members")
-          .select("id, role, email, name, user_id")
-          .eq("project_id", projectId);
-          
-        if (directError) {
-          console.error("Direct team query failed:", directError);
-          throw directError;
-        }
-        
-        teamMemberData = directTeamData || [];
-      } else {
-        teamMemberData = data;
-      }
-      
-      // If no team data or empty, check if owner needs to be added
-      if (!teamMemberData || teamMemberData.length === 0) {
-        console.log("No team members found, checking if owner needs to be added");
-        
-        // Get project owner
-        const { data: projectData, error: projectError } = await supabase
-          .from("projects")
-          .select("user_id")
-          .eq("id", projectId)
-          .maybeSingle();
-          
-        if (projectError) {
-          console.error("Error checking project owner:", projectError);
-        }
-        
-        const projectOwnerId = projectData?.user_id;
-        
-        // If the current user is the project owner, return them as a team member
-        // This prevents recursion during project creation
-        if (projectOwnerId && projectOwnerId === user.id) {
-          console.log("Current user is project owner, adding automatically");
-          return [{
-            id: 'owner', // Temporary ID until team member is formally created
-            role: "owner",
-            name: user.user_metadata?.name || "Project Owner",
-            email: user.email || "No email",
-            avatarUrl: `https://i.pravatar.cc/150?u=${user.email}`,
-            isCurrentUser: true
-          }];
-        }
-        
-        // Add the owner if they're not already a team member
-        if (projectOwnerId) {
-          try {
-            // Get owner profile to get email and name
-            const { data: ownerProfile } = await supabase
-              .from("profiles")
-              .select("name, email")
-              .eq("id", projectOwnerId)
-              .maybeSingle();
-              
-            if (ownerProfile) {
-              // Use the addTeamMember utility
-              console.log("Adding owner to team:", ownerProfile.name, ownerProfile.email);
-              const result = await addTeamMember(
-                projectId,
-                ownerProfile.email,
-                "owner",
-                ownerProfile.name
-              );
-              
-              if (result.success && result.memberId) {
-                // Return the owner as the only team member for now
-                return [{
-                  id: result.memberId,
-                  role: "owner",
-                  name: ownerProfile.name || "Project Owner",
-                  email: ownerProfile.email || "No email",
-                  avatarUrl: `https://i.pravatar.cc/150?u=${ownerProfile.email}`,
-                  isCurrentUser: projectOwnerId === user.id
-                }];
-              } else {
-                console.error("Error adding owner to team:", result.error);
-              }
-            }
-          } catch (err) {
-            console.error("Error adding owner as team member:", err);
+      try {
+        const { data, error: fnError } = await supabase.functions.invoke(
+          'get-project-team-members', {
+            body: { projectId }
           }
+        );
+        
+        if (fnError || !data) {
+          console.error("Error using team members function:", fnError);
+          throw fnError;
         }
         
-        return [];
-      }
-      
-      // Get profile data for user_ids (if available)
-      const userIds = teamMemberData
-        .map(member => member.user_id)
-        .filter(Boolean);
+        teamMemberData = data;
+      } catch (functionError) {
+        console.error("Edge function failed:", functionError);
         
-      let profileMap = new Map();
-      
-      if (userIds.length > 0) {
-        const { data: profilesData, error: profilesError } = await supabase
-          .from("profiles")
-          .select("id, name, email")
-          .in("id", userIds);
+        // Fallback: Try direct query as a last resort
+        try {
+          const { data: directTeamData, error: directError } = await supabase
+            .from("project_team_members")
+            .select("id, role, email, name, user_id")
+            .eq("project_id", projectId);
+            
+          if (directError) {
+            console.error("Direct team query failed:", directError);
+            throw directError;
+          }
           
-        if (profilesError) {
-          console.error("Error fetching profiles:", profilesError);
-        } else if (profilesData) {
-          profilesData.forEach(profile => {
-            profileMap.set(profile.id, profile);
-          });
+          teamMemberData = directTeamData || [];
+        } catch (directQueryError) {
+          console.error("Direct query failed:", directQueryError);
+          
+          // Since we already checked if user is owner above, return empty array
+          return [];
         }
       }
       
       // Format team members with profile data where available
       const formatted: TeamMember[] = teamMemberData.map((member) => {
-        const profile = profileMap.get(member.user_id);
-        const name = profile?.name || member.name || "Unnamed";
-        const email = profile?.email || member.email || "No email";
         const isCurrentUser = member.user_id === user.id;
         
         return {
           id: member.id,
           role: member.role,
-          name: name,
-          email: email,
-          avatarUrl: `https://i.pravatar.cc/150?u=${email}`,
+          name: member.name || "Unnamed",
+          email: member.email || "No email",
+          avatarUrl: `https://i.pravatar.cc/150?u=${member.email}`,
           isCurrentUser: isCurrentUser
         };
       });
