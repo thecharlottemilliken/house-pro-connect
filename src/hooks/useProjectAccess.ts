@@ -1,154 +1,106 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
-interface ProjectAccessResult {
+interface UseProjectAccessResult {
   hasAccess: boolean;
   isOwner: boolean;
   role: string | null;
   isLoading: boolean;
-  error: Error | null;
 }
 
-export const useProjectAccess = (projectId: string | undefined): ProjectAccessResult => {
+export const useProjectAccess = (projectId: string): UseProjectAccessResult => {
+  const [hasAccess, setHasAccess] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
+  const [role, setRole] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
-  const checkProjectAccess = async (): Promise<{ 
-    hasAccess: boolean; 
-    isOwner: boolean; 
-    role: string | null;
-  }> => {
-    if (!projectId || !user) {
-      return { 
-        hasAccess: false, 
-        isOwner: false, 
-        role: null
-      };
-    }
-
-    try {
-      // First check if the user is the project owner - this doesn't trigger recursion
-      const { data: projectData, error: projectError } = await supabase
-        .from('projects')
-        .select('user_id')
-        .eq('id', projectId)
-        .maybeSingle();
-
-      if (projectError) {
-        console.error("Error checking project owner:", projectError);
-        // Continue execution to try other methods
-      } else if (projectData) {
-        // If project data is found, check if user is owner
-        const isOwner = projectData.user_id === user.id;
-        
-        if (isOwner) {
-          console.log("User is project owner, granting access");
-          return {
-            hasAccess: true,
-            isOwner: true,
-            role: 'owner'
-          };
-        }
+  useEffect(() => {
+    const checkAccess = async () => {
+      if (!projectId || !user) {
+        setIsLoading(false);
+        return;
       }
 
-      // Use edge function to check team membership without causing recursion
       try {
-        const { data: isMember, error: membershipError } = await supabase.functions.invoke(
-          'check-team-membership', {
+        // First, check using the edge function
+        const { data: isTeamMember, error: teamMemberError } = await supabase.functions.invoke(
+          'check-team-membership',
+          {
             body: { projectId, userId: user.id }
           }
         );
 
-        if (membershipError) {
-          console.error("Membership function call failed:", membershipError);
-        } else if (isMember) {
-          console.log("User is team member via edge function check");
+        if (teamMemberError) {
+          console.error("Error checking team membership:", teamMemberError);
+          setHasAccess(false);
+          setIsLoading(false);
+          return;
+        }
+
+        if (isTeamMember) {
+          setHasAccess(true);
           
-          // Get the role without joining tables to avoid recursion
+          // Try to get the role from team members
           try {
-            const { data: teamMember, error: roleError } = await supabase
+            // Try direct query first
+            const { data: memberData, error: memberError } = await supabase
               .from('project_team_members')
               .select('role')
               .eq('project_id', projectId)
-              .eq('user_id', user.id)
-              .maybeSingle();
+              .eq('user_id', user.id);
               
-            if (roleError) {
-              console.error("Error getting role:", roleError);
+            if (memberError) {
+              console.error("Error getting role:", memberError);
+              throw memberError;
             }
             
-            return {
-              hasAccess: true,
-              isOwner: false, 
-              role: teamMember?.role || null
-            };
+            if (memberData && memberData.length > 0) {
+              const userRole = memberData[0].role;
+              setRole(userRole);
+              setIsOwner(userRole === 'owner');
+            }
           } catch (roleError) {
-            console.error("Error getting role:", roleError);
+            console.error("Error getting role, using fallback:", roleError);
             
-            // Still grant access even if role fetch fails
-            return {
-              hasAccess: true,
-              isOwner: false,
-              role: null
-            };
+            // Try getting the project directly to check owner
+            try {
+              const { data: projectData, error: projectError } = await supabase
+                .from('projects')
+                .select('user_id')
+                .eq('id', projectId);
+                
+              if (projectError) {
+                throw projectError;
+              }
+              
+              if (projectData && projectData.length > 0) {
+                const isProjectOwner = projectData[0].user_id === user.id;
+                setIsOwner(isProjectOwner);
+                setRole(isProjectOwner ? 'owner' : 'team');
+              } else {
+                setRole('team'); // Default to team member if we can't verify ownership
+              }
+            } catch (projectError) {
+              console.error("Error getting project data:", projectError);
+              setRole('team'); // Default to team member if all checks fail
+            }
           }
+        } else {
+          setHasAccess(false);
         }
-      } catch (functionError) {
-        console.error("Error calling team membership function:", functionError);
+      } catch (error) {
+        console.error("Error checking project access:", error);
+        setHasAccess(false);
+      } finally {
+        setIsLoading(false);
       }
-      
-      // Direct query as last resort
-      try {
-        const { data: directMember, error: directError } = await supabase
-          .from('project_team_members')
-          .select('role')
-          .eq('project_id', projectId)
-          .eq('user_id', user.id)
-          .maybeSingle();
-          
-        if (directError) {
-          console.error("Direct team query failed:", directError);
-          throw directError;
-        }
-        
-        if (directMember) {
-          console.log("User is team member via direct check");
-          return {
-            hasAccess: true,
-            isOwner: directMember.role === 'owner',
-            role: directMember.role
-          };
-        }
-      } catch (directError) {
-        console.error("Error in direct check:", directError);
-      }
+    };
 
-      // Default return if all checks fail
-      return {
-        hasAccess: false,
-        isOwner: false,
-        role: null
-      };
-    } catch (error) {
-      console.error('Error checking project access:', error);
-      throw error;
-    }
-  };
+    checkAccess();
+  }, [projectId, user]);
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['projectAccess', projectId, user?.id],
-    queryFn: checkProjectAccess,
-    enabled: !!projectId && !!user,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 1
-  });
-
-  return {
-    hasAccess: data?.hasAccess || false,
-    isOwner: data?.isOwner || false,
-    role: data?.role || null,
-    isLoading,
-    error
-  };
+  return { hasAccess, isOwner, role, isLoading };
 };
