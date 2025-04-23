@@ -84,6 +84,25 @@ const JWTDebugger = () => {
         } catch (fnError) {
           console.error("❌ Failed to call set-claims function:", fnError);
         }
+        
+        // Debug projects access for coach
+        if (profileData?.role === 'coach') {
+          try {
+            console.log("👀 Testing direct projects access...");
+            const { data: projectsData, error: projectsError } = await supabase
+              .from('projects')
+              .select('id, title')
+              .limit(3);
+              
+            if (projectsError) {
+              console.error("❌ Error accessing projects:", projectsError);
+            } else {
+              console.log("✅ Projects access success:", projectsData?.length || 0, "projects found");
+            }
+          } catch (projectsError) {
+            console.error("❌ Failed to access projects:", projectsError);
+          }
+        }
       } catch (decodeError) {
         console.error("❌ Error decoding JWT:", decodeError);
       }
