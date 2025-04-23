@@ -42,6 +42,7 @@ const CreateProject = () => {
           setProperties(directData || []);
         } else {
           console.log(`Properties fetched via security definer function: ${definerData?.length}`);
+          console.log('Property data:', definerData);
           setProperties(definerData || []);
         }
       } catch (error) {
@@ -86,6 +87,14 @@ const CreateProject = () => {
     { number: 7, title: "Prior Experience", current: false },
   ];
 
+  // Helper function to get property image
+  const getPropertyImage = (property: any) => {
+    if (property.home_photos && property.home_photos.length > 0) {
+      return property.home_photos[0];
+    }
+    return property.image_url;
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <DashboardNavbar />
@@ -125,16 +134,23 @@ const CreateProject = () => {
                     onClick={() => selectProperty(property)}
                   >
                     <div className="h-40 bg-gray-100">
-                      {property.image_url ? (
+                      {property.home_photos && property.home_photos.length > 0 ? (
                         <img 
-                          src={property.image_url} 
+                          src={property.home_photos[0]} 
+                          alt={property.property_name} 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            console.log("Image failed to load:", target.src);
+                            target.src = property.image_url || "https://images.unsplash.com/photo-1493809842364-78817add7ffb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80";
+                          }}
+                        />
+                      ) : (
+                        <img 
+                          src={property.image_url || "https://images.unsplash.com/photo-1493809842364-78817add7ffb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80"} 
                           alt={property.property_name} 
                           className="w-full h-full object-cover"
                         />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400">
-                          No Image
-                        </div>
                       )}
                     </div>
                     <div className="p-4">
