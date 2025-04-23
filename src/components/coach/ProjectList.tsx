@@ -8,7 +8,7 @@ import LoadingState from "./LoadingState";
 import MessageDialog from "./MessageDialog";
 
 const ProjectList = () => {
-  const { projects, isLoading } = useCoachProjects();
+  const { projects, isLoading, fetchProjects } = useCoachProjects();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);

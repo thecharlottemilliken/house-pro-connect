@@ -106,10 +106,7 @@ const CoachRoute = ({ children }: CoachRouteProps) => {
 
   // If not authenticated or not a coach, redirect to dashboard
   if (!isCoach) {
-    toast({
-      title: "Access Denied",
-      description: "You need coach permissions to access this area",
-    });
+    toast.error("Access Denied - You need coach permissions to access this area");
     return <Navigate to="/dashboard" replace />;
   }
 

@@ -21,12 +21,6 @@ export interface Project {
   };
 }
 
-interface ProfileInfo {
-  id: string;
-  name: string;
-  email: string;
-}
-
 export const useCoachProjects = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -38,100 +32,26 @@ export const useCoachProjects = () => {
   const fetchProjects = async () => {
     setIsLoading(true);
     try {
-      console.log("Fetching projects as coach...");
-
-      // Try direct query first using the new RLS policy
-      const { data: projectsData, error: projectsError } = await supabase
-        .from("projects")
-        .select(`
-          id,
-          title,
-          created_at,
-          state,
-          user_id,
-          property_id
-        `)
-        .order("created_at", { ascending: false });
-
-      if (projectsError) {
-        console.error("Error fetching projects:", projectsError);
-        throw projectsError;
+      console.log("Fetching projects as coach using edge function...");
+      
+      // Use the edge function to bypass RLS
+      const { data: edgeData, error: edgeError } = await supabase.functions.invoke(
+        'get-coach-projects',
+        { method: 'GET' }
+      );
+      
+      if (edgeError) {
+        console.error("Error calling get-coach-projects edge function:", edgeError);
+        throw edgeError;
       }
-
-      if (!projectsData || projectsData.length === 0) {
-        console.log("No projects found");
+      
+      if (edgeData && Array.isArray(edgeData.projects)) {
+        console.log(`Found ${edgeData.projects.length} projects via edge function`);
+        setProjects(edgeData.projects);
+      } else {
+        console.log("No projects found or invalid response format");
         setProjects([]);
-        setIsLoading(false);
-        return;
       }
-
-      console.log(`Found ${projectsData.length} projects`);
-
-      const propertyIds = projectsData.map((project) => project.property_id);
-      const userIds = projectsData.map((project) => project.user_id);
-
-      // Get properties data
-      const { data: propertiesData, error: propertiesError } = await supabase
-        .from("properties")
-        .select(`
-          id,
-          property_name,
-          address_line1,
-          city,
-          state
-        `)
-        .in("id", propertyIds);
-
-      if (propertiesError) {
-        console.error("Error fetching properties:", propertiesError);
-        throw propertiesError;
-      }
-
-      // Get profiles data
-      const { data: profilesData, error: profilesError } = await supabase
-        .from("profiles")
-        .select(`
-          id,
-          name,
-          email
-        `)
-        .in("id", userIds);
-
-      if (profilesError) {
-        console.error("Error fetching profiles:", profilesError);
-        throw profilesError;
-      }
-
-      // Create maps for quick lookups
-      const propertiesMap = new Map(propertiesData?.map(p => [p.id, p]));
-      const profilesMap = new Map(profilesData?.map(p => [p.id, p]));
-
-      // Combine all data
-      const processedProjects = projectsData.map(project => {
-        const property = propertiesMap.get(project.property_id) || {
-          property_name: "Unknown Property",
-          address_line1: "Address not available",
-          city: "Unknown",
-          state: "Unknown"
-        };
-
-        const owner = profilesMap.get(project.user_id) || {
-          id: project.user_id,
-          name: `User ${project.user_id.substring(0, 6)}`,
-          email: "email@unknown.com"
-        };
-
-        return {
-          id: project.id,
-          title: project.title,
-          created_at: project.created_at,
-          state: project.state,
-          property,
-          owner
-        };
-      });
-
-      setProjects(processedProjects);
     } catch (error: any) {
       console.error("Error in useCoachProjects:", error);
       toast.error("Failed to load projects. Please try again.");
