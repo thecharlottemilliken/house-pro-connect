@@ -53,19 +53,22 @@ export const useProjectAccess = (projectId: string | undefined): ProjectAccessRe
         }
       }
 
-      // Use the security definer function to check team membership
-      const { data: isMember, error: membershipError } = await supabase
-        .rpc('safe_check_team_membership', { 
-          p_project_id: projectId, 
-          p_user_id: user.id 
-        });
+      // Use a function to check team membership
+      const { data: isMember, error: membershipError } = await supabase.functions.invoke(
+        'check-team-membership', {
+          body: { projectId, userId: user.id }
+        }
+      );
 
       if (membershipError) {
         console.warn("Membership function call failed:", membershipError);
         
-        // Try another security definer function as a backup
-        const { data: teamMembers, error: teamError } = await supabase
-          .rpc('get_project_team_members', { p_project_id: projectId });
+        // Try another approach as a backup
+        const { data: teamMembers, error: teamError } = await supabase.functions.invoke(
+          'get-project-team-members', {
+            body: { projectId }
+          }
+        );
           
         if (teamError) {
           console.error("Team members function call failed:", teamError);
@@ -91,9 +94,9 @@ export const useProjectAccess = (projectId: string | undefined): ProjectAccessRe
           } catch (directCheckError) {
             console.error("Error in direct check:", directCheckError);
           }
-        } else if (teamMembers) {
+        } else if (teamMembers && Array.isArray(teamMembers)) {
           // Find the current user in the team members list
-          const userMembership = teamMembers.find(m => m.user_id === user.id);
+          const userMembership = teamMembers.find((m: any) => m.user_id === user.id);
           
           if (userMembership) {
             return {

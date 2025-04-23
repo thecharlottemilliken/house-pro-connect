@@ -14,6 +14,18 @@ interface TeamMember {
   isCurrentUser: boolean;
 }
 
+// Define the team member data structure from RPC
+interface TeamMemberData {
+  id: string;
+  project_id: string;
+  user_id: string;
+  role: string;
+  email: string;
+  name: string;
+  added_by: string;
+  added_at: string;
+}
+
 export const useTeamMembers = (projectId: string | undefined) => {
   const { user } = useAuth();
   
@@ -24,12 +36,16 @@ export const useTeamMembers = (projectId: string | undefined) => {
       console.log("Fetching team members for project:", projectId);
       
       // Use the security definer function to get team members
-      const { data: teamData, error: fnError } = await supabase
-        .rpc('get_project_team_members', { 
-          p_project_id: projectId 
-        });
+      let teamMemberData: TeamMemberData[] = [];
       
-      if (fnError) {
+      // First try using the security definer function
+      const { data, error: fnError } = await supabase.functions.invoke(
+        'get-project-team-members', {
+          body: { projectId }
+        }
+      );
+      
+      if (fnError || !data) {
         console.error("Error using team members function:", fnError);
         
         // Fallback: Try direct query
@@ -43,11 +59,13 @@ export const useTeamMembers = (projectId: string | undefined) => {
           throw directError;
         }
         
-        teamData = directTeamData;
+        teamMemberData = directTeamData || [];
+      } else {
+        teamMemberData = data;
       }
       
       // If no team data or empty, check if owner needs to be added
-      if (!teamData || teamData.length === 0) {
+      if (!teamMemberData || teamMemberData.length === 0) {
         console.log("No team members found, checking if owner needs to be added");
         
         // Get project owner
@@ -83,10 +101,10 @@ export const useTeamMembers = (projectId: string | undefined) => {
                 ownerProfile.name
               );
               
-              if (result.success) {
+              if (result.success && result.memberId) {
                 // Return the owner as the only team member for now
                 return [{
-                  id: result.memberId || 'temp-id', // Use memberId if available, otherwise use a temporary ID
+                  id: result.memberId,
                   role: "owner",
                   name: ownerProfile.name || "Project Owner",
                   email: ownerProfile.email || "No email",
@@ -106,7 +124,7 @@ export const useTeamMembers = (projectId: string | undefined) => {
       }
       
       // Get profile data for user_ids (if available)
-      const userIds = teamData
+      const userIds = teamMemberData
         .map(member => member.user_id)
         .filter(Boolean);
         
@@ -128,7 +146,7 @@ export const useTeamMembers = (projectId: string | undefined) => {
       }
       
       // Format team members with profile data where available
-      const formatted: TeamMember[] = teamData.map((member) => {
+      const formatted: TeamMember[] = teamMemberData.map((member) => {
         const profile = profileMap.get(member.user_id);
         const name = profile?.name || member.name || "Unnamed";
         const email = profile?.email || member.email || "No email";

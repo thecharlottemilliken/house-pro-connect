@@ -2,23 +2,30 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
-export const addTeamMember = async (projectId: string, email: string, role: string, name?: string) => {
+interface AddTeamMemberResult {
+  success: boolean;
+  memberId?: string;
+  error?: string;
+}
+
+export const addTeamMember = async (projectId: string, email: string, role: string, name?: string): Promise<AddTeamMemberResult> => {
   try {
     const cleanEmail = email.trim().toLowerCase();
     
-    // Use raw SQL via rpc to bypass any RLS policies that could cause recursion
-    const { data: existingMemberCheck, error: checkError } = await supabase.rpc(
-      'check_existing_team_member',
-      { 
-        p_project_id: projectId, 
-        p_email: cleanEmail 
+    // Check if member already exists
+    const { data: existingMemberCheck, error: checkError } = await supabase.functions.invoke(
+      'check-existing-team-member', {
+        body: { 
+          projectId, 
+          email: cleanEmail 
+        }
       }
     );
 
     if (checkError) {
       console.error("Error checking existing member:", checkError);
       
-      // Fallback: Use direct query with service_role (bypasses RLS)
+      // Fallback: Use direct query
       const { data: existingMember, error: directCheckError } = await supabase
         .from("project_team_members")
         .select("id")
@@ -35,7 +42,7 @@ export const addTeamMember = async (projectId: string, email: string, role: stri
       return { success: false, error: "This person is already a team member" };
     }
 
-    // Check if the email exists in profiles (without using joins that could trigger recursion)
+    // Check if the email exists in profiles
     const { data: userData, error: userError } = await supabase
       .from("profiles")
       .select("id, email")
@@ -44,22 +51,23 @@ export const addTeamMember = async (projectId: string, email: string, role: stri
 
     if (userError) throw userError;
 
-    // Use RPC call to insert team member (bypassing RLS)
-    const { data: insertResult, error: insertError } = await supabase.rpc(
-      'add_team_member',
-      {
-        p_project_id: projectId,
-        p_user_id: userData?.id || null,
-        p_role: role,
-        p_email: cleanEmail,
-        p_name: name || cleanEmail.split('@')[0]
+    // Add team member using edge function
+    const { data: insertResult, error: insertError } = await supabase.functions.invoke(
+      'add-team-member', {
+        body: {
+          projectId,
+          userId: userData?.id || null,
+          role,
+          email: cleanEmail,
+          name: name || cleanEmail.split('@')[0]
+        }
       }
     );
     
     if (insertError) {
-      console.error("RPC insert failed:", insertError);
+      console.error("Team member insert failed:", insertError);
       
-      // Last resort fallback: Try direct insert (might hit RLS, but we've tried other methods)
+      // Last resort fallback: Try direct insert
       const { data, error } = await supabase
         .from("project_team_members")
         .insert({
@@ -77,7 +85,7 @@ export const addTeamMember = async (projectId: string, email: string, role: stri
       return { success: true, memberId: data?.id };
     }
     
-    // Return success with member ID if available from the RPC call
+    // Return success with member ID if available
     return { success: true, memberId: insertResult?.id };
   } catch (err: any) {
     console.error("Error adding team member:", err);
@@ -85,16 +93,17 @@ export const addTeamMember = async (projectId: string, email: string, role: stri
   }
 };
 
-export const removeTeamMember = async (memberId: string) => {
+export const removeTeamMember = async (memberId: string): Promise<{success: boolean, error?: string}> => {
   try {
-    // Try using RPC call to remove member (bypassing RLS)
-    const { error: rpcError } = await supabase.rpc(
-      'remove_team_member',
-      { p_member_id: memberId }
+    // Use edge function to remove member
+    const { error: removeError } = await supabase.functions.invoke(
+      'remove-team-member', {
+        body: { memberId }
+      }
     );
 
-    if (rpcError) {
-      console.error("RPC remove failed:", rpcError);
+    if (removeError) {
+      console.error("Team member removal failed:", removeError);
       
       // Fallback: Try direct delete
       const { error } = await supabase

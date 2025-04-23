@@ -1,14 +1,68 @@
 
+# This file is used by Supabase to deploy edge functions
+# DO NOT EDIT DIRECTLY!
+
 project_id = "gluggyghzalabvlvwqqk"
 
-[functions.set-claims]
+[api]
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[[publications]]
+publication = "supabase_realtime"
+tables = []
+
+[db]
+port = 54322
+major_version = 15
+
+[studio]
+port = 54323
+
+[storage]
+file_size_limit = "50MiB"
+
+[auth]
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["https://localhost:3000"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+
+[auth.external.github]
+enabled = false
+client_id = ""
+secret = ""
+redirect_uri = ""
+url = ""
+
+[auth.external.google]
+enabled = false
+client_id = ""
+secret = ""
+redirect_uri = ""
+url = ""
+
+[functions]
+[functions.check-existing-team-member]
 verify_jwt = true
 
-[functions.get-user-data]
+[functions.add-team-member]
 verify_jwt = true
 
-[functions.get-mapbox-token]
-verify_jwt = false
+[functions.remove-team-member]
+verify_jwt = true
 
-[functions.get-approved-jobs]
-verify_jwt = false
+[functions.get-project-team-members]
+verify_jwt = true
+
+[functions.check-team-membership]
+verify_jwt = true
