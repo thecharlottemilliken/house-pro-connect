@@ -24,7 +24,6 @@ export const useTeamMembers = (projectId: string | undefined) => {
       console.log("Fetching team members for project:", projectId);
       
       // First, check if the user is the project owner using a direct query
-      // This is less likely to cause recursion issues
       const { data: projectData, error: projectError } = await supabase
         .from("projects")
         .select("user_id")
@@ -33,6 +32,7 @@ export const useTeamMembers = (projectId: string | undefined) => {
         
       if (projectError) {
         console.error("Error checking project owner:", projectError);
+        // Continue execution to try other methods
       }
       
       const projectOwnerId = projectData?.user_id;
@@ -40,7 +40,7 @@ export const useTeamMembers = (projectId: string | undefined) => {
       
       // Get team members with a direct query rather than using policies
       // that might cause recursion
-      let { data: teamData, error: teamError } = await supabase
+      const { data: teamData, error: teamError } = await supabase
         .from("project_team_members")
         .select("id, role, email, name, user_id")
         .eq("project_id", projectId);
@@ -50,56 +50,52 @@ export const useTeamMembers = (projectId: string | undefined) => {
         throw teamError;
       }
 
-      // Check if owner exists in team
-      const ownerExists = teamData?.some(member => 
-        member.user_id === projectOwnerId && member.role === 'owner'
-      ) || false;
-      
-      // If owner not found in team, try to add them using the utility function
-      if (projectOwnerId && !ownerExists && teamData) {
-        console.log("Owner not found in team, adding...");
+      // If no team data or empty, return empty array
+      if (!teamData || teamData.length === 0) {
+        console.log("No team members found, checking if owner needs to be added");
         
-        try {
-          // Get owner profile to get email and name
-          const { data: ownerProfile } = await supabase
-            .from("profiles")
-            .select("name, email")
-            .eq("id", projectOwnerId)
-            .maybeSingle();
-            
-          if (ownerProfile) {
-            // Use the addTeamMember utility which handles RLS properly
-            const result = await addTeamMember(
-              projectId,
-              ownerProfile.email,
-              "owner",
-              ownerProfile.name
-            );
-            
-            if (result.success) {
-              // Re-fetch the team data after adding the owner
-              const { data: refreshedData } = await supabase
-                .from("project_team_members")
-                .select("id, role, email, name, user_id")
-                .eq("project_id", projectId);
-                
-              if (refreshedData && refreshedData.length > 0) {
-                teamData = refreshedData;
+        // Add the owner if they're not already a team member
+        if (projectOwnerId) {
+          try {
+            // Get owner profile to get email and name
+            const { data: ownerProfile } = await supabase
+              .from("profiles")
+              .select("name, email")
+              .eq("id", projectOwnerId)
+              .maybeSingle();
+              
+            if (ownerProfile) {
+              // Use the addTeamMember utility
+              console.log("Adding owner to team:", ownerProfile.name, ownerProfile.email);
+              const result = await addTeamMember(
+                projectId,
+                ownerProfile.email,
+                "owner",
+                ownerProfile.name
+              );
+              
+              if (result.success) {
+                // Return the owner as the only team member for now
+                return [{
+                  id: result.memberId || 'temp-id',
+                  role: "owner",
+                  name: ownerProfile.name || "Project Owner",
+                  email: ownerProfile.email || "No email",
+                  avatarUrl: `https://i.pravatar.cc/150?u=${ownerProfile.email}`,
+                  isCurrentUser: projectOwnerId === user.id
+                }];
+              } else {
+                console.error("Error adding owner to team:", result.error);
               }
-            } else {
-              console.error("Error adding owner to team:", result.error);
             }
-          } else {
-            console.error("Could not find owner profile information");
+          } catch (err) {
+            console.error("Error adding owner as team member:", err);
           }
-        } catch (insertErr) {
-          console.error("Error in manual owner insertion:", insertErr);
         }
+        
+        return [];
       }
       
-      // If still no team data, return empty array
-      if (!teamData || teamData.length === 0) return [];
-
       // Get profile data using direct ID lookups rather than joins
       const userIds = teamData
         .map(member => member.user_id)
@@ -113,9 +109,9 @@ export const useTeamMembers = (projectId: string | undefined) => {
           .select("id, name, email")
           .in("id", userIds);
           
-        if (profilesError) throw profilesError;
-        
-        if (profilesData) {
+        if (profilesError) {
+          console.error("Error fetching profiles:", profilesError);
+        } else if (profilesData) {
           profilesData.forEach(profile => {
             profileMap.set(profile.id, profile);
           });

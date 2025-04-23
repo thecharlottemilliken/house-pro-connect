@@ -33,20 +33,24 @@ export const useProjectAccess = (projectId: string | undefined): ProjectAccessRe
         .from('projects')
         .select('user_id')
         .eq('id', projectId)
-        .single();
+        .maybeSingle();
 
       if (projectError && projectError.code !== 'PGRST116') {
-        throw projectError;
+        console.error("Error checking project owner:", projectError);
+        // Continue execution to try other methods
       }
 
-      const isOwner = projectData?.user_id === user.id;
-      
-      if (isOwner) {
-        return {
-          hasAccess: true,
-          isOwner: true,
-          role: 'owner'
-        };
+      // If project data is found, check if user is owner
+      if (projectData) {
+        const isOwner = projectData.user_id === user.id;
+        
+        if (isOwner) {
+          return {
+            hasAccess: true,
+            isOwner: true,
+            role: 'owner'
+          };
+        }
       }
 
       // Use the security definer function to check team membership
@@ -59,46 +63,52 @@ export const useProjectAccess = (projectId: string | undefined): ProjectAccessRe
       if (membershipError) {
         console.warn("Membership function call failed:", membershipError);
         
-        // Fallback to direct check
-        const { data: teamMember, error: teamError } = await supabase
-          .from('project_team_members')
-          .select('role')
-          .eq('project_id', projectId)
-          .eq('user_id', user.id)
-          .maybeSingle();
+        // Direct check fallback - using a direct query which is less likely to cause recursion
+        try {
+          const { data: teamMember, error: teamError } = await supabase
+            .from('project_team_members')
+            .select('role')
+            .eq('project_id', projectId)
+            .eq('user_id', user.id)
+            .maybeSingle();
 
-        if (teamError) {
-          throw teamError;
+          if (teamError) {
+            console.error("Direct team member check failed:", teamError);
+          }
+
+          return {
+            hasAccess: !!teamMember,
+            isOwner: false,
+            role: teamMember?.role || null
+          };
+        } catch (directCheckError) {
+          console.error("Error in direct check:", directCheckError);
+          // Continue with default return
         }
+      } else {
+        // If using the function was successful
+        if (isMember) {
+          // We know they're a member, but we need to get their role
+          const { data: teamMember, error: teamError } = await supabase
+            .from('project_team_members')
+            .select('role')
+            .eq('project_id', projectId)
+            .eq('user_id', user.id)
+            .maybeSingle();
 
-        return {
-          hasAccess: !!teamMember,
-          isOwner: false,
-          role: teamMember?.role || null
-        };
+          if (teamError) {
+            console.error("Error getting team member role:", teamError);
+          }
+
+          return {
+            hasAccess: true,
+            isOwner: false,
+            role: teamMember?.role || null
+          };
+        }
       }
 
-      // If using the function was successful
-      if (isMember) {
-        // We know they're a member, but we need to get their role
-        const { data: teamMember, error: teamError } = await supabase
-          .from('project_team_members')
-          .select('role')
-          .eq('project_id', projectId)
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (teamError) {
-          throw teamError;
-        }
-
-        return {
-          hasAccess: true,
-          isOwner: false,
-          role: teamMember?.role || null
-        };
-      }
-
+      // Default return if all checks fail
       return {
         hasAccess: false,
         isOwner: false,
