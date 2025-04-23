@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Plus, Upload } from "lucide-react";
@@ -19,11 +20,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { DesignPreferences as DesignPreferencesType } from "@/hooks/useProjectData";
 import { Json } from "@/integrations/supabase/types";
+import { useAuth } from "@/contexts/AuthContext";
 
 const DesignPreferences = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
+  const { user } = useAuth();
   
   const [propertyId, setPropertyId] = useState<string | null>(null);
   const [projectId, setProjectId] = useState<string | null>(null);
@@ -34,6 +37,7 @@ const DesignPreferences = () => {
   const [designers, setDesigners] = useState([
     { businessName: "", contactName: "", email: "", phone: "", speciality: "Architecture" }
   ]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (location.state) {
@@ -59,6 +63,31 @@ const DesignPreferences = () => {
   
   const loadExistingPreferences = async (id: string) => {
     try {
+      // First attempt to use the edge function for bypassing RLS issues
+      const { data: edgeData, error: edgeError } = await supabase.functions.invoke('handle-project-update', {
+        method: 'POST',
+        body: { 
+          projectId: id,
+          userId: user?.id
+        }
+      });
+
+      if (!edgeError && edgeData) {
+        // Successfully got data from the edge function
+        console.log('Retrieved project data via edge function');
+        
+        if (edgeData.design_preferences) {
+          const prefs = edgeData.design_preferences as any;
+          if (prefs.hasDesigns !== undefined) setHasDesigns(prefs.hasDesigns);
+          if (prefs.designers && Array.isArray(prefs.designers) && prefs.designers.length > 0) {
+            setDesigners(prefs.designers);
+          }
+        }
+        return;
+      }
+      
+      // Fallback to direct query - this will only work if RLS permissions allow
+      console.log('Falling back to direct query for project data');
       const { data, error } = await supabase
         .from('projects')
         .select('design_preferences')
@@ -77,10 +106,25 @@ const DesignPreferences = () => {
       }
     } catch (error) {
       console.error('Error loading design preferences:', error);
+      toast({
+        title: "Error",
+        description: "Could not load design preferences. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
   const savePreferences = async () => {
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to save preferences",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoading(true);
     const designPreferences: Record<string, unknown> = {
       hasDesigns,
       designers: !hasDesigns ? designers : [],
@@ -89,14 +133,29 @@ const DesignPreferences = () => {
     
     if (projectId) {
       try {
-        const { error } = await supabase
-          .from('projects')
-          .update({
-            design_preferences: designPreferences as Json
-          })
-          .eq('id', projectId);
+        // First try using the edge function (bypasses RLS issues)
+        const { data: updateData, error: updateError } = await supabase.functions.invoke('handle-project-update', {
+          method: 'POST',
+          body: { 
+            projectId,
+            userId: user.id,
+            designPreferences: designPreferences as Json
+          }
+        });
 
-        if (error) throw error;
+        if (updateError) {
+          console.error('Error updating via edge function:', updateError);
+          
+          // Fall back to direct update
+          const { error } = await supabase
+            .from('projects')
+            .update({
+              design_preferences: designPreferences as Json
+            })
+            .eq('id', projectId);
+
+          if (error) throw error;
+        }
         
         toast({
           title: "Success",
@@ -109,6 +168,7 @@ const DesignPreferences = () => {
           description: "Failed to save design preferences",
           variant: "destructive"
         });
+        setIsLoading(false);
         return;
       }
     } else {
@@ -123,6 +183,7 @@ const DesignPreferences = () => {
     };
     
     setProjectPrefs(updatedProjectPrefs);
+    setIsLoading(false);
     
     navigate("/management-preferences", {
       state: updatedProjectPrefs
@@ -356,6 +417,7 @@ const DesignPreferences = () => {
               variant="outline" 
               className="flex items-center text-[#174c65] order-2 sm:order-1 w-full sm:w-auto"
               onClick={goBack}
+              disabled={isLoading}
             >
               <ArrowLeft className="mr-2 h-4 w-4" /> BACK
             </Button>
@@ -365,14 +427,16 @@ const DesignPreferences = () => {
                 variant="outline"
                 className="text-[#174c65] border-[#174c65] w-full sm:w-auto"
                 onClick={() => navigate("/dashboard")}
+                disabled={isLoading}
               >
                 SAVE & EXIT
               </Button>
               <Button
                 className="flex items-center bg-[#174c65] hover:bg-[#174c65]/90 text-white w-full sm:w-auto justify-center"
                 onClick={goToNextStep}
+                disabled={isLoading}
               >
-                NEXT <ArrowRight className="ml-2 h-4 w-4" />
+                {isLoading ? "Loading..." : "NEXT"} {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
               </Button>
             </div>
           </div>

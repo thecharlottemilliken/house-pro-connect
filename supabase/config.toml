@@ -59,4 +59,3 @@ verify_jwt = true
 verify_jwt = true
 [functions.get-project-team-members]
 verify_jwt = true
-
