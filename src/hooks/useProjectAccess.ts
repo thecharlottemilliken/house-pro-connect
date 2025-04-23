@@ -60,13 +60,10 @@ export const useProjectAccess = (projectId: string): UseProjectAccessResult => {
             console.error("Error getting project data:", projectError);
           } else if (projectData) {
             // Check if user is the owner
-            const isProjectOwner = projectData.isOwner || projectData.user_id === user.id;
-            setIsOwner(isProjectOwner);
-            setRole(isProjectOwner ? 'owner' : projectData.role || 'team');
-          }
-          
-          // If we couldn't determine the role, default to team member
-          if (!role) {
+            setIsOwner(!!projectData.isOwner);
+            setRole(projectData.isOwner ? 'owner' : projectData.role || 'team');
+          } else {
+            // If we couldn't determine the role, default to team member
             setRole('team');
           }
         }

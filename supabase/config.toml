@@ -1,61 +1,85 @@
 
+# A string used to distinguish different Supabase projects on the same host. Defaults to the project reference.
 project_id = "gluggyghzalabvlvwqqk"
 
 [api]
 enabled = true
+# Port to use for the API URL.
 port = 54321
-schemas = ["public", "storage", "graphql_public"]
+# Schemas to expose in your API. Tables, views and stored procedures in this schema will get API
+# endpoints. public and storage are always included.
+schemas = ["public", "storage"]
+# Extra schemas to add to the search_path of every request. public is always included.
+extra_search_path = ["public", "extensions"]
+# The maximum number of rows returns from a view, table, or stored procedure. Limits payload size
+# for accidental or malicious requests.
+max_rows = 1000
 
 [db]
 port = 54322
 shadow_port = 54320
+major_version = 15
+
+[db.pooler]
+enabled = false
+port = 54329
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
 
 [realtime]
 enabled = true
+ip_address = "0.0.0.0"
+port = 54323
 
 [studio]
 enabled = true
-port = 54323
-api_url = "http://localhost"
+port = 54324
+api_url = "https://api.supabase.green"
 
 [inbucket]
 enabled = true
-port = 54324
+port = 54325
 
 [storage]
 enabled = true
+file_size_limit = "50MiB"
 
 [auth]
 enabled = true
 site_url = "http://localhost:3000"
+# List of URLs that can be used as redirects
+additional_redirect_urls = ["https://localhost:3000"]
+# How long tokens are valid for, in seconds. Defaults to 3600 (1 hour).
+# Maximum is 604,800 seconds (one week).
+jwt_expiry = 3600
+# Allow/disallow new user signups to your project.
+enable_signup = true
 
 [auth.email]
+# Allow/disallow new user signups via email to your project.
 enable_signup = true
+# If enabled, a user will be required to confirm any email change on both the old, and new email
+# addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
+# If enabled, users need to confirm their email address before signing in.
 enable_confirmations = false
-
-[auth.external.github]
-enabled = false
-client_id = ""
-secret = ""
-
-[auth.external.google]
-enabled = false
-client_id = ""
-secret = ""
 
 [analytics]
 enabled = false
 port = 54327
 vector_port = 54328
 
-[experimental]
-events_enabled = false
-
 [functions]
+enabled = true
+port = 54326
+
 [functions.check-team-membership]
 verify_jwt = true
+
 [functions.handle-project-update]
 verify_jwt = true
-[functions.get-project-team-members]
+
+[functions.get-property-details]
 verify_jwt = true
+
