@@ -38,30 +38,10 @@ export const useCoachProjects = () => {
   const fetchProjects = async () => {
     setIsLoading(true);
     try {
-      console.log("Fetching projects for coach...");
+      console.log("Fetching projects as coach...");
 
-      // Use edge function to get all projects directly (bypassing RLS)
-      const { data: projectsData, error: edgeError } = await supabase.functions.invoke(
-        'get-coach-projects',
-        {
-          body: {}
-        }
-      );
-
-      if (edgeError) {
-        console.error("Error fetching projects via edge function:", edgeError);
-        throw edgeError;
-      }
-
-      if (projectsData && Array.isArray(projectsData.projects)) {
-        console.log(`Found ${projectsData.projects.length} projects via edge function`);
-        setProjects(projectsData.projects);
-        setIsLoading(false);
-        return;
-      }
-
-      // Fallback to direct query if edge function fails
-      const { data, error } = await supabase
+      // Try direct query first using the new RLS policy
+      const { data: projectsData, error: projectsError } = await supabase
         .from("projects")
         .select(`
           id,
@@ -73,41 +53,72 @@ export const useCoachProjects = () => {
         `)
         .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error("Error fetching projects:", error);
-        throw error;
+      if (projectsError) {
+        console.error("Error fetching projects:", projectsError);
+        throw projectsError;
       }
 
-      if (!data || data.length === 0) {
+      if (!projectsData || projectsData.length === 0) {
         console.log("No projects found");
         setProjects([]);
         setIsLoading(false);
         return;
       }
 
-      const propertyIds = data.map((project) => project.property_id);
-      const userIds = data.map((project) => project.user_id);
+      console.log(`Found ${projectsData.length} projects`);
 
-      // Fetch properties and user data
-      const [propertiesResult, profilesMap] = await Promise.all([
-        fetchProperties(propertyIds),
-        fetchUserProfiles(userIds)
-      ]);
+      const propertyIds = projectsData.map((project) => project.property_id);
+      const userIds = projectsData.map((project) => project.user_id);
 
-      // Map projects with their properties and owner info
-      const processedProjects: Project[] = data.map((project) => {
-        const property = propertiesResult.get(project.property_id) || {
+      // Get properties data
+      const { data: propertiesData, error: propertiesError } = await supabase
+        .from("properties")
+        .select(`
+          id,
+          property_name,
+          address_line1,
+          city,
+          state
+        `)
+        .in("id", propertyIds);
+
+      if (propertiesError) {
+        console.error("Error fetching properties:", propertiesError);
+        throw propertiesError;
+      }
+
+      // Get profiles data
+      const { data: profilesData, error: profilesError } = await supabase
+        .from("profiles")
+        .select(`
+          id,
+          name,
+          email
+        `)
+        .in("id", userIds);
+
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
+        throw profilesError;
+      }
+
+      // Create maps for quick lookups
+      const propertiesMap = new Map(propertiesData?.map(p => [p.id, p]));
+      const profilesMap = new Map(profilesData?.map(p => [p.id, p]));
+
+      // Combine all data
+      const processedProjects = projectsData.map(project => {
+        const property = propertiesMap.get(project.property_id) || {
           property_name: "Unknown Property",
           address_line1: "Address not available",
           city: "Unknown",
-          state: "Unknown",
+          state: "Unknown"
         };
 
-        const owner = profilesMap.get(project.user_id);
-        const ownerData: ProfileInfo = owner || {
+        const owner = profilesMap.get(project.user_id) || {
           id: project.user_id,
           name: `User ${project.user_id.substring(0, 6)}`,
-          email: "email@unknown.com",
+          email: "email@unknown.com"
         };
 
         return {
@@ -116,83 +127,18 @@ export const useCoachProjects = () => {
           created_at: project.created_at,
           state: project.state,
           property,
-          owner: ownerData,
+          owner
         };
       });
 
       setProjects(processedProjects);
     } catch (error: any) {
-      console.error("Error fetching projects:", error);
+      console.error("Error in useCoachProjects:", error);
       toast.error("Failed to load projects. Please try again.");
+      setProjects([]);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const fetchProperties = async (propertyIds: string[]): Promise<Map<string, any>> => {
-    const propertiesMap = new Map();
-    try {
-      const { data } = await supabase
-        .from("properties")
-        .select(`
-          id, 
-          property_name,
-          address_line1,
-          city,
-          state
-        `)
-        .in("id", propertyIds);
-
-      if (data) {
-        data.forEach((property) => {
-          propertiesMap.set(property.id, property);
-        });
-      }
-    } catch (err) {
-      console.error("Error fetching properties:", err);
-    }
-    return propertiesMap;
-  };
-
-  const fetchUserProfiles = async (userIds: string[]): Promise<Map<string, ProfileInfo>> => {
-    const profilesMap = new Map<string, ProfileInfo>();
-    
-    try {
-      // Approach 1: Try to fetch profiles directly
-      const { data: profilesData } = await supabase
-        .from("profiles")
-        .select("id, name, email")
-        .in("id", userIds);
-
-      if (profilesData && profilesData.length > 0) {
-        profilesData.forEach((profile) => {
-          profilesMap.set(profile.id, profile);
-        });
-      }
-      
-      // If we couldn't get all profiles, try edge function for remaining users
-      if (profilesMap.size < userIds.length) {
-        const missingUserIds = userIds.filter(id => !profilesMap.has(id));
-        
-        const { data } = await supabase.functions.invoke('get-user-data', { 
-          body: { user_ids: missingUserIds }
-        });
-        
-        if (data && data.users) {
-          data.users.forEach((user: any) => {
-            profilesMap.set(user.id, {
-              id: user.id,
-              name: user.name || `User ${user.id.substring(0, 6)}`,
-              email: user.email || "unknown@email.com"
-            });
-          });
-        }
-      }
-    } catch (err) {
-      console.error("Error fetching user profiles:", err);
-    }
-    
-    return profilesMap;
   };
 
   return { projects, isLoading, fetchProjects };

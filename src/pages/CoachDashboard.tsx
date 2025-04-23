@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProjectList from "@/components/coach/ProjectList";
 import MessageCenter from "@/components/coach/MessageCenter";
-import JWTDebugger from "@/components/debug/JWTDebugger"; // adjust path if needed
+import JWTDebugger from "@/components/debug/JWTDebugger";
 
 const CoachDashboard = () => {
   const [activeTab, setActiveTab] = useState("projects");

@@ -430,6 +430,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      check_coach_access: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       check_team_member_access: {
         Args: { project_id_param: string }
         Returns: boolean
