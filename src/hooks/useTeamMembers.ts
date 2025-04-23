@@ -81,6 +81,20 @@ export const useTeamMembers = (projectId: string | undefined) => {
         
         const projectOwnerId = projectData?.user_id;
         
+        // If the current user is the project owner, return them as a team member
+        // This prevents recursion during project creation
+        if (projectOwnerId && projectOwnerId === user.id) {
+          console.log("Current user is project owner, adding automatically");
+          return [{
+            id: 'owner', // Temporary ID until team member is formally created
+            role: "owner",
+            name: user.user_metadata?.name || "Project Owner",
+            email: user.email || "No email",
+            avatarUrl: `https://i.pravatar.cc/150?u=${user.email}`,
+            isCurrentUser: true
+          }];
+        }
+        
         // Add the owner if they're not already a team member
         if (projectOwnerId) {
           try {
