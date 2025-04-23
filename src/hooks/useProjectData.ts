@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
 import { type PinterestBoard } from "@/types/pinterest";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 export interface PropertyDetails {
   id: string;
@@ -82,6 +83,8 @@ export const useProjectData = (projectId: string | undefined, locationState: any
           throw new Error("Project ID is undefined or user is not authenticated");
         }
 
+        console.log(`Fetching project data for project: ${projectId} and user: ${user.id}`);
+
         // Use the edge function to get project data to avoid RLS issues
         const { data: projectDetails, error: projectError } = await supabase.functions.invoke(
           'handle-project-update',
@@ -99,8 +102,11 @@ export const useProjectData = (projectId: string | undefined, locationState: any
         }
 
         if (!projectDetails) {
+          console.error("Project details not found");
           throw new Error("Project details not found");
         }
+
+        console.log("Project data retrieved successfully:", projectDetails);
 
         const projectDataMapped: ProjectData = {
           id: projectDetails.id,
@@ -130,124 +136,46 @@ export const useProjectData = (projectId: string | undefined, locationState: any
 
         setProjectData(projectDataMapped);
 
-        // Use the security definer function to fetch property details
-        const { data: propertyData, error: propertyFnError } = await supabase
-          .rpc('get_property_details', { p_property_id: projectDetails.property_id });
-
-        if (propertyFnError) {
-          console.warn("Property function call failed:", propertyFnError);
-          
-          // Fallback to edge function to get property data
-          try {
-            const { data: propertyViaEdge, error: edgePropertyError } = await supabase.functions.invoke(
-              'get-property-details', 
-              { 
-                body: { 
-                  propertyId: projectDetails.property_id,
-                  userId: user.id 
-                } 
-              }
-            );
-            
-            if (edgePropertyError) {
-              throw edgePropertyError;
-            }
-            
-            if (propertyViaEdge) {
-              const property = propertyViaEdge;
-              
-              const propertyDetailsMapped: PropertyDetails = {
-                id: property.id,
-                property_name: property.property_name,
-                address: `${property.address_line1}, ${property.city}, ${property.state} ${property.zip_code}`,
-                address_line1: property.address_line1,
-                city: property.city,
-                state: property.state,
-                zip: property.zip_code,
-                zip_code: property.zip_code,
-                home_photos: property.home_photos || [],
-                image_url: property.image_url || '',
-                blueprint_url: property.blueprint_url
-              };
-  
-              setPropertyDetails(propertyDetailsMapped);
-              return;
-            }
-          } catch (edgeError) {
-            console.error("Edge function property fetch error:", edgeError);
-          }
-          
-          // As a last resort, try direct query
-          try {
-            const { data: property, error: propertyError } = await supabase
-              .from('properties')
-              .select('*')
-              .eq('id', projectDetails.property_id)
-              .single();
-
-            if (propertyError) {
-              throw propertyError;
-            }
-
-            if (!property) {
-              throw new Error("Property not found");
-            }
-
-            const propertyDetailsMapped: PropertyDetails = {
-              id: property.id,
-              property_name: property.property_name,
-              address: `${property.address_line1}, ${property.city}, ${property.state} ${property.zip_code}`,
-              address_line1: property.address_line1,
-              city: property.city,
-              state: property.state,
-              zip: property.zip_code,
-              zip_code: property.zip_code,
-              home_photos: property.home_photos || [],
-              image_url: property.image_url || '',
-              blueprint_url: property.blueprint_url
-            };
-
-            setPropertyDetails(propertyDetailsMapped);
-          } catch (innerError) {
-            console.error("Inner property fetch error:", innerError);
-            // Create minimal property details if all else fails
-            if (projectDetails && projectDetails.property_id) {
-              setPropertyDetails({
-                id: projectDetails.property_id,
-                property_name: "Property Details Unavailable",
-                address: "Address unavailable",
-                address_line1: "",
-                city: "",
-                state: "",
-                zip: "",
-                zip_code: "",
-                home_photos: [],
-                image_url: "",
-              });
+        // Use the edge function to get property details
+        const { data: propertyData, error: propertyError } = await supabase.functions.invoke(
+          'get-property-details',
+          { 
+            body: { 
+              propertyId: projectDetails.property_id,
+              userId: user.id 
             }
           }
-        } else if (propertyData && propertyData.length > 0) {
-          const property = propertyData[0];
-          
-          const propertyDetailsMapped: PropertyDetails = {
-            id: property.id,
-            property_name: property.property_name,
-            address: `${property.address_line1}, ${property.city}, ${property.state} ${property.zip_code}`,
-            address_line1: property.address_line1,
-            city: property.city,
-            state: property.state,
-            zip: property.zip_code,
-            zip_code: property.zip_code,
-            home_photos: property.home_photos || [],
-            image_url: property.image_url || '',
-            blueprint_url: property.blueprint_url
-          };
-
-          setPropertyDetails(propertyDetailsMapped);
+        );
+        
+        if (propertyError) {
+          console.error("Error fetching property via edge function:", propertyError);
+          throw propertyError;
         }
+        
+        if (!propertyData) {
+          console.error("Property not found via edge function");
+          throw new Error("Property not found");
+        }
+          
+        const propertyDetailsMapped: PropertyDetails = {
+          id: propertyData.id,
+          property_name: propertyData.property_name,
+          address: `${propertyData.address_line1}, ${propertyData.city}, ${propertyData.state} ${propertyData.zip_code}`,
+          address_line1: propertyData.address_line1,
+          city: propertyData.city,
+          state: propertyData.state,
+          zip: propertyData.zip_code,
+          zip_code: propertyData.zip_code,
+          home_photos: propertyData.home_photos || [],
+          image_url: propertyData.image_url || '',
+          blueprint_url: propertyData.blueprint_url
+        };
+
+        setPropertyDetails(propertyDetailsMapped);
       } catch (err: any) {
         setError(err);
         console.error("Error fetching project data:", err);
+        toast.error(`Failed to load project: ${err.message}`);
       } finally {
         setIsLoading(false);
       }

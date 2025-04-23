@@ -11,9 +11,10 @@ import MessagesCard from "@/components/project/MessagesCard";
 import EventsCard from "@/components/project/EventsCard";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { FileText, PenBox, ShieldAlert } from "lucide-react";
+import { FileText, PenBox, ShieldAlert, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProjectAccess } from "@/hooks/useProjectAccess";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,23 +37,52 @@ const ProjectDashboard = () => {
   const projectId = params.projectId || "";
   const { hasAccess, isOwner, role, isLoading: isAccessLoading } = useProjectAccess(projectId);
   
-  const { projectData, propertyDetails, isLoading: isProjectLoading } = useProjectData(
+  const { projectData, propertyDetails, isLoading: isProjectLoading, error } = useProjectData(
     projectId,
     location.state
   );
 
   const isLoading = isAccessLoading || isProjectLoading;
 
+  React.useEffect(() => {
+    if (error) {
+      toast.error(`Error loading project: ${error.message}`);
+    }
+  }, [error]);
+
   if (!isAccessLoading && !hasAccess) {
     return <Navigate to="/projects" replace />;
   }
 
-  if (isLoading || !propertyDetails) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-white">
         <DashboardNavbar />
-        <div className="flex-1 p-4 md:p-10">
-          <div className="text-center py-10">Loading project details...</div>
+        <div className="flex-1 p-4 md:p-10 flex items-center justify-center">
+          <div className="text-center py-10">
+            <div className="animate-spin w-8 h-8 border-4 border-t-blue-500 border-blue-200 rounded-full mx-auto mb-4"></div>
+            <div className="text-lg text-gray-600">Loading project details...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !propertyDetails || !projectData) {
+    return (
+      <div className="min-h-screen flex flex-col bg-white">
+        <DashboardNavbar />
+        <div className="flex-1 p-4 md:p-10 flex items-center justify-center">
+          <div className="text-center py-10 max-w-md mx-auto">
+            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Unable to load project</h2>
+            <p className="text-gray-600 mb-6">
+              {error ? error.message : "The project could not be loaded. It may have been deleted or you may not have access."}
+            </p>
+            <Button onClick={() => navigate('/projects')}>
+              Return to Projects
+            </Button>
+          </div>
         </div>
       </div>
     );

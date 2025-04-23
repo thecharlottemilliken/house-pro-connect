@@ -47,11 +47,22 @@ serve(async (req) => {
           .from('projects')
           .select('user_id')
           .eq('id', projectId)
-          .single();
+          .maybeSingle();
           
         if (projectError) {
           console.error("Error fetching project:", projectError);
-          throw projectError;
+          return new Response(JSON.stringify({ error: projectError.message }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 500,
+          });
+        }
+        
+        // If project not found, return 404
+        if (!projectData) {
+          return new Response(JSON.stringify({ error: "Project not found" }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 404,
+          });
         }
         
         const isOwner = projectData.user_id === userId;
@@ -207,8 +218,68 @@ serve(async (req) => {
       }
     }
 
+    // Get project details for dashboard
+    if (body.projectId && body.userId && !body.operation) {
+      const projectId = body.projectId;
+      const userId = body.userId;
+
+      try {
+        // Fetch the project with all its details
+        const { data: projectData, error: projectError } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('id', projectId)
+          .maybeSingle();
+
+        if (projectError) {
+          console.error("Error fetching project:", projectError);
+          return new Response(JSON.stringify({ error: projectError.message }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 500,
+          });
+        }
+
+        // If project not found, return 404
+        if (!projectData) {
+          return new Response(JSON.stringify({ error: "Project not found" }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 404,
+          });
+        }
+
+        // Check if user has access to this project
+        const { data: isOwner } = await supabase
+          .rpc('check_team_membership', { 
+            project_id_param: projectId, 
+            user_id_param: userId
+          });
+
+        if (!isOwner) {
+          return new Response(JSON.stringify({ error: "Access denied" }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 403,
+          });
+        }
+
+        return new Response(JSON.stringify(projectData), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      } catch (error) {
+        console.error("Error fetching project details:", error);
+        return new Response(JSON.stringify({ error: error.message || "An error occurred" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        });
+      }
+    }
+
     // Handle project update or creation
-    if (body.projectId || (body.propertyId && body.userId)) {
+    if ((body.projectId || (body.propertyId && body.userId)) && 
+        (body.title || body.renovationAreas || body.projectPreferences || 
+         body.constructionPreferences || body.designPreferences || 
+         body.managementPreferences || body.prior_experience)) {
+          
       const projectId = body.projectId;
       const userId = body.userId;
       const propertyId = body.propertyId;
@@ -222,16 +293,27 @@ serve(async (req) => {
 
       try {
         if (projectId) {
-          // First get the existing project to verify ownership
+          // First get the existing project to verify it exists
           const { data: existingProject, error: fetchError } = await supabase
             .from('projects')
             .select('*')
             .eq('id', projectId)
-            .single();
+            .maybeSingle();
             
           if (fetchError) {
             console.error("Error fetching project:", fetchError);
-            throw new Error("Error fetching project");
+            return new Response(JSON.stringify({ error: fetchError.message }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 500,
+            });
+          }
+          
+          // If project not found, return 404
+          if (!existingProject) {
+            return new Response(JSON.stringify({ error: "Project not found" }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 404,
+            });
           }
           
           // Update the project with the provided data
@@ -256,7 +338,10 @@ serve(async (req) => {
 
           if (error) {
             console.error("Error updating project:", error);
-            throw new Error("Error updating project");
+            return new Response(JSON.stringify({ error: error.message }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 500,
+            });
           }
 
           return new Response(JSON.stringify(data), {
@@ -283,7 +368,10 @@ serve(async (req) => {
 
           if (error) {
             console.error("Error creating project:", error);
-            throw new Error("Error creating project");
+            return new Response(JSON.stringify({ error: error.message }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 500,
+            });
           }
 
           return new Response(JSON.stringify(data), {
@@ -291,36 +379,16 @@ serve(async (req) => {
             status: 200,
           });
         }
-      } catch (error) {
+        
         return new Response(
-          JSON.stringify({ error: error.message || "An error occurred" }),
+          JSON.stringify({ error: "Missing required parameters" }),
           {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 500,
+            status: 400,
           }
         );
-      }
-    }
-    
-    // If projectId is provided but no specific fields to update, return the project data
-    if (body.projectId && body.userId) {
-      try {
-        const { data, error } = await supabase
-          .from('projects')
-          .select('*')
-          .eq('id', body.projectId)
-          .single();
-          
-        if (error) {
-          console.error("Error fetching project:", error);
-          throw new Error("Error fetching project");
-        }
-        
-        return new Response(JSON.stringify(data), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        });
       } catch (error) {
+        console.error("Error handling project update:", error);
         return new Response(
           JSON.stringify({ error: error.message || "An error occurred" }),
           {
@@ -339,6 +407,7 @@ serve(async (req) => {
       }
     );
   } catch (error) {
+    console.error("Unexpected server error:", error);
     return new Response(
       JSON.stringify({ error: error.message || "Internal Server Error" }),
       {
