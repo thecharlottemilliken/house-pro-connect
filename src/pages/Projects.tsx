@@ -1,28 +1,14 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { ArrowRight, Plus } from "lucide-react";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-
-interface Project {
-  id: string;
-  property_id: string;
-  title: string;
-  created_at: string;
-  property: {
-    property_name: string;
-    image_url: string;
-    address_line1: string;
-    city: string;
-    state: string;
-    zip_code: string;
-  };
-  is_owner: boolean;
-  team_role?: string;
-}
+import ProjectHeader from "@/components/projects/ProjectHeader";
+import ProjectGrid from "@/components/projects/ProjectGrid";
+import EmptyProjectState from "@/components/projects/EmptyProjectState";
+import { Project } from "@/types/project";
 
 const Projects = () => {
   const navigate = useNavigate();
@@ -32,7 +18,6 @@ const Projects = () => {
 
   useEffect(() => {
     if (!user) return;
-    
     fetchProjects();
   }, [user]);
 
@@ -41,7 +26,6 @@ const Projects = () => {
     try {
       console.log("Fetching projects for user:", user?.id);
       
-      // First try using the edge function to bypass RLS issues
       const { data: edgeData, error: edgeError } = await supabase.functions.invoke('handle-project-update', {
         method: 'POST',
         body: { 
@@ -106,7 +90,6 @@ const Projects = () => {
 
       let teamProjects: Project[] = [];
       
-      // If user is a team member on any projects, fetch those projects
       if (teamMemberships && teamMemberships.length > 0) {
         const projectIds = teamMemberships.map(member => member.project_id);
         
@@ -156,7 +139,7 @@ const Projects = () => {
         }
       });
       
-      // Convert map back to array for state
+      // Convert map back to array
       const allProjects = Array.from(projectMap.values());
       
       console.log(`Found ${allProjects.length} projects in total`);
@@ -177,78 +160,23 @@ const Projects = () => {
   const goToProjectDashboard = (projectId: string) => {
     navigate(`/project-dashboard/${projectId}`);
   };
-  
-  const formatAddress = (project: Project) => {
-    const property = project.property;
-    return `${property.address_line1}, ${property.city}, ${property.state} ${property.zip_code}`;
-  };
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <DashboardNavbar />
       
       <main className="flex-1 p-4 md:p-10">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 md:mb-8 gap-3 sm:gap-0">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Your Projects</h1>
-          <Button 
-            className="bg-[#174c65] hover:bg-[#174c65]/90 w-full sm:w-auto"
-            onClick={() => navigate("/create-project")}
-          >
-            <Plus className="mr-2 h-4 w-4" /> CREATE NEW PROJECT
-          </Button>
-        </div>
+        <ProjectHeader />
         
         {isLoading ? (
           <div className="py-8 text-center">Loading your projects...</div>
         ) : projects.length === 0 ? (
-          <div className="bg-gray-50 rounded-lg p-6 text-center mb-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-2">No Projects Yet</h2>
-            <p className="text-gray-600 mb-4">You haven't created any projects yet. Start your first renovation project today!</p>
-            <Button 
-              className="bg-[#174c65] hover:bg-[#174c65]/90"
-              onClick={() => navigate("/create-project")}
-            >
-              <Plus className="mr-2 h-4 w-4" /> Create Your First Project
-            </Button>
-          </div>
+          <EmptyProjectState />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {projects.map((project) => (
-              <div 
-                key={project.id} 
-                className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow"
-              >
-                <div className="h-48 overflow-hidden">
-                  <img 
-                    src={project.property.image_url} 
-                    alt={project.property.property_name} 
-                    className="w-full h-full object-cover" 
-                  />
-                </div>
-                <div className="p-4">
-                  <div className="flex justify-between mb-1">
-                    <h2 className="text-lg font-semibold">{project.title}</h2>
-                    {!project.is_owner && (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {project.team_role || 'Team Member'}
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="text-base text-gray-700 mb-2">{project.property.property_name}</h3>
-                  <p className="text-sm text-gray-600 mb-4">{formatAddress(project)}</p>
-                  <p className="text-xs text-gray-500 mb-3">
-                    Created on {new Date(project.created_at).toLocaleDateString()}
-                  </p>
-                  <Button 
-                    className="w-full bg-[#174c65] hover:bg-[#174c65]/90 justify-between"
-                    onClick={() => goToProjectDashboard(project.id)}
-                  >
-                    VIEW PROJECT <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
+          <ProjectGrid 
+            projects={projects} 
+            onProjectClick={goToProjectDashboard}
+          />
         )}
       </main>
     </div>
