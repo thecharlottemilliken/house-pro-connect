@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.29.0";
 
@@ -96,7 +97,7 @@ serve(async (req) => {
       // Get coaches from profiles
       const { data: coaches, error: coachError } = await supabase
         .from('profiles')
-        .select('id')
+        .select('id, name, email')
         .eq('role', 'coach');
       
       if (coachError) {
@@ -136,24 +137,34 @@ serve(async (req) => {
         });
       }
       
-      // Add each coach to the project
+      // Add each coach to the project - Fixed: Don't use on_conflict directly
       let addedCount = 0;
       for (const coach of coaches) {
         try {
-          const { data, error } = await supabase
+          // First check if the coach is already a team member
+          const { data: existingMember } = await supabase
             .from('project_team_members')
-            .insert({
-              project_id: projectId,
-              user_id: coach.id,
-              role: 'coach',
-              added_by: user.id
-            })
-            .select()
-            .on_conflict(['project_id', 'user_id'])
-            .ignore();
+            .select('id')
+            .eq('project_id', projectId)
+            .eq('user_id', coach.id)
+            .maybeSingle();
           
-          if (!error) {
-            addedCount++;
+          // Only add if not already a member
+          if (!existingMember) {
+            const { error: insertError } = await supabase
+              .from('project_team_members')
+              .insert({
+                project_id: projectId,
+                user_id: coach.id,
+                role: 'coach',
+                added_by: user.id,
+                name: coach.name || 'Coach',
+                email: coach.email
+              });
+            
+            if (!insertError) {
+              addedCount++;
+            }
           }
         } catch (err) {
           console.error(`Error adding coach ${coach.id}:`, err);

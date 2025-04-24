@@ -8,6 +8,7 @@ interface TeamMember {
   name: string;
   email: string;
   avatarUrl: string;
+  user_id?: string;
 }
 
 interface TeamMemberListProps {
@@ -73,7 +74,7 @@ const TeamMemberList = ({ teamMembers, isLoading, projectId }: TeamMemberListPro
           email={member.email}
           role={member.role}
           avatarUrl={member.avatarUrl}
-          isCurrentUser={user?.id === member.id}
+          isCurrentUser={user?.id === (member.user_id || member.id)}
           isOwner={member.role === "owner"}
           projectId={projectId}
         />

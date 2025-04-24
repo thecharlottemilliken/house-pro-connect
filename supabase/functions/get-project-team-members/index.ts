@@ -68,11 +68,11 @@ serve(async (req) => {
     } else if (ownerProfile) {
       // Add owner to team members list with direct profile data
       teamMembers.push({
-        id: 'owner',
+        id: ownerProfile.id,
         role: 'owner',
         user_id: ownerProfile.id,
-        name: ownerProfile.name,
-        email: ownerProfile.email
+        name: ownerProfile.name || 'Project Owner',
+        email: ownerProfile.email || 'No email'
       });
     } else {
       // Fallback if profile not found - get email from auth.users
@@ -84,7 +84,7 @@ serve(async (req) => {
         console.error("Error fetching owner auth data:", authError);
       } else if (ownerAuth && ownerAuth.user) {
         teamMembers.push({
-          id: 'owner', 
+          id: projectData.user_id, 
           role: 'owner',
           user_id: projectData.user_id,
           name: ownerAuth.user.user_metadata?.name || 'Project Owner',
@@ -93,19 +93,36 @@ serve(async (req) => {
       }
     }
 
-    // Now get other team members if any
-    const { data: otherMembers, error: membersError } = await supabaseClient
+    // Query for all team members including coaches
+    const { data: allTeamMembers, error: membersError } = await supabaseClient
       .from('project_team_members')
       .select('id, role, user_id, name, email')
-      .eq('project_id', projectId)
-      .neq('role', 'owner'); // Exclude owner as we've already added them
+      .eq('project_id', projectId);
     
     if (membersError) {
       console.error("Error fetching team members:", membersError);
-    } else if (otherMembers && otherMembers.length > 0) {
-      // Merge other team members into the list
-      teamMembers = [...teamMembers, ...otherMembers];
+    } else if (allTeamMembers && allTeamMembers.length > 0) {
+      // Merge team members into the list
+      allTeamMembers.forEach(member => {
+        // Check if member is not already in the list (avoiding owner duplication)
+        const isDuplicate = teamMembers.some(existingMember => 
+          existingMember.user_id === member.user_id
+        );
+        
+        if (!isDuplicate) {
+          teamMembers.push({
+            id: member.id,
+            role: member.role,
+            user_id: member.user_id,
+            name: member.name || 'Team Member',
+            email: member.email || 'No email'
+          });
+        }
+      });
     }
+
+    // Debug log
+    console.log(`Found ${teamMembers.length} team members for project ${projectId}`);
 
     return new Response(
       JSON.stringify(teamMembers),

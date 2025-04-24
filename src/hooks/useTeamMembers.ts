@@ -12,6 +12,7 @@ interface TeamMember {
   email: string;
   avatarUrl: string;
   isCurrentUser: boolean;
+  user_id?: string;
 }
 
 // Define the team member data structure that can come from different sources
@@ -35,48 +36,7 @@ export const useTeamMembers = (projectId: string | undefined) => {
     try {
       console.log("Fetching team members for project:", projectId);
       
-      // First, check if we're in project creation mode
-      // In creation mode, we just treat current user as owner without querying the database
-      // This requires checking if the project exists
-      const { data: projectExists, error: projectCheckError } = await supabase
-        .from("projects")
-        .select("id, user_id")
-        .eq("id", projectId)
-        .maybeSingle();
-        
-      // If the project doesn't exist or this is a new project
-      // or we couldn't verify existence, just return the current user as the owner
-      if (projectCheckError || !projectExists) {
-        console.log("Project in creation mode or check error, returning current user as owner");
-        return [{
-          id: 'owner-provisional',
-          role: "owner",
-          name: user.user_metadata?.name || "Project Owner",
-          email: user.email || "No email",
-          avatarUrl: `https://i.pravatar.cc/150?u=${user.email}`,
-          isCurrentUser: true
-        }];
-      }
-      
-      // Check if current user is the project owner
-      if (projectExists && projectExists.user_id === user.id) {
-        console.log("User is project owner");
-        
-        // Add the user as owner immediately to avoid team members query
-        return [{
-          id: 'owner',
-          role: "owner",
-          name: user.user_metadata?.name || "Project Owner",
-          email: user.email || "No email",
-          avatarUrl: `https://i.pravatar.cc/150?u=${user.email}`,
-          isCurrentUser: true
-        }];
-      }
-      
-      // If we reach here, we're dealing with an existing project
-      // First try using the edge function
-      let teamMemberData: TeamMemberData[] = [];
-      
+      // Use the edge function to get team members (including coaches)
       try {
         const { data, error: fnError } = await supabase.functions.invoke(
           'get-project-team-members', {
@@ -84,53 +44,103 @@ export const useTeamMembers = (projectId: string | undefined) => {
           }
         );
         
-        if (fnError || !data) {
+        if (fnError) {
           console.error("Error using team members function:", fnError);
           throw fnError;
         }
         
-        teamMemberData = data;
+        if (!data || !Array.isArray(data)) {
+          console.error("Invalid data returned from team members function");
+          throw new Error("Invalid team members data");
+        }
+        
+        console.log("Team members from edge function:", data);
+        
+        // Format team members with profile data
+        const formatted: TeamMember[] = data.map((member) => {
+          const isCurrentUser = member.user_id === user.id || member.id === user.id;
+          const avatarSeed = member.name || member.email || 'user';
+          
+          return {
+            id: member.id,
+            user_id: member.user_id,
+            role: member.role,
+            name: member.name || "Unnamed",
+            email: member.email || "No email",
+            avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(avatarSeed)}`,
+            isCurrentUser: isCurrentUser
+          };
+        });
+        
+        console.log("Team members loaded:", formatted.length);
+        return formatted;
+        
       } catch (functionError) {
         console.error("Edge function failed:", functionError);
         
         // Fallback: Try direct query as a last resort
-        try {
-          const { data: directTeamData, error: directError } = await supabase
-            .from("project_team_members")
-            .select("id, role, email, name, user_id")
-            .eq("project_id", projectId);
-            
-          if (directError) {
-            console.error("Direct team query failed:", directError);
-            throw directError;
-          }
-          
-          teamMemberData = directTeamData || [];
-        } catch (directQueryError) {
-          console.error("Direct query failed:", directQueryError);
-          
-          // Since we already checked if user is owner above, return empty array
-          return [];
-        }
-      }
-      
-      // Format team members with profile data where available
-      const formatted: TeamMember[] = teamMemberData.map((member) => {
-        const isCurrentUser = member.user_id === user.id;
+        console.log("Trying direct query fallback");
         
-        return {
-          id: member.id,
-          role: member.role,
-          name: member.name || "Unnamed",
-          email: member.email || "No email",
-          avatarUrl: `https://i.pravatar.cc/150?u=${member.email}`,
-          isCurrentUser: isCurrentUser
-        };
-      });
-      
-      console.log("Team members loaded:", formatted.length);
-      return formatted;
-      
+        let teamMemberData: TeamMember[] = [];
+        
+        // First check if current user is the project owner
+        const { data: projectData } = await supabase
+          .from("projects")
+          .select("user_id")
+          .eq("id", projectId)
+          .maybeSingle();
+          
+        if (projectData?.user_id === user.id) {
+          // Current user is owner
+          teamMemberData.push({
+            id: 'owner',
+            role: "owner",
+            name: user.user_metadata?.name || "Project Owner",
+            email: user.email || "No email",
+            avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${user.email}`,
+            isCurrentUser: true,
+            user_id: user.id
+          });
+        }
+        
+        // Then get all team members
+        const { data: directMembers, error: directError } = await supabase
+          .from("project_team_members")
+          .select("id, role, email, name, user_id")
+          .eq("project_id", projectId);
+          
+        if (directError) {
+          console.error("Direct team query failed:", directError);
+          throw directError;
+        }
+        
+        if (directMembers && directMembers.length > 0) {
+          // Add team members
+          directMembers.forEach(member => {
+            // Check for duplicates - don't add if already in list
+            const isDuplicate = teamMemberData.some(existingMember => 
+              existingMember.user_id === member.user_id
+            );
+            
+            if (!isDuplicate) {
+              const isCurrentUser = member.user_id === user.id;
+              const avatarSeed = member.name || member.email || 'user';
+              
+              teamMemberData.push({
+                id: member.id,
+                role: member.role,
+                name: member.name || "Unnamed",
+                email: member.email || "No email",
+                avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(avatarSeed)}`,
+                isCurrentUser: isCurrentUser,
+                user_id: member.user_id
+              });
+            }
+          });
+        }
+        
+        return teamMemberData;
+      }
     } catch (err: any) {
       console.error("Error in fetching team data:", err);
       throw err;
@@ -141,8 +151,8 @@ export const useTeamMembers = (projectId: string | undefined) => {
     queryKey: ["teamMembers", projectId],
     queryFn: fetchTeamMembers,
     enabled: !!projectId && !!user,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 1
+    staleTime: 1000 * 60, // 1 minute
+    retry: 2
   });
 
   if (error) {
