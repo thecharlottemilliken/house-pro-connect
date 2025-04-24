@@ -94,37 +94,43 @@ export const useProjectData = (projectId: string | undefined, locationState: any
           console.log("Using coach access path for project data");
           
           try {
-            // Use RPC function to bypass RLS for coaches
+            // Use raw SQL query with parameters to bypass TypeScript type checking issues
             const { data: coachProjectData, error: coachProjectError } = await supabase
-              .rpc('get_project_for_coach', { p_project_id: projectId });
+              .from('projects')
+              .select('*')
+              .eq('id', projectId)
+              .maybeSingle();
               
             if (coachProjectError) {
-              console.error("Error fetching project using coach function:", coachProjectError);
+              console.error("Error fetching project using coach path:", coachProjectError);
               throw coachProjectError;
             }
             
-            if (!coachProjectData || coachProjectData.length === 0) {
+            if (!coachProjectData) {
               throw new Error("Project not found");
             }
             
-            projectDetails = coachProjectData[0];
+            projectDetails = coachProjectData;
             
             // Now get property data
             const { data: coachPropertyData, error: coachPropertyError } = await supabase
-              .rpc('get_property_for_coach', { p_property_id: projectDetails.property_id });
+              .from('properties')
+              .select('*')
+              .eq('id', projectDetails.property_id)
+              .maybeSingle();
               
             if (coachPropertyError) {
-              console.error("Error fetching property using coach function:", coachPropertyError);
+              console.error("Error fetching property using coach path:", coachPropertyError);
               throw coachPropertyError;
             }
             
-            if (!coachPropertyData || coachPropertyData.length === 0) {
+            if (!coachPropertyData) {
               throw new Error("Property not found");
             }
             
-            propertyData = coachPropertyData[0];
+            propertyData = coachPropertyData;
           } catch (coachError) {
-            console.error("Coach access functions failed, falling back to edge functions:", coachError);
+            console.error("Coach access path failed, falling back to edge functions:", coachError);
             
             // Fall back to edge functions if direct access fails
             const { data: projectEdgeData, error: projectError } = await supabase.functions.invoke(
@@ -247,7 +253,7 @@ export const useProjectData = (projectId: string | undefined, locationState: any
       } catch (err: any) {
         setError(err);
         console.error("Error fetching project data:", err);
-        toast.error(`Failed to load project: ${err.message}`);
+        toast.error(`Error loading project: ${err.message}`);
       } finally {
         setIsLoading(false);
       }
