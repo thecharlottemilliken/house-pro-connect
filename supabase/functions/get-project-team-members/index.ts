@@ -104,7 +104,52 @@ serve(async (req) => {
     if (membersError) {
       console.error("Error fetching team members:", membersError);
     } else if (allTeamMembers && allTeamMembers.length > 0) {
-      // Merge team members into the list
+      // For each team member that has a user_id but missing name/email, try to get their profile data
+      const usersToLookup = allTeamMembers
+        .filter(member => member.user_id && (!member.name || !member.email))
+        .map(member => member.user_id);
+      
+      let userProfiles = {};
+      
+      if (usersToLookup.length > 0) {
+        // Get profile data for users with missing information
+        const { data: profiles } = await supabaseClient
+          .from('profiles')
+          .select('id, name, email')
+          .in('id', usersToLookup);
+          
+        // Also get auth data as backup
+        const authPromises = usersToLookup.map(userId => 
+          supabaseClient.auth.admin.getUserById(userId)
+            .then(({data}) => data?.user)
+            .catch(() => null)
+        );
+        
+        const authUsers = await Promise.all(authPromises);
+        
+        // Create a lookup object for quick access
+        if (profiles) {
+          profiles.forEach(profile => {
+            userProfiles[profile.id] = profile;
+          });
+        }
+        
+        // Add auth data as fallback
+        authUsers.forEach((authUser, index) => {
+          if (authUser && usersToLookup[index]) {
+            const userId = usersToLookup[index];
+            if (!userProfiles[userId]) {
+              userProfiles[userId] = {
+                id: userId,
+                name: authUser.user_metadata?.name,
+                email: authUser.email
+              };
+            }
+          }
+        });
+      }
+      
+      // Merge team members into the list with enhanced profile data
       allTeamMembers.forEach(member => {
         // Check if member is not already in the list (avoiding owner duplication)
         const isDuplicate = teamMembers.some(existingMember => 
@@ -112,14 +157,30 @@ serve(async (req) => {
         );
         
         if (!isDuplicate) {
-          const avatarSeed = member.name || member.email || 'user';
+          // Try to get name and email from profiles if missing
+          let name = member.name;
+          let email = member.email;
+          
+          // If user_id exists and either name or email is missing, try to get from profile data
+          if (member.user_id && (!name || !email) && userProfiles[member.user_id]) {
+            name = name || userProfiles[member.user_id].name;
+            email = email || userProfiles[member.user_id].email;
+          }
+          
+          // Ensure we have some value
+          name = name || (member.role === 'coach' ? 'Coach' : 'Team Member');
+          email = email || 'No email';
+          
+          const avatarSeed = name !== 'Coach' && name !== 'Team Member' 
+            ? name 
+            : (email !== 'No email' ? email : `user-${member.id.substring(0,8)}`);
           
           teamMembers.push({
             id: member.id,
             role: member.role,
             user_id: member.user_id,
-            name: member.name || 'Team Member',
-            email: member.email || 'No email',
+            name: name,
+            email: email,
             avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(avatarSeed)}`
           });
         }

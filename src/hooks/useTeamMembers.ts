@@ -59,14 +59,22 @@ export const useTeamMembers = (projectId: string | undefined) => {
         // Format team members with profile data
         const formatted: TeamMember[] = data.map((member) => {
           const isCurrentUser = member.user_id === user.id || member.id === user.id;
-          const avatarSeed = member.name || member.email || 'user';
+          
+          // Make sure name and email exist
+          const name = member.name || (member.role === 'coach' ? `Coach` : "Team Member");
+          const email = member.email || "No email available";
+          
+          // Generate avatar from name or email, but ensure there's always a valid seed
+          const avatarSeed = name !== "Coach" && name !== "Team Member" 
+            ? name 
+            : (email !== "No email available" ? email : `user-${member.id.substring(0, 8)}`);
           
           return {
             id: member.id,
             user_id: member.user_id,
             role: member.role,
-            name: member.name || "Unnamed",
-            email: member.email || "No email",
+            name: name,
+            email: email,
             avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(avatarSeed)}`,
             isCurrentUser: isCurrentUser
           };
@@ -124,19 +132,68 @@ export const useTeamMembers = (projectId: string | undefined) => {
             
             if (!isDuplicate) {
               const isCurrentUser = member.user_id === user.id;
-              const avatarSeed = member.name || member.email || 'user';
+              
+              // Ensure name and email exist
+              const name = member.name || (member.role === 'coach' ? `Coach` : "Team Member");
+              const email = member.email || "No email available";
+              
+              // Generate avatar from name or email, but ensure there's always a valid seed
+              const avatarSeed = name !== "Coach" && name !== "Team Member" 
+                ? name 
+                : (email !== "No email available" ? email : `member-${member.id.substring(0, 8)}`);
               
               teamMemberData.push({
                 id: member.id,
                 role: member.role,
-                name: member.name || "Unnamed",
-                email: member.email || "No email",
+                name: name,
+                email: email,
                 avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(avatarSeed)}`,
                 isCurrentUser: isCurrentUser,
                 user_id: member.user_id
               });
             }
           });
+        }
+        
+        // If there are missing coach names/emails, add a fallback to retrieve them
+        const membersWithMissingInfo = teamMemberData.filter(
+          member => member.role === 'coach' && 
+          (member.name === "Coach" || member.email === "No email available") && 
+          member.user_id
+        );
+        
+        if (membersWithMissingInfo.length > 0) {
+          try {
+            // Try to get user profile data from the user_data edge function
+            const userIds = membersWithMissingInfo.map(member => member.user_id).filter(Boolean);
+            
+            if (userIds.length > 0) {
+              const { data: userData, error: userError } = await supabase.functions.invoke(
+                'get-user-data', {
+                  body: { user_ids: userIds }
+                }
+              );
+              
+              if (!userError && userData && userData.users && Array.isArray(userData.users)) {
+                // Update team members with the fetched user data
+                userData.users.forEach(fetchedUser => {
+                  teamMemberData = teamMemberData.map(member => {
+                    if (member.user_id === fetchedUser.id) {
+                      return {
+                        ...member,
+                        name: fetchedUser.name || member.name,
+                        email: fetchedUser.email || member.email,
+                        avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(fetchedUser.name || fetchedUser.email || member.id)}`
+                      };
+                    }
+                    return member;
+                  });
+                });
+              }
+            }
+          } catch (profileError) {
+            console.error("Error fetching additional user data:", profileError);
+          }
         }
         
         return teamMemberData;

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
-import { MessageSquare, Phone, CreditCard, MoreVertical, Trash2 } from "lucide-react";
+import { MessageSquare, Phone, CreditCard, MoreVertical, Trash2, Shield, UserCircle } from "lucide-react";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -95,8 +95,10 @@ const TeamMemberCard = ({
     switch(role.toLowerCase()) {
       case 'owner':
         return "bg-blue-100 text-blue-800";
-      case 'contractor':
+      case 'coach':
         return "bg-green-100 text-green-800";
+      case 'contractor':
+        return "bg-amber-100 text-amber-800";
       case 'designer':
         return "bg-purple-100 text-purple-800";
       case 'architect':
@@ -110,6 +112,29 @@ const TeamMemberCard = ({
   
   const roleDisplay = role.charAt(0).toUpperCase() + role.slice(1).replace('_', ' ');
 
+  // Get initials for the avatar fallback
+  const getInitials = () => {
+    if (!name || name === "Team Member" || name === "Coach" || name === "Project Owner") {
+      return role.charAt(0).toUpperCase();
+    }
+    
+    return name
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
+  };
+
+  const getRoleIcon = () => {
+    if (role.toLowerCase() === 'owner') {
+      return <Shield className="h-4 w-4 mr-1" />;
+    } else if (role.toLowerCase() === 'coach') {
+      return <UserCircle className="h-4 w-4 mr-1" />;
+    }
+    return null;
+  };
+
   return (
     <Card className="border border-gray-200 rounded-lg overflow-hidden">
       <CardContent className="p-0">
@@ -118,11 +143,12 @@ const TeamMemberCard = ({
             <div className="flex items-center">
               <Avatar className="h-12 w-12 mr-3">
                 <AvatarImage src={avatarUrl} alt={name} />
-                <AvatarFallback>{name.charAt(0).toUpperCase()}</AvatarFallback>
+                <AvatarFallback>{getInitials()}</AvatarFallback>
               </Avatar>
               <div>
                 <h3 className="font-medium text-lg text-gray-900">{name}</h3>
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeClass()}`}>
+                  {getRoleIcon()}
                   {roleDisplay}
                 </span>
               </div>

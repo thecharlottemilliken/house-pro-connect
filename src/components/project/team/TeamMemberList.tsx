@@ -1,3 +1,4 @@
+
 import { useAuth } from "@/contexts/AuthContext";
 import TeamMemberCard from "./TeamMemberCard";
 import { Card } from "@/components/ui/card";
@@ -65,9 +66,15 @@ const TeamMemberList = ({ teamMembers, isLoading, projectId }: TeamMemberListPro
     );
   }
 
+  // Filter and sort team members - ensures we always show the owner first, followed by coaches, then others
   const owner = teamMembers.find(member => member.role === 'owner');
-  const coaches = teamMembers.filter(member => member.role === 'coach');
-  const otherMembers = teamMembers.filter(member => member.role !== 'owner' && member.role !== 'coach');
+  const coaches = teamMembers.filter(member => member.role === 'coach')
+    // Sort coaches by name to ensure consistent ordering
+    .sort((a, b) => a.name.localeCompare(b.name));
+  
+  const otherMembers = teamMembers.filter(member => member.role !== 'owner' && member.role !== 'coach')
+    // Sort other members by role then name
+    .sort((a, b) => a.role === b.role ? a.name.localeCompare(b.name) : a.role.localeCompare(b.role));
 
   return (
     <div className="space-y-8">
@@ -132,7 +139,7 @@ const TeamMemberList = ({ teamMembers, isLoading, projectId }: TeamMemberListPro
                 email={member.email}
                 role={member.role}
                 avatarUrl={member.avatarUrl}
-                isCurrentUser={user?.id === (member.user_id || member.id)}
+                isCurrentUser={user?.id === (member.user_id || coach.id)}
                 isOwner={false}
                 projectId={projectId}
               />

@@ -67,25 +67,51 @@ serve(async (req) => {
       }
     );
 
-    // Get basic user info from auth.users using admin powers
-    const users = [];
-    for (const userId of userIds) {
-      try {
-        const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(userId);
-        
-        if (userError) {
-          console.error(`Error fetching user ${userId}:`, userError);
-        } else if (userData?.user) {
-          users.push({
-            id: userData.user.id,
-            email: userData.user.email,
-            name: userData.user.user_metadata?.name || `User ${userData.user.id.substring(0, 6)}`,
-          });
+    // First try to get data from the profiles table
+    const { data: profilesData, error: profilesError } = await supabaseAdmin
+      .from('profiles')
+      .select('id, name, email')
+      .in('id', userIds);
+    
+    let users = [];
+    
+    // Create a map of profile data by user id
+    const profilesMap = {};
+    if (profilesData && !profilesError) {
+      profilesData.forEach(profile => {
+        profilesMap[profile.id] = {
+          id: profile.id,
+          name: profile.name,
+          email: profile.email
+        };
+      });
+    }
+    
+    // For any missing users, try to get from auth.users
+    const missingUserIds = userIds.filter(id => !profilesMap[id]);
+    
+    if (missingUserIds.length > 0) {
+      for (const userId of missingUserIds) {
+        try {
+          const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(userId);
+          
+          if (userError) {
+            console.error(`Error fetching user ${userId}:`, userError);
+          } else if (userData?.user) {
+            profilesMap[userId] = {
+              id: userData.user.id,
+              email: userData.user.email,
+              name: userData.user.user_metadata?.name || `User ${userData.user.id.substring(0, 6)}`,
+            };
+          }
+        } catch (err) {
+          console.error(`Error processing user ${userId}:`, err);
         }
-      } catch (err) {
-        console.error(`Error processing user ${userId}:`, err);
       }
     }
+    
+    // Convert the map to an array
+    users = Object.values(profilesMap);
 
     return new Response(
       JSON.stringify({ success: true, users }),
