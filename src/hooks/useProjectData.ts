@@ -94,7 +94,7 @@ export const useProjectData = (projectId: string | undefined, locationState: any
           console.log("Using coach access path for project data");
           
           try {
-            // Use raw SQL query with parameters to bypass TypeScript type checking issues
+            // Use direct database queries for coaches (RLS policies now allow this)
             const { data: coachProjectData, error: coachProjectError } = await supabase
               .from('projects')
               .select('*')

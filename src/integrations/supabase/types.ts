@@ -442,6 +442,10 @@ export type Database = {
         Args: { project_id_param: string; user_id_param: string }
         Returns: boolean
       }
+      check_user_is_coach: {
+        Args: { p_user_id: string }
+        Returns: boolean
+      }
       get_property_details: {
         Args: { p_property_id: string }
         Returns: {
