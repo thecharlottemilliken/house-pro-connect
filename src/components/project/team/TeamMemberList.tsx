@@ -1,6 +1,7 @@
-
 import { useAuth } from "@/contexts/AuthContext";
 import TeamMemberCard from "./TeamMemberCard";
+import { Card } from "@/components/ui/card";
+import { UserRound, Shield } from "lucide-react";
 
 interface TeamMember {
   id: string;
@@ -64,21 +65,90 @@ const TeamMemberList = ({ teamMembers, isLoading, projectId }: TeamMemberListPro
     );
   }
 
+  const owner = teamMembers.find(member => member.role === 'owner');
+  const coaches = teamMembers.filter(member => member.role === 'coach');
+  const otherMembers = teamMembers.filter(member => member.role !== 'owner' && member.role !== 'coach');
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-      {teamMembers.map((member) => (
-        <TeamMemberCard
-          key={member.id}
-          id={member.id}
-          name={member.name}
-          email={member.email}
-          role={member.role}
-          avatarUrl={member.avatarUrl}
-          isCurrentUser={user?.id === (member.user_id || member.id)}
-          isOwner={member.role === "owner"}
-          projectId={projectId}
-        />
-      ))}
+    <div className="space-y-8">
+      {owner && (
+        <div>
+          <h2 className="text-lg font-semibold mb-4 flex items-center">
+            <Shield className="mr-2 h-5 w-5 text-blue-600" />
+            Project Owner
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <TeamMemberCard
+              key={owner.id}
+              id={owner.id}
+              name={owner.name}
+              email={owner.email}
+              role={owner.role}
+              avatarUrl={owner.avatarUrl}
+              isCurrentUser={user?.id === (owner.user_id || owner.id)}
+              isOwner={true}
+              projectId={projectId}
+            />
+          </div>
+        </div>
+      )}
+
+      {coaches.length > 0 && (
+        <div>
+          <h2 className="text-lg font-semibold mb-4 flex items-center">
+            <UserRound className="mr-2 h-5 w-5 text-green-600" />
+            Coaches ({coaches.length})
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {coaches.map((coach) => (
+              <TeamMemberCard
+                key={coach.id}
+                id={coach.id}
+                name={coach.name}
+                email={coach.email}
+                role={coach.role}
+                avatarUrl={coach.avatarUrl}
+                isCurrentUser={user?.id === (coach.user_id || coach.id)}
+                isOwner={false}
+                projectId={projectId}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {otherMembers.length > 0 && (
+        <div>
+          <h2 className="text-lg font-semibold mb-4 flex items-center">
+            <UserRound className="mr-2 h-5 w-5 text-gray-600" />
+            Team Members ({otherMembers.length})
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {otherMembers.map((member) => (
+              <TeamMemberCard
+                key={member.id}
+                id={member.id}
+                name={member.name}
+                email={member.email}
+                role={member.role}
+                avatarUrl={member.avatarUrl}
+                isCurrentUser={user?.id === (member.user_id || member.id)}
+                isOwner={false}
+                projectId={projectId}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {coaches.length === 0 && otherMembers.length === 0 && (
+        <Card className="p-6 text-center bg-gray-50">
+          <p className="text-gray-600">
+            This project currently has no additional team members or coaches.
+            Use the "INVITE A TEAM MEMBER" button to add more people to this project.
+          </p>
+        </Card>
+      )}
     </div>
   );
 };

@@ -72,7 +72,8 @@ serve(async (req) => {
         role: 'owner',
         user_id: ownerProfile.id,
         name: ownerProfile.name || 'Project Owner',
-        email: ownerProfile.email || 'No email'
+        email: ownerProfile.email || 'No email',
+        avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(ownerProfile.name || ownerProfile.email || 'owner')}`
       });
     } else {
       // Fallback if profile not found - get email from auth.users
@@ -88,7 +89,8 @@ serve(async (req) => {
           role: 'owner',
           user_id: projectData.user_id,
           name: ownerAuth.user.user_metadata?.name || 'Project Owner',
-          email: ownerAuth.user.email || 'No email'
+          email: ownerAuth.user.email || 'No email',
+          avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(ownerAuth.user.email || 'owner')}`
         });
       }
     }
@@ -110,12 +112,15 @@ serve(async (req) => {
         );
         
         if (!isDuplicate) {
+          const avatarSeed = member.name || member.email || 'user';
+          
           teamMembers.push({
             id: member.id,
             role: member.role,
             user_id: member.user_id,
             name: member.name || 'Team Member',
-            email: member.email || 'No email'
+            email: member.email || 'No email',
+            avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(avatarSeed)}`
           });
         }
       });

@@ -7,18 +7,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface WebhookPayload {
-  type: string;
-  table: string;
-  record: {
-    [key: string]: any;
-  };
-  schema: string;
-  old_record: null | {
-    [key: string]: any;
-  };
-}
-
 serve(async (req) => {
   // Handle CORS preflight request
   if (req.method === "OPTIONS") {
@@ -224,6 +212,37 @@ serve(async (req) => {
       const userId = body.userId;
 
       try {
+        // Check if user is a coach first
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', userId)
+          .maybeSingle();
+        
+        const isCoach = profileData?.role === 'coach';
+        
+        // If user is a coach, skip team membership check
+        let hasAccess = isCoach;
+        
+        // If not a coach, check team membership
+        if (!isCoach) {
+          const { data: membershipData } = await supabase
+            .rpc('check_team_membership', { 
+              project_id_param: projectId, 
+              user_id_param: userId
+            });
+          
+          hasAccess = !!membershipData;
+        }
+        
+        // If user doesn't have access, return 403
+        if (!hasAccess) {
+          return new Response(JSON.stringify({ error: "Access denied" }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 403,
+          });
+        }
+        
         // Fetch the project with all its details
         const { data: projectData, error: projectError } = await supabase
           .from('projects')
@@ -244,20 +263,6 @@ serve(async (req) => {
           return new Response(JSON.stringify({ error: "Project not found" }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 404,
-          });
-        }
-
-        // Check if user has access to this project
-        const { data: isOwner } = await supabase
-          .rpc('check_team_membership', { 
-            project_id_param: projectId, 
-            user_id_param: userId
-          });
-
-        if (!isOwner) {
-          return new Response(JSON.stringify({ error: "Access denied" }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 403,
           });
         }
 
