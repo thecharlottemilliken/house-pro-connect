@@ -1,79 +1,32 @@
 
-import React, { useState, useEffect } from "react";
-import { useParams, useLocation, useNavigate } from "react-router-dom";
+import React from "react";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useProjectData } from "@/hooks/useProjectData";
-import { Button } from "@/components/ui/button";
-import { UserPlus } from "lucide-react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import ProjectSidebar from "@/components/project/ProjectSidebar";
-import { toast } from "@/hooks/use-toast";
-import { useTeamMembers } from "@/hooks/useTeamMembers";
 import TeamMemberList from "@/components/project/team/TeamMemberList";
 import TeamMemberInviteDialog from "@/components/project/team/TeamMemberInviteDialog";
-import { useAuth } from "@/contexts/AuthContext";
+import TeamPageLoading from "@/components/project/team/TeamPageLoading";
+import TeamPageHeader from "@/components/project/team/TeamPageHeader";
+import { useProjectTeamPage } from "@/hooks/useProjectTeamPage";
 
 const ProjectTeam = () => {
-  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
-  const location = useLocation();
-  const params = useParams();
-  const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { user } = useAuth();
-  
-  const { 
-    projectData, 
-    isLoading: isProjectLoading 
-  } = useProjectData(params.projectId, location.state);
-
-  const projectId = projectData?.id || params.projectId || "";
-  const projectTitle = projectData?.title || "Unknown Project";
-
-  const { 
-    teamMembers, 
-    isLoading: isTeamLoading 
-  } = useTeamMembers(projectId);
-
-  useEffect(() => {
-    if (!params.projectId) {
-      toast({
-        title: "Missing Project",
-        description: "Please select a project from the projects list.",
-        variant: "destructive"
-      });
-      navigate("/projects");
-    }
-  }, [params.projectId, navigate]);
-
-  const openInviteDialog = () => {
-    setIsInviteDialogOpen(true);
-  };
-
-  const closeInviteDialog = () => {
-    setIsInviteDialogOpen(false);
-  };
+  const {
+    isInviteDialogOpen,
+    setIsInviteDialogOpen,
+    projectId,
+    projectTitle,
+    teamMembers,
+    isLoading
+  } = useProjectTeamPage();
 
   if (!projectId) {
-    return (
-      <div className="min-h-screen flex flex-col bg-white">
-        <DashboardNavbar />
-        <div className="flex-1 p-4 md:p-10">
-          <div className="text-center py-10">Redirecting to projects...</div>
-        </div>
-      </div>
-    );
+    return <TeamPageLoading />;
   }
 
-  if (isProjectLoading) {
-    return (
-      <div className="min-h-screen flex flex-col bg-white">
-        <DashboardNavbar />
-        <div className="flex-1 p-4 md:p-10">
-          <div className="text-center py-10">Loading project details...</div>
-        </div>
-      </div>
-    );
+  if (isLoading) {
+    return <TeamPageLoading />;
   }
 
   return (
@@ -85,29 +38,18 @@ const ProjectTeam = () => {
           <ProjectSidebar projectId={projectId} projectTitle={projectTitle} activePage="team" />
 
           <div className="flex-1 p-4 sm:p-6 md:p-8 bg-white overflow-y-auto">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-8">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-0">Project Team</h1>
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-3">
-                <Button 
-                  className="bg-[#0f566c] hover:bg-[#0d4a5d]"
-                  onClick={openInviteDialog}
-                >
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  INVITE A TEAM MEMBER
-                </Button>
-              </div>
-            </div>
+            <TeamPageHeader onInviteClick={() => setIsInviteDialogOpen(true)} />
 
             <TeamMemberList 
               teamMembers={teamMembers} 
-              isLoading={isTeamLoading} 
+              isLoading={isLoading} 
               projectId={projectId}
             />
 
             <TeamMemberInviteDialog
               projectId={projectId}
               isOpen={isInviteDialogOpen}
-              onClose={closeInviteDialog}
+              onClose={() => setIsInviteDialogOpen(false)}
             />
           </div>
         </div>
@@ -117,4 +59,3 @@ const ProjectTeam = () => {
 };
 
 export default ProjectTeam;
-
