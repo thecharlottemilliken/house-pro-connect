@@ -71,7 +71,7 @@ export const useProjectData = (projectId: string | undefined, locationState: any
   const [propertyDetails, setPropertyDetails] = useState<PropertyDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   useEffect(() => {
     const fetchProjectData = async () => {
@@ -85,25 +85,118 @@ export const useProjectData = (projectId: string | undefined, locationState: any
 
         console.log(`Fetching project data for project: ${projectId} and user: ${user.id}`);
 
-        // Use the edge function to get project data to avoid RLS issues
-        const { data: projectDetails, error: projectError } = await supabase.functions.invoke(
-          'handle-project-update',
-          {
-            body: { 
-              projectId, 
-              userId: user.id 
-            }
-          }
-        );
-        
-        if (projectError) {
-          console.error("Error fetching project data via edge function:", projectError);
-          throw new Error("Failed to fetch project data");
-        }
+        let projectDetails;
+        let propertyData;
+        const isCoach = profile?.role === 'coach';
 
-        if (!projectDetails) {
-          console.error("Project details not found");
-          throw new Error("Project details not found");
+        // Coach access path - use direct database query with RLS bypassing functions
+        if (isCoach) {
+          console.log("Using coach access path for project data");
+          
+          try {
+            // Use RPC function to bypass RLS for coaches
+            const { data: coachProjectData, error: coachProjectError } = await supabase
+              .rpc('get_project_for_coach', { p_project_id: projectId });
+              
+            if (coachProjectError) {
+              console.error("Error fetching project using coach function:", coachProjectError);
+              throw coachProjectError;
+            }
+            
+            if (!coachProjectData || coachProjectData.length === 0) {
+              throw new Error("Project not found");
+            }
+            
+            projectDetails = coachProjectData[0];
+            
+            // Now get property data
+            const { data: coachPropertyData, error: coachPropertyError } = await supabase
+              .rpc('get_property_for_coach', { p_property_id: projectDetails.property_id });
+              
+            if (coachPropertyError) {
+              console.error("Error fetching property using coach function:", coachPropertyError);
+              throw coachPropertyError;
+            }
+            
+            if (!coachPropertyData || coachPropertyData.length === 0) {
+              throw new Error("Property not found");
+            }
+            
+            propertyData = coachPropertyData[0];
+          } catch (coachError) {
+            console.error("Coach access functions failed, falling back to edge functions:", coachError);
+            
+            // Fall back to edge functions if direct access fails
+            const { data: projectEdgeData, error: projectError } = await supabase.functions.invoke(
+              'handle-project-update',
+              {
+                body: { 
+                  projectId, 
+                  userId: user.id 
+                }
+              }
+            );
+            
+            if (projectError) throw projectError;
+            projectDetails = projectEdgeData;
+
+            const { data: propertyEdgeData, error: propertyError } = await supabase.functions.invoke(
+              'get-property-details',
+              { 
+                body: { 
+                  propertyId: projectDetails.property_id,
+                  userId: user.id 
+                }
+              }
+            );
+            
+            if (propertyError) throw propertyError;
+            propertyData = propertyEdgeData;
+          }
+        } else {
+          // Non-coach path - use edge functions as before
+          const { data: projectEdgeData, error: projectError } = await supabase.functions.invoke(
+            'handle-project-update',
+            {
+              body: { 
+                projectId, 
+                userId: user.id 
+              }
+            }
+          );
+          
+          if (projectError) {
+            console.error("Error fetching project data via edge function:", projectError);
+            throw new Error("Failed to fetch project data");
+          }
+          projectDetails = projectEdgeData;
+
+          if (!projectDetails) {
+            console.error("Project details not found");
+            throw new Error("Project details not found");
+          }
+
+          const { data: propertyEdgeData, error: propertyError } = await supabase.functions.invoke(
+            'get-property-details',
+            { 
+              body: { 
+                propertyId: projectDetails.property_id,
+                userId: user.id 
+              }
+            }
+          );
+          
+          if (propertyError) {
+            console.error("Error fetching property via edge function:", propertyError);
+            throw propertyError;
+          }
+          
+          if (!propertyEdgeData) {
+            console.error("Property not found via edge function");
+            throw new Error("Property not found");
+          }
+          
+          propertyData = propertyEdgeData;
         }
 
         console.log("Project data retrieved successfully:", projectDetails);
@@ -136,27 +229,6 @@ export const useProjectData = (projectId: string | undefined, locationState: any
 
         setProjectData(projectDataMapped);
 
-        // Use the edge function to get property details
-        const { data: propertyData, error: propertyError } = await supabase.functions.invoke(
-          'get-property-details',
-          { 
-            body: { 
-              propertyId: projectDetails.property_id,
-              userId: user.id 
-            }
-          }
-        );
-        
-        if (propertyError) {
-          console.error("Error fetching property via edge function:", propertyError);
-          throw propertyError;
-        }
-        
-        if (!propertyData) {
-          console.error("Property not found via edge function");
-          throw new Error("Property not found");
-        }
-          
         const propertyDetailsMapped: PropertyDetails = {
           id: propertyData.id,
           property_name: propertyData.property_name,
@@ -182,7 +254,7 @@ export const useProjectData = (projectId: string | undefined, locationState: any
     };
 
     fetchProjectData();
-  }, [projectId, user]);
+  }, [projectId, user, profile]);
 
   return { projectData, propertyDetails, isLoading, error };
 };

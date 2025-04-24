@@ -16,7 +16,7 @@ export const useProjectAccess = (projectId: string): UseProjectAccessResult => {
   const [isOwner, setIsOwner] = useState(false);
   const [role, setRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   useEffect(() => {
     const checkAccess = async () => {
@@ -28,7 +28,17 @@ export const useProjectAccess = (projectId: string): UseProjectAccessResult => {
       try {
         console.log(`Checking access for projectId: ${projectId} and userId: ${user.id}`);
 
-        // First check if the user is the project owner or has team membership
+        // Check if user is a coach first (simplest check)
+        if (profile?.role === 'coach') {
+          console.log("User is a coach, granting access");
+          setHasAccess(true);
+          setIsOwner(false);
+          setRole('coach');
+          setIsLoading(false);
+          return;
+        }
+
+        // If not a coach, check if the user is the project owner or has team membership
         const { data: accessData, error: accessError } = await supabase.functions.invoke(
           'check-team-membership',
           {
@@ -92,7 +102,7 @@ export const useProjectAccess = (projectId: string): UseProjectAccessResult => {
     };
 
     checkAccess();
-  }, [projectId, user]);
+  }, [projectId, user, profile]);
 
   return { hasAccess, isOwner, role, isLoading };
 };
