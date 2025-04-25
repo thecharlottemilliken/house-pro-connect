@@ -25,10 +25,13 @@ export class FirecrawlService {
 
       if (error) {
         console.error('Supabase function error:', error);
-        throw new Error(error.message || 'Failed to call property scraping service');
+        return { 
+          success: false, 
+          error: error.message || 'Failed to call property scraping service'
+        };
       }
       
-      if (!data || data.error) {
+      if (!data || !data.success) {
         console.error('Property scraping error:', data?.error || 'Unknown error');
         return { 
           success: false, 
