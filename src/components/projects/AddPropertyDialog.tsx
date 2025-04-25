@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 import { 
@@ -15,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { HomeAttributesSelect } from "@/components/property/HomeAttributesSelect";
+import { PropertyLinkInput } from "@/components/property/PropertyLinkInput";
 
 interface AddPropertyDialogProps {
   open: boolean;
@@ -50,6 +50,20 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
     setZipCode(address.zipCode);
   };
 
+  const handlePropertyDataFetched = (data: any) => {
+    if (data.address) {
+      data.address.street && setAddressLine1(data.address.street);
+      data.address.city && setCity(data.address.city);
+      data.address.state && setState(data.address.state);
+      data.address.zipCode && setZipCode(data.address.zipCode);
+    }
+    
+    data.sqft && setSqft(data.sqft);
+    data.bedrooms && setBedrooms(data.bedrooms);
+    data.bathrooms && setBathrooms(data.bathrooms);
+    data.propertyType && setHomeType(data.propertyType.toLowerCase());
+  };
+
   const handleSubmit = async () => {
     const newProperty = {
       id: Date.now(),
@@ -78,6 +92,8 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
           <DialogTitle className="text-2xl font-bold mb-4">Add a Property</DialogTitle>
           
           <div className="space-y-6">
+            <PropertyLinkInput onPropertyDataFetched={handlePropertyDataFetched} />
+            
             <div>
               <label htmlFor="propertyName" className="block text-sm font-medium text-gray-700 mb-1">
                 Enter a Property Nick Name
