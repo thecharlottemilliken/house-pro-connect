@@ -434,6 +434,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      check_project_ownership: {
+        Args: { p_project_id: string }
+        Returns: boolean
+      }
       check_team_member_access: {
         Args: { project_id_param: string }
         Returns: boolean
@@ -522,6 +526,30 @@ export type Database = {
           p_prior_experience?: Json
         }
         Returns: string
+      }
+      has_property_team_access: {
+        Args: { p_property_id: string }
+        Returns: boolean
+      }
+      is_project_owner: {
+        Args: { p_project_id: string }
+        Returns: boolean
+      }
+      is_project_team_member: {
+        Args: { p_project_id: string }
+        Returns: boolean
+      }
+      is_property_owner: {
+        Args: { p_property_id: string }
+        Returns: boolean
+      }
+      is_team_member: {
+        Args: { p_project_id: string }
+        Returns: boolean
+      }
+      is_user_coach: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
       safe_check_team_membership: {
         Args: { p_project_id: string; p_user_id: string }

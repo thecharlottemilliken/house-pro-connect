@@ -1,5 +1,5 @@
-
-import { useState } from "react";
+import React, { useState } from "react";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
 import { 
   Dialog, 
   DialogContent, 
@@ -31,7 +31,6 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
   const [bedrooms, setBedrooms] = useState("");
   const [bathrooms, setBathrooms] = useState("");
   
-  // Exterior and Interior Attributes
   const [exteriorAttributes, setExteriorAttributes] = useState<string[]>([]);
   const [interiorAttributes, setInteriorAttributes] = useState<string[]>([]);
 
@@ -50,7 +49,19 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
         : [...prev, attribute]
     );
   };
-  
+
+  const handleAddressSelect = (address: {
+    addressLine1: string;
+    city: string;
+    state: string;
+    zipCode: string;
+  }) => {
+    setAddressLine1(address.addressLine1);
+    setCity(address.city);
+    setState(address.state);
+    setZipCode(address.zipCode);
+  };
+
   const handleSubmit = () => {
     const newProperty = {
       id: Date.now(),
@@ -79,7 +90,6 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
           <DialogTitle className="text-2xl font-bold mb-4">Add a Property</DialogTitle>
           
           <div className="space-y-6">
-            {/* Property Name */}
             <div>
               <label htmlFor="propertyName" className="block text-sm font-medium text-gray-700 mb-1">
                 Enter a Property Nick Name
@@ -93,7 +103,6 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
               />
             </div>
             
-            {/* Working on behalf checkbox */}
             <div className="flex items-center space-x-2">
               <Checkbox 
                 id="workingOnBehalf" 
@@ -105,29 +114,23 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
               </label>
             </div>
             
-            {/* Home Address Section */}
             <div>
               <h3 className="font-semibold text-gray-800 mb-3">Home Address</h3>
               <div className="space-y-4">
                 <div>
                   <label htmlFor="addressLine1" className="block text-sm font-medium text-gray-700 mb-1">
-                    Address Line 1
+                    Address
                   </label>
-                  <Input 
-                    id="addressLine1" 
-                    placeholder="Street Dr." 
-                    value={addressLine1} 
-                    onChange={(e) => setAddressLine1(e.target.value)} 
-                  />
+                  <AddressAutocomplete onAddressSelect={handleAddressSelect} />
                 </div>
                 
                 <div>
                   <label htmlFor="addressLine2" className="block text-sm font-medium text-gray-700 mb-1">
-                    Address Line 2
+                    Address Line 2 (Optional)
                   </label>
                   <Input 
                     id="addressLine2" 
-                    placeholder="1263" 
+                    placeholder="Apt, Suite, etc." 
                     value={addressLine2} 
                     onChange={(e) => setAddressLine2(e.target.value)} 
                   />
@@ -162,7 +165,6 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
                         <SelectItem value="CO">Colorado</SelectItem>
                         <SelectItem value="CT">Connecticut</SelectItem>
                         <SelectItem value="UT">Utah</SelectItem>
-                        {/* Add more states as needed */}
                       </SelectContent>
                     </Select>
                   </div>
@@ -182,7 +184,6 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
               </div>
             </div>
             
-            {/* Home Specs Section */}
             <div>
               <h3 className="font-semibold text-gray-800 mb-3">Home Specs</h3>
               <div className="grid grid-cols-12 gap-4">
@@ -271,11 +272,9 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
               </div>
             </div>
             
-            {/* Optional Home Information */}
             <div>
               <h3 className="font-semibold text-gray-800 mb-3">Optional Home Information</h3>
               
-              {/* Exterior Attributes */}
               <div className="mb-6">
                 <h4 className="font-medium text-gray-700 mb-2">Exterior Attributes</h4>
                 <div className="flex flex-wrap gap-2">
@@ -316,7 +315,6 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
                 </div>
               </div>
               
-              {/* Interior Attributes */}
               <div className="mb-6">
                 <h4 className="font-medium text-gray-700 mb-2">Interior Attributes</h4>
                 <div className="flex flex-wrap gap-2">
@@ -343,7 +341,6 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
                 </div>
               </div>
               
-              {/* Upload Files */}
               <div>
                 <h4 className="font-medium text-gray-700 mb-2">Upload Files</h4>
                 
