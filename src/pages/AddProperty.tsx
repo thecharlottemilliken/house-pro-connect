@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { FileUpload } from "@/components/ui/file-upload";
 import { PropertyImageCarousel } from "@/components/property/PropertyImageCarousel";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
 
 const AddProperty = () => {
   const navigate = useNavigate();
@@ -53,6 +54,18 @@ const AddProperty = () => {
     );
   };
   
+  const handleAddressSelect = (address: {
+    addressLine1: string;
+    city: string;
+    state: string;
+    zipCode: string;
+  }) => {
+    setAddressLine1(address.addressLine1);
+    setCity(address.city);
+    setState(address.state);
+    setZipCode(address.zipCode);
+  };
+
   const handleSubmit = async () => {
     if (!user) {
       toast({
@@ -209,14 +222,9 @@ const AddProperty = () => {
                 <div className="space-y-4">
                   <div>
                     <label htmlFor="addressLine1" className="block text-sm font-medium text-gray-700 mb-1">
-                      Address Line 1
+                      Address
                     </label>
-                    <Input 
-                      id="addressLine1" 
-                      placeholder="Street Dr." 
-                      value={addressLine1} 
-                      onChange={(e) => setAddressLine1(e.target.value)} 
-                    />
+                    <AddressAutocomplete onAddressSelect={handleAddressSelect} />
                   </div>
                   
                   <div>
@@ -225,7 +233,7 @@ const AddProperty = () => {
                     </label>
                     <Input 
                       id="addressLine2" 
-                      placeholder="1263" 
+                      placeholder="Apt, Suite, etc." 
                       value={addressLine2} 
                       onChange={(e) => setAddressLine2(e.target.value)} 
                     />
