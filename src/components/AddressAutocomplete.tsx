@@ -9,6 +9,9 @@ interface AddressResult {
   place_name: string;
   context: Array<{id: string, text: string}>;
   address?: string;
+  properties?: {
+    accuracy?: string;
+  };
 }
 
 interface AddressAutocompleteProps {
@@ -119,18 +122,37 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({ onAddressSele
   };
 
   const handleAddressSelect = (address: AddressResult) => {
-    // Extract only the street number and street name
-    // For addresses like "11001 Hollywood Circle, Cuyahoga Falls, Ohio 44221, United States"
-    // We want to extract just "11001 Hollywood Circle"
-    const streetAddress = address.address ? 
-      `${address.address} ${address.text}` : 
-      address.text;
+    // Extract the street address properly
+    // From the Mapbox API, we need to use address (house number) and text (street name)
+    let streetAddress = '';
+    
+    // Mapbox format typically has house number in "address" field and street name in "text"
+    if (address.address) {
+      streetAddress = `${address.address} ${address.text}`;
+    } else {
+      // If for some reason address is not available, use just the text 
+      // which might be just the street name
+      streetAddress = address.text;
+    }
+    
+    // Sometimes the place_name contains the full address string like:
+    // "11001 Hollywood Circle, Cuyahoga Falls, Ohio 44221, United States"
+    // In this case, we need to extract just the street part
+    if (address.place_name && !streetAddress) {
+      const parts = address.place_name.split(',');
+      if (parts.length > 0) {
+        streetAddress = parts[0].trim();
+      }
+    }
       
     const city = address.context.find(c => c.id.includes('place'))?.text || '';
     const stateName = address.context.find(c => c.id.includes('region'))?.text || '';
     const stateAbbr = stateNameToAbbreviation[stateName] || stateName;
     const zipCode = address.context.find(c => c.id.includes('postcode'))?.text || '';
 
+    console.log('Selected address:', address);
+    console.log('Extracted street address:', streetAddress);
+    
     onAddressSelect({
       addressLine1: streetAddress,
       city,
@@ -139,7 +161,8 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({ onAddressSele
     });
 
     setSuggestions([]);
-    setQuery(address.place_name);
+    // Only show the street address in the input field
+    setQuery(streetAddress);
   };
 
   return (

@@ -28,6 +28,8 @@ serve(async (req) => {
       throw new Error("No search query provided");
     }
 
+    console.log("Geocoding query:", query);
+
     // Fetch geocoding results from Mapbox
     const response = await fetch(
       `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${mapboxToken}&types=address&country=us`
@@ -39,10 +41,25 @@ serve(async (req) => {
 
     const data = await response.json();
     
+    // Ensure we have proper address data for each result
+    const processedResults = data.features.map(feature => {
+      // The address format can vary, so we'll try to standardize it
+      // In most cases, the house number is in feature.address and street name in feature.text
+      
+      return {
+        ...feature,
+        // Make sure address field is preserved
+        address: feature.address || null
+      };
+    });
+
+    console.log("Processed first result:", processedResults.length > 0 ? 
+      JSON.stringify(processedResults[0], null, 2).substring(0, 200) + "..." : "No results");
+
     // Return the geocoding results
     return new Response(
       JSON.stringify({ 
-        results: data.features,
+        results: processedResults,
         success: true 
       }),
       {
@@ -54,6 +71,7 @@ serve(async (req) => {
       }
     );
   } catch (error) {
+    console.error("Geocoding error:", error);
     // Return error with CORS headers
     return new Response(
       JSON.stringify({ 
