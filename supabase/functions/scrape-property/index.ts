@@ -1,7 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { FirecrawlApp } from "https://esm.sh/@mendable/firecrawl-js@1.0.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -25,22 +24,33 @@ serve(async (req) => {
       throw new Error('URL is required');
     }
 
-    console.log('Scraping property URL:', url);
+    console.log('Processing property URL:', url);
     
-    const firecrawl = new FirecrawlApp({ apiKey });
-    const response = await firecrawl.crawlUrl(url, {
-      limit: 1,
-      scrapeOptions: {
-        formats: ['markdown', 'html'],
-      }
+    // Since we're having issues with the Firecrawl import,
+    // let's make a direct fetch to their API instead
+    const response = await fetch('https://api.firecrawl.dev/api/v1/crawl', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        url: url,
+        limit: 1,
+        scrapeOptions: {
+          formats: ['markdown', 'html']
+        }
+      })
     });
 
-    if (!response.success) {
-      throw new Error('Failed to scrape URL');
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(`Firecrawl API error: ${result.message || 'Unknown error'}`);
     }
 
     // Extract and normalize property data from the scraped content
-    const content = response.data?.[0]?.content || '';
+    const content = result.data?.[0]?.content || '';
     
     // Basic data extraction - this can be enhanced based on actual site structures
     const data = {
@@ -50,6 +60,8 @@ serve(async (req) => {
       propertyType: extractPropertyType(content),
       address: extractAddress(content)
     };
+
+    console.log('Extracted property data:', data);
 
     return new Response(JSON.stringify({ success: true, data }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

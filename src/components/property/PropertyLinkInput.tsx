@@ -21,8 +21,11 @@ export function PropertyLinkInput({ onPropertyDataFetched }: PropertyLinkInputPr
 
     setIsLoading(true);
     try {
+      console.log("Scraping property URL:", url);
       const result = await FirecrawlService.scrapePropertyUrl(url);
+      
       if (result.success && result.data) {
+        console.log("Property data loaded successfully:", result.data);
         onPropertyDataFetched(result.data);
         toast({
           title: "Success",
@@ -30,16 +33,20 @@ export function PropertyLinkInput({ onPropertyDataFetched }: PropertyLinkInputPr
         });
         setUrl("");
       } else {
+        console.error("Failed to load property data:", result.error);
         toast({
           title: "Error",
-          description: result.error || "Failed to load property data",
+          description: result.error || "Failed to load property data. Please try again.",
           variant: "destructive",
         });
       }
     } catch (error) {
+      console.error("Error scraping property:", error);
       toast({
         title: "Error",
-        description: "Failed to load property data",
+        description: error instanceof Error 
+          ? `Failed to load property: ${error.message}` 
+          : "Failed to load property data. Please check console for details.",
         variant: "destructive",
       });
     } finally {
