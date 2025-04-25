@@ -1,3 +1,4 @@
+
 import { useAuth } from "@/contexts/AuthContext";
 import TeamMemberCard from "./TeamMemberCard";
 import { Card } from "@/components/ui/card";
