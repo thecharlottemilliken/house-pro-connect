@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowUpFromLine } from "lucide-react";
-import { HomeAttributesSelect } from "@/components/property/HomeAttributesSelect";
 
 interface AddPropertyDialogProps {
   open: boolean;
@@ -32,7 +31,24 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
   const [bedrooms, setBedrooms] = useState("");
   const [bathrooms, setBathrooms] = useState("");
   
-  const [attributes, setAttributes] = useState<string[]>([]);
+  const [exteriorAttributes, setExteriorAttributes] = useState<string[]>([]);
+  const [interiorAttributes, setInteriorAttributes] = useState<string[]>([]);
+
+  const toggleExteriorAttribute = (attribute: string) => {
+    setExteriorAttributes(prev => 
+      prev.includes(attribute) 
+        ? prev.filter(attr => attr !== attribute) 
+        : [...prev, attribute]
+    );
+  };
+
+  const toggleInteriorAttribute = (attribute: string) => {
+    setInteriorAttributes(prev => 
+      prev.includes(attribute) 
+        ? prev.filter(attr => attr !== attribute) 
+        : [...prev, attribute]
+    );
+  };
 
   const handleAddressSelect = (address: {
     addressLine1: string;
@@ -58,7 +74,8 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
         homePurpose,
         bedrooms,
         bathrooms,
-        attributes,  // Combined attributes instead of separate interior/exterior
+        exteriorAttributes,
+        interiorAttributes
       }
     };
     
@@ -299,25 +316,71 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
             </div>
             
             <div>
-              <h3 className="font-semibold text-gray-800 mb-3">Home Attributes</h3>
-              <HomeAttributesSelect 
-                selectedAttributes={attributes}
-                onAttributeChange={setAttributes}
-              />
-            </div>
-            
-            <div>
               <h3 className="font-semibold text-gray-800 mb-3">Optional Home Information</h3>
               
               <div className="mb-6">
                 <h4 className="font-medium text-gray-700 mb-2">Exterior Attributes</h4>
                 <div className="flex flex-wrap gap-2">
+                  <AttributeToggleButton 
+                    selected={exteriorAttributes.includes("Front Yard")}
+                    onClick={() => toggleExteriorAttribute("Front Yard")}
+                  >
+                    Front Yard
+                  </AttributeToggleButton>
+                  
+                  <AttributeToggleButton 
+                    selected={exteriorAttributes.includes("Back Yard")}
+                    onClick={() => toggleExteriorAttribute("Back Yard")}
+                  >
+                    Back Yard
+                  </AttributeToggleButton>
+                  
+                  <AttributeToggleButton 
+                    selected={exteriorAttributes.includes("Historic Home")}
+                    onClick={() => toggleExteriorAttribute("Historic Home")}
+                  >
+                    Historic Home
+                  </AttributeToggleButton>
+                  
+                  <AttributeToggleButton 
+                    selected={exteriorAttributes.includes("Waterfront")}
+                    onClick={() => toggleExteriorAttribute("Waterfront")}
+                  >
+                    Waterfront
+                  </AttributeToggleButton>
+                  
+                  <AttributeToggleButton 
+                    selected={exteriorAttributes.includes("Multi-Level")}
+                    onClick={() => toggleExteriorAttribute("Multi-Level")}
+                  >
+                    Multi-Level
+                  </AttributeToggleButton>
                 </div>
               </div>
               
               <div className="mb-6">
                 <h4 className="font-medium text-gray-700 mb-2">Interior Attributes</h4>
                 <div className="flex flex-wrap gap-2">
+                  <AttributeToggleButton 
+                    selected={interiorAttributes.includes("Front Yard")}
+                    onClick={() => toggleInteriorAttribute("Front Yard")}
+                  >
+                    Front Yard
+                  </AttributeToggleButton>
+                  
+                  <AttributeToggleButton 
+                    selected={interiorAttributes.includes("Back Yard")}
+                    onClick={() => toggleInteriorAttribute("Back Yard")}
+                  >
+                    Back Yard
+                  </AttributeToggleButton>
+                  
+                  <AttributeToggleButton 
+                    selected={interiorAttributes.includes("Historic Home")}
+                    onClick={() => toggleInteriorAttribute("Historic Home")}
+                  >
+                    Historic Home
+                  </AttributeToggleButton>
                 </div>
               </div>
               
