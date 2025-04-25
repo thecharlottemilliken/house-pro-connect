@@ -19,6 +19,60 @@ interface AddressAutocompleteProps {
   }) => void;
 }
 
+// Map of state names to abbreviations
+const stateNameToAbbreviation: { [key: string]: string } = {
+  'Alabama': 'AL',
+  'Alaska': 'AK',
+  'Arizona': 'AZ',
+  'Arkansas': 'AR',
+  'California': 'CA',
+  'Colorado': 'CO',
+  'Connecticut': 'CT',
+  'Delaware': 'DE',
+  'Florida': 'FL',
+  'Georgia': 'GA',
+  'Hawaii': 'HI',
+  'Idaho': 'ID',
+  'Illinois': 'IL',
+  'Indiana': 'IN',
+  'Iowa': 'IA',
+  'Kansas': 'KS',
+  'Kentucky': 'KY',
+  'Louisiana': 'LA',
+  'Maine': 'ME',
+  'Maryland': 'MD',
+  'Massachusetts': 'MA',
+  'Michigan': 'MI',
+  'Minnesota': 'MN',
+  'Mississippi': 'MS',
+  'Missouri': 'MO',
+  'Montana': 'MT',
+  'Nebraska': 'NE',
+  'Nevada': 'NV',
+  'New Hampshire': 'NH',
+  'New Jersey': 'NJ',
+  'New Mexico': 'NM',
+  'New York': 'NY',
+  'North Carolina': 'NC',
+  'North Dakota': 'ND',
+  'Ohio': 'OH',
+  'Oklahoma': 'OK',
+  'Oregon': 'OR',
+  'Pennsylvania': 'PA',
+  'Rhode Island': 'RI',
+  'South Carolina': 'SC',
+  'South Dakota': 'SD',
+  'Tennessee': 'TN',
+  'Texas': 'TX',
+  'Utah': 'UT',
+  'Vermont': 'VT',
+  'Virginia': 'VA',
+  'Washington': 'WA',
+  'West Virginia': 'WV',
+  'Wisconsin': 'WI',
+  'Wyoming': 'WY'
+};
+
 const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({ onAddressSelect }) => {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<AddressResult[]>([]);
@@ -66,13 +120,14 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({ onAddressSele
   const handleAddressSelect = (address: AddressResult) => {
     const addressLine1 = address.text;
     const city = address.context.find(c => c.id.includes('place'))?.text || '';
-    const state = address.context.find(c => c.id.includes('region'))?.text || '';
+    const stateName = address.context.find(c => c.id.includes('region'))?.text || '';
+    const stateAbbr = stateNameToAbbreviation[stateName] || stateName;
     const zipCode = address.context.find(c => c.id.includes('postcode'))?.text || '';
 
     onAddressSelect({
       addressLine1,
       city,
-      state,
+      state: stateAbbr,
       zipCode
     });
 
