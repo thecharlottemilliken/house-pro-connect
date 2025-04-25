@@ -118,7 +118,8 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({ onAddressSele
   };
 
   const handleAddressSelect = (address: AddressResult) => {
-    const addressLine1 = address.text;
+    // Extract only the street address (first part of the text)
+    const addressLine1 = address.text.split(',')[0].trim();
     const city = address.context.find(c => c.id.includes('place'))?.text || '';
     const stateName = address.context.find(c => c.id.includes('region'))?.text || '';
     const stateAbbr = stateNameToAbbreviation[stateName] || stateName;
