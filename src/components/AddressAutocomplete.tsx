@@ -8,6 +8,7 @@ interface AddressResult {
   text: string;
   place_name: string;
   context: Array<{id: string, text: string}>;
+  address?: string;
 }
 
 interface AddressAutocompleteProps {
@@ -118,16 +119,20 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({ onAddressSele
   };
 
   const handleAddressSelect = (address: AddressResult) => {
-    // Extract only the street address (first part) - ensuring we don't include city/state info
-    // This ensures we only get the street name and number
-    const addressLine1 = address.text;
+    // Extract only the street number and street name
+    // For addresses like "11001 Hollywood Circle, Cuyahoga Falls, Ohio 44221, United States"
+    // We want to extract just "11001 Hollywood Circle"
+    const streetAddress = address.address ? 
+      `${address.address} ${address.text}` : 
+      address.text;
+      
     const city = address.context.find(c => c.id.includes('place'))?.text || '';
     const stateName = address.context.find(c => c.id.includes('region'))?.text || '';
     const stateAbbr = stateNameToAbbreviation[stateName] || stateName;
     const zipCode = address.context.find(c => c.id.includes('postcode'))?.text || '';
 
     onAddressSelect({
-      addressLine1,
+      addressLine1: streetAddress,
       city,
       state: stateAbbr,
       zipCode

@@ -38,7 +38,7 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-
+    
     // Return the geocoding results
     return new Response(
       JSON.stringify({ 
