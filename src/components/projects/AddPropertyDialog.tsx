@@ -304,7 +304,7 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
                 </div>
               </div>
               
-              {/* Replace Interior/Exterior attributes with Home Attributes */}
+              {/* Home Attributes using our new component */}
               <div>
                 <h3 className="font-semibold text-gray-800 mb-3">Home Attributes</h3>
                 <HomeAttributesSelect
@@ -316,104 +316,6 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
             
             <div>
               <h3 className="font-semibold text-gray-800 mb-3">Optional Home Information</h3>
-              
-              <div className="mb-6">
-                <h4 className="font-medium text-gray-700 mb-2">Exterior Attributes</h4>
-                <div className="flex flex-wrap gap-2">
-                  <AttributeToggleButton 
-                    selected={attributes.includes("Front Yard")}
-                    onClick={() => setAttributes(prev => 
-                      prev.includes("Front Yard") 
-                        ? prev.filter(attr => attr !== "Front Yard") 
-                        : [...prev, "Front Yard"]
-                    )}
-                  >
-                    Front Yard
-                  </AttributeToggleButton>
-                  
-                  <AttributeToggleButton 
-                    selected={attributes.includes("Back Yard")}
-                    onClick={() => setAttributes(prev => 
-                      prev.includes("Back Yard") 
-                        ? prev.filter(attr => attr !== "Back Yard") 
-                        : [...prev, "Back Yard"]
-                    )}
-                  >
-                    Back Yard
-                  </AttributeToggleButton>
-                  
-                  <AttributeToggleButton 
-                    selected={attributes.includes("Historic Home")}
-                    onClick={() => setAttributes(prev => 
-                      prev.includes("Historic Home") 
-                        ? prev.filter(attr => attr !== "Historic Home") 
-                        : [...prev, "Historic Home"]
-                    )}
-                  >
-                    Historic Home
-                  </AttributeToggleButton>
-                  
-                  <AttributeToggleButton 
-                    selected={attributes.includes("Waterfront")}
-                    onClick={() => setAttributes(prev => 
-                      prev.includes("Waterfront") 
-                        ? prev.filter(attr => attr !== "Waterfront") 
-                        : [...prev, "Waterfront"]
-                    )}
-                  >
-                    Waterfront
-                  </AttributeToggleButton>
-                  
-                  <AttributeToggleButton 
-                    selected={attributes.includes("Multi-Level")}
-                    onClick={() => setAttributes(prev => 
-                      prev.includes("Multi-Level") 
-                        ? prev.filter(attr => attr !== "Multi-Level") 
-                        : [...prev, "Multi-Level"]
-                    )}
-                  >
-                    Multi-Level
-                  </AttributeToggleButton>
-                </div>
-              </div>
-              
-              <div className="mb-6">
-                <h4 className="font-medium text-gray-700 mb-2">Interior Attributes</h4>
-                <div className="flex flex-wrap gap-2">
-                  <AttributeToggleButton 
-                    selected={attributes.includes("Front Yard")}
-                    onClick={() => setAttributes(prev => 
-                      prev.includes("Front Yard") 
-                        ? prev.filter(attr => attr !== "Front Yard") 
-                        : [...prev, "Front Yard"]
-                    )}
-                  >
-                    Front Yard
-                  </AttributeToggleButton>
-                  
-                  <AttributeToggleButton 
-                    selected={attributes.includes("Back Yard")}
-                    onClick={() => setAttributes(prev => 
-                      prev.includes("Back Yard") 
-                        ? prev.filter(attr => attr !== "Back Yard") 
-                        : [...prev, "Back Yard"]
-                    )}
-                  >
-                    Back Yard
-                  </AttributeToggleButton>
-                  
-                  <AttributeToggleButton 
-                    selected={attributes.includes("Historic Home")}
-                    onClick={() => setAttributes(prev => 
-                      prev.includes("Historic Home") 
-                        ? prev.filter(attr => attr !== "Historic Home") 
-                        : [...prev, "Historic Home"]
-                    )}
-                  >
-                    Historic Home
-                  </AttributeToggleButton>
-                </div>
-              </div>
               
               <div>
                 <h4 className="font-medium text-gray-700 mb-2">Upload Files</h4>
@@ -466,29 +368,6 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
         </div>
       </DialogContent>
     </Dialog>
-  );
-};
-
-interface AttributeToggleButtonProps {
-  children: React.ReactNode;
-  selected: boolean;
-  onClick: () => void;
-}
-
-const AttributeToggleButton = ({ children, selected, onClick }: AttributeToggleButtonProps) => {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex items-center px-4 py-2 rounded-full border ${
-        selected 
-          ? 'bg-[#174c65] text-white border-[#174c65]' 
-          : 'bg-white text-gray-700 border-gray-300'
-      } transition-colors`}
-    >
-      {selected && <span className="mr-1">✓</span>}
-      {children}
-    </button>
   );
 };
 

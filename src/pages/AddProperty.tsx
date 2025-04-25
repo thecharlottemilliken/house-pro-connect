@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { FileUpload } from "@/components/ui/file-upload";
 import { PropertyImageCarousel } from "@/components/property/PropertyImageCarousel";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
+import { HomeAttributesSelect } from "@/components/property/HomeAttributesSelect";
 
 const AddProperty = () => {
   const navigate = useNavigate();
@@ -32,28 +33,12 @@ const AddProperty = () => {
   const [bedrooms, setBedrooms] = useState("");
   const [bathrooms, setBathrooms] = useState("");
   
-  // Exterior and Interior Attributes
-  const [exteriorAttributes, setExteriorAttributes] = useState<string[]>([]);
-  const [interiorAttributes, setInteriorAttributes] = useState<string[]>([]);
+  // Combined attributes
+  const [attributes, setAttributes] = useState<string[]>([]);
+  
   const [blueprintUrl, setBlueprintUrl] = useState<string | null>(null);
   const [homePhotos, setHomePhotos] = useState<string[]>([]);
 
-  const toggleExteriorAttribute = (attribute: string) => {
-    setExteriorAttributes(prev => 
-      prev.includes(attribute) 
-        ? prev.filter(attr => attr !== attribute) 
-        : [...prev, attribute]
-    );
-  };
-
-  const toggleInteriorAttribute = (attribute: string) => {
-    setInteriorAttributes(prev => 
-      prev.includes(attribute) 
-        ? prev.filter(attr => attr !== attribute) 
-        : [...prev, attribute]
-    );
-  };
-  
   const handleAddressSelect = (address: {
     addressLine1: string;
     city: string;
@@ -104,8 +89,8 @@ const AddProperty = () => {
           home_purpose: homePurpose || null,
           bedrooms: bedrooms || null,
           bathrooms: bathrooms || null,
-          exterior_attributes: exteriorAttributes,
-          interior_attributes: interiorAttributes,
+          exterior_attributes: attributes,
+          interior_attributes: attributes,
           blueprint_url: blueprintUrl,
           home_photos: homePhotos
         })
@@ -420,73 +405,13 @@ const AddProperty = () => {
                   </div>
                 </div>
               
-                {/* Optional Home Information */}
+                {/* Home Attributes Section - Using our new component */}
                 <div>
-                  <h3 className="font-semibold text-gray-800 mb-3">Optional Home Information</h3>
-                  
-                  {/* Exterior Attributes */}
-                  <h4 className="font-medium text-gray-700 mb-2">Exterior Attributes</h4>
-                  <div className="flex flex-wrap gap-2 mb-6">
-                    <AttributeToggleButton 
-                      selected={exteriorAttributes.includes("Front Yard")}
-                      onClick={() => toggleExteriorAttribute("Front Yard")}
-                    >
-                      Front Yard
-                    </AttributeToggleButton>
-                    
-                    <AttributeToggleButton 
-                      selected={exteriorAttributes.includes("Back Yard")}
-                      onClick={() => toggleExteriorAttribute("Back Yard")}
-                    >
-                      Back Yard
-                    </AttributeToggleButton>
-                    
-                    <AttributeToggleButton 
-                      selected={exteriorAttributes.includes("Historic Home")}
-                      onClick={() => toggleExteriorAttribute("Historic Home")}
-                    >
-                      Historic Home
-                    </AttributeToggleButton>
-                    
-                    <AttributeToggleButton 
-                      selected={exteriorAttributes.includes("Waterfront")}
-                      onClick={() => toggleExteriorAttribute("Waterfront")}
-                    >
-                      Waterfront
-                    </AttributeToggleButton>
-                    
-                    <AttributeToggleButton 
-                      selected={exteriorAttributes.includes("Multi-Level")}
-                      onClick={() => toggleExteriorAttribute("Multi-Level")}
-                    >
-                      Multi-Level
-                    </AttributeToggleButton>
-                  </div>
-                  
-                  {/* Interior Attributes */}
-                  <h4 className="font-medium text-gray-700 mb-2">Interior Attributes</h4>
-                  <div className="flex flex-wrap gap-2">
-                    <AttributeToggleButton 
-                      selected={interiorAttributes.includes("Open Floor Plan")}
-                      onClick={() => toggleInteriorAttribute("Open Floor Plan")}
-                    >
-                      Open Floor Plan
-                    </AttributeToggleButton>
-                    
-                    <AttributeToggleButton 
-                      selected={interiorAttributes.includes("Hardwood Floors")}
-                      onClick={() => toggleInteriorAttribute("Hardwood Floors")}
-                    >
-                      Hardwood Floors
-                    </AttributeToggleButton>
-                    
-                    <AttributeToggleButton 
-                      selected={interiorAttributes.includes("Finished Basement")}
-                      onClick={() => toggleInteriorAttribute("Finished Basement")}
-                    >
-                      Finished Basement
-                    </AttributeToggleButton>
-                  </div>
+                  <h3 className="font-semibold text-gray-800 mb-3">Home Attributes</h3>
+                  <HomeAttributesSelect 
+                    selectedAttributes={attributes}
+                    onAttributesChange={setAttributes}
+                  />
                 </div>
               </div>
               
