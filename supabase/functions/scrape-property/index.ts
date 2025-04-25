@@ -26,46 +26,83 @@ serve(async (req) => {
 
     console.log('Processing property URL:', url);
     
-    // Since we're having issues with the Firecrawl import,
-    // let's make a direct fetch to their API instead
-    const response = await fetch('https://api.firecrawl.dev/api/v1/crawl', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        url: url,
-        limit: 1,
-        scrapeOptions: {
-          formats: ['markdown', 'html']
-        }
-      })
-    });
+    // Let's improve error handling with the API request
+    try {
+      const response = await fetch('https://api.firecrawl.dev/api/v1/crawl', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          url: url,
+          limit: 1,
+          scrapeOptions: {
+            formats: ['markdown', 'html']
+          }
+        })
+      });
 
-    const result = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(`Firecrawl API error: ${result.message || 'Unknown error'}`);
+      // Check if the response is valid JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const textResponse = await response.text();
+        console.error('Invalid API response format, expected JSON but got:', contentType);
+        console.error('Response text preview:', textResponse.substring(0, 200));
+        throw new Error(`API returned invalid format: ${contentType || 'unknown'}`);
+      }
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        console.error('API error response:', result);
+        throw new Error(`Firecrawl API error: ${result.message || result.error || 'Unknown error'}`);
+      }
+
+      // Check if we have the expected data structure
+      if (!result.data || !Array.isArray(result.data) || result.data.length === 0) {
+        console.warn('No content was returned from the API');
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: 'No property data was found. The URL may not be supported or contain property details.' 
+        }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Extract and normalize property data from the scraped content
+      const content = result.data[0]?.content || '';
+      
+      if (!content) {
+        console.warn('Content was empty in the API response');
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: 'No content found in the property data' 
+        }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      // Basic data extraction - this can be enhanced based on actual site structures
+      const data = {
+        sqft: extractSqft(content),
+        bedrooms: extractBedrooms(content),
+        bathrooms: extractBathrooms(content),
+        propertyType: extractPropertyType(content),
+        address: extractAddress(content)
+      };
+
+      console.log('Extracted property data:', data);
+
+      return new Response(JSON.stringify({ success: true, data }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } catch (apiError) {
+      console.error('Error from Firecrawl API:', apiError);
+      throw new Error(`API error: ${apiError.message}`);
     }
-
-    // Extract and normalize property data from the scraped content
-    const content = result.data?.[0]?.content || '';
-    
-    // Basic data extraction - this can be enhanced based on actual site structures
-    const data = {
-      sqft: extractSqft(content),
-      bedrooms: extractBedrooms(content),
-      bathrooms: extractBathrooms(content),
-      propertyType: extractPropertyType(content),
-      address: extractAddress(content)
-    };
-
-    console.log('Extracted property data:', data);
-
-    return new Response(JSON.stringify({ success: true, data }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
   } catch (error) {
     console.error('Error in scrape-property function:', error);
     return new Response(JSON.stringify({ 

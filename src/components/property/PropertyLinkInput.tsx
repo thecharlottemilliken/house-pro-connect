@@ -17,7 +17,14 @@ export function PropertyLinkInput({ onPropertyDataFetched }: PropertyLinkInputPr
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!url.trim()) return;
+    if (!url.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a property URL",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -62,6 +69,7 @@ export function PropertyLinkInput({ onPropertyDataFetched }: PropertyLinkInputPr
         value={url}
         onChange={(e) => setUrl(e.target.value)}
         className="flex-1"
+        disabled={isLoading}
       />
       <Button type="submit" disabled={isLoading}>
         {isLoading ? (
