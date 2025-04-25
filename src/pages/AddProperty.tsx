@@ -13,6 +13,7 @@ import { FileUpload } from "@/components/ui/file-upload";
 import { PropertyImageCarousel } from "@/components/property/PropertyImageCarousel";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 import { HomeAttributesSelect } from "@/components/property/HomeAttributesSelect";
+import { PropertyLinkInput } from "@/components/property/PropertyLinkInput";
 
 const AddProperty = () => {
   const navigate = useNavigate();
@@ -49,6 +50,20 @@ const AddProperty = () => {
     setCity(address.city);
     setState(address.state);
     setZipCode(address.zipCode);
+  };
+
+  const handlePropertyDataFetched = (data: any) => {
+    if (data.address) {
+      data.address.street && setAddressLine1(data.address.street);
+      data.address.city && setCity(data.address.city);
+      data.address.state && setState(data.address.state);
+      data.address.zipCode && setZipCode(data.address.zipCode);
+    }
+    
+    data.sqft && setSqft(data.sqft);
+    data.bedrooms && setBedrooms(data.bedrooms);
+    data.bathrooms && setBathrooms(data.bathrooms);
+    data.propertyType && setHomeType(data.propertyType.toLowerCase());
   };
 
   const handleSubmit = async () => {
@@ -175,6 +190,9 @@ const AddProperty = () => {
             
             {/* Property Form */}
             <div className="space-y-6 md:space-y-8">
+              {/* Property Link Input - Added at the top of the form */}
+              <PropertyLinkInput onPropertyDataFetched={handlePropertyDataFetched} />
+              
               {/* Property Name */}
               <div>
                 <label htmlFor="propertyName" className="block text-sm font-medium text-gray-700 mb-1">
