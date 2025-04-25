@@ -10,6 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowUpFromLine } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import { HomeAttributesSelect } from "@/components/property/HomeAttributesSelect";
 
 interface AddPropertyDialogProps {
   open: boolean;
@@ -31,25 +35,8 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
   const [bedrooms, setBedrooms] = useState("");
   const [bathrooms, setBathrooms] = useState("");
   
-  const [exteriorAttributes, setExteriorAttributes] = useState<string[]>([]);
-  const [interiorAttributes, setInteriorAttributes] = useState<string[]>([]);
-
-  const toggleExteriorAttribute = (attribute: string) => {
-    setExteriorAttributes(prev => 
-      prev.includes(attribute) 
-        ? prev.filter(attr => attr !== attribute) 
-        : [...prev, attribute]
-    );
-  };
-
-  const toggleInteriorAttribute = (attribute: string) => {
-    setInteriorAttributes(prev => 
-      prev.includes(attribute) 
-        ? prev.filter(attr => attr !== attribute) 
-        : [...prev, attribute]
-    );
-  };
-
+  const [attributes, setAttributes] = useState<string[]>([]);
+  
   const handleAddressSelect = (address: {
     addressLine1: string;
     city: string;
@@ -62,7 +49,7 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
     setZipCode(address.zipCode);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const newProperty = {
       id: Date.now(),
       type: propertyName,
@@ -74,8 +61,8 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
         homePurpose,
         bedrooms,
         bathrooms,
-        exteriorAttributes,
-        interiorAttributes
+        exteriorAttributes: attributes,
+        interiorAttributes: attributes
       }
     };
     
@@ -227,91 +214,103 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
               </div>
             </div>
             
-            <div>
-              <h3 className="font-semibold text-gray-800 mb-3">Home Specs</h3>
-              <div className="grid grid-cols-12 gap-4">
-                <div className="col-span-6 md:col-span-4">
-                  <label htmlFor="homeType" className="block text-sm font-medium text-gray-700 mb-1">
-                    Home Type
-                  </label>
-                  <Select value={homeType} onValueChange={setHomeType}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="single-family">Single Family</SelectItem>
-                      <SelectItem value="townhouse">Townhouse</SelectItem>
-                      <SelectItem value="condo">Condo</SelectItem>
-                      <SelectItem value="multi-family">Multi-Family</SelectItem>
-                    </SelectContent>
-                  </Select>
+            {/* Home Specs Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-3">Home Specs</h3>
+                <div className="grid grid-cols-12 gap-4">
+                  <div className="col-span-6 md:col-span-4">
+                    <label htmlFor="homeType" className="block text-sm font-medium text-gray-700 mb-1">
+                      Home Type
+                    </label>
+                    <Select value={homeType} onValueChange={setHomeType}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="single-family">Single Family</SelectItem>
+                        <SelectItem value="townhouse">Townhouse</SelectItem>
+                        <SelectItem value="condo">Condo</SelectItem>
+                        <SelectItem value="multi-family">Multi-Family</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="col-span-6 md:col-span-4">
+                    <label htmlFor="homePurpose" className="block text-sm font-medium text-gray-700 mb-1">
+                      Home Purpose
+                    </label>
+                    <Select value={homePurpose} onValueChange={setHomePurpose}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="primary">Primary Residence</SelectItem>
+                        <SelectItem value="vacation">Vacation Home</SelectItem>
+                        <SelectItem value="rental">Rental Property</SelectItem>
+                        <SelectItem value="investment">Investment Property</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="col-span-12 md:col-span-4">
+                    <label htmlFor="sqft" className="block text-sm font-medium text-gray-700 mb-1">
+                      SQFT
+                    </label>
+                    <Input 
+                      id="sqft" 
+                      placeholder="SQFT" 
+                      value={sqft} 
+                      onChange={(e) => setSqft(e.target.value)} 
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Estimate if you don't know.</p>
+                  </div>
+                  
+                  <div className="col-span-6">
+                    <label htmlFor="bedrooms" className="block text-sm font-medium text-gray-700 mb-1">
+                      Bedrooms
+                    </label>
+                    <Select value={bedrooms} onValueChange={setBedrooms}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1</SelectItem>
+                        <SelectItem value="2">2</SelectItem>
+                        <SelectItem value="3">3</SelectItem>
+                        <SelectItem value="4">4</SelectItem>
+                        <SelectItem value="5+">5+</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="col-span-6">
+                    <label htmlFor="bathrooms" className="block text-sm font-medium text-gray-700 mb-1">
+                      Bathrooms
+                    </label>
+                    <Select value={bathrooms} onValueChange={setBathrooms}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1</SelectItem>
+                        <SelectItem value="1.5">1.5</SelectItem>
+                        <SelectItem value="2">2</SelectItem>
+                        <SelectItem value="2.5">2.5</SelectItem>
+                        <SelectItem value="3+">3+</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                
-                <div className="col-span-6 md:col-span-4">
-                  <label htmlFor="homePurpose" className="block text-sm font-medium text-gray-700 mb-1">
-                    Home Purpose
-                  </label>
-                  <Select value={homePurpose} onValueChange={setHomePurpose}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="primary">Primary Residence</SelectItem>
-                      <SelectItem value="vacation">Vacation Home</SelectItem>
-                      <SelectItem value="rental">Rental Property</SelectItem>
-                      <SelectItem value="investment">Investment Property</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="col-span-12 md:col-span-4">
-                  <label htmlFor="sqft" className="block text-sm font-medium text-gray-700 mb-1">
-                    SQFT
-                  </label>
-                  <Input 
-                    id="sqft" 
-                    placeholder="SQFT" 
-                    value={sqft} 
-                    onChange={(e) => setSqft(e.target.value)} 
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Estimate if you don't know.</p>
-                </div>
-                
-                <div className="col-span-6">
-                  <label htmlFor="bedrooms" className="block text-sm font-medium text-gray-700 mb-1">
-                    Bedrooms
-                  </label>
-                  <Select value={bedrooms} onValueChange={setBedrooms}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1</SelectItem>
-                      <SelectItem value="2">2</SelectItem>
-                      <SelectItem value="3">3</SelectItem>
-                      <SelectItem value="4">4</SelectItem>
-                      <SelectItem value="5+">5+</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="col-span-6">
-                  <label htmlFor="bathrooms" className="block text-sm font-medium text-gray-700 mb-1">
-                    Bathrooms
-                  </label>
-                  <Select value={bathrooms} onValueChange={setBathrooms}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1</SelectItem>
-                      <SelectItem value="1.5">1.5</SelectItem>
-                      <SelectItem value="2">2</SelectItem>
-                      <SelectItem value="2.5">2.5</SelectItem>
-                      <SelectItem value="3+">3+</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              </div>
+              
+              {/* Replace Interior/Exterior attributes with Home Attributes */}
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-3">Home Attributes</h3>
+                <HomeAttributesSelect
+                  selectedAttributes={attributes}
+                  onAttributesChange={setAttributes}
+                />
               </div>
             </div>
             
@@ -322,36 +321,56 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
                 <h4 className="font-medium text-gray-700 mb-2">Exterior Attributes</h4>
                 <div className="flex flex-wrap gap-2">
                   <AttributeToggleButton 
-                    selected={exteriorAttributes.includes("Front Yard")}
-                    onClick={() => toggleExteriorAttribute("Front Yard")}
+                    selected={attributes.includes("Front Yard")}
+                    onClick={() => setAttributes(prev => 
+                      prev.includes("Front Yard") 
+                        ? prev.filter(attr => attr !== "Front Yard") 
+                        : [...prev, "Front Yard"]
+                    )}
                   >
                     Front Yard
                   </AttributeToggleButton>
                   
                   <AttributeToggleButton 
-                    selected={exteriorAttributes.includes("Back Yard")}
-                    onClick={() => toggleExteriorAttribute("Back Yard")}
+                    selected={attributes.includes("Back Yard")}
+                    onClick={() => setAttributes(prev => 
+                      prev.includes("Back Yard") 
+                        ? prev.filter(attr => attr !== "Back Yard") 
+                        : [...prev, "Back Yard"]
+                    )}
                   >
                     Back Yard
                   </AttributeToggleButton>
                   
                   <AttributeToggleButton 
-                    selected={exteriorAttributes.includes("Historic Home")}
-                    onClick={() => toggleExteriorAttribute("Historic Home")}
+                    selected={attributes.includes("Historic Home")}
+                    onClick={() => setAttributes(prev => 
+                      prev.includes("Historic Home") 
+                        ? prev.filter(attr => attr !== "Historic Home") 
+                        : [...prev, "Historic Home"]
+                    )}
                   >
                     Historic Home
                   </AttributeToggleButton>
                   
                   <AttributeToggleButton 
-                    selected={exteriorAttributes.includes("Waterfront")}
-                    onClick={() => toggleExteriorAttribute("Waterfront")}
+                    selected={attributes.includes("Waterfront")}
+                    onClick={() => setAttributes(prev => 
+                      prev.includes("Waterfront") 
+                        ? prev.filter(attr => attr !== "Waterfront") 
+                        : [...prev, "Waterfront"]
+                    )}
                   >
                     Waterfront
                   </AttributeToggleButton>
                   
                   <AttributeToggleButton 
-                    selected={exteriorAttributes.includes("Multi-Level")}
-                    onClick={() => toggleExteriorAttribute("Multi-Level")}
+                    selected={attributes.includes("Multi-Level")}
+                    onClick={() => setAttributes(prev => 
+                      prev.includes("Multi-Level") 
+                        ? prev.filter(attr => attr !== "Multi-Level") 
+                        : [...prev, "Multi-Level"]
+                    )}
                   >
                     Multi-Level
                   </AttributeToggleButton>
@@ -362,22 +381,34 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
                 <h4 className="font-medium text-gray-700 mb-2">Interior Attributes</h4>
                 <div className="flex flex-wrap gap-2">
                   <AttributeToggleButton 
-                    selected={interiorAttributes.includes("Front Yard")}
-                    onClick={() => toggleInteriorAttribute("Front Yard")}
+                    selected={attributes.includes("Front Yard")}
+                    onClick={() => setAttributes(prev => 
+                      prev.includes("Front Yard") 
+                        ? prev.filter(attr => attr !== "Front Yard") 
+                        : [...prev, "Front Yard"]
+                    )}
                   >
                     Front Yard
                   </AttributeToggleButton>
                   
                   <AttributeToggleButton 
-                    selected={interiorAttributes.includes("Back Yard")}
-                    onClick={() => toggleInteriorAttribute("Back Yard")}
+                    selected={attributes.includes("Back Yard")}
+                    onClick={() => setAttributes(prev => 
+                      prev.includes("Back Yard") 
+                        ? prev.filter(attr => attr !== "Back Yard") 
+                        : [...prev, "Back Yard"]
+                    )}
                   >
                     Back Yard
                   </AttributeToggleButton>
                   
                   <AttributeToggleButton 
-                    selected={interiorAttributes.includes("Historic Home")}
-                    onClick={() => toggleInteriorAttribute("Historic Home")}
+                    selected={attributes.includes("Historic Home")}
+                    onClick={() => setAttributes(prev => 
+                      prev.includes("Historic Home") 
+                        ? prev.filter(attr => attr !== "Historic Home") 
+                        : [...prev, "Historic Home"]
+                    )}
                   >
                     Historic Home
                   </AttributeToggleButton>
