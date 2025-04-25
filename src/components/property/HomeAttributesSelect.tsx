@@ -1,4 +1,3 @@
-
 import React, { useState } from "react"
 import {
   Command,
@@ -10,6 +9,8 @@ import {
 } from "@/components/ui/command"
 import { Badge } from "@/components/ui/badge"
 import { X } from "lucide-react"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Button } from "@/components/ui/button"
 
 interface HomeAttributesSelectProps {
   selectedAttributes: string[]
@@ -35,14 +36,15 @@ export function HomeAttributesSelect({
   selectedAttributes,
   onAttributesChange,
 }: HomeAttributesSelectProps) {
+  const [open, setOpen] = useState(false)
   const [inputValue, setInputValue] = useState("")
 
   const handleSelect = (value: string) => {
-    // Don't add if already selected
     if (!selectedAttributes.includes(value)) {
       onAttributesChange([...selectedAttributes, value])
     }
     setInputValue("")
+    setOpen(false)
   }
 
   const handleRemove = (attribute: string) => {
@@ -59,35 +61,49 @@ export function HomeAttributesSelect({
 
   return (
     <div className="flex flex-col gap-4">
-      <Command className="border rounded-lg overflow-visible" onKeyDown={handleKeyDown}>
-        <CommandInput 
-          placeholder="Select a tag or type to create..." 
-          value={inputValue}
-          onValueChange={setInputValue}
-        />
-        <CommandList>
-          <CommandEmpty className="py-2 px-2 text-sm">
-            {inputValue ? "Press enter to create this tag" : "No attributes found"}
-          </CommandEmpty>
-          <CommandGroup>
-            {predefinedAttributes
-              .filter(attr => 
-                attr.toLowerCase().includes(inputValue.toLowerCase()) &&
-                !selectedAttributes.includes(attr)
-              )
-              .map((attribute) => (
-                <CommandItem
-                  key={attribute}
-                  value={attribute}
-                  onSelect={handleSelect}
-                  className="cursor-pointer"
-                >
-                  {attribute}
-                </CommandItem>
-              ))}
-          </CommandGroup>
-        </CommandList>
-      </Command>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button 
+            variant="outline" 
+            role="combobox" 
+            aria-expanded={open}
+            className="w-full justify-between"
+          >
+            Select or type attributes...
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-full p-0" align="start">
+          <Command className="w-full" onKeyDown={handleKeyDown}>
+            <CommandInput 
+              placeholder="Search attributes..." 
+              value={inputValue}
+              onValueChange={setInputValue}
+            />
+            <CommandList>
+              <CommandEmpty className="py-2 px-2 text-sm">
+                {inputValue ? "Press enter to create this tag" : "No attributes found"}
+              </CommandEmpty>
+              <CommandGroup>
+                {predefinedAttributes
+                  .filter(attr => 
+                    attr.toLowerCase().includes(inputValue.toLowerCase()) &&
+                    !selectedAttributes.includes(attr)
+                  )
+                  .map((attribute) => (
+                    <CommandItem
+                      key={attribute}
+                      value={attribute}
+                      onSelect={handleSelect}
+                      className="cursor-pointer"
+                    >
+                      {attribute}
+                    </CommandItem>
+                  ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
 
       <div className="flex flex-wrap gap-2">
         {selectedAttributes.map((attribute) => (
