@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 import { 
@@ -304,7 +305,7 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
                 </div>
               </div>
               
-              {/* Home Attributes using our new component */}
+              {/* Home Attributes using our fixed component */}
               <div>
                 <h3 className="font-semibold text-gray-800 mb-3">Home Attributes</h3>
                 <HomeAttributesSelect

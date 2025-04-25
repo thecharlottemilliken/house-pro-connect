@@ -1,6 +1,5 @@
 
-import React from "react"
-import { Command as CommandPrimitive } from "cmdk"
+import React, { useState } from "react"
 import {
   Command,
   CommandEmpty,
@@ -35,7 +34,7 @@ export function HomeAttributesSelect({
   selectedAttributes,
   onAttributesChange,
 }: HomeAttributesSelectProps) {
-  const [inputValue, setInputValue] = React.useState("")
+  const [inputValue, setInputValue] = useState("")
 
   const handleSelect = (value: string) => {
     // Don't add if already selected
@@ -49,21 +48,21 @@ export function HomeAttributesSelect({
     onAttributesChange(selectedAttributes.filter((item) => item !== attribute))
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && inputValue && !predefinedAttributes.includes(inputValue)) {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLInputElement
+    if (e.key === "Enter" && target.value && !predefinedAttributes.includes(target.value)) {
       e.preventDefault()
-      handleSelect(inputValue)
+      handleSelect(target.value)
     }
   }
 
   return (
     <div className="flex flex-col gap-4">
-      <Command className="border rounded-lg">
+      <Command className="border rounded-lg overflow-visible" onKeyDown={handleKeyDown}>
         <CommandInput 
           placeholder="Select a tag or type to create..." 
           value={inputValue}
           onValueChange={setInputValue}
-          onKeyDown={handleKeyDown}
         />
         <CommandEmpty className="py-2 px-2 text-sm">
           {inputValue ? "Press enter to create this tag" : "No attributes found"}
@@ -96,6 +95,7 @@ export function HomeAttributesSelect({
           >
             {attribute}
             <button
+              type="button"
               onClick={() => handleRemove(attribute)}
               className="ml-1 hover:bg-muted rounded-full"
             >
