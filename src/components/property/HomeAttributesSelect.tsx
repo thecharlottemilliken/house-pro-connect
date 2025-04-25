@@ -6,6 +6,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
 } from "@/components/ui/command"
 import { Badge } from "@/components/ui/badge"
 import { X } from "lucide-react"
@@ -64,26 +65,28 @@ export function HomeAttributesSelect({
           value={inputValue}
           onValueChange={setInputValue}
         />
-        <CommandEmpty className="py-2 px-2 text-sm">
-          {inputValue ? "Press enter to create this tag" : "No attributes found"}
-        </CommandEmpty>
-        <CommandGroup>
-          {predefinedAttributes
-            .filter(attr => 
-              attr.toLowerCase().includes(inputValue.toLowerCase()) &&
-              !selectedAttributes.includes(attr)
-            )
-            .map((attribute) => (
-              <CommandItem
-                key={attribute}
-                value={attribute}
-                onSelect={handleSelect}
-                className="cursor-pointer"
-              >
-                {attribute}
-              </CommandItem>
-            ))}
-        </CommandGroup>
+        <CommandList>
+          <CommandEmpty className="py-2 px-2 text-sm">
+            {inputValue ? "Press enter to create this tag" : "No attributes found"}
+          </CommandEmpty>
+          <CommandGroup>
+            {predefinedAttributes
+              .filter(attr => 
+                attr.toLowerCase().includes(inputValue.toLowerCase()) &&
+                !selectedAttributes.includes(attr)
+              )
+              .map((attribute) => (
+                <CommandItem
+                  key={attribute}
+                  value={attribute}
+                  onSelect={handleSelect}
+                  className="cursor-pointer"
+                >
+                  {attribute}
+                </CommandItem>
+              ))}
+          </CommandGroup>
+        </CommandList>
       </Command>
 
       <div className="flex flex-wrap gap-2">
