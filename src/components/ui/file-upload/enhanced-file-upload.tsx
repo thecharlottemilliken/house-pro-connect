@@ -74,17 +74,17 @@ export function EnhancedFileUpload({
       });
       
       // Process all uploads in parallel
-      const uploadedFiles = (await Promise.all(uploadPromises)).filter(Boolean) as FileWithPreview[];
+      const completedFiles = (await Promise.all(uploadPromises)).filter(Boolean) as FileWithPreview[];
       
-      if (uploadedFiles.length && onUploadComplete) {
+      if (completedFiles.length && onUploadComplete) {
         // Only call onUploadComplete once with all completed files
-        onUploadComplete(uploadedFiles);
+        onUploadComplete(completedFiles);
       }
       
-      if (uploadedFiles.length > 0) {
+      if (completedFiles.length > 0) {
         toast({
           title: "Upload Complete",
-          description: `${uploadedFiles.length} file(s) uploaded successfully.`,
+          description: `${completedFiles.length} file(s) uploaded successfully.`,
         });
       }
     } catch (error) {
