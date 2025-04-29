@@ -26,9 +26,24 @@ export function PropertyFileUpload({
   // Handle completed uploads
   const handleUploadComplete = (files: FileWithPreview[]) => {
     console.log(`Upload complete callback received ${files.length} files`);
-    if (onFilesUploaded) {
-      onFilesUploaded(files);
-    }
+    
+    // Update our local state with the new files
+    setUploadedFiles(prevFiles => {
+      // Avoid duplicates by checking file IDs
+      const existingIds = new Set(prevFiles.map(f => f.id));
+      const newFilesToAdd = files.filter(file => !existingIds.has(file.id));
+      
+      console.log(`Adding ${newFilesToAdd.length} new files to state (filtering out ${files.length - newFilesToAdd.length} duplicates)`);
+      const updatedFiles = [...prevFiles, ...newFilesToAdd];
+      
+      // Now call the parent's callback with ALL files
+      if (onFilesUploaded) {
+        console.log(`Calling onFilesUploaded with ${updatedFiles.length} total files`);
+        onFilesUploaded(updatedFiles);
+      }
+      
+      return updatedFiles;
+    });
 
     toast({
       title: "Upload Complete",
