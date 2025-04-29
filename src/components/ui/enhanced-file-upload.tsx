@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "./button";
 import { Input } from "./input";
@@ -34,7 +33,7 @@ interface EnhancedFileUploadProps {
   label: string;
   description: string;
   uploadedFiles?: FileWithPreview[];
-  setUploadedFiles?: (files: FileWithPreview[]) => void;
+  setUploadedFiles?: React.Dispatch<React.SetStateAction<FileWithPreview[]>>;
   allowUrlUpload?: boolean;
   roomOptions?: RoomTagOption[];
   maxConcurrentUploads?: number;
@@ -120,7 +119,9 @@ export function EnhancedFileUpload({
     }
     
     // Update uploadedFiles with the new files and maintain existing ones
-    setUploadedFiles?.([...uploadedFiles, ...newFiles]);
+    if (setUploadedFiles) {
+      setUploadedFiles(prev => [...prev, ...newFiles]);
+    }
     console.log(`Added ${newFiles.length} files to upload queue`);
     
     // If autoUpload is enabled, immediately process the upload queue
@@ -347,8 +348,9 @@ export function EnhancedFileUpload({
         status: 'complete'
       };
       
-      const updatedFiles = [...uploadedFiles, newFile];
-      setUploadedFiles?.(updatedFiles);
+      if (setUploadedFiles) {
+        setUploadedFiles(prev => [...prev, newFile]);
+      }
       setCurrentUrl("");
       
       toast({
@@ -381,11 +383,11 @@ export function EnhancedFileUpload({
 
   // Helper function to update file status
   const updateFileStatus = (fileId: string, status: FileWithPreview['status']) => {
-    setUploadedFiles?.(prevFiles => 
-      prevFiles.map(file => 
+    if (setUploadedFiles) {
+      setUploadedFiles(prev => prev.map(file => 
         file.id === fileId ? { ...file, status } : file
-      )
-    );
+      ));
+    }
     
     const updatedFile = uploadedFiles.find(f => f.id === fileId);
     console.log(`File ${fileId} (${updatedFile?.name}) status updated to: ${status}`);
@@ -394,28 +396,30 @@ export function EnhancedFileUpload({
 
   // Helper function to update file progress
   const updateFileProgress = (fileId: string, progress: number) => {
-    setUploadedFiles?.(prevFiles => 
-      prevFiles.map(file => 
+    if (setUploadedFiles) {
+      setUploadedFiles(prev => prev.map(file => 
         file.id === fileId ? { ...file, progress } : file
-      )
-    );
+      ));
+    }
   };
 
   // Helper function to update file URL
   const updateFileUrl = (fileId: string, url: string) => {
     let updatedFile: FileWithPreview | undefined;
     
-    setUploadedFiles?.(prevFiles => {
-      const newFiles = prevFiles.map(file => {
-        if (file.id === fileId) {
-          const updated = { ...file, url, status: 'complete' as const };
-          updatedFile = updated;
-          return updated;
-        }
-        return file;
+    if (setUploadedFiles) {
+      setUploadedFiles(prev => {
+        const newFiles = prev.map(file => {
+          if (file.id === fileId) {
+            const updated = { ...file, url, status: 'complete' as const };
+            updatedFile = updated;
+            return updated;
+          }
+          return file;
+        });
+        return newFiles;
       });
-      return newFiles;
-    });
+    }
     
     return updatedFile;
   };
@@ -432,7 +436,9 @@ export function EnhancedFileUpload({
       setActiveUploads(prev => Math.max(0, prev - 1));
     }
     
-    setUploadedFiles?.(prevFiles => prevFiles.filter(file => file.id !== fileId));
+    if (setUploadedFiles) {
+      setUploadedFiles(prev => prev.filter(file => file.id !== fileId));
+    }
     
     toast({
       title: "File removed",
@@ -447,15 +453,17 @@ export function EnhancedFileUpload({
       return;
     }
     
-    setUploadedFiles?.(prevFiles => 
-      prevFiles.map(file => {
-        if (file.id === fileId) {
-          const updatedTags = file.tags.includes(newTag) ? file.tags : [...file.tags, newTag];
-          return { ...file, tags: updatedTags };
-        }
-        return file;
-      })
-    );
+    if (setUploadedFiles) {
+      setUploadedFiles(prev => 
+        prev.map(file => {
+          if (file.id === fileId) {
+            const updatedTags = file.tags.includes(newTag) ? file.tags : [...file.tags, newTag];
+            return { ...file, tags: updatedTags };
+          }
+          return file;
+        })
+      );
+    }
     
     setNewTag("");
     setIsAddingTag(null);
@@ -463,29 +471,33 @@ export function EnhancedFileUpload({
 
   // Remove a tag from a file
   const removeTag = (fileId: string, tag: string) => {
-    setUploadedFiles?.(prevFiles => 
-      prevFiles.map(file => {
-        if (file.id === fileId) {
-          return { ...file, tags: file.tags.filter(t => t !== tag) };
-        }
-        return file;
-      })
-    );
+    if (setUploadedFiles) {
+      setUploadedFiles(prev => 
+        prev.map(file => {
+          if (file.id === fileId) {
+            return { ...file, tags: file.tags.filter(t => t !== tag) };
+          }
+          return file;
+        })
+      );
+    }
   };
 
   // Add a room tag to a file
   const addRoomTag = (fileId: string, room: string) => {
-    setUploadedFiles?.(prevFiles => 
-      prevFiles.map(file => {
-        if (file.id === fileId) {
-          // Replace any existing room tags (from roomOptions) with the new one
-          const existingRoomTags = roomOptions.map(opt => opt.value);
-          const nonRoomTags = file.tags.filter(tag => !existingRoomTags.includes(tag));
-          return { ...file, tags: [...nonRoomTags, room] };
-        }
-        return file;
-      })
-    );
+    if (setUploadedFiles) {
+      setUploadedFiles(prev => 
+        prev.map(file => {
+          if (file.id === fileId) {
+            // Replace any existing room tags (from roomOptions) with the new one
+            const existingRoomTags = roomOptions.map(opt => opt.value);
+            const nonRoomTags = file.tags.filter(tag => !existingRoomTags.includes(tag));
+            return { ...file, tags: [...nonRoomTags, room] };
+          }
+          return file;
+        })
+      );
+    }
   };
 
   // Check if a file has room tag
