@@ -124,6 +124,14 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
       (f.type.includes('pdf') || f.tags.includes('blueprint'))
     )?.url;
     
+    // Format file metadata for storage
+    const fileMetadata = propertyFiles.map(f => ({
+      name: f.name,
+      url: f.url,
+      type: f.type,
+      tags: f.tags
+    }));
+    
     const newProperty = {
       id: Date.now(),
       type: propertyName,
@@ -138,7 +146,8 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
         exteriorAttributes: attributes,
         interiorAttributes: attributes,
         blueprintUrl,
-        images: imageUrls
+        images: imageUrls,
+        fileMetadata: fileMetadata
       }
     };
     

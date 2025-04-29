@@ -173,6 +173,14 @@ const AddProperty = () => {
         url !== currentBlueprintUrl
       );
 
+      // Format file metadata for storage
+      const fileMetadata = propertyFiles.map(f => ({
+        name: f.name,
+        url: f.url,
+        type: f.type,
+        tags: f.tags
+      }));
+
       const { data, error } = await supabase
         .from('properties')
         .insert({
@@ -193,13 +201,7 @@ const AddProperty = () => {
           interior_attributes: attributes,
           blueprint_url: currentBlueprintUrl || null,
           home_photos: currentHomePhotos.length > 0 ? currentHomePhotos : null,
-          // Store all file metadata for future reference
-          file_metadata: propertyFiles.map(f => ({
-            name: f.name,
-            url: f.url,
-            type: f.type,
-            tags: f.tags
-          }))
+          file_metadata: fileMetadata.length > 0 ? fileMetadata : null
         })
         .select();
 

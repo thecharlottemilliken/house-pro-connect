@@ -236,6 +236,7 @@ export type Database = {
           city: string
           created_at: string
           exterior_attributes: string[] | null
+          file_metadata: Json | null
           home_photos: string[] | null
           home_purpose: string | null
           home_type: string | null
@@ -259,6 +260,7 @@ export type Database = {
           city: string
           created_at?: string
           exterior_attributes?: string[] | null
+          file_metadata?: Json | null
           home_photos?: string[] | null
           home_purpose?: string | null
           home_type?: string | null
@@ -282,6 +284,7 @@ export type Database = {
           city?: string
           created_at?: string
           exterior_attributes?: string[] | null
+          file_metadata?: Json | null
           home_photos?: string[] | null
           home_purpose?: string | null
           home_type?: string | null
@@ -461,6 +464,7 @@ export type Database = {
           city: string
           created_at: string
           exterior_attributes: string[] | null
+          file_metadata: Json | null
           home_photos: string[] | null
           home_purpose: string | null
           home_type: string | null
@@ -493,6 +497,7 @@ export type Database = {
           city: string
           created_at: string
           exterior_attributes: string[] | null
+          file_metadata: Json | null
           home_photos: string[] | null
           home_purpose: string | null
           home_type: string | null
