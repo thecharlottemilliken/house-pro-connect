@@ -1,59 +1,89 @@
-import React, { useState, useRef, useCallback } from "react";
-import { Upload } from "lucide-react";
-import { Button } from "./button"; // assume you have these
-import { Progress } from "./progress"; // assume you have these
-import { cn } from "@/lib/utils"; // your utils
+import React, { useState, useRef } from "react";
+import { Button } from "./button";
+import { Input } from "./input";
+import { Progress } from "./progress";
+import { Badge } from "./badge";
+import { X, Upload, Trash2, XCircle, Plus } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 export interface FileWithPreview {
   id: string;
-  file: File;
+  file?: File;
   name: string;
   size: string;
   type: string;
-  previewUrl?: string;
+  url?: string;
   progress: number;
-  status: 'uploading' | 'ready' | 'complete' | 'error';
+  tags: string[];
+  previewUrl?: string;
+  status: 'uploading' | 'complete' | 'error' | 'ready';
 }
+
+export type RoomTagOption = {
+  value: string;
+  label: string;
+};
 
 interface EnhancedFileUploadProps {
   accept?: string;
   multiple?: boolean;
+  onUploadComplete?: (files: FileWithPreview[]) => void;
   label: string;
   description: string;
   uploadedFiles?: FileWithPreview[];
   setUploadedFiles?: (files: FileWithPreview[]) => void;
+  allowUrlUpload?: boolean;
+  roomOptions?: RoomTagOption[];
 }
 
 export function EnhancedFileUpload({
   accept = "image/*,application/pdf",
   multiple = true,
+  onUploadComplete,
   label,
   description,
   uploadedFiles = [],
   setUploadedFiles,
+  allowUrlUpload = false,
+  roomOptions = [],
 }: EnhancedFileUploadProps) {
+  const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [currentUrl, setCurrentUrl] = useState("");
+  const [isAddingTag, setIsAddingTag] = useState<string | null>(null);
+  const [newTag, setNewTag] = useState("");
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const tagInputRef = useRef<HTMLInputElement>(null);
 
   const formatFileSize = (bytes: number) => {
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + ' ' + sizes[i];
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   const createPreviewUrl = (file: File): Promise<string | undefined> => {
     return new Promise((resolve) => {
-      if (!file.type.startsWith('image/')) {
+      if (!file.type.startsWith("image/")) {
         resolve(undefined);
         return;
       }
       const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
+      reader.onloadend = () => {
+        resolve(reader.result as string);
+      };
       reader.readAsDataURL(file);
     });
   };
 
-  const processFiles = useCallback(async (files: FileList) => {
+  const processFiles = async (files: FileList) => {
+    if (!files.length) return;
+
+    setIsUploading(true);
     const newFiles: FileWithPreview[] = [];
 
     for (let i = 0; i < files.length; i++) {
@@ -66,30 +96,74 @@ export function EnhancedFileUpload({
         name: file.name,
         size: formatFileSize(file.size),
         type: file.type,
-        previewUrl,
         progress: 0,
-        status: 'ready',
+        tags: [],
+        previewUrl,
+        status: "ready",
       });
     }
 
     setUploadedFiles?.((prev) => [...prev, ...newFiles]);
-  }, [setUploadedFiles]);
+    setIsUploading(false);
+  };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files && files.length > 0) {
       processFiles(files);
     }
-    event.target.value = '';
+    event.target.value = "";
   };
 
-  const handleDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     setIsDragging(false);
+
     if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
       processFiles(event.dataTransfer.files);
     }
-  }, [processFiles]);
+  };
+
+  const removeFile = (fileId: string) => {
+    const fileToRemove = uploadedFiles.find((f) => f.id === fileId);
+    const updatedFiles = uploadedFiles.filter((file) => file.id !== fileId);
+    setUploadedFiles?.(updatedFiles);
+
+    toast({
+      title: "File removed",
+      description: `${fileToRemove?.name || "File"} has been removed`,
+    });
+  };
+
+  const addTag = (fileId: string) => {
+    if (!newTag.trim()) {
+      setIsAddingTag(null);
+      return;
+    }
+
+    const updatedFiles = uploadedFiles.map((file) => {
+      if (file.id === fileId) {
+        const updatedTags = file.tags.includes(newTag) ? file.tags : [...file.tags, newTag];
+        return { ...file, tags: updatedTags };
+      }
+      return file;
+    });
+
+    setUploadedFiles?.(updatedFiles);
+    setNewTag("");
+    setIsAddingTag(null);
+  };
+
+  const removeTag = (fileId: string, tag: string) => {
+    const updatedFiles = uploadedFiles.map((file) => {
+      if (file.id === fileId) {
+        return { ...file, tags: file.tags.filter((t) => t !== tag) };
+      }
+      return file;
+    });
+
+    setUploadedFiles?.(updatedFiles);
+  };
 
   return (
     <div className="space-y-4">
@@ -120,22 +194,125 @@ export function EnhancedFileUpload({
       </div>
 
       {uploadedFiles.length > 0 && (
-        <div className="space-y-3">
-          {uploadedFiles.map((file) => (
-            <div key={file.id} className="border rounded-md p-4 flex items-center gap-4">
-              {file.previewUrl ? (
-                <img src={file.previewUrl} alt={file.name} className="w-16 h-16 object-cover rounded" />
-              ) : (
-                <div className="w-16 h-16 flex items-center justify-center bg-gray-200 rounded">
-                  {file.type.includes('pdf') ? 'PDF' : 'FILE'}
+        <div className="mt-6 space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-semibold">
+              {uploadedFiles.length} File{uploadedFiles.length !== 1 ? "s" : ""}
+            </h3>
+          </div>
+
+          <div className="space-y-3">
+            {uploadedFiles.map((file) => (
+              <div key={file.id} className="border rounded-lg p-4 flex items-center gap-4">
+                <div className="flex-shrink-0 w-12 h-12 flex items-center justify-center">
+                  {file.previewUrl ? (
+                    <img
+                      src={file.previewUrl}
+                      alt={file.name}
+                      className="w-full h-full object-cover rounded"
+                    />
+                  ) : (
+                    <div
+                      className={cn(
+                        "w-full h-full flex items-center justify-center rounded text-white font-bold",
+                        file.type.includes("pdf") ? "bg-red-500" : "bg-blue-500"
+                      )}
+                    >
+                      {file.type.includes("pdf")
+                        ? "PDF"
+                        : file.type.split("/")[1]?.toUpperCase().substring(0, 3) || "?"}
+                    </div>
+                  )}
                 </div>
-              )}
-              <div className="flex flex-col">
-                <span className="font-semibold">{file.name}</span>
-                <span className="text-sm text-gray-500">{file.size}</span>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="font-medium text-gray-900 truncate">{file.name}</p>
+                      <p className="text-sm text-gray-500">{file.size}</p>
+                    </div>
+
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => removeFile(file.id)}
+                    >
+                      <Trash2 className="h-5 w-5 text-gray-500" />
+                    </Button>
+                  </div>
+
+                  {file.status === "uploading" && (
+                    <div className="mt-2">
+                      <Progress value={file.progress} className="h-2" />
+                      <p className="text-xs text-gray-500 mt-1">{file.progress}% complete</p>
+                    </div>
+                  )}
+
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    {file.tags.map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant="outline"
+                        className="flex items-center gap-1 bg-gray-100"
+                      >
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeTag(file.id, tag);
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+
+                    {isAddingTag === file.id ? (
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          addTag(file.id);
+                        }}
+                        className="flex items-center"
+                      >
+                        <Input
+                          ref={tagInputRef}
+                          type="text"
+                          value={newTag}
+                          onChange={(e) => setNewTag(e.target.value)}
+                          placeholder="Enter tag"
+                          className="h-8 text-xs mr-1 w-28"
+                          autoFocus
+                        />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setIsAddingTag(null)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </form>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-1 px-2 py-1 h-auto text-xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsAddingTag(file.id);
+                          setNewTag("");
+                          setTimeout(() => tagInputRef.current?.focus(), 0);
+                        }}
+                      >
+                        <Plus className="h-3 w-3" /> Add Tag
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
     </div>
