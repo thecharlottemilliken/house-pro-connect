@@ -32,6 +32,18 @@ export function FileUpload({
     const uploadedUrls: string[] = [];
 
     try {
+      // Check authentication first
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        toast({
+          title: "Authentication required",
+          description: "You must be signed in to upload files.",
+          variant: "destructive"
+        });
+        setIsUploading(false);
+        return;
+      }
+
       for (const file of files) {
         const fileExt = file.name.split('.').pop();
         const filePath = `${Math.random()}-${Date.now()}.${fileExt}`;
@@ -40,7 +52,10 @@ export function FileUpload({
           .from('properties')
           .upload(filePath, file);
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error("Upload error:", uploadError);
+          throw uploadError;
+        }
 
         if (data) {
           const { data: { publicUrl } } = supabase.storage
@@ -60,7 +75,7 @@ export function FileUpload({
       console.error('Upload error:', error);
       toast({
         title: "Upload failed",
-        description: "There was an error uploading your files.",
+        description: "There was an error uploading your files. Please ensure you're signed in.",
         variant: "destructive"
       });
     } finally {

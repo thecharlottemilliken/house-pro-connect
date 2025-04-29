@@ -68,6 +68,13 @@ export async function uploadFile(
     return null;
   }
 
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData.session) {
+    console.error("Authentication required for file uploads");
+    updateFileStatusCallback(fileWithPreview.id, "error");
+    return null;
+  }
+
   try {
     // Mark file as uploading
     updateFileStatusCallback(fileWithPreview.id, "uploading", 0);
