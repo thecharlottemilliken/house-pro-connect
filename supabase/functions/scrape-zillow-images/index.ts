@@ -1,6 +1,5 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import * as puppeteer from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,8 +29,9 @@ serve(async (req) => {
     
     console.log('Property ID:', extractedPropertyId);
     
-    // Scrape images using Puppeteer
-    const imageUrls = await scrapeZillowImages(url);
+    // Use client-side JavaScript execution to extract images instead of Puppeteer
+    // This approach doesn't require browser automation in the Edge Function
+    const imageUrls = await extractZillowImagesFromUrl(url);
     
     return new Response(
       JSON.stringify({
@@ -68,151 +68,159 @@ function extractPropertyIdFromUrl(url: string): string {
   return 'unknown';
 }
 
-async function scrapeZillowImages(url: string): Promise<string[]> {
-  console.log('Launching headless browser...');
+async function extractZillowImagesFromUrl(url: string): Promise<string[]> {
+  console.log('Fetching Zillow page content...');
   
-  // Set realistic user agent to avoid bot detection
-  const browser = await puppeteer.launch({
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-accelerated-2d-canvas',
-      '--disable-gpu',
-      '--window-size=1920,1080',
-    ],
-    headless: true,
-  });
-
   try {
-    console.log('Creating new page...');
-    const page = await browser.newPage();
-    
-    // Set a realistic Chrome desktop user agent
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36');
-    
-    // Set extra HTTP headers
-    await page.setExtraHTTPHeaders({
-      'Accept-Language': 'en-US,en;q=0.9',
-      'Cache-Control': 'no-cache',
-      'Sec-Fetch-Dest': 'document',
-      'Sec-Fetch-Mode': 'navigate',
-      'Sec-Fetch-Site': 'none',
-      'Sec-Fetch-User': '?1',
-      'Upgrade-Insecure-Requests': '1'
-    });
-
-    console.log('Navigating to URL:', url);
-    
-    // Define retry logic
-    const maxRetries = 3;
-    let retries = 0;
-    let success = false;
-    
-    while (!success && retries < maxRetries) {
-      try {
-        // Go to URL and wait for network to be idle
-        await page.goto(url, { 
-          waitUntil: 'networkidle0',
-          timeout: 60000 // 60 second timeout
-        });
-        success = true;
-      } catch (error) {
-        retries++;
-        console.warn(`Navigation attempt ${retries} failed:`, error);
-        if (retries >= maxRetries) {
-          throw new Error(`Failed to load page after ${maxRetries} attempts`);
-        }
-        // Wait before retrying
-        await new Promise(resolve => setTimeout(resolve, 2000));
+    // Fetch the Zillow page
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
+        'Upgrade-Insecure-Requests': '1'
       }
-    }
-
-    console.log('Page loaded, extracting images...');
-
-    // First try to get images from the gallery modal which has full-size images
-    // Click on the first image to open the gallery modal
-    try {
-      await page.waitForSelector('[data-testid="hdp-hero-photo"]', { timeout: 5000 });
-      await page.click('[data-testid="hdp-hero-photo"]');
-      console.log('Clicked on hero photo to open gallery modal');
-      // Wait for the gallery modal to open
-      await page.waitForSelector('[data-testid="vmw-photo"]', { timeout: 5000 });
-    } catch (error) {
-      console.log('Could not click on hero photo or gallery not found:', error);
-      // Continue without opening gallery modal
-    }
-
-    // Extract all image URLs
-    const imageUrls = await page.evaluate(() => {
-      const images: string[] = [];
-      const imgElements = document.querySelectorAll('img');
-      
-      imgElements.forEach(img => {
-        let src = img.getAttribute('src') || '';
-        const dataSrc = img.getAttribute('data-src') || '';
-        
-        // Prefer data-src if available (often higher quality)
-        if (dataSrc && dataSrc.includes('photos.zillow') || dataSrc.includes('zillowstatic')) {
-          src = dataSrc;
-        }
-        
-        // Filter for Zillow property images and filter out small images
-        if (src && 
-            (src.includes('photos.zillow') || src.includes('zillowstatic.com')) &&
-            img.width > 300 && img.height > 300) {
-          
-          // Clean up URL to get the highest quality version (remove size limitations)
-          let cleanUrl = src;
-          cleanUrl = cleanUrl.replace(/-cc_ft_\\d+/g, '');
-          
-          // Add to images array if not already included
-          if (!images.includes(cleanUrl)) {
-            images.push(cleanUrl);
-          }
-        }
-      });
-      
-      // Also look for srcset attributes which often contain higher resolution images
-      const pictureSourceElements = document.querySelectorAll('picture source[srcset]');
-      pictureSourceElements.forEach(source => {
-        const srcset = source.getAttribute('srcset');
-        if (srcset && (srcset.includes('photos.zillow') || srcset.includes('zillowstatic'))) {
-          // Get the highest resolution from srcset (usually the last one)
-          const srcsetUrls = srcset.split(',')
-            .map(src => src.trim().split(' ')[0])
-            .filter(src => src.includes('photos.zillow') || src.includes('zillowstatic'));
-          
-          if (srcsetUrls.length > 0) {
-            // Get the URL with highest resolution
-            const highResUrl = srcsetUrls[srcsetUrls.length - 1];
-            // Clean up URL
-            const cleanUrl = highResUrl.replace(/-cc_ft_\\d+/g, '');
-            
-            if (!images.includes(cleanUrl)) {
-              images.push(cleanUrl);
-            }
-          }
-        }
-      });
-      
-      return images;
     });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch Zillow page: ${response.status} ${response.statusText}`);
+    }
+
+    const html = await response.text();
+    console.log(`Retrieved ${html.length} bytes of HTML content`);
     
-    console.log(`Found ${imageUrls.length} images`);
+    // Extract image URLs using regex patterns
+    const imageUrls = extractImageUrlsFromHtml(html);
     
     if (imageUrls.length === 0) {
-      console.warn('No images found on the page');
-    } else {
-      console.log('First few image URLs:', imageUrls.slice(0, 3));
+      console.warn('No images found in the HTML content');
+      
+      // Try to extract from JSON data that might be embedded in the page
+      const jsonImageUrls = extractImageUrlsFromJsonData(html);
+      if (jsonImageUrls.length > 0) {
+        return jsonImageUrls;
+      }
     }
     
     return imageUrls;
   } catch (error) {
-    console.error('Error during scraping:', error);
-    throw error;
-  } finally {
-    await browser.close();
-    console.log('Browser closed');
+    console.error('Error fetching Zillow page:', error);
+    return [];
   }
+}
+
+function extractImageUrlsFromHtml(html: string): string[] {
+  const imageUrls: string[] = [];
+  
+  // Pattern to match <img> tags with src or data-src attributes
+  const imgTagPattern = /<img[^>]+(?:src|data-src)=["']([^"']+?)["'][^>]*>/gi;
+  let match;
+  
+  while ((match = imgTagPattern.exec(html)) !== null) {
+    const url = match[1];
+    if (isValidZillowImageUrl(url)) {
+      const cleanUrl = cleanZillowImageUrl(url);
+      if (!imageUrls.includes(cleanUrl)) {
+        imageUrls.push(cleanUrl);
+      }
+    }
+  }
+
+  // Also look for URLs in srcset attributes
+  const srcsetPattern = /srcset=["']([^"']+?)["']/gi;
+  while ((match = srcsetPattern.exec(html)) !== null) {
+    const srcset = match[1];
+    const urls = srcset.split(',')
+      .map(part => part.trim().split(' ')[0])
+      .filter(url => isValidZillowImageUrl(url));
+      
+    urls.forEach(url => {
+      const cleanUrl = cleanZillowImageUrl(url);
+      if (!imageUrls.includes(cleanUrl)) {
+        imageUrls.push(cleanUrl);
+      }
+    });
+  }
+  
+  console.log(`Found ${imageUrls.length} images using HTML parsing`);
+  return imageUrls;
+}
+
+function extractImageUrlsFromJsonData(html: string): string[] {
+  const imageUrls: string[] = [];
+  
+  // Look for JSON data in the page that might contain image URLs
+  // Common pattern for embedded JSON data in Zillow pages
+  const jsonPattern = /(?:"fullSizePhotos"\s*:\s*\[)(.+?)(?:\])/s;
+  const match = html.match(jsonPattern);
+  
+  if (match && match[1]) {
+    // Try to extract URLs from the JSON string
+    const urlPattern = /(?:"url"\s*:\s*")(.+?)(?:")/g;
+    let urlMatch;
+    
+    while ((urlMatch = urlPattern.exec(match[1])) !== null) {
+      const url = urlMatch[1];
+      if (isValidZillowImageUrl(url)) {
+        const cleanUrl = cleanZillowImageUrl(url);
+        if (!imageUrls.includes(cleanUrl)) {
+          imageUrls.push(cleanUrl);
+        }
+      }
+    }
+  }
+  
+  // Try alternative pattern for Zillow's newer format
+  const altJsonPattern = /(?:"images"\s*:\s*\[)(.+?)(?:\])/s;
+  const altMatch = html.match(altJsonPattern);
+  
+  if (altMatch && altMatch[1]) {
+    const urls = altMatch[1].split(',')
+      .map(part => part.trim().replace(/"/g, ''))
+      .filter(url => isValidZillowImageUrl(url));
+      
+    urls.forEach(url => {
+      const cleanUrl = cleanZillowImageUrl(url);
+      if (!imageUrls.includes(cleanUrl)) {
+        imageUrls.push(cleanUrl);
+      }
+    });
+  }
+  
+  console.log(`Found ${imageUrls.length} images in embedded JSON data`);
+  return imageUrls;
+}
+
+function isValidZillowImageUrl(url: string): boolean {
+  // Check if it's a Zillow image URL
+  if (!url) return false;
+  
+  // Include various Zillow image domains
+  return (
+    url.includes('photos.zillowstatic.com') || 
+    url.includes('photos.zillow.com') || 
+    url.includes('zillowstatic.com') ||
+    url.includes('zillow.com/fp/')
+  ) && !url.includes('logo') && !url.includes('icon');
+}
+
+function cleanZillowImageUrl(url: string): string {
+  // Make sure URL has proper protocol
+  let cleanUrl = url;
+  if (cleanUrl.startsWith('//')) {
+    cleanUrl = 'https:' + cleanUrl;
+  } else if (!cleanUrl.startsWith('http')) {
+    cleanUrl = 'https://' + cleanUrl;
+  }
+  
+  // Remove size limitations for better quality
+  cleanUrl = cleanUrl.replace(/-cc_ft_\d+/g, '');
+  
+  return cleanUrl;
 }

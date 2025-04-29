@@ -49,28 +49,29 @@ export class FirecrawlService {
       
       console.log('Property data retrieved successfully:', propertyData);
       
-      // Now, let's use the Puppeteer-based function to extract high-quality images
-      // Only try to get images from Zillow URLs since they're trickier
+      // Now, use our dedicated function to extract high-quality images
       let images = propertyData.data.images || [];
+      let imageError = null;
       
-      if (url.includes('zillow.com') || images.length === 0) {
-        console.log('Detected Zillow URL or no images found, using dedicated Zillow image scraper');
+      try {
+        console.log('Using dedicated image scraper for URL:', url);
         
-        try {
-          const { data: imageData, error: imageError } = await supabase.functions.invoke('scrape-zillow-images', {
-            body: { url }
-          });
-          
-          if (!imageError && imageData?.success && imageData?.data?.image_urls?.length > 0) {
-            console.log(`Found ${imageData.data.image_urls.length} images using Zillow scraper`);
-            images = imageData.data.image_urls;
-          } else {
-            console.warn('No additional images found using dedicated scraper, or error occurred:', imageError || 'No error details');
-          }
-        } catch (imageError) {
-          console.error('Error using Zillow image scraper:', imageError);
-          // Continue with the process even if image scraping fails
+        const { data: imageData, error: imageError } = await supabase.functions.invoke('scrape-zillow-images', {
+          body: { url }
+        });
+        
+        if (!imageError && imageData?.success && imageData?.data?.image_urls?.length > 0) {
+          console.log(`Found ${imageData.data.image_urls.length} images using dedicated scraper`);
+          images = imageData.data.image_urls;
+        } else {
+          console.warn(
+            'No additional images found using dedicated scraper, or error occurred:', 
+            imageError || imageData?.error || 'No image data returned'
+          );
         }
+      } catch (err) {
+        console.error('Error using dedicated image scraper:', err);
+        imageError = err instanceof Error ? err.message : 'Unknown error scraping images';
       }
       
       // Format the response data
@@ -95,7 +96,12 @@ export class FirecrawlService {
       if (formattedData.images && formattedData.images.length > 0) {
         console.log(`Total of ${formattedData.images.length} property image URLs found:`, formattedData.images);
       } else {
-        console.log('No property image URLs were found by either scraper');
+        console.log('No property image URLs were found');
+        
+        // If we have an image error but the property data is good, we can still return success
+        if (imageError) {
+          console.warn('Image scraping failed but property data was retrieved:', imageError);
+        }
       }
       
       return { success: true, data: formattedData };
