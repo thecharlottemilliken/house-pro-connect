@@ -159,7 +159,8 @@ export function EnhancedFileUpload({
       const { error: uploadError, data } = await supabase.storage
         .from('property-files')
         .upload(filePath, fileToUpload.file, {
-          onUploadProgress: (progress) => {
+          // Custom upload progress handling
+          onUpload: (progress) => {
             const progressPercent = Math.round((progress.loaded / progress.total) * 100);
             updateFileProgress(fileToUpload.id, progressPercent);
           },
