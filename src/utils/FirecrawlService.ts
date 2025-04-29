@@ -43,7 +43,23 @@ export class FirecrawlService {
       }
       
       console.log('Property data retrieved successfully:', data);
-      return { success: true, data: data.data };
+      
+      // Format the response data if needed
+      const propertyData: PropertyData = {
+        address: {
+          street: data.data?.address?.street,
+          city: data.data?.address?.city,
+          state: data.data?.address?.state,
+          zipCode: data.data?.address?.zipCode
+        },
+        bedrooms: data.data?.bedrooms,
+        bathrooms: data.data?.bathrooms,
+        sqft: data.data?.sqft,
+        propertyType: data.data?.propertyType,
+        images: data.data?.images
+      };
+      
+      return { success: true, data: propertyData };
     } catch (error) {
       console.error('Error scraping property:', error);
       return { 

@@ -7,8 +7,22 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
+interface PropertyData {
+  address?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+  };
+  bedrooms?: string;
+  bathrooms?: string;
+  sqft?: string;
+  propertyType?: string;
+  images?: string[];
+}
+
 interface PropertyLinkInputProps {
-  onPropertyDataFetched: (data: any) => void;
+  onPropertyDataFetched: (data: PropertyData) => void;
 }
 
 export function PropertyLinkInput({ onPropertyDataFetched }: PropertyLinkInputProps) {
@@ -39,12 +53,27 @@ export function PropertyLinkInput({ onPropertyDataFetched }: PropertyLinkInputPr
       if (result.success && result.data) {
         console.log("Property data loaded successfully:", result.data);
         
+        // Process the data before passing it to the parent component
+        const formattedData: PropertyData = {
+          address: {
+            street: result.data.address?.street || "",
+            city: result.data.address?.city || "",
+            state: result.data.address?.state || "",
+            zipCode: result.data.address?.zipCode || "",
+          },
+          bedrooms: result.data.bedrooms || "",
+          bathrooms: result.data.bathrooms || "",
+          sqft: result.data.sqft || "",
+          propertyType: result.data.propertyType || "",
+          images: result.data.images || []
+        };
+        
         // Check if we got images and log them
-        if (result.data.images && result.data.images.length > 0) {
-          console.log(`Found ${result.data.images.length} property images`);
+        if (formattedData.images && formattedData.images.length > 0) {
+          console.log(`Found ${formattedData.images.length} property images`);
         }
         
-        onPropertyDataFetched(result.data);
+        onPropertyDataFetched(formattedData);
         toast({
           title: "Success",
           description: "Property data loaded successfully",
