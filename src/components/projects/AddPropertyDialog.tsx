@@ -16,7 +16,7 @@ import { toast } from "@/hooks/use-toast";
 import { HomeAttributesSelect } from "@/components/property/HomeAttributesSelect";
 import { PropertyLinkInput } from "@/components/property/PropertyLinkInput";
 import { PropertyFileUpload } from "@/components/property/PropertyFileUpload";
-import { FileWithPreview } from "@/components/ui/enhanced-file-upload";
+import { FileWithPreview } from "@/components/ui/file-upload";
 
 interface AddPropertyDialogProps {
   open: boolean;

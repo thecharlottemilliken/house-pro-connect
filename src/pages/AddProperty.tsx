@@ -14,7 +14,7 @@ import AddressAutocomplete from "@/components/AddressAutocomplete";
 import { HomeAttributesSelect } from "@/components/property/HomeAttributesSelect";
 import { PropertyLinkInput } from "@/components/property/PropertyLinkInput";
 import { PropertyFileUpload } from "@/components/property/PropertyFileUpload";
-import { FileWithPreview } from "@/components/ui/enhanced-file-upload";
+import { FileWithPreview } from "@/components/ui/file-upload";
 
 const AddProperty = () => {
   const navigate = useNavigate();
