@@ -93,6 +93,29 @@ export class FirecrawlService {
         description: propertyData.data.description
       };
       
+      // Log comprehensive data for debugging
+      console.log('Final formatted property data:', formattedData);
+      
+      if (formattedData.address) {
+        console.log('Address data:', {
+          street: formattedData.address.street || 'Not found',
+          city: formattedData.address.city || 'Not found',
+          state: formattedData.address.state || 'Not found',
+          zipCode: formattedData.address.zipCode || 'Not found'
+        });
+      } else {
+        console.log('No address data found');
+      }
+      
+      console.log('Property specs:', {
+        bedrooms: formattedData.bedrooms || 'Not found',
+        bathrooms: formattedData.bathrooms || 'Not found',
+        sqft: formattedData.sqft || 'Not found',
+        propertyType: formattedData.propertyType || 'Not found',
+        yearBuilt: formattedData.yearBuilt || 'Not found',
+        lotSize: formattedData.lotSize || 'Not found'
+      });
+      
       if (formattedData.images && formattedData.images.length > 0) {
         console.log(`Total of ${formattedData.images.length} property image URLs found:`, formattedData.images);
       } else {
