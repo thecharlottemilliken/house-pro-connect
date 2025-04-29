@@ -7,6 +7,7 @@ import { toast } from "@/hooks/use-toast";
 import { FileWithPreview, RoomTagOption } from "./types";
 import { FileItem } from "./file-item";
 import { processFiles, uploadFile } from "./upload-service";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EnhancedFileUploadProps {
   accept?: string;
@@ -50,6 +51,18 @@ export function EnhancedFileUpload({
     setIsUploading(true);
     
     try {
+      // Check authentication first
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        toast({
+          title: "Authentication required",
+          description: "You must be signed in to upload files.",
+          variant: "destructive"
+        });
+        setIsUploading(false);
+        return;
+      }
+      
       const newFiles = await processFiles(files, uploadedFiles);
       
       // Update state with new files
@@ -73,7 +86,7 @@ export function EnhancedFileUpload({
       console.error("Error processing files:", error);
       toast({
         title: "Upload failed",
-        description: "An error occurred while uploading files.",
+        description: "An error occurred while uploading files. Please ensure you're signed in.",
         variant: "destructive",
       });
     } finally {
@@ -102,9 +115,20 @@ export function EnhancedFileUpload({
     );
   };
 
-  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = async (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     setIsDragging(false);
+
+    // Check authentication first
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      toast({
+        title: "Authentication required",
+        description: "You must be signed in to upload files.",
+        variant: "destructive"
+      });
+      return;
+    }
 
     if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
       handleProcessFiles(event.dataTransfer.files);
@@ -149,6 +173,25 @@ export function EnhancedFileUpload({
     );
   };
 
+  const checkAuthBeforeUpload = async () => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      toast({
+        title: "Authentication required",
+        description: "You must be signed in to upload files.",
+        variant: "destructive"
+      });
+      return false;
+    }
+    return true;
+  };
+
+  const handleBoxClick = async () => {
+    if (await checkAuthBeforeUpload()) {
+      fileInputRef.current?.click();
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div
@@ -162,7 +205,7 @@ export function EnhancedFileUpload({
         }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
-        onClick={() => fileInputRef.current?.click()}
+        onClick={handleBoxClick}
       >
         <Upload className="h-10 w-10 text-gray-400 mb-2" />
         <p className="text-lg font-medium text-gray-800">{label}</p>
@@ -193,6 +236,7 @@ export function EnhancedFileUpload({
                 onRemove={removeFile} 
                 onAddTag={addTag} 
                 onRemoveTag={removeTag} 
+                roomOptions={roomOptions}
               />
             ))}
           </div>

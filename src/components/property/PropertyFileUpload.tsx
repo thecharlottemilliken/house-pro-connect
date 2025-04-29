@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { FileWithPreview, RoomTagOption, EnhancedFileUpload } from "@/components/ui/file-upload";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PropertyFileUploadProps {
   accept?: string;
@@ -23,6 +24,26 @@ export function PropertyFileUpload({
   description = "Upload property photos, blueprints, or drawings"
 }: PropertyFileUploadProps) {
   const [uploadedFiles, setUploadedFiles] = useState<FileWithPreview[]>(initialFiles);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  
+  // Check authentication status on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data } = await supabase.auth.getSession();
+      setIsAuthenticated(!!data.session);
+    };
+    
+    checkAuth();
+    
+    // Listen for authentication changes
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(!!session);
+    });
+    
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
   
   useEffect(() => {
     // Update with initialFiles when they change
@@ -77,6 +98,24 @@ export function PropertyFileUpload({
   ];
 
   const roomTagOptions = roomOptions.length > 0 ? roomOptions : defaultRoomOptions;
+
+  // Display authentication warning if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-yellow-50 border border-yellow-300 text-yellow-800 px-4 py-3 rounded relative">
+          <strong className="font-bold">Authentication Required</strong>
+          <span className="block sm:inline"> Please sign in to upload files.</span>
+        </div>
+        
+        <div className="border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center bg-gray-50">
+          <p className="text-lg font-medium text-gray-500">{label}</p>
+          <p className="text-sm text-gray-400">{description}</p>
+          <p className="text-sm text-gray-400 mt-4">Sign in to enable file uploads</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

@@ -12,6 +12,13 @@ export async function processFiles(
 ): Promise<FileWithPreview[]> {
   if (!files.length) return [];
 
+  // Check authentication before processing
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData.session) {
+    console.error("Authentication required for file uploads");
+    throw new Error("Authentication required");
+  }
+
   const newFiles: FileWithPreview[] = [];
 
   console.log(`Processing ${files.length} files`);
@@ -81,7 +88,7 @@ export async function uploadFile(
 
     // Generate a unique file path
     const timestamp = Date.now();
-    const filePath = `${timestamp}-${fileWithPreview.file.name}`;
+    const filePath = `${sessionData.session.user.id}/${timestamp}-${fileWithPreview.file.name}`;
     
     console.log(`Uploading file: ${filePath}`);
 
