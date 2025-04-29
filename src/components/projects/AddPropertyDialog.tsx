@@ -53,7 +53,7 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
 
   const handlePropertyDataFetched = (data: any) => {
     if (data.address) {
-      // Explicitly set the street address to addressLine1
+      // Set address data if available
       if (data.address.street) {
         console.log("Setting address line 1 from street:", data.address.street);
         setAddressLine1(data.address.street);
