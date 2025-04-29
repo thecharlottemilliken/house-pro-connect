@@ -37,6 +37,7 @@ interface EnhancedFileUploadProps {
   setUploadedFiles?: (files: FileWithPreview[]) => void;
   allowUrlUpload?: boolean;
   roomOptions?: RoomTagOption[];
+  maxConcurrentUploads?: number;
 }
 
 export function EnhancedFileUpload({
@@ -48,13 +49,15 @@ export function EnhancedFileUpload({
   uploadedFiles = [],
   setUploadedFiles,
   allowUrlUpload = false,
-  roomOptions = []
+  roomOptions = [],
+  maxConcurrentUploads = 3
 }: EnhancedFileUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [currentUrl, setCurrentUrl] = useState("");
   const [isAddingTag, setIsAddingTag] = useState<string | null>(null);
   const [newTag, setNewTag] = useState("");
+  const [uploadQueue, setUploadQueue] = useState<string[]>([]);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const tagInputRef = useRef<HTMLInputElement>(null);
@@ -90,13 +93,15 @@ export function EnhancedFileUpload({
     
     setIsUploading(true);
     const newFiles: FileWithPreview[] = [];
+    const newFileIds: string[] = [];
     
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const previewUrl = await createPreviewUrl(file);
+      const fileId = `${Date.now()}-${i}`;
       
       const newFile: FileWithPreview = {
-        id: `${Date.now()}-${i}`,
+        id: fileId,
         file,
         name: file.name,
         size: formatFileSize(file.size),
@@ -108,11 +113,54 @@ export function EnhancedFileUpload({
       };
       
       newFiles.push(newFile);
+      newFileIds.push(fileId);
     }
     
     const updatedFiles = [...uploadedFiles, ...newFiles];
     setUploadedFiles?.(updatedFiles);
+    setUploadQueue(prev => [...prev, ...newFileIds]);
     setIsUploading(false);
+
+    // Start upload process for new files if not already uploading
+    if (!isUploading) {
+      processUploadQueue();
+    }
+  };
+
+  // Process the upload queue
+  const processUploadQueue = async () => {
+    if (uploadQueue.length === 0) return;
+    
+    setIsUploading(true);
+    const currentBatch = uploadQueue.slice(0, maxConcurrentUploads);
+    setUploadQueue(prev => prev.slice(maxConcurrentUploads));
+    
+    const uploadPromises = currentBatch.map(fileId => {
+      const fileToUpload = uploadedFiles.find(f => f.id === fileId);
+      if (fileToUpload) {
+        return uploadFile(fileToUpload);
+      }
+      return Promise.resolve(null);
+    });
+    
+    const results = await Promise.allSettled(uploadPromises);
+    const successfulUploads = results
+      .filter((result): result is PromiseFulfilledResult<FileWithPreview | null> => 
+        result.status === 'fulfilled' && result.value !== null
+      )
+      .map(result => result.value);
+    
+    // Process next batch if any files are in queue
+    if (uploadQueue.length > 0) {
+      processUploadQueue();
+    } else {
+      setIsUploading(false);
+      
+      if (successfulUploads.length > 0) {
+        const validUploads = successfulUploads.filter((item): item is FileWithPreview => item !== null);
+        onUploadComplete?.(validUploads);
+      }
+    }
   };
 
   // Handle file input change
@@ -260,25 +308,13 @@ export function EnhancedFileUpload({
     
     if (filesToUpload.length === 0) return;
     
-    setIsUploading(true);
-    const uploadedFilesArray = [];
+    // Add all ready files to the upload queue
+    const fileIds = filesToUpload.map(file => file.id);
+    setUploadQueue(prev => [...prev, ...fileIds]);
     
-    for (const file of filesToUpload) {
-      const uploadedFile = await uploadFile(file);
-      if (uploadedFile) uploadedFilesArray.push(uploadedFile);
-    }
-    
-    setIsUploading(false);
-    
-    if (uploadedFilesArray.length > 0) {
-      toast({
-        title: "Files uploaded",
-        description: `Successfully uploaded ${uploadedFilesArray.length} file(s)`
-      });
-      
-      if (onUploadComplete) {
-        onUploadComplete(uploadedFilesArray);
-      }
+    // Start the upload process
+    if (!isUploading) {
+      processUploadQueue();
     }
   };
 
@@ -314,8 +350,8 @@ export function EnhancedFileUpload({
     
     // If the file is currently uploading, we need to cancel the upload
     if (fileToRemove?.status === 'uploading') {
-      // In a real implementation, you would abort the upload request here
-      // For now, we'll just remove it from the list
+      // Remove from upload queue if still pending
+      setUploadQueue(prev => prev.filter(id => id !== fileId));
     }
     
     const updatedFiles = uploadedFiles.filter(file => file.id !== fileId);
@@ -401,7 +437,7 @@ export function EnhancedFileUpload({
         <p className="text-sm text-gray-500 mb-4">{description}</p>
         <p className="text-sm text-gray-500">
           Drag & Drop or{" "}
-          <span className="text-blue-600 hover:underline">Choose file</span>
+          <span className="text-blue-600 hover:underline">Choose file{multiple ? 's' : ''}</span>
           {" "}to upload
         </p>
         <input
@@ -442,7 +478,10 @@ export function EnhancedFileUpload({
       {uploadedFiles.length > 0 && (
         <div className="mt-6 space-y-4">
           <div className="flex justify-between items-center">
-            <h3 className="text-lg font-semibold">{uploadedFiles.length} File Upload{uploadedFiles.length !== 1 ? 's' : ''}</h3>
+            <h3 className="text-lg font-semibold">
+              {uploadedFiles.length} File{uploadedFiles.length !== 1 ? 's' : ''} 
+              {isUploading && <span className="text-sm text-gray-500 ml-2">(Uploading...)</span>}
+            </h3>
             {uploadedFiles.some(f => f.status === 'ready') && (
               <Button 
                 onClick={uploadAllReadyFiles}
@@ -484,7 +523,10 @@ export function EnhancedFileUpload({
                       <Button
                         size="icon"
                         variant="ghost"
-                        onClick={() => removeFile(file.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeFile(file.id);
+                        }}
                       >
                         <Trash2 className="h-5 w-5 text-gray-500" />
                       </Button>
@@ -494,7 +536,10 @@ export function EnhancedFileUpload({
                       <Button
                         size="icon"
                         variant="ghost"
-                        onClick={() => removeFile(file.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeFile(file.id);
+                        }}
                       >
                         <XCircle className="h-5 w-5 text-gray-500" />
                       </Button>
@@ -587,7 +632,10 @@ export function EnhancedFileUpload({
                         <Button 
                           size="sm"
                           variant="ghost"
-                          onClick={() => setIsAddingTag(null)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setIsAddingTag(null);
+                          }}
                         >
                           <X className="h-4 w-4" />
                         </Button>
