@@ -38,6 +38,12 @@ export function PropertyLinkInput({ onPropertyDataFetched }: PropertyLinkInputPr
       
       if (result.success && result.data) {
         console.log("Property data loaded successfully:", result.data);
+        
+        // Check if we got images and log them
+        if (result.data.images && result.data.images.length > 0) {
+          console.log(`Found ${result.data.images.length} property images`);
+        }
+        
         onPropertyDataFetched(result.data);
         toast({
           title: "Success",
@@ -102,7 +108,7 @@ export function PropertyLinkInput({ onPropertyDataFetched }: PropertyLinkInputPr
       )}
       
       <p className="text-xs text-gray-500">
-        Paste a property URL from Zillow or Realtor.com to automatically fill the form fields.
+        Paste a property URL from Zillow or Realtor.com to automatically fill the form fields and import property images.
       </p>
     </div>
   );

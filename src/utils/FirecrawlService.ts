@@ -1,17 +1,20 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
+interface AddressInfo {
+  street?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+}
+
 interface PropertyData {
   sqft?: string;
   bedrooms?: string;
   bathrooms?: string;
   propertyType?: string;
-  address?: {
-    street?: string;
-    city?: string;
-    state?: string;
-    zipCode?: string;
-  };
+  address?: AddressInfo;
+  images?: string[];
 }
 
 export class FirecrawlService {
