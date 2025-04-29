@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "./button";
 import { Input } from "./input";
@@ -124,7 +125,7 @@ export function EnhancedFileUpload({
     }
     console.log(`Added ${newFiles.length} files to upload queue`);
     
-    // If autoUpload is enabled, immediately add to upload queue
+    // If autoUpload is enabled, immediately add ALL files to upload queue
     if (autoUpload) {
       console.log(`Auto-upload enabled, adding ${newFileIds.length} files to upload queue`);
       setUploadQueue(prevQueue => [...prevQueue, ...newFileIds]);
@@ -227,18 +228,15 @@ export function EnhancedFileUpload({
   };
 
   // Handle file drop zone
-  const handleDrop = useCallback(
-    (event: React.DragEvent<HTMLDivElement>) => {
-      event.preventDefault();
-      setIsDragging(false);
-      
-      if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
-        console.log(`Dropped ${event.dataTransfer.files.length} files`);
-        processFiles(event.dataTransfer.files);
-      }
-    },
-    [processFiles]
-  );
+  const handleDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDragging(false);
+    
+    if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+      console.log(`Dropped ${event.dataTransfer.files.length} files`);
+      processFiles(event.dataTransfer.files);
+    }
+  }, []);
 
   // Upload a file to Supabase storage
   const uploadFile = async (fileToUpload: FileWithPreview) => {
