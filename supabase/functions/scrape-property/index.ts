@@ -15,11 +15,24 @@ serve(async (req) => {
 
   try {
     const apiKey = Deno.env.get('FIRECRAWL_API_KEY');
+    const openAiApiKey = Deno.env.get('OPENAI_API_KEY');
+    
     if (!apiKey) {
       console.error('Firecrawl API key not configured');
       return new Response(JSON.stringify({ 
         success: false, 
         error: 'Firecrawl API key not configured' 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!openAiApiKey) {
+      console.error('OpenAI API key not configured');
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'OpenAI API key not configured' 
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -77,10 +90,10 @@ serve(async (req) => {
     const crawledData = await firecrawlResponse.json();
     console.log('Firecrawl response received');
     
-    // Extract property data from crawled content
-    const propertyData = parsePropertyData(crawledData, url);
+    // Extract basic property data from crawled content
+    const basicPropertyData = parsePropertyData(crawledData, url);
     
-    if (!propertyData) {
+    if (!basicPropertyData) {
       return new Response(JSON.stringify({ 
         success: false, 
         error: 'Could not extract property data from provided URL' 
@@ -90,9 +103,12 @@ serve(async (req) => {
       });
     }
     
-    console.log('Successfully extracted property data:', propertyData);
+    // Send crawled content to OpenAI for enhanced extraction
+    const enhancedPropertyData = await enhanceWithOpenAI(crawledData, basicPropertyData, url, openAiApiKey);
     
-    return new Response(JSON.stringify({ success: true, data: propertyData }), {
+    console.log('Successfully enhanced property data with AI:', enhancedPropertyData);
+    
+    return new Response(JSON.stringify({ success: true, data: enhancedPropertyData }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
     
@@ -108,7 +124,117 @@ serve(async (req) => {
   }
 });
 
-// Parse property data from crawled content
+// Enhanced property data with OpenAI
+async function enhanceWithOpenAI(crawledData: any, basicPropertyData: any, url: string, openAiApiKey: string) {
+  try {
+    const pageContent = crawledData.text || '';
+    const metadata = crawledData.metadata || {};
+    const htmlContent = crawledData.html || '';
+    
+    // Create a comprehensive prompt for OpenAI
+    const prompt = `
+You are a real estate data extraction expert. Extract structured property information from the following real estate listing.
+Use the provided data to extract as much detailed property information as possible.
+
+URL: ${url}
+
+Page Title: ${metadata.title || ''}
+Page Description: ${metadata.description || ''}
+
+Page Content:
+${pageContent.substring(0, 3000)}
+
+Based on the above, extract the following information in a JSON format:
+- address: {street, city, state, zipCode}
+- bedrooms (as a number or string like "3" or "4+")
+- bathrooms (as a number or string like "2", "2.5", etc.)
+- sqft (square footage as a number without commas)
+- propertyType (e.g., "Single Family", "Condo", "Townhouse", "Multi-Family")
+- yearBuilt (if available)
+- lotSize (if available)
+- price (if available, as a number without currency symbols or commas)
+- description (a brief description if available)
+
+Example format:
+{
+  "address": {
+    "street": "123 Main St",
+    "city": "Austin", 
+    "state": "TX",
+    "zipCode": "78701"
+  },
+  "bedrooms": "3",
+  "bathrooms": "2.5",
+  "sqft": "2100",
+  "propertyType": "Single Family",
+  "yearBuilt": "2005",
+  "lotSize": "0.25",
+  "price": "499000",
+  "description": "Beautiful renovated home in central neighborhood"
+}
+
+Format the output as clean JSON only, without any explanations or additional text.
+`;
+
+    // Call OpenAI API
+    const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${openAiApiKey}`
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: "You are a data extraction assistant that processes real estate listing data and outputs structured JSON."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.2,
+        max_tokens: 1000
+      })
+    });
+
+    if (!openAIResponse.ok) {
+      console.error('OpenAI API error:', await openAIResponse.text());
+      // Fallback to basic extracted data if OpenAI fails
+      return basicPropertyData;
+    }
+
+    const openAIData = await openAIResponse.json();
+    const jsonContent = openAIData.choices[0].message.content;
+    
+    try {
+      // Try to parse the JSON response
+      const parsedJson = JSON.parse(jsonContent);
+      
+      // Merge AI-extracted data with the images from basic extraction
+      const mergedData = {
+        ...parsedJson,
+        images: basicPropertyData.images
+      };
+      
+      console.log('Enhanced property data with AI:', mergedData);
+      return mergedData;
+    } catch (error) {
+      console.error('Failed to parse OpenAI JSON response:', error);
+      console.log('Raw OpenAI response:', jsonContent);
+      // Fallback to basic extracted data
+      return basicPropertyData;
+    }
+  } catch (error) {
+    console.error('Error enhancing data with OpenAI:', error);
+    // Fallback to basic extraction
+    return basicPropertyData;
+  }
+}
+
+// Parse property data from crawled content (basic extraction)
 function parsePropertyData(crawledData: any, originalUrl: string) {
   try {
     // Check if the URL is from a known real estate site

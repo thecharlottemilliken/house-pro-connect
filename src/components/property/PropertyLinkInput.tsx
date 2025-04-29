@@ -19,6 +19,10 @@ interface PropertyData {
   sqft?: string;
   propertyType?: string;
   images?: string[];
+  yearBuilt?: string;
+  lotSize?: string;
+  price?: string;
+  description?: string;
 }
 
 interface PropertyLinkInputProps {
@@ -47,11 +51,11 @@ export function PropertyLinkInput({ onPropertyDataFetched }: PropertyLinkInputPr
     setError(null);
     
     try {
-      console.log("Scraping property URL:", url);
+      console.log("Scraping property URL with AI enhancement:", url);
       const result = await FirecrawlService.scrapePropertyUrl(url);
       
       if (result.success && result.data) {
-        console.log("Property data loaded successfully:", result.data);
+        console.log("AI-enhanced property data loaded successfully:", result.data);
         
         // Process the data before passing it to the parent component
         const formattedData: PropertyData = {
@@ -65,7 +69,11 @@ export function PropertyLinkInput({ onPropertyDataFetched }: PropertyLinkInputPr
           bathrooms: result.data.bathrooms || "",
           sqft: result.data.sqft || "",
           propertyType: result.data.propertyType || "",
-          images: result.data.images || []
+          images: result.data.images || [],
+          yearBuilt: result.data.yearBuilt || "",
+          lotSize: result.data.lotSize || "",
+          price: result.data.price || "",
+          description: result.data.description || ""
         };
         
         // Check if we got images and log them
@@ -76,7 +84,7 @@ export function PropertyLinkInput({ onPropertyDataFetched }: PropertyLinkInputPr
         onPropertyDataFetched(formattedData);
         toast({
           title: "Success",
-          description: "Property data loaded successfully",
+          description: "AI-enhanced property data loaded successfully",
         });
         setUrl("");
       } else {
@@ -137,7 +145,7 @@ export function PropertyLinkInput({ onPropertyDataFetched }: PropertyLinkInputPr
       )}
       
       <p className="text-xs text-gray-500">
-        Paste a property URL from Zillow or Realtor.com to automatically fill the form fields and import property images.
+        Paste a property URL from Zillow or Realtor.com to automatically fill the form fields and import property images using AI.
       </p>
     </div>
   );

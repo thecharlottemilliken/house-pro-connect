@@ -15,6 +15,10 @@ interface PropertyData {
   propertyType?: string;
   address?: AddressInfo;
   images?: string[];
+  yearBuilt?: string;
+  lotSize?: string;
+  price?: string;
+  description?: string;
 }
 
 export class FirecrawlService {
@@ -42,7 +46,7 @@ export class FirecrawlService {
         };
       }
       
-      console.log('Property data retrieved successfully:', data);
+      console.log('AI-enhanced property data retrieved successfully:', data);
       
       // Format the response data if needed
       const propertyData: PropertyData = {
@@ -56,7 +60,11 @@ export class FirecrawlService {
         bathrooms: data.data?.bathrooms,
         sqft: data.data?.sqft,
         propertyType: data.data?.propertyType,
-        images: data.data?.images
+        images: data.data?.images,
+        yearBuilt: data.data?.yearBuilt,
+        lotSize: data.data?.lotSize,
+        price: data.data?.price,
+        description: data.data?.description
       };
       
       return { success: true, data: propertyData };
