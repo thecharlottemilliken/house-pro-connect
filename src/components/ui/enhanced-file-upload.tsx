@@ -1,4 +1,5 @@
-import React, { useState, useRef } from "react";
+
+import React, { useState, useRef, useEffect } from "react";
 import { Button } from "./button";
 import { Input } from "./input";
 import { Progress } from "./progress";
@@ -12,7 +13,7 @@ export interface FileWithPreview {
   id: string;
   file?: File;
   name: string;
-  size: string;
+  size: string | number;
   type: string;
   url?: string;
   progress: number;
@@ -32,8 +33,8 @@ interface EnhancedFileUploadProps {
   onUploadComplete?: (files: FileWithPreview[]) => void;
   label: string;
   description: string;
-  uploadedFiles?: FileWithPreview[];
-  setUploadedFiles?: (files: FileWithPreview[]) => void;
+  uploadedFiles: FileWithPreview[];
+  setUploadedFiles: (files: FileWithPreview[]) => void;
   allowUrlUpload?: boolean;
   roomOptions?: RoomTagOption[];
 }
@@ -44,7 +45,7 @@ export function EnhancedFileUpload({
   onUploadComplete,
   label,
   description,
-  uploadedFiles = [],
+  uploadedFiles,
   setUploadedFiles,
   allowUrlUpload = false,
   roomOptions = [],
@@ -58,7 +59,14 @@ export function EnhancedFileUpload({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const tagInputRef = useRef<HTMLInputElement>(null);
 
-  const formatFileSize = (bytes: number) => {
+  // Focus on tag input when adding a new tag
+  useEffect(() => {
+    if (isAddingTag && tagInputRef.current) {
+      tagInputRef.current.focus();
+    }
+  }, [isAddingTag]);
+
+  const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return "0 Bytes";
     const k = 1024;
     const sizes = ["Bytes", "KB", "MB", "GB"];
@@ -86,15 +94,18 @@ export function EnhancedFileUpload({
     setIsUploading(true);
     const newFiles: FileWithPreview[] = [];
 
+    console.log(`Processing ${files.length} files`);
+
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const previewUrl = await createPreviewUrl(file);
+      const formattedSize = typeof file.size === 'number' ? formatFileSize(file.size) : file.size;
 
       newFiles.push({
         id: `${Date.now()}-${i}`,
         file,
         name: file.name,
-        size: formatFileSize(file.size),
+        size: formattedSize,
         type: file.type,
         progress: 0,
         tags: [],
@@ -103,8 +114,104 @@ export function EnhancedFileUpload({
       });
     }
 
-    setUploadedFiles?.((prev) => [...prev, ...newFiles]);
+    console.log(`Adding ${newFiles.length} files to upload queue`);
+    
+    // Update state with new files
+    setUploadedFiles(prev => [...prev, ...newFiles]);
+    
+    // Start uploading these files
+    for (const fileWithPreview of newFiles) {
+      await uploadFile(fileWithPreview);
+    }
+    
     setIsUploading(false);
+  };
+
+  const uploadFile = async (fileWithPreview: FileWithPreview) => {
+    if (!fileWithPreview.file || !fileWithPreview.id) {
+      console.error("Cannot upload file - missing file or ID");
+      return;
+    }
+
+    try {
+      // Mark file as uploading
+      updateFileStatus(fileWithPreview.id, "uploading", 0);
+
+      // Generate a unique file path
+      const timestamp = Date.now();
+      const fileExt = fileWithPreview.file.name.split('.').pop();
+      const filePath = `${timestamp}-${fileWithPreview.file.name}`;
+      
+      console.log(`Uploading file: ${filePath}`);
+
+      const { data, error } = await supabase.storage
+        .from('properties')
+        .upload(filePath, fileWithPreview.file, {
+          upsert: true,
+          contentType: fileWithPreview.file.type,
+          onUploadProgress: (progress) => {
+            const percent = Math.round((progress.loaded / progress.total) * 100);
+            updateFileStatus(fileWithPreview.id, "uploading", percent);
+          }
+        });
+
+      if (error) {
+        console.error("Upload error:", error);
+        updateFileStatus(fileWithPreview.id, "error");
+        toast({
+          title: "Upload failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('properties')
+        .getPublicUrl(data.path);
+
+      // Update file with URL and complete status
+      updateFileStatus(fileWithPreview.id, "complete", 100, publicUrl);
+      
+      console.log(`Upload complete: ${publicUrl}`);
+
+      // Notify parent component of completed upload
+      if (onUploadComplete) {
+        // Find all completed files
+        const completedFiles = uploadedFiles.filter(f => f.status === "complete");
+        onUploadComplete(completedFiles);
+      }
+    } catch (error: any) {
+      console.error("Upload exception:", error);
+      updateFileStatus(fileWithPreview.id, "error");
+      toast({
+        title: "Upload error",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const updateFileStatus = (
+    fileId: string,
+    status: FileWithPreview["status"],
+    progress: number = 0,
+    url?: string
+  ) => {
+    setUploadedFiles((prevFiles) =>
+      prevFiles.map((file) => {
+        if (file.id === fileId) {
+          return {
+            ...file,
+            status,
+            progress,
+            url: url || file.url,
+          };
+        }
+        return file;
+      })
+    );
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -112,7 +219,10 @@ export function EnhancedFileUpload({
     if (files && files.length > 0) {
       processFiles(files);
     }
-    event.target.value = "";
+    // Reset file input
+    if (event.target) {
+      event.target.value = "";
+    }
   };
 
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
@@ -127,7 +237,7 @@ export function EnhancedFileUpload({
   const removeFile = (fileId: string) => {
     const fileToRemove = uploadedFiles.find((f) => f.id === fileId);
     const updatedFiles = uploadedFiles.filter((file) => file.id !== fileId);
-    setUploadedFiles?.(updatedFiles);
+    setUploadedFiles(updatedFiles);
 
     toast({
       title: "File removed",
@@ -141,28 +251,29 @@ export function EnhancedFileUpload({
       return;
     }
 
-    const updatedFiles = uploadedFiles.map((file) => {
-      if (file.id === fileId) {
-        const updatedTags = file.tags.includes(newTag) ? file.tags : [...file.tags, newTag];
-        return { ...file, tags: updatedTags };
-      }
-      return file;
-    });
+    setUploadedFiles((prevFiles) =>
+      prevFiles.map((file) => {
+        if (file.id === fileId) {
+          const updatedTags = file.tags.includes(newTag) ? file.tags : [...file.tags, newTag];
+          return { ...file, tags: updatedTags };
+        }
+        return file;
+      })
+    );
 
-    setUploadedFiles?.(updatedFiles);
     setNewTag("");
     setIsAddingTag(null);
   };
 
   const removeTag = (fileId: string, tag: string) => {
-    const updatedFiles = uploadedFiles.map((file) => {
-      if (file.id === fileId) {
-        return { ...file, tags: file.tags.filter((t) => t !== tag) };
-      }
-      return file;
-    });
-
-    setUploadedFiles?.(updatedFiles);
+    setUploadedFiles((prevFiles) =>
+      prevFiles.map((file) => {
+        if (file.id === fileId) {
+          return { ...file, tags: file.tags.filter((t) => t !== tag) };
+        }
+        return file;
+      })
+    );
   };
 
   return (
@@ -235,7 +346,10 @@ export function EnhancedFileUpload({
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => removeFile(file.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeFile(file.id);
+                      }}
                     >
                       <Trash2 className="h-5 w-5 text-gray-500" />
                     </Button>
@@ -302,7 +416,6 @@ export function EnhancedFileUpload({
                           e.stopPropagation();
                           setIsAddingTag(file.id);
                           setNewTag("");
-                          setTimeout(() => tagInputRef.current?.focus(), 0);
                         }}
                       >
                         <Plus className="h-3 w-3" /> Add Tag

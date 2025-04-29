@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -107,6 +106,9 @@ const AddProperty = () => {
   
   // Handle files uploaded via the new component
   const handleFilesUploaded = (files: FileWithPreview[]) => {
+    console.log("Parent received uploaded files:", files);
+    setPropertyFiles(files);
+    
     // Extract URLs from complete files
     const imageUrls = files
       .filter(f => f.status === 'complete' && f.url)
@@ -528,7 +530,7 @@ const AddProperty = () => {
                 <h3 className="font-semibold text-gray-800 mb-3">Upload Files</h3>
                 <PropertyFileUpload 
                   accept="image/*, .pdf, .dwg"
-                  multiple={true}   // 👈 ADD THIS!!!
+                  multiple={true}
                   label="Upload Files"
                   description="Upload property photos, blueprints, or drawings"
                   onFilesUploaded={handleFilesUploaded}
@@ -543,8 +545,7 @@ const AddProperty = () => {
                     { value: "blueprint", label: "Blueprint" },
                     { value: "floorPlan", label: "Floor Plan" }
                   ]}
-
-/>
+                />
               </div>
               
               <div className="flex flex-col sm:flex-row justify-between pt-6 border-t border-gray-200 gap-4">
