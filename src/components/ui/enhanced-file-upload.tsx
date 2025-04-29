@@ -110,8 +110,7 @@ export function EnhancedFileUpload({
       newFiles.push(newFile);
     }
     
-    const updatedFiles = [...uploadedFiles, ...newFiles];
-    setUploadedFiles?.(updatedFiles);
+    setUploadedFiles?.((prev) => [...prev, ...newFiles]);
     setIsUploading(false);
   };
 
