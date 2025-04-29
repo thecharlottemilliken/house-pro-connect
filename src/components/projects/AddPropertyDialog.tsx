@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 import { 
@@ -52,16 +53,33 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
 
   const handlePropertyDataFetched = (data: any) => {
     if (data.address) {
-      data.address.street && setAddressLine1(data.address.street);
+      // Explicitly set the street address to addressLine1
+      if (data.address.street) {
+        console.log("Setting address line 1 from street:", data.address.street);
+        setAddressLine1(data.address.street);
+      }
+      
       data.address.city && setCity(data.address.city);
       data.address.state && setState(data.address.state);
       data.address.zipCode && setZipCode(data.address.zipCode);
+      
+      // Handle secondary address if available
+      if (data.secondaryAddress) {
+        setAddressLine2(data.secondaryAddress);
+        console.log('Setting address line 2:', data.secondaryAddress);
+      }
     }
     
     data.sqft && setSqft(data.sqft);
     data.bedrooms && setBedrooms(data.bedrooms);
     data.bathrooms && setBathrooms(data.bathrooms);
     data.propertyType && setHomeType(data.propertyType.toLowerCase());
+    
+    // Handle home attributes if available
+    if (data.attributes && Array.isArray(data.attributes) && data.attributes.length > 0) {
+      console.log(`Setting ${data.attributes.length} home attributes:`, data.attributes);
+      setAttributes(data.attributes);
+    }
   };
 
   const handleSubmit = async () => {
@@ -125,6 +143,13 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
                   <label htmlFor="addressLine1" className="block text-sm font-medium text-gray-700 mb-1">
                     Address
                   </label>
+                  <Input 
+                    id="addressLine1" 
+                    placeholder="Street address" 
+                    value={addressLine1} 
+                    onChange={(e) => setAddressLine1(e.target.value)}
+                    className="mb-2" 
+                  />
                   <AddressAutocomplete onAddressSelect={handleAddressSelect} />
                 </div>
                 

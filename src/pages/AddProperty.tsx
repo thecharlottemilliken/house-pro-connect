@@ -53,7 +53,12 @@ const AddProperty = () => {
 
   const handlePropertyDataFetched = (data: any) => {
     if (data.address) {
-      data.address.street && setAddressLine1(data.address.street);
+      // Explicitly set the street address to addressLine1
+      if (data.address.street) {
+        console.log("Setting address line 1 from street:", data.address.street);
+        setAddressLine1(data.address.street);
+      }
+      
       data.address.city && setCity(data.address.city);
       data.address.state && setState(data.address.state);
       data.address.zipCode && setZipCode(data.address.zipCode);
@@ -236,7 +241,16 @@ const AddProperty = () => {
                     <label htmlFor="addressLine1" className="block text-sm font-medium text-gray-700 mb-1">
                       Address
                     </label>
-                    <AddressAutocomplete onAddressSelect={handleAddressSelect} />
+                    <div className="relative">
+                      <Input 
+                        id="addressLine1"
+                        placeholder="Street address"
+                        value={addressLine1}
+                        onChange={(e) => setAddressLine1(e.target.value)}
+                        className="w-full"
+                      />
+                      <AddressAutocomplete onAddressSelect={handleAddressSelect} />
+                    </div>
                   </div>
                   
                   <div>
