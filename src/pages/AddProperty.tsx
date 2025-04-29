@@ -527,14 +527,13 @@ const AddProperty = () => {
               <div>
                 <h3 className="font-semibold text-gray-800 mb-3">Upload Files</h3>
                 <PropertyFileUpload 
-  accept="image/*, .pdf, .dwg"
-  multiple={true}   // 👈 ADD THIS!!!
-  label="Upload Files"
-  description="Upload property photos, blueprints, or drawings"
-  uploadedFiles={uploadedFiles}
-  setUploadedFiles={setUploadedFiles}
-  onUploadComplete={handleUploadComplete}
-roomOptions={[
+                  accept="image/*, .pdf, .dwg"
+                  multiple={true}   // 👈 ADD THIS!!!
+                  label="Upload Files"
+                  description="Upload property photos, blueprints, or drawings"
+                  onFilesUploaded={handleFilesUploaded}
+                  initialFiles={propertyFiles}
+                  roomOptions={[
                     { value: "livingRoom", label: "Living Room" },
                     { value: "kitchen", label: "Kitchen" },
                     { value: "bathroom", label: "Bathroom" },
