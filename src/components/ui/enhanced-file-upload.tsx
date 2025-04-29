@@ -91,6 +91,7 @@ export function EnhancedFileUpload({
 
   // Process files selected by the user
   const processFiles = async (files: FileList) => {
+    console.log(`Processing ${files.length} files`);
     if (!files.length) return;
     
     const newFiles: FileWithPreview[] = [];
@@ -117,69 +118,94 @@ export function EnhancedFileUpload({
       newFileIds.push(fileId);
     }
     
-    const updatedFiles = [...uploadedFiles, ...newFiles];
-    setUploadedFiles?.(updatedFiles);
+    // Update uploadedFiles with the new files and maintain existing ones
+    setUploadedFiles?.([...uploadedFiles, ...newFiles]);
+    console.log(`Added ${newFiles.length} files to upload queue`);
     
     // If autoUpload is enabled, immediately process the upload queue
     if (autoUpload) {
-      processUploadQueue(newFileIds);
+      console.log(`Auto-upload enabled, processing upload queue with ${newFileIds.length} files`);
+      setUploadQueue(prevQueue => [...prevQueue, ...newFileIds]);
     } else {
-      setUploadQueue(prev => [...prev, ...newFileIds]);
+      setUploadQueue(prevQueue => [...prevQueue, ...newFileIds]);
     }
   };
 
   // Process the upload queue
-  const processUploadQueue = async (newIds: string[] = []) => {
-    const currentQueue = [...uploadQueue, ...newIds];
-    if (currentQueue.length === 0) return;
+  const processUploadQueue = useCallback(async () => {
+    if (uploadQueue.length === 0 || isUploading) return;
+    console.log(`Processing upload queue with ${uploadQueue.length} files`);
     
     setIsUploading(true);
-    const currentBatch = currentQueue.slice(0, maxConcurrentUploads);
-    const remainingQueue = currentQueue.slice(maxConcurrentUploads);
+    
+    // Get the files to upload in this batch
+    const currentBatch = uploadQueue.slice(0, maxConcurrentUploads);
+    const remainingQueue = uploadQueue.slice(maxConcurrentUploads);
+    
+    console.log(`Current batch: ${currentBatch.length} files, Remaining: ${remainingQueue.length} files`);
     setUploadQueue(remainingQueue);
     
-    const filesToUpload = currentBatch.map(fileId => 
-      uploadedFiles.find(f => f.id === fileId && f.status === 'ready')
-    ).filter(Boolean) as FileWithPreview[];
+    // Find the actual file objects for the IDs in the current batch
+    const filesToUpload = uploadedFiles.filter(f => 
+      currentBatch.includes(f.id) && f.status === 'ready'
+    );
+    
+    console.log(`Found ${filesToUpload.length} files to upload in this batch`);
     
     if (filesToUpload.length === 0) {
-      // No files to upload in this batch, check if there are any more in the queue
+      // No files to upload in this batch
+      setIsUploading(false);
+      
+      // If there are more files in the queue, process them
       if (remainingQueue.length > 0) {
-        processUploadQueue();
+        setTimeout(() => processUploadQueue(), 100);
       } else {
-        setIsUploading(false);
+        // All uploads completed
+        const completedFiles = uploadedFiles.filter(file => file.status === 'complete');
+        console.log(`All uploads complete. ${completedFiles.length} files uploaded.`);
+        if (completedFiles.length > 0 && onUploadComplete) {
+          onUploadComplete(completedFiles);
+        }
       }
       return;
     }
     
-    const uploadPromises = filesToUpload.map(fileToUpload => uploadFile(fileToUpload));
-    await Promise.allSettled(uploadPromises);
+    // Upload files in parallel
+    try {
+      const uploadPromises = filesToUpload.map(fileToUpload => uploadFile(fileToUpload));
+      await Promise.allSettled(uploadPromises);
+      console.log(`Completed batch upload of ${filesToUpload.length} files`);
+    } catch (error) {
+      console.error('Error during batch upload:', error);
+    }
+    
+    setIsUploading(false);
     
     // Process next batch if any files are in queue
     if (remainingQueue.length > 0) {
-      processUploadQueue();
+      setTimeout(() => processUploadQueue(), 100);
     } else {
-      setIsUploading(false);
-      
-      // Notify of completed uploads
+      // All uploads completed
       const completedFiles = uploadedFiles.filter(file => file.status === 'complete');
       if (completedFiles.length > 0 && onUploadComplete) {
         onUploadComplete(completedFiles);
       }
     }
-  };
+  }, [uploadQueue, uploadedFiles, isUploading, maxConcurrentUploads, onUploadComplete]);
 
   // Start upload queue processing when files are added and autoUpload is true
   useEffect(() => {
     if (autoUpload && uploadQueue.length > 0 && !isUploading) {
       processUploadQueue();
     }
-  }, [uploadQueue, autoUpload]);
+  }, [uploadQueue, autoUpload, isUploading, processUploadQueue]);
 
   // Handle file input change
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log("File input changed");
     const files = event.target.files;
     if (files && files.length > 0) {
+      console.log(`Selected ${files.length} files`);
       processFiles(files);
     }
     // Reset the input so the same file can be selected again
@@ -195,6 +221,7 @@ export function EnhancedFileUpload({
       setIsDragging(false);
       
       if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+        console.log(`Dropped ${event.dataTransfer.files.length} files`);
         processFiles(event.dataTransfer.files);
       }
     },
@@ -214,6 +241,7 @@ export function EnhancedFileUpload({
     
     // Update file status
     updateFileStatus(fileToUpload.id, 'uploading');
+    console.log(`Uploading file: ${fileToUpload.name}`);
     
     try {
       const fileExt = fileToUpload.name.split('.').pop();
@@ -241,7 +269,10 @@ export function EnhancedFileUpload({
         }, 200);
       }
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error(`Error uploading ${fileToUpload.name}:`, uploadError);
+        throw uploadError;
+      }
 
       if (data) {
         // Clear the interval if it exists
@@ -256,6 +287,7 @@ export function EnhancedFileUpload({
         
         // Update file with URL
         const updatedFile = updateFileUrl(fileToUpload.id, publicUrl);
+        console.log(`Upload complete for ${fileToUpload.name}`);
         return updatedFile;
       }
     } catch (error) {
@@ -320,13 +352,14 @@ export function EnhancedFileUpload({
 
   // Upload all files that are in 'ready' status
   const uploadAllReadyFiles = async () => {
-    const filesToUpload = uploadedFiles.filter(f => f.status === 'ready');
+    const readyFiles = uploadedFiles.filter(f => f.status === 'ready');
+    console.log(`Uploading all ready files: ${readyFiles.length} files`);
     
-    if (filesToUpload.length === 0) return;
+    if (readyFiles.length === 0) return;
     
     // Add all ready files to the upload queue
-    const fileIds = filesToUpload.map(file => file.id);
-    processUploadQueue(fileIds);
+    const fileIds = readyFiles.map(file => file.id);
+    setUploadQueue(prevQueue => [...prevQueue, ...fileIds]);
   };
 
   // Helper function to update file status
@@ -427,6 +460,13 @@ export function EnhancedFileUpload({
     const roomTag = file.tags.find(tag => roomValues.includes(tag));
     return roomTag || null;
   };
+
+  // Manually trigger the upload queue processing
+  useEffect(() => {
+    if (!isUploading && uploadQueue.length > 0) {
+      processUploadQueue();
+    }
+  }, [uploadQueue, isUploading, processUploadQueue]);
 
   return (
     <div className="space-y-4">

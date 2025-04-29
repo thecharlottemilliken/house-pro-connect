@@ -25,6 +25,7 @@ export function PropertyFileUpload({
 
   // Handle completed uploads
   const handleUploadComplete = (files: FileWithPreview[]) => {
+    console.log(`Upload complete callback received ${files.length} files`);
     if (onFilesUploaded) {
       onFilesUploaded(files);
     }
