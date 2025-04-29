@@ -1,6 +1,6 @@
 
-// The uuid package should now be available after installation
-import { v4 as uuidv4 } from "uuid";
+// Import uuid as a regular dependency
+import { v4 as uuidv4 } from 'uuid';
 import { supabase } from "@/integrations/supabase/client";
 import { FileWithPreview } from "./types";
 
