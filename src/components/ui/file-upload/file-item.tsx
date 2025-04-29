@@ -3,7 +3,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Trash2 } from "lucide-react";
-import { FileWithPreview } from "./types";
+import { FileWithPreview, RoomTagOption } from "./types";
 import { FileThumbnail } from "./file-thumbnail";
 import { FileTags } from "./file-tags";
 
@@ -12,9 +12,10 @@ interface FileItemProps {
   onRemove: (fileId: string) => void;
   onAddTag: (fileId: string, tag: string) => void;
   onRemoveTag: (fileId: string, tag: string) => void;
+  roomOptions?: RoomTagOption[];
 }
 
-export function FileItem({ file, onRemove, onAddTag, onRemoveTag }: FileItemProps) {
+export function FileItem({ file, onRemove, onAddTag, onRemoveTag, roomOptions = [] }: FileItemProps) {
   return (
     <div className="border rounded-lg p-4 flex items-center gap-4">
       <FileThumbnail file={file} />
@@ -49,6 +50,7 @@ export function FileItem({ file, onRemove, onAddTag, onRemoveTag }: FileItemProp
           file={file} 
           onAddTag={(tag) => onAddTag(file.id, tag)} 
           onRemoveTag={(tag) => onRemoveTag(file.id, tag)} 
+          roomOptions={roomOptions}
         />
       </div>
     </div>

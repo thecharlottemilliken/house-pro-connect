@@ -1,89 +1,97 @@
 
-import React, { useRef, useEffect, useState } from "react";
+import React, { useState } from "react";
+import { FileWithPreview, RoomTagOption } from "./types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { X, Plus } from "lucide-react";
-import { FileWithPreview } from "./types";
+import { Plus, X } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface FileTagsProps {
   file: FileWithPreview;
   onAddTag: (tag: string) => void;
   onRemoveTag: (tag: string) => void;
+  roomOptions?: RoomTagOption[];
 }
 
-export function FileTags({ file, onAddTag, onRemoveTag }: FileTagsProps) {
-  const [isAddingTag, setIsAddingTag] = useState(false);
-  const [newTag, setNewTag] = useState("");
-  const tagInputRef = useRef<HTMLInputElement>(null);
-
-  // Focus on tag input when adding a new tag
-  useEffect(() => {
-    if (isAddingTag && tagInputRef.current) {
-      tagInputRef.current.focus();
-    }
-  }, [isAddingTag]);
+export function FileTags({ file, onAddTag, onRemoveTag, roomOptions = [] }: FileTagsProps) {
+  const [isAdding, setIsAdding] = useState(false);
+  const [selectedTag, setSelectedTag] = useState("");
 
   const handleAddTag = () => {
-    if (newTag.trim()) {
-      onAddTag(newTag);
-      setNewTag("");
+    if (selectedTag) {
+      onAddTag(selectedTag);
+      setSelectedTag("");
+      setIsAdding(false);
     }
-    setIsAddingTag(false);
   };
 
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-2">
-      {file.tags.map((tag) => (
-        <Badge key={tag} variant="outline" className="flex items-center gap-1 bg-gray-100">
-          {tag}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onRemoveTag(tag);
-            }}
-          >
-            <X className="h-3 w-3" />
-          </button>
-        </Badge>
-      ))}
+    <div className="mt-2">
+      <div className="flex flex-wrap gap-2 items-center">
+        {file.tags.map((tag) => (
+          <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+            {tag}
+            <X
+              className="h-3 w-3 cursor-pointer"
+              onClick={() => onRemoveTag(tag)}
+            />
+          </Badge>
+        ))}
 
-      {isAddingTag ? (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleAddTag();
-          }}
-          className="flex items-center"
-        >
-          <Input
-            ref={tagInputRef}
-            type="text"
-            value={newTag}
-            onChange={(e) => setNewTag(e.target.value)}
-            placeholder="Enter tag"
-            className="h-8 text-xs mr-1 w-28"
-            autoFocus
-          />
-          <Button size="sm" variant="ghost" onClick={() => setIsAddingTag(false)}>
-            <X className="h-4 w-4" />
+        {!isAdding ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-7 px-2 text-xs"
+            onClick={() => setIsAdding(true)}
+          >
+            <Plus className="h-3 w-3 mr-1" /> Add Tag
           </Button>
-        </form>
-      ) : (
-        <Button
-          variant="outline"
-          size="sm"
-          className="flex items-center gap-1 px-2 py-1 h-auto text-xs"
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsAddingTag(true);
-            setNewTag("");
-          }}
-        >
-          <Plus className="h-3 w-3" /> Add Tag
-        </Button>
-      )}
+        ) : (
+          <div className="flex items-center gap-2">
+            <Select value={selectedTag} onValueChange={setSelectedTag}>
+              <SelectTrigger className="w-[180px] h-8">
+                <SelectValue placeholder="Select tag" />
+              </SelectTrigger>
+              <SelectContent>
+                {roomOptions.length > 0 ? (
+                  roomOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <>
+                    <SelectItem value="livingRoom">Living Room</SelectItem>
+                    <SelectItem value="kitchen">Kitchen</SelectItem>
+                    <SelectItem value="bathroom">Bathroom</SelectItem>
+                    <SelectItem value="bedroom">Bedroom</SelectItem>
+                    <SelectItem value="exterior">Exterior</SelectItem>
+                    <SelectItem value="blueprint">Blueprint</SelectItem>
+                  </>
+                )}
+              </SelectContent>
+            </Select>
+            <Button size="sm" onClick={handleAddTag}>
+              Add
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setIsAdding(false)}
+            >
+              Cancel
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
