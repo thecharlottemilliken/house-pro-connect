@@ -46,17 +46,13 @@ export function EnhancedFileUpload({
   onUploadComplete,
   label,
   description,
-  uploadedFiles,
+  uploadedFiles = [],
   setUploadedFiles,
   allowUrlUpload = false,
   roomOptions = [],
   maxConcurrentUploads = 5,
   autoUpload = false
 }: EnhancedFileUploadProps) {
-  const [internalUploadedFiles, internalSetUploadedFiles] = useState<FileWithPreview[]>([]);
-  const files = uploadedFiles || internalUploadedFiles;
-  const setFiles = setUploadedFiles || internalSetUploadedFiles;
-
   const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [currentUrl, setCurrentUrl] = useState("");
@@ -85,43 +81,40 @@ export function EnhancedFileUpload({
     });
   };
 
-const processFiles = async (fileList: FileList) => {
-  console.log(`Processing ${fileList.length} files`);
-  if (!fileList.length) return;
-  
-  const newFiles: FileWithPreview[] = [];
-  const newFileIds: string[] = [];
+  const processFiles = async (fileList: FileList) => {
+    console.log(`Processing ${fileList.length} files`);
+    if (!fileList.length) return;
 
-  for (let i = 0; i < fileList.length; i++) {
-    const file = fileList[i];
-    const previewUrl = await createPreviewUrl(file);
-    const fileId = `${Date.now()}-${i}`; // Fine to create new ids here
+    const newFiles: FileWithPreview[] = [];
+    const newFileIds: string[] = [];
 
-    const newFile: FileWithPreview = {
-      id: fileId,
-      file,
-      name: file.name,
-      size: formatFileSize(file.size),
-      type: file.type,
-      progress: 0,
-      tags: [],
-      previewUrl,
-      status: 'ready'
-    };
+    for (let i = 0; i < fileList.length; i++) {
+      const file = fileList[i];
+      const previewUrl = await createPreviewUrl(file);
+      const fileId = `${Date.now()}-${i}`;
 
-    newFiles.push(newFile);
-    newFileIds.push(fileId);
-  }
+      const newFile: FileWithPreview = {
+        id: fileId,
+        file,
+        name: file.name,
+        size: formatFileSize(file.size),
+        type: file.type,
+        progress: 0,
+        tags: [],
+        previewUrl,
+        status: 'ready'
+      };
 
-  // ✅ Correctly append new files to uploadedFiles
-  if (setUploadedFiles) {
-    setUploadedFiles(prevFiles => [...prevFiles, ...newFiles]);
-    console.log(`Added ${newFiles.length} files to uploadedFiles state`);
-  }
+      newFiles.push(newFile);
+      newFileIds.push(fileId);
+    }
 
-  // ✅ Queue them for upload
-  setUploadQueue(prevQueue => [...prevQueue, ...newFileIds]);
-};
+    if (setUploadedFiles) {
+      setUploadedFiles(prevFiles => [...prevFiles, ...newFiles]);
+    }
+
+    setUploadQueue(prevQueue => [...prevQueue, ...newFileIds]);
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files;
@@ -143,19 +136,20 @@ const processFiles = async (fileList: FileList) => {
     setUploadQueue(remainingQueueIds);
 
     filesToUpload.forEach(async (fileId) => {
-      const fileToUpload = files.find(f => f.id === fileId && f.status === 'ready');
+      const fileToUpload = uploadedFiles.find(f => f.id === fileId && f.status === 'ready');
       if (!fileToUpload) return;
 
       setActiveUploads(prev => prev + 1);
       setIsUploading(true);
 
       try {
-        setFiles(prev =>
-          prev.map(file =>
-            file.id === fileToUpload.id ? { ...file, status: 'uploading' } : file
-          )
-        );
-
+        if (setUploadedFiles) {
+          setUploadedFiles(prev =>
+            prev.map(file =>
+              file.id === fileToUpload.id ? { ...file, status: 'uploading' } : file
+            )
+          );
+        }
         await uploadFile(fileToUpload);
       } catch (error) {
         console.error(error);
@@ -163,7 +157,7 @@ const processFiles = async (fileList: FileList) => {
         setActiveUploads(prev => Math.max(0, prev - 1));
       }
     });
-  }, [uploadQueue, files, activeUploads, maxConcurrentUploads, setFiles]);
+  }, [uploadQueue, uploadedFiles, activeUploads, maxConcurrentUploads, setUploadedFiles]);
 
   const uploadFile = async (fileToUpload: FileWithPreview) => {
     if (!fileToUpload.file) return;
@@ -180,20 +174,24 @@ const processFiles = async (fileList: FileList) => {
 
       const { data } = supabase.storage.from('property-files').getPublicUrl(filePath);
 
-      setFiles(prev =>
-        prev.map(file =>
-          file.id === fileToUpload.id
-            ? { ...file, url: data.publicUrl, progress: 100, status: 'complete' }
-            : file
-        )
-      );
+      if (setUploadedFiles) {
+        setUploadedFiles(prev =>
+          prev.map(file =>
+            file.id === fileToUpload.id
+              ? { ...file, url: data.publicUrl, progress: 100, status: 'complete' }
+              : file
+          )
+        );
+      }
     } catch (error) {
       console.error('Upload error', error);
-      setFiles(prev =>
-        prev.map(file =>
-          file.id === fileToUpload.id ? { ...file, status: 'error' } : file
-        )
-      );
+      if (setUploadedFiles) {
+        setUploadedFiles(prev =>
+          prev.map(file =>
+            file.id === fileToUpload.id ? { ...file, status: 'error' } : file
+          )
+        );
+      }
     }
   };
 
@@ -206,12 +204,12 @@ const processFiles = async (fileList: FileList) => {
   useEffect(() => {
     if (activeUploads === 0 && uploadQueue.length === 0 && isUploading) {
       setIsUploading(false);
-      const completed = files.filter(f => f.status === 'complete');
+      const completed = uploadedFiles.filter(f => f.status === 'complete');
       if (completed.length > 0 && onUploadComplete) {
         onUploadComplete(completed);
       }
     }
-  }, [activeUploads, uploadQueue, isUploading, files, onUploadComplete]);
+  }, [activeUploads, uploadQueue, isUploading, uploadedFiles, onUploadComplete]);
 
   return (
     <div className="space-y-4">
@@ -237,11 +235,6 @@ const processFiles = async (fileList: FileList) => {
         <Upload className="h-10 w-10 text-gray-400 mb-2" />
         <p className="text-lg font-medium text-gray-800">{label}</p>
         <p className="text-sm text-gray-500 mb-4">{description}</p>
-        <p className="text-sm text-gray-500">
-          Drag & Drop or{" "}
-          <span className="text-blue-600 hover:underline">Choose file{multiple ? 's' : ''}</span>
-          {" "}to upload
-        </p>
         <input
           ref={fileInputRef}
           type="file"
@@ -251,30 +244,6 @@ const processFiles = async (fileList: FileList) => {
           className="hidden"
         />
       </div>
-
-      {files.length > 0 && (
-        <div className="space-y-3 mt-6">
-          {files.map(file => (
-            <div key={file.id} className="flex items-center justify-between border p-4 rounded-md">
-              <div className="flex items-center gap-4">
-                {file.previewUrl && (
-                  <img src={file.previewUrl} alt={file.name} className="w-12 h-12 object-cover rounded" />
-                )}
-                <div>
-                  <p className="text-sm font-medium">{file.name}</p>
-                  <p className="text-xs text-gray-500">{file.size}</p>
-                  {file.status === 'uploading' && <Progress value={file.progress} className="h-2 mt-1" />}
-                </div>
-              </div>
-              <div>
-                {file.status === 'uploading' && <XCircle className="h-5 w-5 text-gray-400" />}
-                {file.status === 'complete' && <Badge variant="outline">Uploaded</Badge>}
-                {file.status === 'error' && <Badge variant="destructive">Error</Badge>}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
