@@ -23,6 +23,8 @@ interface PropertyData {
   lotSize?: string;
   price?: string;
   description?: string;
+  attributes?: string[];
+  secondaryAddress?: string;
 }
 
 interface PropertyLinkInputProps {
@@ -93,79 +95,7 @@ export function PropertyLinkInput({ onPropertyDataFetched }: PropertyLinkInputPr
           console.log(`Mapped property type from "${propertyType}" to "${result.data.propertyType}"`);
         }
         
-        // Clean up the state field to use state abbreviation if needed
-        if (result.data.address?.state) {
-          const state = result.data.address.state.trim();
-          
-          // If state is full name, convert to abbreviation
-          const stateMapping: {[key: string]: string} = {
-            'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR',
-            'california': 'CA', 'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE',
-            'florida': 'FL', 'georgia': 'GA', 'hawaii': 'HI', 'idaho': 'ID',
-            'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA', 'kansas': 'KS',
-            'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
-            'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS',
-            'missouri': 'MO', 'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV',
-            'new hampshire': 'NH', 'new jersey': 'NJ', 'new mexico': 'NM', 'new york': 'NY',
-            'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH', 'oklahoma': 'OK',
-            'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
-            'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT',
-            'vermont': 'VT', 'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV',
-            'wisconsin': 'WI', 'wyoming': 'WY'
-          };
-          
-          if (state.length > 2) {
-            const stateAbbr = stateMapping[state.toLowerCase()];
-            if (stateAbbr) {
-              result.data.address.state = stateAbbr;
-              console.log(`Converted state "${state}" to "${stateAbbr}"`);
-            }
-          } else if (state.length === 2) {
-            // Ensure uppercase for state abbreviations
-            result.data.address.state = state.toUpperCase();
-          }
-        }
-        
-        // Format the bedrooms and bathrooms if needed
-        if (result.data.bedrooms) {
-          // Remove any non-numeric characters except decimal point for bedrooms
-          const bedroomsNum = parseFloat(result.data.bedrooms.replace(/[^\d.]/g, ''));
-          if (!isNaN(bedroomsNum)) {
-            if (bedroomsNum >= 5) {
-              result.data.bedrooms = '5+';
-            } else {
-              result.data.bedrooms = bedroomsNum.toString();
-            }
-          }
-        }
-        
-        if (result.data.bathrooms) {
-          // Remove any non-numeric characters except decimal point for bathrooms
-          const bathroomsNum = parseFloat(result.data.bathrooms.replace(/[^\d.]/g, ''));
-          if (!isNaN(bathroomsNum)) {
-            if (bathroomsNum >= 3) {
-              result.data.bathrooms = '3+';
-            } else if (bathroomsNum === 1.5) {
-              result.data.bathrooms = '1.5';
-            } else if (bathroomsNum === 2.5) {
-              result.data.bathrooms = '2.5';
-            } else {
-              result.data.bathrooms = Math.floor(bathroomsNum).toString();
-            }
-          }
-        }
-        
-        // Clean up sqft - remove any commas, units, or other non-numeric characters
-        if (result.data.sqft) {
-          const sqftClean = result.data.sqft.replace(/[^\d]/g, '');
-          if (sqftClean) {
-            result.data.sqft = sqftClean;
-          }
-        }
-        
-        // Log the cleaned data
-        console.log("Property data after formatting:", result.data);
-        
+        // Make sure to pass all data to the parent component, including attributes and secondaryAddress
         onPropertyDataFetched(result.data);
         toast({
           title: "Success",

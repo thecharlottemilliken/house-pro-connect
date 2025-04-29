@@ -228,6 +228,8 @@ Based on the above, extract the following information in a JSON format:
 - lotSize (if available)
 - price (if available, as a number without currency symbols or commas)
 - description (a brief description if available)
+- factsAndFeatures (extract all facts and features, separated by commas)
+- features (an array of property features and amenities)
 
 Example format:
 {
@@ -244,7 +246,9 @@ Example format:
   "yearBuilt": "2005",
   "lotSize": "0.25",
   "price": "499000",
-  "description": "Beautiful renovated home in central neighborhood"
+  "description": "Beautiful renovated home in central neighborhood",
+  "factsAndFeatures": "Hardwood floors, Granite countertops, Central AC, Fenced yard, 2-car garage",
+  "features": ["Hardwood floors", "Granite countertops", "Central AC", "Fenced yard", "2-car garage"]
 }
 
 Format the output as clean JSON only, without any explanations or additional text.

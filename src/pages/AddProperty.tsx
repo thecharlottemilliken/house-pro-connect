@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -56,12 +57,24 @@ const AddProperty = () => {
       data.address.city && setCity(data.address.city);
       data.address.state && setState(data.address.state);
       data.address.zipCode && setZipCode(data.address.zipCode);
+      
+      // Handle secondary address if available
+      if (data.secondaryAddress) {
+        setAddressLine2(data.secondaryAddress);
+        console.log('Setting address line 2:', data.secondaryAddress);
+      }
     }
     
     data.sqft && setSqft(data.sqft);
     data.bedrooms && setBedrooms(data.bedrooms);
     data.bathrooms && setBathrooms(data.bathrooms);
     data.propertyType && setHomeType(data.propertyType.toLowerCase());
+    
+    // Handle home attributes if available
+    if (data.attributes && Array.isArray(data.attributes) && data.attributes.length > 0) {
+      console.log(`Setting ${data.attributes.length} home attributes:`, data.attributes);
+      setAttributes(data.attributes);
+    }
     
     if (data.images && Array.isArray(data.images) && data.images.length > 0) {
       console.log(`Setting ${data.images.length} property images:`, data.images);

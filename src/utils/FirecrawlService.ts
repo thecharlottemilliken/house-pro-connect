@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 interface AddressInfo {
@@ -18,6 +19,7 @@ interface PropertyData {
   lotSize?: string;
   price?: string;
   description?: string;
+  attributes?: string[]; // Added to store home attributes
 }
 
 export class FirecrawlService {
@@ -52,6 +54,15 @@ export class FirecrawlService {
     'duplex': 'multi-family',
     'triplex': 'multi-family',
   };
+
+  // Common home attributes to look for in property descriptions
+  private static commonAttributes = [
+    "Front Yard", "Back Yard", "Historic Home", "Waterfront", "Multi-Level",
+    "Open Floor Plan", "Hardwood Floors", "Finished Basement", "High Ceilings",
+    "Modern Kitchen", "Pool", "Garage", "Fireplace", "Central Air", "Deck", 
+    "Patio", "Stainless Appliances", "Granite Countertops", "HVAC", "Updated",
+    "Renovated", "New Construction", "Garden", "Fenced Yard", "Gourmet Kitchen"
+  ];
 
   static async scrapePropertyUrl(url: string): Promise<{ success: boolean; data?: PropertyData; error?: string }> {
     try {
@@ -117,6 +128,12 @@ export class FirecrawlService {
       // Format the response data with normalized values
       const formattedData = this.formatPropertyData(propertyData.data, images);
       
+      // Extract home attributes from the description and facts & features section
+      formattedData.attributes = this.extractHomeAttributes(propertyData.data);
+      
+      // Parse the address fields to handle street address and address line 2
+      this.parseAddressComponents(formattedData);
+      
       // Log comprehensive data for debugging
       console.log('Final formatted property data:', formattedData);
       this.logPropertyDetails(formattedData);
@@ -129,6 +146,87 @@ export class FirecrawlService {
         error: error instanceof Error ? error.message : 'Failed to scrape property data'
       };
     }
+  }
+  
+  // New method to parse address into street and secondary address
+  private static parseAddressComponents(data: PropertyData): void {
+    if (!data.address || !data.address.street) return;
+    
+    const street = data.address.street;
+    
+    // Check for common apartment/suite indicators
+    const aptRegex = /(.+?)(?:\s+)(#\w+|apt\.?\s+\w+|suite\s+\w+|unit\s+\w+)/i;
+    const match = street.match(aptRegex);
+    
+    if (match) {
+      console.log('Found secondary address component in street address:', match[2]);
+      // Split the address into main street and secondary part
+      data.address.street = match[1].trim();
+      // Store the secondary part (will be mapped to address line 2)
+      data.secondaryAddress = match[2].trim();
+    }
+    
+    console.log('Parsed address components:', {
+      street: data.address.street,
+      secondaryAddress: (data as any).secondaryAddress || 'None'
+    });
+  }
+  
+  // New method to extract home attributes from property data
+  private static extractHomeAttributes(rawData: any): string[] {
+    const attributes: string[] = [];
+    
+    // Try to extract from description
+    if (rawData.description) {
+      this.commonAttributes.forEach(attr => {
+        if (rawData.description.toLowerCase().includes(attr.toLowerCase())) {
+          if (!attributes.includes(attr)) {
+            attributes.push(attr);
+          }
+        }
+      });
+    }
+    
+    // Try to extract from facts and features section if available
+    if (rawData.features && Array.isArray(rawData.features)) {
+      rawData.features.forEach((feature: string) => {
+        this.commonAttributes.forEach(attr => {
+          if (feature.toLowerCase().includes(attr.toLowerCase())) {
+            if (!attributes.includes(attr)) {
+              attributes.push(attr);
+            }
+          }
+        });
+      });
+    }
+    
+    // Special case for Zillow's "facts and features" text content
+    if (rawData.factsAndFeatures) {
+      const features = rawData.factsAndFeatures.split(/[,;•]/);
+      features.forEach((feature: string) => {
+        feature = feature.trim();
+        if (feature) {
+          // Check against our common attributes
+          this.commonAttributes.forEach(attr => {
+            if (feature.toLowerCase().includes(attr.toLowerCase())) {
+              if (!attributes.includes(attr)) {
+                attributes.push(attr);
+              }
+            }
+          });
+          
+          // Also add any feature that seems significant
+          if (feature.length > 3 && !attributes.includes(feature) &&
+              !feature.match(/^\d+$/) && // Skip pure numbers
+              !feature.match(/^(sq ft|sqft|square feet|acre|yard|bath|bed)/i)) { // Skip basic measurements
+            attributes.push(feature);
+          }
+        }
+      });
+    }
+    
+    console.log('Extracted home attributes:', attributes);
+    return attributes;
   }
   
   private static normalizeUrl(url: string): string {
@@ -244,6 +342,7 @@ export class FirecrawlService {
     if (data.address) {
       console.log('Address data:', {
         street: data.address.street || 'Not found',
+        secondaryAddress: (data as any).secondaryAddress || 'Not found',
         city: data.address.city || 'Not found',
         state: data.address.state || 'Not found',
         zipCode: data.address.zipCode || 'Not found'
@@ -261,6 +360,13 @@ export class FirecrawlService {
       yearBuilt: data.yearBuilt || 'Not found',
       lotSize: data.lotSize || 'Not found'
     });
+    
+    // Log home attributes
+    if (data.attributes && data.attributes.length > 0) {
+      console.log('Home attributes:', data.attributes);
+    } else {
+      console.log('No home attributes found');
+    }
     
     // Log image data
     if (data.images && data.images.length > 0) {
