@@ -91,7 +91,6 @@ export function EnhancedFileUpload({
   const processFiles = async (files: FileList) => {
     if (!files.length) return;
     
-    setIsUploading(true);
     const newFiles: FileWithPreview[] = [];
     const newFileIds: string[] = [];
     
@@ -119,46 +118,43 @@ export function EnhancedFileUpload({
     const updatedFiles = [...uploadedFiles, ...newFiles];
     setUploadedFiles?.(updatedFiles);
     setUploadQueue(prev => [...prev, ...newFileIds]);
-    setIsUploading(false);
 
-    // Start upload process for new files if not already uploading
+    // Start upload process for new files
     if (!isUploading) {
-      processUploadQueue();
+      processUploadQueue(newFileIds);
     }
   };
 
   // Process the upload queue
-  const processUploadQueue = async () => {
-    if (uploadQueue.length === 0) return;
+  const processUploadQueue = async (newIds: string[] = []) => {
+    const currentQueue = [...uploadQueue, ...newIds];
+    if (currentQueue.length === 0) return;
     
     setIsUploading(true);
-    const currentBatch = uploadQueue.slice(0, maxConcurrentUploads);
-    setUploadQueue(prev => prev.slice(maxConcurrentUploads));
+    const currentBatch = currentQueue.slice(0, maxConcurrentUploads);
+    const remainingQueue = currentQueue.slice(maxConcurrentUploads);
+    setUploadQueue(remainingQueue);
     
     const uploadPromises = currentBatch.map(fileId => {
       const fileToUpload = uploadedFiles.find(f => f.id === fileId);
-      if (fileToUpload) {
+      if (fileToUpload && fileToUpload.status === 'ready') {
         return uploadFile(fileToUpload);
       }
       return Promise.resolve(null);
     });
     
-    const results = await Promise.allSettled(uploadPromises);
-    const successfulUploads = results
-      .filter((result): result is PromiseFulfilledResult<FileWithPreview | null> => 
-        result.status === 'fulfilled' && result.value !== null
-      )
-      .map(result => result.value);
+    await Promise.allSettled(uploadPromises);
     
     // Process next batch if any files are in queue
-    if (uploadQueue.length > 0) {
+    if (remainingQueue.length > 0) {
       processUploadQueue();
     } else {
       setIsUploading(false);
       
-      if (successfulUploads.length > 0) {
-        const validUploads = successfulUploads.filter((item): item is FileWithPreview => item !== null);
-        onUploadComplete?.(validUploads);
+      // Notify of completed uploads
+      const completedFiles = uploadedFiles.filter(file => file.status === 'complete');
+      if (completedFiles.length > 0 && onUploadComplete) {
+        onUploadComplete(completedFiles);
       }
     }
   };
@@ -166,11 +162,13 @@ export function EnhancedFileUpload({
   // Handle file input change
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (files) {
+    if (files && files.length > 0) {
       processFiles(files);
     }
     // Reset the input so the same file can be selected again
-    event.target.value = '';
+    if (event.target) {
+      event.target.value = '';
+    }
   };
 
   // Handle file drop zone
@@ -179,11 +177,11 @@ export function EnhancedFileUpload({
       event.preventDefault();
       setIsDragging(false);
       
-      if (event.dataTransfer.files) {
+      if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
         processFiles(event.dataTransfer.files);
       }
     },
-    [uploadedFiles, setUploadedFiles]
+    [uploadedFiles]
   );
 
   // Upload a file to Supabase storage
@@ -207,14 +205,15 @@ export function EnhancedFileUpload({
       // Set up upload with progress tracking
       const { error: uploadError, data } = await supabase.storage
         .from('property-files')
-        .upload(filePath, fileToUpload.file);
+        .upload(filePath, fileToUpload.file, {
+          cacheControl: '3600'
+        });
 
-      // Update progress separately using the file's progress
+      // Simulate progress since Supabase doesn't provide real-time progress
       let progressInterval: NodeJS.Timeout | null = null;
       let progress = 0;
       
       if (!uploadError) {
-        // Simulate progress since Supabase doesn't provide real-time progress
         progressInterval = setInterval(() => {
           progress += 10;
           if (progress <= 100) {
@@ -310,12 +309,7 @@ export function EnhancedFileUpload({
     
     // Add all ready files to the upload queue
     const fileIds = filesToUpload.map(file => file.id);
-    setUploadQueue(prev => [...prev, ...fileIds]);
-    
-    // Start the upload process
-    if (!isUploading) {
-      processUploadQueue();
-    }
+    processUploadQueue(fileIds);
   };
 
   // Helper function to update file status
