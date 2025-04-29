@@ -70,10 +70,11 @@ export const useFileUpload = (
           variant: "destructive"
         });
       } else {
+        // Change from "warning" to "destructive" as warning is not a valid variant
         toast({
           title: "Upload Partially Complete",
           description: `Uploaded ${successCount} file${successCount !== 1 ? 's' : ''}, ${errorCount} failed.`,
-          variant: "warning"
+          variant: "destructive"
         });
       }
     } catch (error) {
