@@ -85,32 +85,43 @@ export function EnhancedFileUpload({
     });
   };
 
-  const processFiles = async (fileList: FileList) => {
-    const newFiles: FileWithPreview[] = [];
-    const newFileIds: string[] = [];
+const processFiles = async (fileList: FileList) => {
+  console.log(`Processing ${fileList.length} files`);
+  if (!fileList.length) return;
+  
+  const newFiles: FileWithPreview[] = [];
+  const newFileIds: string[] = [];
 
-    for (let i = 0; i < fileList.length; i++) {
-      const file = fileList[i];
-      const previewUrl = await createPreviewUrl(file);
-      const fileId = `${Date.now()}-${i}`;
+  for (let i = 0; i < fileList.length; i++) {
+    const file = fileList[i];
+    const previewUrl = await createPreviewUrl(file);
+    const fileId = `${Date.now()}-${i}`; // Fine to create new ids here
 
-      newFiles.push({
-        id: fileId,
-        file,
-        name: file.name,
-        size: formatFileSize(file.size),
-        type: file.type,
-        progress: 0,
-        tags: [],
-        previewUrl,
-        status: 'ready'
-      });
-      newFileIds.push(fileId);
-    }
+    const newFile: FileWithPreview = {
+      id: fileId,
+      file,
+      name: file.name,
+      size: formatFileSize(file.size),
+      type: file.type,
+      progress: 0,
+      tags: [],
+      previewUrl,
+      status: 'ready'
+    };
 
-    setFiles(prev => [...prev, ...newFiles]);
-    setUploadQueue(prev => [...prev, ...newFileIds]);
-  };
+    newFiles.push(newFile);
+    newFileIds.push(fileId);
+  }
+
+  // ✅ Correctly append new files to uploadedFiles
+  if (setUploadedFiles) {
+    setUploadedFiles(prevFiles => [...prevFiles, ...newFiles]);
+    console.log(`Added ${newFiles.length} files to uploadedFiles state`);
+  }
+
+  // ✅ Queue them for upload
+  setUploadQueue(prevQueue => [...prevQueue, ...newFileIds]);
+};
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files;
