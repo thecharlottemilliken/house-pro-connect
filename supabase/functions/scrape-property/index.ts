@@ -52,7 +52,7 @@ serve(async (req) => {
 
     console.log('Processing property URL:', url);
     
-    // Fetch property data using Firecrawl API with improved image extraction options
+    // Enhanced options for better image extraction from property galleries
     const firecrawlResponse = await fetch('https://api.firecrawl.dev/v0/scrape', {
       method: 'POST',
       headers: {
@@ -62,22 +62,78 @@ serve(async (req) => {
       body: JSON.stringify({
         url: url,
         pageOptions: {
-          onlyMainContent: true,
+          onlyMainContent: false, // Changed to false to capture the whole page
           extractImages: true,
           imageQuality: 'high',
           extractMetadata: true,
           waitForSelectors: [
-            ".media-stream-container", // For Zillow images
-            ".Summary__ImagesWrapper", // For Realtor images
-            ".media-column-container",  // Alternative Zillow image container
-            ".photo-tile", // Additional image container
-            "[data-testid='hdp-hero-photo']", // Zillow hero image
-            "[data-testid='property-image-gallery']", // Realtor gallery
-            ".swiper-slide", // Common carousel slide
-            ".carousel" // Common carousel container
+            // Zillow specific selectors for image galleries
+            "ul.hollywood-vertical-media-wall-container", // Main gallery container
+            "[data-testid='vmw-photo']", // Individual photo elements
+            "picture source[srcset]", // Image sources with srcset
+            "picture img", // Actual image elements
+            
+            // More general gallery selectors for real estate sites
+            ".media-stream-container", 
+            ".Summary__ImagesWrapper",
+            ".media-column-container",
+            ".photo-tile",
+            "[data-testid='hdp-hero-photo']",
+            "[data-testid='property-image-gallery']",
+            ".swiper-slide",
+            ".carousel"
           ],
-          waitUntil: "networkidle"
-        }
+          waitUntil: "networkidle",
+          fullPage: true // Get the full page to ensure we capture hidden galleries
+        },
+        customJS: `
+          // Custom JS to extract high-quality image URLs from Zillow's gallery
+          function extractZillowImages() {
+            const images = [];
+            
+            // Try to extract from picture elements in the gallery
+            const pictureElements = document.querySelectorAll('picture img');
+            pictureElements.forEach(img => {
+              if (img.src && img.src.includes('photos.zillow')) {
+                // Get the highest quality version by removing size limitations
+                let highQualitySrc = img.src;
+                highQualitySrc = highQualitySrc.replace(/-cc_ft_\\d+/g, '');
+                
+                if (!images.includes(highQualitySrc)) {
+                  images.push(highQualitySrc);
+                }
+              }
+            });
+            
+            // Try to get source elements with srcset for highest quality
+            const sourceSets = document.querySelectorAll('picture source[srcset]');
+            sourceSets.forEach(source => {
+              if (source.srcset) {
+                // Get the highest resolution from srcset
+                const srcsetUrls = source.srcset.split(',')
+                  .map(src => src.trim().split(' ')[0])
+                  .filter(src => src.includes('photos.zillow'));
+                
+                // Get the last one which is usually highest resolution
+                if (srcsetUrls.length > 0) {
+                  const highestRes = srcsetUrls[srcsetUrls.length - 1];
+                  // Remove size limitations
+                  const cleanUrl = highestRes.replace(/-cc_ft_\\d+/g, '');
+                  
+                  if (!images.includes(cleanUrl)) {
+                    images.push(cleanUrl);
+                  }
+                }
+              }
+            });
+            
+            return images;
+          }
+          
+          return {
+            zillowGalleryImages: extractZillowImages()
+          };
+        `
       })
     });
 
@@ -96,8 +152,15 @@ serve(async (req) => {
     const crawledData = await firecrawlResponse.json();
     console.log('Firecrawl response received');
     
+    // Extract gallery images from custom JS results
+    let galleryImages = [];
+    if (crawledData.customJSResult && crawledData.customJSResult.zillowGalleryImages) {
+      galleryImages = crawledData.customJSResult.zillowGalleryImages;
+      console.log(`Found ${galleryImages.length} images from Zillow gallery using custom JS:`, galleryImages);
+    }
+    
     // Extract basic property data from crawled content
-    const basicPropertyData = parsePropertyData(crawledData, url);
+    const basicPropertyData = parsePropertyData(crawledData, url, galleryImages);
     
     if (!basicPropertyData) {
       return new Response(JSON.stringify({ 
@@ -111,6 +174,11 @@ serve(async (req) => {
     
     // Send crawled content to OpenAI for enhanced extraction
     const enhancedPropertyData = await enhanceWithOpenAI(crawledData, basicPropertyData, url, openAiApiKey);
+    
+    // Make sure we keep the images from gallery extraction
+    if (basicPropertyData.images && basicPropertyData.images.length > 0) {
+      enhancedPropertyData.images = basicPropertyData.images;
+    }
     
     console.log('Successfully enhanced property data with AI:', enhancedPropertyData);
     
@@ -219,7 +287,7 @@ Format the output as clean JSON only, without any explanations or additional tex
       // Try to parse the JSON response
       const parsedJson = JSON.parse(jsonContent);
       
-      // Merge AI-extracted data with the images from basic extraction
+      // Preserve the images from basic extraction
       const mergedData = {
         ...parsedJson,
         images: basicPropertyData.images
@@ -241,15 +309,15 @@ Format the output as clean JSON only, without any explanations or additional tex
 }
 
 // Parse property data from crawled content (basic extraction)
-function parsePropertyData(crawledData: any, originalUrl: string) {
+function parsePropertyData(crawledData: any, originalUrl: string, galleryImages: string[] = []) {
   try {
     // Check if the URL is from a known real estate site
     if (originalUrl.includes('zillow.com')) {
-      return extractZillowData(crawledData, originalUrl);
+      return extractZillowData(crawledData, originalUrl, galleryImages);
     } else if (originalUrl.includes('realtor.com')) {
-      return extractRealtorData(crawledData, originalUrl);
+      return extractRealtorData(crawledData, originalUrl, galleryImages);
     } else {
-      return extractGenericData(crawledData, originalUrl);
+      return extractGenericData(crawledData, originalUrl, galleryImages);
     }
   } catch (error) {
     console.error('Error parsing property data:', error);
@@ -257,13 +325,23 @@ function parsePropertyData(crawledData: any, originalUrl: string) {
   }
 }
 
-function extractZillowData(crawledData: any, originalUrl: string) {
+function extractZillowData(crawledData: any, originalUrl: string, galleryImages: string[] = []) {
   console.log('Extracting data from Zillow URL');
   
   // Extract images from crawled content
   const images: string[] = [];
   
-  // Try to extract images from the response
+  // First, use any gallery images obtained from custom JS
+  if (galleryImages && galleryImages.length > 0) {
+    console.log(`Using ${galleryImages.length} images from gallery extraction`);
+    galleryImages.forEach(img => {
+      if (!images.includes(img)) {
+        images.push(img);
+      }
+    });
+  }
+  
+  // Then try to extract images from the crawled data
   if (crawledData.images && crawledData.images.length > 0) {
     console.log(`Found ${crawledData.images.length} images in the scraped data`);
     
@@ -272,8 +350,9 @@ function extractZillowData(crawledData: any, originalUrl: string) {
       img.src && img.src.startsWith('http') &&
       (img.width > 500 && img.height > 500) &&
       (
-        img.src.includes('images.zillow.com') || 
+        img.src.includes('photos.zillow') || 
         img.src.includes('photos.zillowstatic.com') ||
+        img.src.includes('zillowstatic.com') ||
         img.src.includes('/hdp-') ||
         img.src.includes('pictures.zillow.com')
       )
@@ -282,7 +361,16 @@ function extractZillowData(crawledData: any, originalUrl: string) {
     if (propertyImages.length > 0) {
       console.log(`Found ${propertyImages.length} high-quality Zillow property images`);
       propertyImages.forEach((img: any) => {
-        images.push(img.src);
+        // Clean up the URL to get the highest quality version
+        let imgUrl = img.src;
+        
+        // Remove any size limitations in the URL
+        imgUrl = imgUrl.replace(/-cc_ft_\d+/g, '');
+        
+        if (!images.includes(imgUrl)) {
+          console.log(`Adding image from crawled data: ${imgUrl}`);
+          images.push(imgUrl);
+        }
       });
     } else {
       // Fallback to any reasonably sized images
@@ -290,8 +378,14 @@ function extractZillowData(crawledData: any, originalUrl: string) {
         if (img.src && img.src.startsWith('http')) {
           // Filter out small icons and logos, focus on property images
           if (img.width > 300 && img.height > 300) {
-            console.log(`Adding image: ${img.src} (${img.width}x${img.height})`);
-            images.push(img.src);
+            // Clean up the URL to get the highest quality version
+            let imgUrl = img.src;
+            imgUrl = imgUrl.replace(/-cc_ft_\d+/g, '');
+            
+            if (!images.includes(imgUrl)) {
+              console.log(`Adding fallback image: ${imgUrl} (${img.width}x${img.height})`);
+              images.push(imgUrl);
+            }
           }
         }
       });
@@ -307,13 +401,25 @@ function extractZillowData(crawledData: any, originalUrl: string) {
         if (item.image && Array.isArray(item.image)) {
           item.image.forEach((imgUrl: string) => {
             if (imgUrl && typeof imgUrl === 'string' && imgUrl.startsWith('http')) {
-              console.log(`Adding image from JSON-LD: ${imgUrl}`);
-              images.push(imgUrl);
+              // Clean up the URL to get the highest quality version
+              let cleanUrl = imgUrl;
+              cleanUrl = cleanUrl.replace(/-cc_ft_\d+/g, '');
+              
+              if (!images.includes(cleanUrl)) {
+                console.log(`Adding image from JSON-LD: ${cleanUrl}`);
+                images.push(cleanUrl);
+              }
             }
           });
         } else if (item.image && typeof item.image === 'string') {
-          console.log(`Adding image from JSON-LD: ${item.image}`);
-          images.push(item.image);
+          // Clean up the URL to get the highest quality version
+          let cleanUrl = item.image;
+          cleanUrl = cleanUrl.replace(/-cc_ft_\d+/g, '');
+          
+          if (!images.includes(cleanUrl)) {
+            console.log(`Adding image from JSON-LD: ${cleanUrl}`);
+            images.push(cleanUrl);
+          }
         }
       }
     });
@@ -323,8 +429,14 @@ function extractZillowData(crawledData: any, originalUrl: string) {
   if (crawledData.metadata && crawledData.metadata['og:image']) {
     const ogImage = crawledData.metadata['og:image'];
     if (ogImage && ogImage.startsWith('http')) {
-      console.log(`Adding Open Graph image: ${ogImage}`);
-      images.push(ogImage);
+      // Clean up the URL to get the highest quality version
+      let cleanUrl = ogImage;
+      cleanUrl = cleanUrl.replace(/-cc_ft_\d+/g, '');
+      
+      if (!images.includes(cleanUrl)) {
+        console.log(`Adding Open Graph image: ${cleanUrl}`);
+        images.push(cleanUrl);
+      }
     }
   }
   
@@ -448,11 +560,21 @@ function extractZillowData(crawledData: any, originalUrl: string) {
   };
 }
 
-function extractRealtorData(crawledData: any, originalUrl: string) {
+function extractRealtorData(crawledData: any, originalUrl: string, galleryImages: string[] = []) {
   console.log('Extracting data from Realtor.com URL');
   
   // Extract images from crawled content
   const images: string[] = [];
+  
+  // First, use any gallery images obtained from custom JS
+  if (galleryImages && galleryImages.length > 0) {
+    console.log(`Using ${galleryImages.length} images from gallery extraction`);
+    galleryImages.forEach(img => {
+      if (!images.includes(img)) {
+        images.push(img);
+      }
+    });
+  }
   
   // Try to extract images from the response
   if (crawledData.images && crawledData.images.length > 0) {
@@ -473,7 +595,10 @@ function extractRealtorData(crawledData: any, originalUrl: string) {
     if (propertyImages.length > 0) {
       console.log(`Found ${propertyImages.length} high-quality Realtor property images`);
       propertyImages.forEach((img: any) => {
-        images.push(img.src);
+        if (!images.includes(img.src)) {
+          console.log(`Adding image from crawled data: ${img.src}`);
+          images.push(img.src);
+        }
       });
     } else {
       // Fallback to any reasonably sized images
@@ -481,8 +606,10 @@ function extractRealtorData(crawledData: any, originalUrl: string) {
         if (img.src && img.src.startsWith('http')) {
           // Filter for larger, likely property images
           if (img.width > 300 && img.height > 300) {
-            console.log(`Adding image: ${img.src} (${img.width}x${img.height})`);
-            images.push(img.src);
+            if (!images.includes(img.src)) {
+              console.log(`Adding image: ${img.src} (${img.width}x${img.height})`);
+              images.push(img.src);
+            }
           }
         }
       });
@@ -498,13 +625,17 @@ function extractRealtorData(crawledData: any, originalUrl: string) {
         if (item.image && Array.isArray(item.image)) {
           item.image.forEach((imgUrl: string) => {
             if (imgUrl && typeof imgUrl === 'string' && imgUrl.startsWith('http')) {
-              console.log(`Adding image from JSON-LD: ${imgUrl}`);
-              images.push(imgUrl);
+              if (!images.includes(imgUrl)) {
+                console.log(`Adding image from JSON-LD: ${imgUrl}`);
+                images.push(imgUrl);
+              }
             }
           });
         } else if (item.image && typeof item.image === 'string') {
-          console.log(`Adding image from JSON-LD: ${item.image}`);
-          images.push(item.image);
+          if (!images.includes(item.image)) {
+            console.log(`Adding image from JSON-LD: ${item.image}`);
+            images.push(item.image);
+          }
         }
       }
     });
@@ -513,16 +644,13 @@ function extractRealtorData(crawledData: any, originalUrl: string) {
   // Check for gallery images in meta tags
   if (crawledData.metadata && crawledData.metadata['og:image']) {
     const ogImage = crawledData.metadata['og:image'];
-    if (ogImage && ogImage.startsWith('http')) {
+    if (ogImage && ogImage.startsWith('http') && !images.includes(ogImage)) {
       console.log(`Adding Open Graph image: ${ogImage}`);
       images.push(ogImage);
     }
   }
   
   console.log(`Extracted ${images.length} property images from Realtor.com`);
-  
-  // Extract address and property details following the same pattern as before
-  // ... keep existing code (address extraction logic, bedrooms, bathrooms, etc.)
   
   // Try to extract address from content
   let street, city, state, zipCode;
@@ -643,11 +771,23 @@ function extractRealtorData(crawledData: any, originalUrl: string) {
   };
 }
 
-function extractGenericData(crawledData: any, originalUrl: string) {
+function extractGenericData(crawledData: any, originalUrl: string, galleryImages: string[] = []) {
   console.log('Extracting data using generic method');
   
-  // Try to extract images from the response
+  // Extract images from crawled content
   const images: string[] = [];
+  
+  // First, use any gallery images obtained from custom JS
+  if (galleryImages && galleryImages.length > 0) {
+    console.log(`Using ${galleryImages.length} images from gallery extraction`);
+    galleryImages.forEach(img => {
+      if (!images.includes(img)) {
+        images.push(img);
+      }
+    });
+  }
+  
+  // Try to extract images from the response
   if (crawledData.images && crawledData.images.length > 0) {
     console.log(`Found ${crawledData.images.length} images in the scraped data`);
     
@@ -660,15 +800,18 @@ function extractGenericData(crawledData: any, originalUrl: string) {
     if (propertyImages.length > 0) {
       console.log(`Found ${propertyImages.length} potential property images`);
       propertyImages.forEach((img: any) => {
-        console.log(`Adding image: ${img.src} (${img.width}x${img.height})`);
-        images.push(img.src);
+        if (!images.includes(img.src)) {
+          console.log(`Adding image: ${img.src} (${img.width}x${img.height})`);
+          images.push(img.src);
+        }
       });
     } else {
       // Fallback to any reasonably sized images
       crawledData.images.forEach((img: any) => {
         // Only include reasonably sized images (skip icons, etc.)
         if (img.src && img.src.startsWith('http') && 
-            img.width > 200 && img.height > 200) {
+            img.width > 200 && img.height > 200 && 
+            !images.includes(img.src)) {
           console.log(`Adding image: ${img.src} (${img.width}x${img.height})`);
           images.push(img.src);
         }
