@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "./button";
 import { Input } from "./input";
 import { Progress } from "./progress";
@@ -38,6 +38,7 @@ interface EnhancedFileUploadProps {
   allowUrlUpload?: boolean;
   roomOptions?: RoomTagOption[];
   maxConcurrentUploads?: number;
+  autoUpload?: boolean;
 }
 
 export function EnhancedFileUpload({
@@ -50,7 +51,8 @@ export function EnhancedFileUpload({
   setUploadedFiles,
   allowUrlUpload = false,
   roomOptions = [],
-  maxConcurrentUploads = 3
+  maxConcurrentUploads = 3,
+  autoUpload = false
 }: EnhancedFileUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -117,11 +119,12 @@ export function EnhancedFileUpload({
     
     const updatedFiles = [...uploadedFiles, ...newFiles];
     setUploadedFiles?.(updatedFiles);
-    setUploadQueue(prev => [...prev, ...newFileIds]);
-
-    // Start upload process for new files
-    if (!isUploading) {
+    
+    // If autoUpload is enabled, immediately process the upload queue
+    if (autoUpload) {
       processUploadQueue(newFileIds);
+    } else {
+      setUploadQueue(prev => [...prev, ...newFileIds]);
     }
   };
 
@@ -135,14 +138,21 @@ export function EnhancedFileUpload({
     const remainingQueue = currentQueue.slice(maxConcurrentUploads);
     setUploadQueue(remainingQueue);
     
-    const uploadPromises = currentBatch.map(fileId => {
-      const fileToUpload = uploadedFiles.find(f => f.id === fileId);
-      if (fileToUpload && fileToUpload.status === 'ready') {
-        return uploadFile(fileToUpload);
-      }
-      return Promise.resolve(null);
-    });
+    const filesToUpload = currentBatch.map(fileId => 
+      uploadedFiles.find(f => f.id === fileId && f.status === 'ready')
+    ).filter(Boolean) as FileWithPreview[];
     
+    if (filesToUpload.length === 0) {
+      // No files to upload in this batch, check if there are any more in the queue
+      if (remainingQueue.length > 0) {
+        processUploadQueue();
+      } else {
+        setIsUploading(false);
+      }
+      return;
+    }
+    
+    const uploadPromises = filesToUpload.map(fileToUpload => uploadFile(fileToUpload));
     await Promise.allSettled(uploadPromises);
     
     // Process next batch if any files are in queue
@@ -158,6 +168,13 @@ export function EnhancedFileUpload({
       }
     }
   };
+
+  // Start upload queue processing when files are added and autoUpload is true
+  useEffect(() => {
+    if (autoUpload && uploadQueue.length > 0 && !isUploading) {
+      processUploadQueue();
+    }
+  }, [uploadQueue, autoUpload]);
 
   // Handle file input change
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -476,7 +493,7 @@ export function EnhancedFileUpload({
               {uploadedFiles.length} File{uploadedFiles.length !== 1 ? 's' : ''} 
               {isUploading && <span className="text-sm text-gray-500 ml-2">(Uploading...)</span>}
             </h3>
-            {uploadedFiles.some(f => f.status === 'ready') && (
+            {!autoUpload && uploadedFiles.some(f => f.status === 'ready') && (
               <Button 
                 onClick={uploadAllReadyFiles}
                 disabled={isUploading}
