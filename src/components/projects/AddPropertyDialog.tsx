@@ -143,14 +143,15 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
                   <label htmlFor="addressLine1" className="block text-sm font-medium text-gray-700 mb-1">
                     Address
                   </label>
-                  <Input 
-                    id="addressLine1" 
-                    placeholder="Street address" 
-                    value={addressLine1} 
-                    onChange={(e) => setAddressLine1(e.target.value)}
-                    className="mb-2" 
-                  />
-                  <AddressAutocomplete onAddressSelect={handleAddressSelect} />
+                  <div className="relative">
+                    <Input 
+                      id="addressLine1" 
+                      placeholder="Street address" 
+                      value={addressLine1} 
+                      onChange={(e) => setAddressLine1(e.target.value)} 
+                    />
+                    <AddressAutocomplete onAddressSelect={handleAddressSelect} />
+                  </div>
                 </div>
                 
                 <div>
