@@ -156,19 +156,36 @@ export function EnhancedFileUpload({
       const fileExt = fileToUpload.name.split('.').pop();
       const filePath = `${Math.random()}-${Date.now()}.${fileExt}`;
       
+      // Set up upload with progress tracking
       const { error: uploadError, data } = await supabase.storage
         .from('property-files')
-        .upload(filePath, fileToUpload.file, {
-          // Custom upload progress handling
-          onUpload: (progress) => {
-            const progressPercent = Math.round((progress.loaded / progress.total) * 100);
-            updateFileProgress(fileToUpload.id, progressPercent);
-          },
-        });
+        .upload(filePath, fileToUpload.file);
+
+      // Update progress separately using the file's progress
+      let progressInterval: NodeJS.Timeout | null = null;
+      let progress = 0;
+      
+      if (!uploadError) {
+        // Simulate progress since Supabase doesn't provide real-time progress
+        progressInterval = setInterval(() => {
+          progress += 10;
+          if (progress <= 100) {
+            updateFileProgress(fileToUpload.id, progress);
+          } else {
+            if (progressInterval) clearInterval(progressInterval);
+          }
+        }, 200);
+      }
 
       if (uploadError) throw uploadError;
 
       if (data) {
+        // Clear the interval if it exists
+        if (progressInterval) clearInterval(progressInterval);
+        
+        // Set progress to 100% when complete
+        updateFileProgress(fileToUpload.id, 100);
+        
         const { data: { publicUrl } } = supabase.storage
           .from('property-files')
           .getPublicUrl(filePath);
