@@ -60,6 +60,7 @@ export function EnhancedFileUpload({
   const [isAddingTag, setIsAddingTag] = useState<string | null>(null);
   const [newTag, setNewTag] = useState("");
   const [uploadQueue, setUploadQueue] = useState<string[]>([]);
+  const [activeUploads, setActiveUploads] = useState(0);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const tagInputRef = useRef<HTMLInputElement>(null);
@@ -124,81 +125,96 @@ export function EnhancedFileUpload({
     
     // If autoUpload is enabled, immediately process the upload queue
     if (autoUpload) {
-      console.log(`Auto-upload enabled, processing upload queue with ${newFileIds.length} files`);
+      console.log(`Auto-upload enabled, adding ${newFileIds.length} files to upload queue`);
       setUploadQueue(prevQueue => [...prevQueue, ...newFileIds]);
     } else {
       setUploadQueue(prevQueue => [...prevQueue, ...newFileIds]);
     }
   };
 
-  // Process the upload queue
+  // Process the upload queue - completely rewritten for parallel uploads
   const processUploadQueue = useCallback(async () => {
-    if (uploadQueue.length === 0 || isUploading) return;
-    console.log(`Processing upload queue with ${uploadQueue.length} files`);
+    if (uploadQueue.length === 0) return;
     
-    setIsUploading(true);
+    console.log(`Processing upload queue with ${uploadQueue.length} files, currently active: ${activeUploads}`);
+    
+    // Determine how many new uploads we can start (based on max concurrent limit)
+    const availableSlots = maxConcurrentUploads - activeUploads;
+    if (availableSlots <= 0) {
+      console.log('Maximum concurrent uploads reached, waiting for slots to free up');
+      return;
+    }
     
     // Get the files to upload in this batch
-    const currentBatch = uploadQueue.slice(0, maxConcurrentUploads);
-    const remainingQueue = uploadQueue.slice(maxConcurrentUploads);
+    const currentBatchIds = uploadQueue.slice(0, availableSlots);
+    const remainingQueueIds = uploadQueue.slice(availableSlots);
     
-    console.log(`Current batch: ${currentBatch.length} files, Remaining: ${remainingQueue.length} files`);
-    setUploadQueue(remainingQueue);
+    console.log(`Starting batch: ${currentBatchIds.length} files, Remaining in queue: ${remainingQueueIds.length} files`);
+    
+    // Update the queue to remove the files we're about to process
+    setUploadQueue(remainingQueueIds);
     
     // Find the actual file objects for the IDs in the current batch
     const filesToUpload = uploadedFiles.filter(f => 
-      currentBatch.includes(f.id) && f.status === 'ready'
+      currentBatchIds.includes(f.id) && f.status === 'ready'
     );
     
     console.log(`Found ${filesToUpload.length} files to upload in this batch`);
     
     if (filesToUpload.length === 0) {
-      // No files to upload in this batch
-      setIsUploading(false);
-      
-      // If there are more files in the queue, process them
-      if (remainingQueue.length > 0) {
-        setTimeout(() => processUploadQueue(), 100);
-      } else {
-        // All uploads completed
-        const completedFiles = uploadedFiles.filter(file => file.status === 'complete');
-        console.log(`All uploads complete. ${completedFiles.length} files uploaded.`);
-        if (completedFiles.length > 0 && onUploadComplete) {
-          onUploadComplete(completedFiles);
-        }
-      }
+      console.log('No valid files to upload in this batch');
       return;
     }
     
-    // Upload files in parallel
-    try {
-      const uploadPromises = filesToUpload.map(fileToUpload => uploadFile(fileToUpload));
-      await Promise.allSettled(uploadPromises);
-      console.log(`Completed batch upload of ${filesToUpload.length} files`);
-    } catch (error) {
-      console.error('Error during batch upload:', error);
-    }
+    // Increment active upload counter
+    setActiveUploads(prev => prev + filesToUpload.length);
+    setIsUploading(true);
     
-    setIsUploading(false);
-    
-    // Process next batch if any files are in queue
-    if (remainingQueue.length > 0) {
-      setTimeout(() => processUploadQueue(), 100);
-    } else {
-      // All uploads completed
-      const completedFiles = uploadedFiles.filter(file => file.status === 'complete');
-      if (completedFiles.length > 0 && onUploadComplete) {
-        onUploadComplete(completedFiles);
+    // Start uploads in parallel
+    filesToUpload.forEach(async (fileToUpload) => {
+      try {
+        console.log(`Starting upload of file: ${fileToUpload.name}`);
+        await uploadFile(fileToUpload);
+      } catch (error) {
+        console.error(`Error uploading ${fileToUpload.name}:`, error);
+      } finally {
+        // Decrement active upload counter when an upload completes (success or failure)
+        setActiveUploads(prev => {
+          const newCount = prev - 1;
+          console.log(`Upload finished, active uploads decreased to ${newCount}`);
+          
+          // If this was the last active upload, check if we're completely done
+          if (newCount <= 0 && remainingQueueIds.length === 0) {
+            setIsUploading(false);
+            
+            // Call onUploadComplete with all completed files
+            const completedFiles = uploadedFiles.filter(file => file.status === 'complete');
+            if (completedFiles.length > 0 && onUploadComplete) {
+              console.log(`All uploads complete. ${completedFiles.length} files uploaded.`);
+              onUploadComplete(completedFiles);
+            }
+          }
+          return newCount;
+        });
       }
-    }
-  }, [uploadQueue, uploadedFiles, isUploading, maxConcurrentUploads, onUploadComplete]);
+    });
+  }, [uploadQueue, uploadedFiles, activeUploads, maxConcurrentUploads, onUploadComplete]);
 
-  // Start upload queue processing when files are added and autoUpload is true
+  // Watch for queue changes and process them
   useEffect(() => {
-    if (autoUpload && uploadQueue.length > 0 && !isUploading) {
+    if (uploadQueue.length > 0) {
+      console.log(`Queue changed, now contains ${uploadQueue.length} files`);
       processUploadQueue();
     }
-  }, [uploadQueue, autoUpload, isUploading, processUploadQueue]);
+  }, [uploadQueue, processUploadQueue]);
+
+  // Watch for active uploads changes
+  useEffect(() => {
+    if (activeUploads < maxConcurrentUploads && uploadQueue.length > 0) {
+      console.log(`Active uploads (${activeUploads}) below max (${maxConcurrentUploads}), processing queue`);
+      processUploadQueue();
+    }
+  }, [activeUploads, maxConcurrentUploads, uploadQueue, processUploadQueue]);
 
   // Handle file input change
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -225,12 +241,13 @@ export function EnhancedFileUpload({
         processFiles(event.dataTransfer.files);
       }
     },
-    [uploadedFiles]
+    []
   );
 
   // Upload a file to Supabase storage
   const uploadFile = async (fileToUpload: FileWithPreview) => {
     if (!fileToUpload.file) {
+      console.error("Upload failed: file not found");
       toast({
         title: "Upload failed",
         description: "File not found.",
@@ -241,7 +258,7 @@ export function EnhancedFileUpload({
     
     // Update file status
     updateFileStatus(fileToUpload.id, 'uploading');
-    console.log(`Uploading file: ${fileToUpload.name}`);
+    console.log(`Starting upload for file: ${fileToUpload.name}`);
     
     try {
       const fileExt = fileToUpload.name.split('.').pop();
@@ -287,7 +304,7 @@ export function EnhancedFileUpload({
         
         // Update file with URL
         const updatedFile = updateFileUrl(fileToUpload.id, publicUrl);
-        console.log(`Upload complete for ${fileToUpload.name}`);
+        console.log(`Upload complete for ${fileToUpload.name} - URL: ${publicUrl}`);
         return updatedFile;
       }
     } catch (error) {
@@ -364,28 +381,43 @@ export function EnhancedFileUpload({
 
   // Helper function to update file status
   const updateFileStatus = (fileId: string, status: FileWithPreview['status']) => {
-    const updatedFiles = uploadedFiles.map(file => 
-      file.id === fileId ? { ...file, status } : file
+    setUploadedFiles?.(prevFiles => 
+      prevFiles.map(file => 
+        file.id === fileId ? { ...file, status } : file
+      )
     );
-    setUploadedFiles?.(updatedFiles);
-    return updatedFiles.find(f => f.id === fileId);
+    
+    const updatedFile = uploadedFiles.find(f => f.id === fileId);
+    console.log(`File ${fileId} (${updatedFile?.name}) status updated to: ${status}`);
+    return updatedFile;
   };
 
   // Helper function to update file progress
   const updateFileProgress = (fileId: string, progress: number) => {
-    const updatedFiles = uploadedFiles.map(file => 
-      file.id === fileId ? { ...file, progress } : file
+    setUploadedFiles?.(prevFiles => 
+      prevFiles.map(file => 
+        file.id === fileId ? { ...file, progress } : file
+      )
     );
-    setUploadedFiles?.(updatedFiles);
   };
 
   // Helper function to update file URL
   const updateFileUrl = (fileId: string, url: string) => {
-    const updatedFiles = uploadedFiles.map(file => 
-      file.id === fileId ? { ...file, url, status: 'complete' as const } : file
-    );
-    setUploadedFiles?.(updatedFiles);
-    return updatedFiles.find(f => f.id === fileId);
+    let updatedFile: FileWithPreview | undefined;
+    
+    setUploadedFiles?.(prevFiles => {
+      const newFiles = prevFiles.map(file => {
+        if (file.id === fileId) {
+          const updated = { ...file, url, status: 'complete' as const };
+          updatedFile = updated;
+          return updated;
+        }
+        return file;
+      });
+      return newFiles;
+    });
+    
+    return updatedFile;
   };
 
   // Remove a file from the list
@@ -396,10 +428,11 @@ export function EnhancedFileUpload({
     if (fileToRemove?.status === 'uploading') {
       // Remove from upload queue if still pending
       setUploadQueue(prev => prev.filter(id => id !== fileId));
+      // Decrease active uploads count
+      setActiveUploads(prev => Math.max(0, prev - 1));
     }
     
-    const updatedFiles = uploadedFiles.filter(file => file.id !== fileId);
-    setUploadedFiles?.(updatedFiles);
+    setUploadedFiles?.(prevFiles => prevFiles.filter(file => file.id !== fileId));
     
     toast({
       title: "File removed",
@@ -414,44 +447,45 @@ export function EnhancedFileUpload({
       return;
     }
     
-    const updatedFiles = uploadedFiles.map(file => {
-      if (file.id === fileId) {
-        const updatedTags = file.tags.includes(newTag) ? file.tags : [...file.tags, newTag];
-        return { ...file, tags: updatedTags };
-      }
-      return file;
-    });
+    setUploadedFiles?.(prevFiles => 
+      prevFiles.map(file => {
+        if (file.id === fileId) {
+          const updatedTags = file.tags.includes(newTag) ? file.tags : [...file.tags, newTag];
+          return { ...file, tags: updatedTags };
+        }
+        return file;
+      })
+    );
     
-    setUploadedFiles?.(updatedFiles);
     setNewTag("");
     setIsAddingTag(null);
   };
 
   // Remove a tag from a file
   const removeTag = (fileId: string, tag: string) => {
-    const updatedFiles = uploadedFiles.map(file => {
-      if (file.id === fileId) {
-        return { ...file, tags: file.tags.filter(t => t !== tag) };
-      }
-      return file;
-    });
-    
-    setUploadedFiles?.(updatedFiles);
+    setUploadedFiles?.(prevFiles => 
+      prevFiles.map(file => {
+        if (file.id === fileId) {
+          return { ...file, tags: file.tags.filter(t => t !== tag) };
+        }
+        return file;
+      })
+    );
   };
 
   // Add a room tag to a file
   const addRoomTag = (fileId: string, room: string) => {
-    const updatedFiles = uploadedFiles.map(file => {
-      if (file.id === fileId) {
-        // Replace any existing room tags (from roomOptions) with the new one
-        const existingRoomTags = roomOptions.map(opt => opt.value);
-        const nonRoomTags = file.tags.filter(tag => !existingRoomTags.includes(tag));
-        return { ...file, tags: [...nonRoomTags, room] };
-      }
-      return file;
-    });
-    
-    setUploadedFiles?.(updatedFiles);
+    setUploadedFiles?.(prevFiles => 
+      prevFiles.map(file => {
+        if (file.id === fileId) {
+          // Replace any existing room tags (from roomOptions) with the new one
+          const existingRoomTags = roomOptions.map(opt => opt.value);
+          const nonRoomTags = file.tags.filter(tag => !existingRoomTags.includes(tag));
+          return { ...file, tags: [...nonRoomTags, room] };
+        }
+        return file;
+      })
+    );
   };
 
   // Check if a file has room tag
@@ -461,12 +495,16 @@ export function EnhancedFileUpload({
     return roomTag || null;
   };
 
-  // Manually trigger the upload queue processing
-  useEffect(() => {
-    if (!isUploading && uploadQueue.length > 0) {
-      processUploadQueue();
-    }
-  }, [uploadQueue, isUploading, processUploadQueue]);
+  // Return upload summary stats
+  const getUploadStats = () => {
+    const total = uploadedFiles.length;
+    const completed = uploadedFiles.filter(f => f.status === 'complete').length;
+    const uploading = uploadedFiles.filter(f => f.status === 'uploading').length;
+    const ready = uploadedFiles.filter(f => f.status === 'ready').length;
+    const error = uploadedFiles.filter(f => f.status === 'error').length;
+    
+    return { total, completed, uploading, ready, error };
+  };
 
   return (
     <div className="space-y-4">
@@ -531,7 +569,11 @@ export function EnhancedFileUpload({
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold">
               {uploadedFiles.length} File{uploadedFiles.length !== 1 ? 's' : ''} 
-              {isUploading && <span className="text-sm text-gray-500 ml-2">(Uploading...)</span>}
+              {isUploading && (
+                <span className="text-sm text-gray-500 ml-2">
+                  ({activeUploads} uploading, {uploadQueue.length} in queue)
+                </span>
+              )}
             </h3>
             {!autoUpload && uploadedFiles.some(f => f.status === 'ready') && (
               <Button 
