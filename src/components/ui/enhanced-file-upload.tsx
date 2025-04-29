@@ -103,6 +103,8 @@ export function EnhancedFileUpload({
       const previewUrl = await createPreviewUrl(file);
       const fileId = `${Date.now()}-${i}`;
       
+      console.log(`Creating file object for ${file.name} with id ${fileId}`);
+      
       const newFile: FileWithPreview = {
         id: fileId,
         file,
@@ -119,13 +121,14 @@ export function EnhancedFileUpload({
       newFileIds.push(fileId);
     }
     
+    console.log(`Created ${newFiles.length} file objects with IDs:`, newFileIds);
+    
     // Update uploadedFiles state with new files
     if (setUploadedFiles) {
       setUploadedFiles(prevFiles => [...prevFiles, ...newFiles]);
+      console.log(`Added ${newFiles.length} files to uploadedFiles state`);
     }
-    console.log(`Added ${newFiles.length} files to upload queue`);
     
-    // If autoUpload is enabled, immediately add ALL files to upload queue
     if (autoUpload) {
       console.log(`Auto-upload enabled, adding ${newFileIds.length} files to upload queue`);
       setUploadQueue(prevQueue => [...prevQueue, ...newFileIds]);
@@ -152,6 +155,7 @@ export function EnhancedFileUpload({
     
     // Start uploads for all files in the batch
     filesToUpload.forEach(async (fileId) => {
+      console.log(`Looking for file with ID: ${fileId} to upload`);
       const fileToUpload = uploadedFiles.find(f => f.id === fileId && f.status === 'ready');
       
       if (!fileToUpload) {
@@ -193,6 +197,8 @@ export function EnhancedFileUpload({
 
   // Effect to check if all uploads are complete
   useEffect(() => {
+    console.log(`Upload status check: activeUploads=${activeUploads}, queueLength=${uploadQueue.length}, isUploading=${isUploading}`);
+    
     if (activeUploads === 0 && uploadQueue.length === 0 && isUploading) {
       console.log("All uploads complete");
       setIsUploading(false);
@@ -474,17 +480,6 @@ export function EnhancedFileUpload({
     const roomValues = roomOptions.map(opt => opt.value);
     const roomTag = file.tags.find(tag => roomValues.includes(tag));
     return roomTag || null;
-  };
-
-  // Return upload summary stats
-  const getUploadStats = () => {
-    const total = uploadedFiles.length;
-    const completed = uploadedFiles.filter(f => f.status === 'complete').length;
-    const uploading = uploadedFiles.filter(f => f.status === 'uploading').length;
-    const ready = uploadedFiles.filter(f => f.status === 'ready').length;
-    const error = uploadedFiles.filter(f => f.status === 'error').length;
-    
-    return { total, completed, uploading, ready, error };
   };
 
   return (
