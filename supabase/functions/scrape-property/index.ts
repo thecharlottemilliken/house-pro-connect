@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
@@ -53,7 +52,7 @@ serve(async (req) => {
 
     console.log('Processing property URL:', url);
     
-    // Fetch property data using Firecrawl API
+    // Fetch property data using Firecrawl API with improved image extraction options
     const firecrawlResponse = await fetch('https://api.firecrawl.dev/v0/scrape', {
       method: 'POST',
       headers: {
@@ -65,13 +64,19 @@ serve(async (req) => {
         pageOptions: {
           onlyMainContent: true,
           extractImages: true,
+          imageQuality: 'high',
           extractMetadata: true,
           waitForSelectors: [
             ".media-stream-container", // For Zillow images
             ".Summary__ImagesWrapper", // For Realtor images
             ".media-column-container",  // Alternative Zillow image container
-            ".photo-tile" // Additional image container
-          ]
+            ".photo-tile", // Additional image container
+            "[data-testid='hdp-hero-photo']", // Zillow hero image
+            "[data-testid='property-image-gallery']", // Realtor gallery
+            ".swiper-slide", // Common carousel slide
+            ".carousel" // Common carousel container
+          ],
+          waitUntil: "networkidle"
         }
       })
     });
@@ -262,17 +267,65 @@ function extractZillowData(crawledData: any, originalUrl: string) {
   if (crawledData.images && crawledData.images.length > 0) {
     console.log(`Found ${crawledData.images.length} images in the scraped data`);
     
-    crawledData.images.forEach((img: any) => {
-      if (img.src && img.src.startsWith('http')) {
-        // Filter out small icons and logos, focus on property images
-        if ((img.width > 200 && img.height > 200) && 
-            (img.src.includes('images-') || img.src.includes('photos') || 
-             img.src.includes('pictures') || img.src.includes('zillow'))) {
-          console.log(`Adding image: ${img.src} (${img.width}x${img.height})`);
-          images.push(img.src);
+    // First look for highest quality Zillow property images
+    const propertyImages = crawledData.images.filter((img: any) => 
+      img.src && img.src.startsWith('http') &&
+      (img.width > 500 && img.height > 500) &&
+      (
+        img.src.includes('images.zillow.com') || 
+        img.src.includes('photos.zillowstatic.com') ||
+        img.src.includes('/hdp-') ||
+        img.src.includes('pictures.zillow.com')
+      )
+    );
+    
+    if (propertyImages.length > 0) {
+      console.log(`Found ${propertyImages.length} high-quality Zillow property images`);
+      propertyImages.forEach((img: any) => {
+        images.push(img.src);
+      });
+    } else {
+      // Fallback to any reasonably sized images
+      crawledData.images.forEach((img: any) => {
+        if (img.src && img.src.startsWith('http')) {
+          // Filter out small icons and logos, focus on property images
+          if (img.width > 300 && img.height > 300) {
+            console.log(`Adding image: ${img.src} (${img.width}x${img.height})`);
+            images.push(img.src);
+          }
+        }
+      });
+    }
+  }
+
+  // Special handling for Zillow JSONLD data which often contains image data
+  if (crawledData.jsonLd && Array.isArray(crawledData.jsonLd)) {
+    crawledData.jsonLd.forEach((item: any) => {
+      if (item['@type'] === 'SingleFamilyResidence' || 
+          item['@type'] === 'Product' || 
+          item['@type'] === 'PropertyListing') {
+        if (item.image && Array.isArray(item.image)) {
+          item.image.forEach((imgUrl: string) => {
+            if (imgUrl && typeof imgUrl === 'string' && imgUrl.startsWith('http')) {
+              console.log(`Adding image from JSON-LD: ${imgUrl}`);
+              images.push(imgUrl);
+            }
+          });
+        } else if (item.image && typeof item.image === 'string') {
+          console.log(`Adding image from JSON-LD: ${item.image}`);
+          images.push(item.image);
         }
       }
     });
+  }
+  
+  // Check for gallery images in meta tags (Open Graph images)
+  if (crawledData.metadata && crawledData.metadata['og:image']) {
+    const ogImage = crawledData.metadata['og:image'];
+    if (ogImage && ogImage.startsWith('http')) {
+      console.log(`Adding Open Graph image: ${ogImage}`);
+      images.push(ogImage);
+    }
   }
   
   console.log(`Extracted ${images.length} property images from Zillow`);
@@ -354,6 +407,32 @@ function extractZillowData(crawledData: any, originalUrl: string) {
     }
   }
   
+  // Check for JSON-LD data which often contains structured property info
+  if (crawledData.jsonLd && Array.isArray(crawledData.jsonLd)) {
+    for (const item of crawledData.jsonLd) {
+      if (item['@type'] === 'SingleFamilyResidence' || 
+          item['@type'] === 'Product' || 
+          item['@type'] === 'PropertyListing') {
+        
+        if (item.numberOfBedrooms) {
+          bedrooms = bedrooms || item.numberOfBedrooms.toString();
+        }
+        
+        if (item.numberOfBathrooms) {
+          bathrooms = bathrooms || item.numberOfBathrooms.toString();
+        }
+        
+        if (item.floorSize && item.floorSize.value) {
+          sqft = sqft || item.floorSize.value.toString().replace(',', '');
+        }
+        
+        if (item.propertyType) {
+          propertyType = propertyType || item.propertyType;
+        }
+      }
+    }
+  }
+  
   return {
     address: {
       street: street || undefined,
@@ -379,20 +458,71 @@ function extractRealtorData(crawledData: any, originalUrl: string) {
   if (crawledData.images && crawledData.images.length > 0) {
     console.log(`Found ${crawledData.images.length} images in the scraped data`);
     
-    crawledData.images.forEach((img: any) => {
-      if (img.src && img.src.startsWith('http')) {
-        // Filter for larger, likely property images
-        if ((img.width > 200 && img.height > 200) && 
-            (img.src.includes('mls-') || img.src.includes('photos') || 
-             img.src.includes('cdn') || img.src.includes('realtor'))) {
-          console.log(`Adding image: ${img.src} (${img.width}x${img.height})`);
-          images.push(img.src);
+    // First look for high-quality Realtor.com property images
+    const propertyImages = crawledData.images.filter((img: any) => 
+      img.src && img.src.startsWith('http') &&
+      (img.width > 500 && img.height > 500) &&
+      (
+        img.src.includes('realtorcdn.com') || 
+        img.src.includes('mls-images') ||
+        img.src.includes('rdccdn.com') ||
+        img.src.includes('activerain-store.s3.amazonaws.com')
+      )
+    );
+    
+    if (propertyImages.length > 0) {
+      console.log(`Found ${propertyImages.length} high-quality Realtor property images`);
+      propertyImages.forEach((img: any) => {
+        images.push(img.src);
+      });
+    } else {
+      // Fallback to any reasonably sized images
+      crawledData.images.forEach((img: any) => {
+        if (img.src && img.src.startsWith('http')) {
+          // Filter for larger, likely property images
+          if (img.width > 300 && img.height > 300) {
+            console.log(`Adding image: ${img.src} (${img.width}x${img.height})`);
+            images.push(img.src);
+          }
+        }
+      });
+    }
+  }
+  
+  // Check for JSON-LD data which often contains image data
+  if (crawledData.jsonLd && Array.isArray(crawledData.jsonLd)) {
+    crawledData.jsonLd.forEach((item: any) => {
+      if (item['@type'] === 'SingleFamilyResidence' || 
+          item['@type'] === 'Product' || 
+          item['@type'] === 'PropertyListing') {
+        if (item.image && Array.isArray(item.image)) {
+          item.image.forEach((imgUrl: string) => {
+            if (imgUrl && typeof imgUrl === 'string' && imgUrl.startsWith('http')) {
+              console.log(`Adding image from JSON-LD: ${imgUrl}`);
+              images.push(imgUrl);
+            }
+          });
+        } else if (item.image && typeof item.image === 'string') {
+          console.log(`Adding image from JSON-LD: ${item.image}`);
+          images.push(item.image);
         }
       }
     });
   }
   
+  // Check for gallery images in meta tags
+  if (crawledData.metadata && crawledData.metadata['og:image']) {
+    const ogImage = crawledData.metadata['og:image'];
+    if (ogImage && ogImage.startsWith('http')) {
+      console.log(`Adding Open Graph image: ${ogImage}`);
+      images.push(ogImage);
+    }
+  }
+  
   console.log(`Extracted ${images.length} property images from Realtor.com`);
+  
+  // Extract address and property details following the same pattern as before
+  // ... keep existing code (address extraction logic, bedrooms, bathrooms, etc.)
   
   // Try to extract address from content
   let street, city, state, zipCode;
@@ -472,6 +602,32 @@ function extractRealtorData(crawledData: any, originalUrl: string) {
     }
   }
   
+  // Check for JSON-LD data which often contains structured property info
+  if (crawledData.jsonLd && Array.isArray(crawledData.jsonLd)) {
+    for (const item of crawledData.jsonLd) {
+      if (item['@type'] === 'SingleFamilyResidence' || 
+          item['@type'] === 'Product' || 
+          item['@type'] === 'PropertyListing') {
+        
+        if (item.numberOfBedrooms) {
+          bedrooms = bedrooms || item.numberOfBedrooms.toString();
+        }
+        
+        if (item.numberOfBathrooms) {
+          bathrooms = bathrooms || item.numberOfBathrooms.toString();
+        }
+        
+        if (item.floorSize && item.floorSize.value) {
+          sqft = sqft || item.floorSize.value.toString().replace(',', '');
+        }
+        
+        if (item.propertyType) {
+          propertyType = propertyType || item.propertyType;
+        }
+      }
+    }
+  }
+  
   return {
     address: {
       street: street || undefined,
@@ -495,14 +651,29 @@ function extractGenericData(crawledData: any, originalUrl: string) {
   if (crawledData.images && crawledData.images.length > 0) {
     console.log(`Found ${crawledData.images.length} images in the scraped data`);
     
-    crawledData.images.forEach((img: any) => {
-      // Only include reasonably sized images (skip icons, etc.)
-      if (img.src && img.src.startsWith('http') && 
-          img.width > 200 && img.height > 200) {
+    // Filter for larger, likely property images
+    const propertyImages = crawledData.images.filter((img: any) => 
+      img.src && img.src.startsWith('http') && 
+      (img.width > 300 && img.height > 300)
+    );
+    
+    if (propertyImages.length > 0) {
+      console.log(`Found ${propertyImages.length} potential property images`);
+      propertyImages.forEach((img: any) => {
         console.log(`Adding image: ${img.src} (${img.width}x${img.height})`);
         images.push(img.src);
-      }
-    });
+      });
+    } else {
+      // Fallback to any reasonably sized images
+      crawledData.images.forEach((img: any) => {
+        // Only include reasonably sized images (skip icons, etc.)
+        if (img.src && img.src.startsWith('http') && 
+            img.width > 200 && img.height > 200) {
+          console.log(`Adding image: ${img.src} (${img.width}x${img.height})`);
+          images.push(img.src);
+        }
+      });
+    }
   }
   
   console.log(`Extracted ${images.length} images from generic source`);

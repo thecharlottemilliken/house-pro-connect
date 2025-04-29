@@ -48,6 +48,13 @@ export class FirecrawlService {
       
       console.log('AI-enhanced property data retrieved successfully:', data);
       
+      // Check if we received image URLs
+      if (data.data?.images && data.data.images.length > 0) {
+        console.log(`Received ${data.data.images.length} property image URLs:`, data.data.images);
+      } else {
+        console.log('No property image URLs were returned from the scraper');
+      }
+      
       // Format the response data if needed
       const propertyData: PropertyData = {
         address: {
