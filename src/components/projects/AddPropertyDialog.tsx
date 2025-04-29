@@ -10,12 +10,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowUpFromLine } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { HomeAttributesSelect } from "@/components/property/HomeAttributesSelect";
 import { PropertyLinkInput } from "@/components/property/PropertyLinkInput";
+import { PropertyFileUpload } from "@/components/property/PropertyFileUpload";
+import { FileWithPreview } from "@/components/ui/enhanced-file-upload";
 
 interface AddPropertyDialogProps {
   open: boolean;
@@ -39,6 +40,7 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
   
   const [attributes, setAttributes] = useState<string[]>([]);
   const addressInputRef = useRef<HTMLInputElement>(null);
+  const [propertyFiles, setPropertyFiles] = useState<FileWithPreview[]>([]);
   
   const handleAddressSelect = (address: {
     addressLine1: string;
@@ -86,13 +88,46 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
       console.log(`Setting ${data.attributes.length} home attributes:`, data.attributes);
       setAttributes(data.attributes);
     }
+    
+    // Handle images if available
+    if (data.images && Array.isArray(data.images) && data.images.length > 0) {
+      // Convert to our FileWithPreview format
+      const newFiles: FileWithPreview[] = data.images.map((url: string, index: number) => ({
+        id: `scraped-${Date.now()}-${index}`,
+        name: `Image ${index + 1}`,
+        size: "Unknown",
+        type: "image/jpeg",
+        url: url,
+        progress: 100,
+        tags: [],
+        status: 'complete'
+      }));
+      
+      setPropertyFiles(newFiles);
+    }
+  };
+  
+  // Handle files uploaded via the new component
+  const handleFilesUploaded = (files: FileWithPreview[]) => {
+    console.log("Files uploaded:", files);
   };
 
   const handleSubmit = async () => {
+    // Extract image URLs from files
+    const imageUrls = propertyFiles
+      .filter(f => f.status === 'complete' && f.url && !f.type.includes('pdf'))
+      .map(f => f.url as string);
+    
+    // Find blueprint URL if any
+    const blueprintUrl = propertyFiles.find(
+      f => f.status === 'complete' && f.url && 
+      (f.type.includes('pdf') || f.tags.includes('blueprint'))
+    )?.url;
+    
     const newProperty = {
       id: Date.now(),
       type: propertyName,
-      image: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
+      image: imageUrls.length > 0 ? imageUrls[0] : "https://images.unsplash.com/photo-1493809842364-78817add7ffb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
       address: `${addressLine1}, ${city}, ${state} ${zipCode}`,
       details: {
         sqft,
@@ -101,7 +136,9 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
         bedrooms,
         bathrooms,
         exteriorAttributes: attributes,
-        interiorAttributes: attributes
+        interiorAttributes: attributes,
+        blueprintUrl,
+        images: imageUrls
       }
     };
     
@@ -365,37 +402,20 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
             </div>
             
             <div>
-              <h3 className="font-semibold text-gray-800 mb-3">Optional Home Information</h3>
-              
-              <div>
-                <h4 className="font-medium text-gray-700 mb-2">Upload Files</h4>
-                
-                <div className="space-y-4">
-                  <div className="border border-gray-200 rounded-md p-4">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="font-medium">Upload specs and/or blueprints</p>
-                        <p className="text-gray-500 text-sm">PNG, JPG, PDF, or DWG</p>
-                      </div>
-                      <Button className="bg-[#174c65]">
-                        <ArrowUpFromLine className="mr-2 h-4 w-4" /> UPLOAD
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div className="border border-gray-200 rounded-md p-4">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="font-medium">Upload home photos</p>
-                        <p className="text-gray-500 text-sm">PNG, JPG, or PDF</p>
-                      </div>
-                      <Button className="bg-[#174c65]">
-                        <ArrowUpFromLine className="mr-2 h-4 w-4" /> UPLOAD
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <h3 className="font-semibold text-gray-800 mb-3">Upload Files</h3>
+              <PropertyFileUpload 
+                onFilesUploaded={handleFilesUploaded}
+                initialFiles={propertyFiles}
+                roomOptions={[
+                  { value: "livingRoom", label: "Living Room" },
+                  { value: "kitchen", label: "Kitchen" },
+                  { value: "bathroom", label: "Bathroom" },
+                  { value: "bedroom", label: "Bedroom" },
+                  { value: "office", label: "Office" },
+                  { value: "exterior", label: "Exterior" },
+                  { value: "blueprint", label: "Blueprint" }
+                ]}
+              />
             </div>
             
             <div className="flex justify-between pt-6 border-t border-gray-200">

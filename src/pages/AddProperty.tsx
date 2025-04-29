@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -9,11 +10,12 @@ import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { FileUpload } from "@/components/ui/file-upload";
 import { PropertyImageCarousel } from "@/components/property/PropertyImageCarousel";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 import { HomeAttributesSelect } from "@/components/property/HomeAttributesSelect";
 import { PropertyLinkInput } from "@/components/property/PropertyLinkInput";
+import { PropertyFileUpload } from "@/components/property/PropertyFileUpload";
+import { FileWithPreview } from "@/components/ui/enhanced-file-upload";
 
 const AddProperty = () => {
   const navigate = useNavigate();
@@ -38,6 +40,7 @@ const AddProperty = () => {
   
   const [blueprintUrl, setBlueprintUrl] = useState<string | null>(null);
   const [homePhotos, setHomePhotos] = useState<string[]>([]);
+  const [propertyFiles, setPropertyFiles] = useState<FileWithPreview[]>([]);
 
   const handleAddressSelect = (address: {
     addressLine1: string;
@@ -85,6 +88,45 @@ const AddProperty = () => {
     if (data.images && Array.isArray(data.images) && data.images.length > 0) {
       console.log(`Setting ${data.images.length} property images:`, data.images);
       setHomePhotos(data.images);
+      
+      // Convert to our FileWithPreview format for the new uploader
+      const newFiles: FileWithPreview[] = data.images.map((url: string, index: number) => ({
+        id: `scraped-${Date.now()}-${index}`,
+        name: `Image ${index + 1}`,
+        size: "Unknown",
+        type: "image/jpeg",
+        url: url,
+        progress: 100,
+        tags: [],
+        status: 'complete'
+      }));
+      
+      setPropertyFiles(newFiles);
+    }
+  };
+  
+  // Handle files uploaded via the new component
+  const handleFilesUploaded = (files: FileWithPreview[]) => {
+    // Extract URLs from complete files
+    const imageUrls = files
+      .filter(f => f.status === 'complete' && f.url)
+      .map(f => f.url as string);
+    
+    // Extract blueprint URL if found
+    const blueprintFile = files.find(
+      f => f.status === 'complete' && 
+      f.url && 
+      (f.type.includes('pdf') || f.type.includes('dwg') || 
+      f.tags.includes('blueprint'))
+    );
+    
+    if (blueprintFile?.url) {
+      setBlueprintUrl(blueprintFile.url);
+    }
+    
+    // Set home photos
+    if (imageUrls.length > 0) {
+      setHomePhotos(imageUrls);
     }
   };
 
@@ -110,6 +152,25 @@ const AddProperty = () => {
     setIsSubmitting(true);
 
     try {
+      // Get the URLs from property files
+      const fileUrls = propertyFiles
+        .filter(f => f.status === 'complete' && f.url)
+        .map(f => f.url) as string[];
+      
+      // Determine blueprint URL
+      const currentBlueprintUrl = blueprintUrl || 
+        propertyFiles.find(f => 
+          f.status === 'complete' && 
+          f.url && 
+          (f.type.includes('pdf') || f.tags.includes('blueprint'))
+        )?.url;
+      
+      // Get the image URLs
+      const currentHomePhotos = fileUrls.filter(url => 
+        !url.endsWith('.pdf') && 
+        url !== currentBlueprintUrl
+      );
+
       const { data, error } = await supabase
         .from('properties')
         .insert({
@@ -128,8 +189,15 @@ const AddProperty = () => {
           bathrooms: bathrooms || null,
           exterior_attributes: attributes,
           interior_attributes: attributes,
-          blueprint_url: blueprintUrl,
-          home_photos: homePhotos
+          blueprint_url: currentBlueprintUrl || null,
+          home_photos: currentHomePhotos.length > 0 ? currentHomePhotos : null,
+          // Store all file metadata for future reference
+          file_metadata: propertyFiles.map(f => ({
+            name: f.name,
+            url: f.url,
+            type: f.type,
+            tags: f.tags
+          }))
         })
         .select();
 
@@ -458,26 +526,25 @@ const AddProperty = () => {
               
               <div>
                 <h3 className="font-semibold text-gray-800 mb-3">Upload Files</h3>
-                <div className="space-y-4">
-                  <FileUpload
-                    accept=".pdf,.dwg"
-                    onUploadComplete={(urls) => setBlueprintUrl(urls[0])}
-                    label="Upload specs and/or blueprints"
-                    description="PDF or DWG"
-                  />
-                  <FileUpload
-                    accept="image/*,.pdf"
-                    multiple
-                    onUploadComplete={(urls) => setHomePhotos(urls)}
-                    label="Upload home photos"
-                    description="PNG, JPG, or PDF"
-                  />
-                </div>
+                <PropertyFileUpload 
+                  onFilesUploaded={handleFilesUploaded}
+                  initialFiles={propertyFiles}
+                  roomOptions={[
+                    { value: "livingRoom", label: "Living Room" },
+                    { value: "kitchen", label: "Kitchen" },
+                    { value: "bathroom", label: "Bathroom" },
+                    { value: "bedroom", label: "Bedroom" },
+                    { value: "office", label: "Office" },
+                    { value: "exterior", label: "Exterior" },
+                    { value: "blueprint", label: "Blueprint" },
+                    { value: "floorPlan", label: "Floor Plan" }
+                  ]}
+                />
               </div>
               
               {homePhotos.length > 0 && (
                 <div className="my-6">
-                  <h3 className="font-semibold text-gray-800 mb-3">Property Photos</h3>
+                  <h3 className="font-semibold text-gray-800 mb-3">Property Photos Preview</h3>
                   <PropertyImageCarousel images={homePhotos} />
                 </div>
               )}
@@ -513,29 +580,6 @@ const AddProperty = () => {
         </div>
       </div>
     </div>
-  );
-};
-
-interface AttributeToggleButtonProps {
-  children: React.ReactNode;
-  selected: boolean;
-  onClick: () => void;
-}
-
-const AttributeToggleButton = ({ children, selected, onClick }: AttributeToggleButtonProps) => {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex items-center px-4 py-2 rounded-full border ${
-        selected 
-          ? 'bg-[#174c65] text-white border-[#174c65]' 
-          : 'bg-white text-gray-700 border-gray-300'
-      } transition-colors`}
-    >
-      {selected && <span className="mr-1">✓</span>}
-      {children}
-    </button>
   );
 };
 
