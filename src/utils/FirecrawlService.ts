@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 interface AddressInfo {
@@ -19,7 +18,9 @@ interface PropertyData {
   lotSize?: string;
   price?: string;
   description?: string;
-  attributes?: string[]; // Added to store home attributes
+  attributes?: string[];
+  secondaryAddress?: string;
+  factsAndFeatures?: string;
 }
 
 export class FirecrawlService {
@@ -55,7 +56,6 @@ export class FirecrawlService {
     'triplex': 'multi-family',
   };
 
-  // Common home attributes to look for in property descriptions
   private static commonAttributes = [
     "Front Yard", "Back Yard", "Historic Home", "Waterfront", "Multi-Level",
     "Open Floor Plan", "Hardwood Floors", "Finished Basement", "High Ceilings",
@@ -68,7 +68,6 @@ export class FirecrawlService {
     try {
       console.log('Sending request to scrape-property function with URL:', url);
       
-      // Validate and normalize the URL
       let processedUrl = this.normalizeUrl(url);
       if (!processedUrl) {
         return { 
@@ -77,7 +76,6 @@ export class FirecrawlService {
         };
       }
       
-      // First try to scrape property data using Firecrawl
       const { data: propertyData, error: propertyError } = await supabase.functions.invoke('scrape-property', {
         body: { url: processedUrl }
       });
@@ -100,7 +98,6 @@ export class FirecrawlService {
       
       console.log('Property data retrieved successfully:', propertyData);
       
-      // Now, use our dedicated function to extract high-quality images
       let images = propertyData.data.images || [];
       let imageError = null;
       
@@ -125,16 +122,12 @@ export class FirecrawlService {
         imageError = err instanceof Error ? err.message : 'Unknown error scraping images';
       }
       
-      // Format the response data with normalized values
       const formattedData = this.formatPropertyData(propertyData.data, images);
       
-      // Extract home attributes from the description and facts & features section
       formattedData.attributes = this.extractHomeAttributes(propertyData.data);
       
-      // Parse the address fields to handle street address and address line 2
       this.parseAddressComponents(formattedData);
       
-      // Log comprehensive data for debugging
       console.log('Final formatted property data:', formattedData);
       this.logPropertyDetails(formattedData);
       
@@ -148,35 +141,29 @@ export class FirecrawlService {
     }
   }
   
-  // New method to parse address into street and secondary address
   private static parseAddressComponents(data: PropertyData): void {
     if (!data.address || !data.address.street) return;
     
     const street = data.address.street;
     
-    // Check for common apartment/suite indicators
     const aptRegex = /(.+?)(?:\s+)(#\w+|apt\.?\s+\w+|suite\s+\w+|unit\s+\w+)/i;
     const match = street.match(aptRegex);
     
     if (match) {
       console.log('Found secondary address component in street address:', match[2]);
-      // Split the address into main street and secondary part
       data.address.street = match[1].trim();
-      // Store the secondary part (will be mapped to address line 2)
       data.secondaryAddress = match[2].trim();
     }
     
     console.log('Parsed address components:', {
       street: data.address.street,
-      secondaryAddress: (data as any).secondaryAddress || 'None'
+      secondaryAddress: data.secondaryAddress || 'None'
     });
   }
   
-  // New method to extract home attributes from property data
   private static extractHomeAttributes(rawData: any): string[] {
     const attributes: string[] = [];
     
-    // Try to extract from description
     if (rawData.description) {
       this.commonAttributes.forEach(attr => {
         if (rawData.description.toLowerCase().includes(attr.toLowerCase())) {
@@ -187,40 +174,37 @@ export class FirecrawlService {
       });
     }
     
-    // Try to extract from facts and features section if available
-    if (rawData.features && Array.isArray(rawData.features)) {
-      rawData.features.forEach((feature: string) => {
-        this.commonAttributes.forEach(attr => {
-          if (feature.toLowerCase().includes(attr.toLowerCase())) {
-            if (!attributes.includes(attr)) {
-              attributes.push(attr);
-            }
-          }
-        });
-      });
-    }
-    
-    // Special case for Zillow's "facts and features" text content
     if (rawData.factsAndFeatures) {
+      console.log('Found facts and features section:', rawData.factsAndFeatures);
+      
       const features = rawData.factsAndFeatures.split(/[,;•]/);
+      
       features.forEach((feature: string) => {
         feature = feature.trim();
-        if (feature) {
-          // Check against our common attributes
+        if (feature && feature.length > 2) {
+          let matched = false;
           this.commonAttributes.forEach(attr => {
             if (feature.toLowerCase().includes(attr.toLowerCase())) {
               if (!attributes.includes(attr)) {
                 attributes.push(attr);
+                matched = true;
               }
             }
           });
           
-          // Also add any feature that seems significant
-          if (feature.length > 3 && !attributes.includes(feature) &&
-              !feature.match(/^\d+$/) && // Skip pure numbers
-              !feature.match(/^(sq ft|sqft|square feet|acre|yard|bath|bed)/i)) { // Skip basic measurements
+          if (!matched && !attributes.includes(feature) &&
+              !feature.match(/^\d+$/) && !feature.match(/^(sq ft|sqft|square feet|acre|yard|bath|bed)/i)) {
             attributes.push(feature);
           }
+        }
+      });
+    }
+    
+    if (rawData.features && Array.isArray(rawData.features)) {
+      rawData.features.forEach((feature: string) => {
+        feature = feature.trim();
+        if (feature && feature.length > 2 && !attributes.includes(feature)) {
+          attributes.push(feature);
         }
       });
     }
@@ -232,13 +216,11 @@ export class FirecrawlService {
   private static normalizeUrl(url: string): string {
     if (!url.trim()) return '';
     
-    // Add protocol if missing
     if (!url.startsWith('http')) {
       url = `https://${url}`;
     }
     
     try {
-      // Validate as URL
       new URL(url);
       return url;
     } catch (error) {
@@ -248,7 +230,6 @@ export class FirecrawlService {
   }
   
   private static formatPropertyData(rawData: any, images: string[]): PropertyData {
-    // Handle address data
     const address: AddressInfo = {
       street: rawData.address?.street || '',
       city: rawData.address?.city || '',
@@ -266,19 +247,18 @@ export class FirecrawlService {
       yearBuilt: rawData.yearBuilt || '',
       lotSize: rawData.lotSize || '',
       price: rawData.price || '',
-      description: rawData.description || ''
+      description: rawData.description || '',
+      factsAndFeatures: rawData.factsAndFeatures || ''
     };
   }
   
   private static normalizeState(state: string): string {
     state = state.trim();
     
-    // If it's already a valid 2-letter code, return it uppercase
     if (state.length === 2) {
       return state.toUpperCase();
     }
     
-    // Otherwise, try to convert from full name to abbreviation
     const stateKey = state.toLowerCase();
     return this.stateAbbreviations[stateKey] || state;
   }
@@ -286,13 +266,11 @@ export class FirecrawlService {
   private static normalizeBedroomCount(bedrooms: string): string {
     if (!bedrooms) return '';
     
-    // Extract numeric value
     const match = bedrooms.toString().match(/(\d+(\.\d+)?)/);
     if (!match) return '';
     
     const count = parseFloat(match[1]);
     
-    // Format according to our application's needs
     if (count >= 5) return '5+';
     if (Number.isInteger(count)) return count.toString();
     return count.toString();
@@ -301,13 +279,11 @@ export class FirecrawlService {
   private static normalizeBathroomCount(bathrooms: string): string {
     if (!bathrooms) return '';
     
-    // Extract numeric value
     const match = bathrooms.toString().match(/(\d+(\.\d+)?)/);
     if (!match) return '';
     
     const count = parseFloat(match[1]);
     
-    // Format according to our application's needs
     if (count >= 3) return '3+';
     if (count === 1.5) return '1.5';
     if (count === 2.5) return '2.5';
@@ -318,7 +294,6 @@ export class FirecrawlService {
   private static normalizeSquareFeet(sqft: string): string {
     if (!sqft) return '';
     
-    // Remove all non-numeric characters
     return sqft.toString().replace(/[^\d]/g, '');
   }
   
@@ -327,7 +302,6 @@ export class FirecrawlService {
     
     const type = propertyType.toLowerCase();
     
-    // Match against our standard property type names
     for (const [key, value] of Object.entries(this.propertyTypeMap)) {
       if (type.includes(key)) {
         return value;
@@ -338,11 +312,10 @@ export class FirecrawlService {
   }
   
   private static logPropertyDetails(data: PropertyData): void {
-    // Log address information
     if (data.address) {
       console.log('Address data:', {
         street: data.address.street || 'Not found',
-        secondaryAddress: (data as any).secondaryAddress || 'Not found',
+        secondaryAddress: data.secondaryAddress || 'Not found',
         city: data.address.city || 'Not found',
         state: data.address.state || 'Not found',
         zipCode: data.address.zipCode || 'Not found'
@@ -351,7 +324,6 @@ export class FirecrawlService {
       console.log('No address data found');
     }
     
-    // Log property specifications
     console.log('Property specs:', {
       bedrooms: data.bedrooms || 'Not found',
       bathrooms: data.bathrooms || 'Not found',
@@ -361,14 +333,12 @@ export class FirecrawlService {
       lotSize: data.lotSize || 'Not found'
     });
     
-    // Log home attributes
     if (data.attributes && data.attributes.length > 0) {
       console.log('Home attributes:', data.attributes);
     } else {
       console.log('No home attributes found');
     }
     
-    // Log image data
     if (data.images && data.images.length > 0) {
       console.log(`Total of ${data.images.length} property image URLs found:`, 
         data.images.slice(0, 3).map(url => url.substring(0, 50) + '...'));

@@ -25,6 +25,7 @@ interface PropertyData {
   description?: string;
   attributes?: string[];
   secondaryAddress?: string;
+  factsAndFeatures?: string;
 }
 
 interface PropertyLinkInputProps {
@@ -93,6 +94,19 @@ export function PropertyLinkInput({ onPropertyDataFetched }: PropertyLinkInputPr
           }
           
           console.log(`Mapped property type from "${propertyType}" to "${result.data.propertyType}"`);
+        }
+        
+        // Log the street address that will be passed to the parent
+        if (result.data.address && result.data.address.street) {
+          console.log("Street address to be set in form:", result.data.address.street);
+          if (result.data.secondaryAddress) {
+            console.log("Secondary address to be set in form:", result.data.secondaryAddress);
+          }
+        }
+        
+        // Log the attributes that will be passed to the parent
+        if (result.data.attributes && result.data.attributes.length > 0) {
+          console.log(`Passing ${result.data.attributes.length} home attributes to form:`, result.data.attributes);
         }
         
         // Make sure to pass all data to the parent component, including attributes and secondaryAddress

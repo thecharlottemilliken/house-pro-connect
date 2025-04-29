@@ -1,3 +1,4 @@
+
 import React, { useState } from "react"
 import {
   Command,
@@ -30,6 +31,19 @@ const predefinedAttributes = [
   "Modern Kitchen",
   "Pool",
   "Garage",
+  "Fireplace",
+  "Central Air",
+  "Deck",
+  "Patio",
+  "Stainless Appliances",
+  "Granite Countertops",
+  "HVAC",
+  "Updated",
+  "Renovated",
+  "New Construction",
+  "Garden",
+  "Fenced Yard",
+  "Gourmet Kitchen"
 ]
 
 export function HomeAttributesSelect({
@@ -53,7 +67,7 @@ export function HomeAttributesSelect({
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     const target = e.target as HTMLInputElement
-    if (e.key === "Enter" && target.value && !predefinedAttributes.includes(target.value)) {
+    if (e.key === "Enter" && target.value && !selectedAttributes.includes(target.value)) {
       e.preventDefault()
       handleSelect(target.value)
     }
@@ -122,6 +136,10 @@ export function HomeAttributesSelect({
             </button>
           </Badge>
         ))}
+        
+        {selectedAttributes.length === 0 && (
+          <p className="text-sm text-gray-500">No attributes selected. These will be populated automatically when using the "Fill Form" feature with a property URL.</p>
+        )}
       </div>
     </div>
   )
