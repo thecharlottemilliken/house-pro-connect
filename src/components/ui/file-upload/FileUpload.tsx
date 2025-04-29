@@ -37,14 +37,14 @@ export function FileUpload({
         const filePath = `${Math.random()}-${Date.now()}.${fileExt}`;
 
         const { error: uploadError, data } = await supabase.storage
-          .from('property-files')
+          .from('properties')
           .upload(filePath, file);
 
         if (uploadError) throw uploadError;
 
         if (data) {
           const { data: { publicUrl } } = supabase.storage
-            .from('property-files')
+            .from('properties')
             .getPublicUrl(filePath);
           
           uploadedUrls.push(publicUrl);
