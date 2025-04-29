@@ -51,42 +51,40 @@ export function PropertyLinkInput({ onPropertyDataFetched }: PropertyLinkInputPr
     setError(null);
     
     try {
-      console.log("Scraping property URL with AI enhancement:", url);
+      console.log("Scraping property URL:", url);
+      
+      // Validate URL format
+      if (!url.startsWith('http')) {
+        const correctedUrl = `https://${url}`;
+        console.log(`URL doesn't start with http, correcting to: ${correctedUrl}`);
+        setUrl(correctedUrl);
+      }
+      
+      // Check if it's a supported real estate site
+      if (!url.includes('zillow.com') && !url.includes('realtor.com')) {
+        console.warn("URL is not from a recognized real estate site. Results may vary.");
+        toast({
+          title: "Notice",
+          description: "For best results, use Zillow or Realtor.com links",
+        });
+      }
+      
       const result = await FirecrawlService.scrapePropertyUrl(url);
       
       if (result.success && result.data) {
-        console.log("AI-enhanced property data loaded successfully:", result.data);
+        console.log("Property data loaded successfully:", result.data);
         
-        // Process the data before passing it to the parent component
-        const formattedData: PropertyData = {
-          address: {
-            street: result.data.address?.street || "",
-            city: result.data.address?.city || "",
-            state: result.data.address?.state || "",
-            zipCode: result.data.address?.zipCode || "",
-          },
-          bedrooms: result.data.bedrooms || "",
-          bathrooms: result.data.bathrooms || "",
-          sqft: result.data.sqft || "",
-          propertyType: result.data.propertyType || "",
-          images: result.data.images || [],
-          yearBuilt: result.data.yearBuilt || "",
-          lotSize: result.data.lotSize || "",
-          price: result.data.price || "",
-          description: result.data.description || ""
-        };
-        
-        // Check if we got images and log them
-        if (formattedData.images && formattedData.images.length > 0) {
-          console.log(`Found ${formattedData.images.length} property image URLs:`, formattedData.images);
+        // Validate images
+        if (result.data.images && result.data.images.length > 0) {
+          console.log(`Found ${result.data.images.length} property image URLs:`, result.data.images);
         } else {
           console.log("No property image URLs found in the scraped data");
         }
         
-        onPropertyDataFetched(formattedData);
+        onPropertyDataFetched(result.data);
         toast({
           title: "Success",
-          description: "AI-enhanced property data loaded successfully",
+          description: "Property data loaded successfully",
         });
         setUrl("");
       } else {
