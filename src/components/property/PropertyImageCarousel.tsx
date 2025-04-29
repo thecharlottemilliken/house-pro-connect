@@ -20,12 +20,15 @@ export function PropertyImageCarousel({ images }: PropertyImageCarouselProps) {
   const [displayImages, setDisplayImages] = useState<string[]>(images.length > 0 ? images : [defaultImage]);
   const [loadingStates, setLoadingStates] = useState<boolean[]>(new Array(images.length || 1).fill(true));
   const [errorStates, setErrorStates] = useState<boolean[]>(new Array(images.length || 1).fill(false));
+  const [retryAttempts, setRetryAttempts] = useState<number[]>(new Array(images.length || 1).fill(0));
+  const MAX_RETRY_ATTEMPTS = 2;
 
   useEffect(() => {
     // Update display images when props change
     setDisplayImages(images.length > 0 ? images : [defaultImage]);
     setLoadingStates(new Array(images.length || 1).fill(true));
     setErrorStates(new Array(images.length || 1).fill(false));
+    setRetryAttempts(new Array(images.length || 1).fill(0));
   }, [images]);
 
   const handleImageLoad = (index: number) => {
@@ -37,8 +40,44 @@ export function PropertyImageCarousel({ images }: PropertyImageCarouselProps) {
   };
 
   const handleImageError = (index: number) => {
-    console.error(`Failed to load image at index ${index}:`, displayImages[index]);
+    const currentUrl = displayImages[index];
+    console.error(`Failed to load image at index ${index}:`, currentUrl);
     
+    // Check if we should attempt to retry with an alternative URL format
+    if (retryAttempts[index] < MAX_RETRY_ATTEMPTS) {
+      const newRetryAttempts = [...retryAttempts];
+      newRetryAttempts[index] = retryAttempts[index] + 1;
+      setRetryAttempts(newRetryAttempts);
+      
+      // Try alternative formats based on the retry attempt count
+      const newImages = [...displayImages];
+      
+      if (currentUrl.includes('.jpg')) {
+        // Try webp instead of jpg
+        newImages[index] = currentUrl.replace('.jpg', '.webp');
+        console.log(`Retrying with alternative format: ${newImages[index]}`);
+      } else if (currentUrl.includes('.webp')) {
+        // Try without explicit extension
+        newImages[index] = currentUrl.split('.webp')[0];
+        console.log(`Retrying with base URL: ${newImages[index]}`);
+      } else if (currentUrl.includes('-cc_ft_')) {
+        // Try removing size constraints
+        newImages[index] = currentUrl.replace(/-cc_ft_\d+/g, '');
+        console.log(`Retrying without size constraints: ${newImages[index]}`);
+      } else {
+        // Mark as failed if we can't figure out an alternative
+        markImageAsFailed(index);
+        return;
+      }
+      
+      setDisplayImages(newImages);
+    } else {
+      // Mark as failed after all retry attempts
+      markImageAsFailed(index);
+    }
+  };
+
+  const markImageAsFailed = (index: number) => {
     // Mark image as failed
     setErrorStates(prev => {
       const newStates = [...prev];
@@ -59,22 +98,13 @@ export function PropertyImageCarousel({ images }: PropertyImageCarouselProps) {
     if (!url) return defaultImage;
     
     try {
-      // If URL already processed properly, return as is
-      if (url.startsWith('http') && !url.includes('undefined')) {
-        return url;
+      // Only do minimal processing to ensure URLs are complete
+      if (url.startsWith('//')) {
+        // Add https: to protocol-relative URLs
+        return `https:${url}`;
       }
       
-      // Fix common issues with Zillow URLs
-      if (url.includes('photos.zillow') || url.includes('zillowstatic')) {
-        // Make sure URL has proper protocol
-        if (!url.startsWith('http')) {
-          return `https://${url.replace(/^\/\//, '')}`;
-        }
-        
-        // Remove size limitations for better quality
-        return url.replace(/-cc_ft_\d+/g, '');
-      }
-      
+      // Don't modify Zillow URLs further - they're sensitive to changes
       return url;
     } catch (e) {
       console.error("Error processing image URL:", e);

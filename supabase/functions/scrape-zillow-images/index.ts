@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -29,10 +28,51 @@ serve(async (req) => {
     
     console.log('Property ID:', extractedPropertyId);
     
-    // Use client-side JavaScript execution to extract images instead of Puppeteer
-    // This approach doesn't require browser automation in the Edge Function
-    const imageUrls = await extractZillowImagesFromUrl(url);
+    // Attempt multiple scraping strategies
+    let imageUrls: string[] = [];
     
+    // Strategy 1: Extract from HTML content
+    imageUrls = await extractZillowImagesFromUrl(url);
+    
+    // Log outcome of image scraping
+    if (imageUrls.length > 0) {
+      console.log(`Successfully extracted ${imageUrls.length} images`);
+      
+      // Validate URLs by checking a sample (first image)
+      if (imageUrls.length > 0) {
+        try {
+          console.log(`Validating first image URL: ${imageUrls[0]}`);
+          const testResponse = await fetch(imageUrls[0], {
+            method: 'HEAD',
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36',
+              'Referer': 'https://www.zillow.com/',
+              'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
+            }
+          });
+          
+          console.log(`Test URL status: ${testResponse.status} ${testResponse.statusText}`);
+          
+          // If first image is invalid, log warning
+          if (!testResponse.ok) {
+            console.warn('Sample image URL validation failed - URLs may not be directly accessible');
+          }
+        } catch (err) {
+          console.warn('Error validating image URL:', err);
+        }
+      }
+    } else {
+      console.warn('No images found using primary extraction method');
+      
+      // Strategy 2: Try alternative extraction method from JSON data
+      const jsonImageUrls = await extractJsonImageUrls(url);
+      if (jsonImageUrls.length > 0) {
+        console.log(`Found ${jsonImageUrls.length} images from JSON data`);
+        imageUrls = jsonImageUrls;
+      }
+    }
+    
+    // Final response with all found images
     return new Response(
       JSON.stringify({
         success: true,
@@ -72,11 +112,11 @@ async function extractZillowImagesFromUrl(url: string): Promise<string[]> {
   console.log('Fetching Zillow page content...');
   
   try {
-    // Fetch the Zillow page
+    // Enhanced headers to mimic a real browser session
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
         'Accept-Language': 'en-US,en;q=0.9',
         'Cache-Control': 'no-cache',
         'Pragma': 'no-cache',
@@ -84,7 +124,10 @@ async function extractZillowImagesFromUrl(url: string): Promise<string[]> {
         'Sec-Fetch-Mode': 'navigate',
         'Sec-Fetch-Site': 'none',
         'Sec-Fetch-User': '?1',
-        'Upgrade-Insecure-Requests': '1'
+        'Upgrade-Insecure-Requests': '1',
+        'sec-ch-ua': '"Google Chrome";v="112", "Chromium";v="112", "Not:A-Brand";v="99"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"Windows"'
       }
     });
 
@@ -95,19 +138,41 @@ async function extractZillowImagesFromUrl(url: string): Promise<string[]> {
     const html = await response.text();
     console.log(`Retrieved ${html.length} bytes of HTML content`);
     
-    // Extract image URLs using regex patterns
-    const imageUrls = extractImageUrlsFromHtml(html);
+    // Extract image URLs using multiple methods
+    let imageUrls: string[] = [];
     
-    if (imageUrls.length === 0) {
-      console.warn('No images found in the HTML content');
-      
-      // Try to extract from JSON data that might be embedded in the page
-      const jsonImageUrls = extractImageUrlsFromJsonData(html);
-      if (jsonImageUrls.length > 0) {
-        return jsonImageUrls;
-      }
+    // Method 1: Extract from img tags
+    const imgTagUrls = extractImageUrlsFromHtml(html);
+    if (imgTagUrls.length > 0) {
+      console.log(`Found ${imgTagUrls.length} images from HTML img tags`);
+      imageUrls = [...imageUrls, ...imgTagUrls];
     }
     
+    // Method 2: Extract from JSON data in the page
+    const jsonUrls = extractImageUrlsFromJsonData(html);
+    if (jsonUrls.length > 0) {
+      console.log(`Found ${jsonUrls.length} images from JSON data`);
+      // Add any new URLs not already in our list
+      jsonUrls.forEach(url => {
+        if (!imageUrls.includes(url)) {
+          imageUrls.push(url);
+        }
+      });
+    }
+    
+    // Method 3: Try to find gallery data specifically
+    const galleryUrls = extractGalleryImages(html);
+    if (galleryUrls.length > 0) {
+      console.log(`Found ${galleryUrls.length} images from gallery data`);
+      // Add any new URLs not already in our list
+      galleryUrls.forEach(url => {
+        if (!imageUrls.includes(url)) {
+          imageUrls.push(url);
+        }
+      });
+    }
+    
+    console.log(`Total unique image URLs found: ${imageUrls.length}`);
     return imageUrls;
   } catch (error) {
     console.error('Error fetching Zillow page:', error);
@@ -125,9 +190,9 @@ function extractImageUrlsFromHtml(html: string): string[] {
   while ((match = imgTagPattern.exec(html)) !== null) {
     const url = match[1];
     if (isValidZillowImageUrl(url)) {
-      const cleanUrl = cleanZillowImageUrl(url);
-      if (!imageUrls.includes(cleanUrl)) {
-        imageUrls.push(cleanUrl);
+      // Keep original URL formatting from Zillow
+      if (!imageUrls.includes(url)) {
+        imageUrls.push(url);
       }
     }
   }
@@ -136,19 +201,21 @@ function extractImageUrlsFromHtml(html: string): string[] {
   const srcsetPattern = /srcset=["']([^"']+?)["']/gi;
   while ((match = srcsetPattern.exec(html)) !== null) {
     const srcset = match[1];
-    const urls = srcset.split(',')
-      .map(part => part.trim().split(' ')[0])
-      .filter(url => isValidZillowImageUrl(url));
-      
-    urls.forEach(url => {
-      const cleanUrl = cleanZillowImageUrl(url);
-      if (!imageUrls.includes(cleanUrl)) {
-        imageUrls.push(cleanUrl);
+    const parts = srcset.split(',');
+    
+    // Get highest resolution image from srcset
+    for (const part of parts) {
+      const [url] = part.trim().split(' ');
+      if (url && isValidZillowImageUrl(url)) {
+        // Keep original URL without modifications
+        if (!imageUrls.includes(url)) {
+          imageUrls.push(url);
+        }
+        break; // Just take one URL from each srcset
       }
-    });
+    }
   }
   
-  console.log(`Found ${imageUrls.length} images using HTML parsing`);
   return imageUrls;
 }
 
@@ -167,11 +234,8 @@ function extractImageUrlsFromJsonData(html: string): string[] {
     
     while ((urlMatch = urlPattern.exec(match[1])) !== null) {
       const url = urlMatch[1];
-      if (isValidZillowImageUrl(url)) {
-        const cleanUrl = cleanZillowImageUrl(url);
-        if (!imageUrls.includes(cleanUrl)) {
-          imageUrls.push(cleanUrl);
-        }
+      if (url && !imageUrls.includes(url)) {
+        imageUrls.push(url);
       }
     }
   }
@@ -181,46 +245,129 @@ function extractImageUrlsFromJsonData(html: string): string[] {
   const altMatch = html.match(altJsonPattern);
   
   if (altMatch && altMatch[1]) {
-    const urls = altMatch[1].split(',')
-      .map(part => part.trim().replace(/"/g, ''))
-      .filter(url => isValidZillowImageUrl(url));
+    const urls = altMatch[1]
+      .split(',')
+      .map(part => {
+        // Clean up the string and remove quotes
+        return part.trim().replace(/^"|"$/g, '');
+      })
+      .filter(url => url && url.length > 10); // Basic validation - real URLs should be longer
       
     urls.forEach(url => {
-      const cleanUrl = cleanZillowImageUrl(url);
-      if (!imageUrls.includes(cleanUrl)) {
-        imageUrls.push(cleanUrl);
+      if (!imageUrls.includes(url)) {
+        imageUrls.push(url);
       }
     });
   }
   
-  console.log(`Found ${imageUrls.length} images in embedded JSON data`);
   return imageUrls;
+}
+
+function extractGalleryImages(html: string): string[] {
+  const imageUrls: string[] = [];
+  
+  try {
+    // Look for gallery container divs
+    const galleryDivPattern = /<div[^>]*class="[^"]*gallery[^"]*"[^>]*>([\s\S]*?)<\/div>/gi;
+    const galleryMatches = html.match(galleryDivPattern);
+    
+    if (galleryMatches && galleryMatches.length > 0) {
+      console.log(`Found ${galleryMatches.length} gallery divs`);
+      
+      for (const galleryDiv of galleryMatches) {
+        // Extract image URLs from the gallery div
+        const imgPattern = /data-src=["']([^"']+?)["']/gi;
+        let imgMatch;
+        
+        while ((imgMatch = imgPattern.exec(galleryDiv)) !== null) {
+          const url = imgMatch[1];
+          if (url && !imageUrls.includes(url)) {
+            imageUrls.push(url);
+          }
+        }
+        
+        // Also look for background images
+        const bgPattern = /background-image:\s*url\(['"]?([^'"]+)['"]?\)/gi;
+        let bgMatch;
+        
+        while ((bgMatch = bgPattern.exec(galleryDiv)) !== null) {
+          const url = bgMatch[1];
+          if (url && !imageUrls.includes(url)) {
+            imageUrls.push(url);
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error extracting gallery images:', error);
+  }
+  
+  return imageUrls;
+}
+
+async function extractJsonImageUrls(url: string): Promise<string[]> {
+  try {
+    // Try to access Zillow's API directly if we can extract the zpid
+    const zpid = extractPropertyIdFromUrl(url);
+    if (zpid === 'unknown') {
+      return [];
+    }
+    
+    console.log(`Attempting to fetch image data for zpid: ${zpid}`);
+    
+    // This is a best-effort attempt that may be blocked by CORS
+    const apiUrl = `https://www.zillow.com/graphql/?zpid=${zpid}&queryId=property%2FPropertyPhotoData`;
+    
+    const response = await fetch(apiUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36',
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Referer': url,
+        'Origin': 'https://www.zillow.com'
+      }
+    });
+    
+    if (!response.ok) {
+      console.warn(`API request failed: ${response.status} ${response.statusText}`);
+      return [];
+    }
+    
+    const json = await response.json();
+    console.log('Received API response:', json);
+    
+    const imageUrls: string[] = [];
+    
+    // Extract image URLs from the API response
+    // The exact path will depend on Zillow's API structure
+    const photos = json?.data?.property?.photos;
+    if (Array.isArray(photos)) {
+      photos.forEach((photo: any) => {
+        if (photo.url && !imageUrls.includes(photo.url)) {
+          imageUrls.push(photo.url);
+        }
+      });
+    }
+    
+    return imageUrls;
+  } catch (error) {
+    console.error('Error extracting JSON image URLs:', error);
+    return [];
+  }
 }
 
 function isValidZillowImageUrl(url: string): boolean {
   // Check if it's a Zillow image URL
   if (!url) return false;
   
-  // Include various Zillow image domains
+  // Include various Zillow image domains and filter out icons/logos
   return (
-    url.includes('photos.zillowstatic.com') || 
-    url.includes('photos.zillow.com') || 
-    url.includes('zillowstatic.com') ||
-    url.includes('zillow.com/fp/')
-  ) && !url.includes('logo') && !url.includes('icon');
-}
-
-function cleanZillowImageUrl(url: string): string {
-  // Make sure URL has proper protocol
-  let cleanUrl = url;
-  if (cleanUrl.startsWith('//')) {
-    cleanUrl = 'https:' + cleanUrl;
-  } else if (!cleanUrl.startsWith('http')) {
-    cleanUrl = 'https://' + cleanUrl;
-  }
-  
-  // Remove size limitations for better quality
-  cleanUrl = cleanUrl.replace(/-cc_ft_\d+/g, '');
-  
-  return cleanUrl;
+    (url.includes('photos.zillowstatic.com') || 
+     url.includes('photos.zillow.com') || 
+     url.includes('zillowstatic.com') ||
+     url.includes('zillow.com/fp/')) &&
+    !url.includes('logo') && 
+    !url.includes('icon') && 
+    url.length > 30 // Basic validation - real image URLs should be longer
+  );
 }
