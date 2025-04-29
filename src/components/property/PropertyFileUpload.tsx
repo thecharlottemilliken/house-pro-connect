@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { EnhancedFileUpload, FileWithPreview, RoomTagOption } from "@/components/ui/enhanced-file-upload";
+import { FileWithPreview, RoomTagOption, EnhancedFileUpload } from "@/components/ui/file-upload";
 import { toast } from "@/hooks/use-toast";
 
 interface PropertyFileUploadProps {
