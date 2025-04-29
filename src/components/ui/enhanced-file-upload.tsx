@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "./button";
 import { Input } from "./input";
@@ -133,7 +134,7 @@ export function EnhancedFileUpload({
     }
   };
 
-  // Process the upload queue - completely rewritten for parallel uploads
+  // Process the upload queue
   const processUploadQueue = useCallback(async () => {
     if (uploadQueue.length === 0) return;
     
@@ -172,7 +173,7 @@ export function EnhancedFileUpload({
     setIsUploading(true);
     
     // Start uploads in parallel
-    filesToUpload.forEach(async (fileToUpload) => {
+    const uploadPromises = filesToUpload.map(async (fileToUpload) => {
       try {
         console.log(`Starting upload of file: ${fileToUpload.name}`);
         await uploadFile(fileToUpload);
@@ -183,22 +184,25 @@ export function EnhancedFileUpload({
         setActiveUploads(prev => {
           const newCount = prev - 1;
           console.log(`Upload finished, active uploads decreased to ${newCount}`);
-          
-          // If this was the last active upload, check if we're completely done
-          if (newCount <= 0 && remainingQueueIds.length === 0) {
-            setIsUploading(false);
-            
-            // Call onUploadComplete with all completed files
-            const completedFiles = uploadedFiles.filter(file => file.status === 'complete');
-            if (completedFiles.length > 0 && onUploadComplete) {
-              console.log(`All uploads complete. ${completedFiles.length} files uploaded.`);
-              onUploadComplete(completedFiles);
-            }
-          }
           return newCount;
         });
       }
     });
+    
+    // Wait for all uploads to complete
+    await Promise.all(uploadPromises);
+    
+    // Check if we are completely done
+    if (remainingQueueIds.length === 0 && filesToUpload.length > 0) {
+      setTimeout(() => {
+        const completedFiles = uploadedFiles.filter(file => file.status === 'complete');
+        if (completedFiles.length > 0 && onUploadComplete) {
+          console.log(`All uploads complete. ${completedFiles.length} files uploaded.`);
+          onUploadComplete(completedFiles);
+          setIsUploading(false);
+        }
+      }, 100);
+    }
   }, [uploadQueue, uploadedFiles, activeUploads, maxConcurrentUploads, onUploadComplete]);
 
   // Watch for queue changes and process them
@@ -214,6 +218,9 @@ export function EnhancedFileUpload({
     if (activeUploads < maxConcurrentUploads && uploadQueue.length > 0) {
       console.log(`Active uploads (${activeUploads}) below max (${maxConcurrentUploads}), processing queue`);
       processUploadQueue();
+    } else if (activeUploads === 0 && uploadQueue.length === 0) {
+      // If we have no active uploads and no queue, we're done uploading
+      setIsUploading(false);
     }
   }, [activeUploads, maxConcurrentUploads, uploadQueue, processUploadQueue]);
 
