@@ -1,4 +1,5 @@
-import React, { useEffect } from "react";
+
+import React, { useState, useEffect } from "react";
 import { EnhancedFileUpload, FileWithPreview, RoomTagOption } from "@/components/ui/enhanced-file-upload";
 import { toast } from "@/hooks/use-toast";
 
@@ -13,29 +14,44 @@ export function PropertyFileUpload({
   initialFiles = [],
   roomOptions = []
 }: PropertyFileUploadProps) {
-  // Notify parent if there are any initial files (e.g., from DB)
+  const [uploadedFiles, setUploadedFiles] = useState<FileWithPreview[]>(initialFiles);
+  
   useEffect(() => {
-    if (initialFiles.length > 0 && onFilesUploaded) {
-      onFilesUploaded(initialFiles);
+    // Update with initialFiles when they change
+    if (initialFiles.length > 0) {
+      setUploadedFiles(initialFiles);
     }
-  }, [initialFiles, onFilesUploaded]);
+  }, [initialFiles]);
 
-  // Handle completed uploads from EnhancedFileUpload
+  // Handle completed uploads
   const handleUploadComplete = (files: FileWithPreview[]) => {
-    console.log(`Upload complete: ${files.length} new file(s)`);
+    console.log(`Upload complete callback received ${files.length} files`);
     
-    // Pass all files to parent
-    if (onFilesUploaded) {
-      onFilesUploaded(files);
-    }
+    // Update our local state with the new files
+    setUploadedFiles(prevFiles => {
+      // Avoid duplicates by checking file IDs
+      const existingIds = new Set(prevFiles.map(f => f.id));
+      const newFilesToAdd = files.filter(file => !existingIds.has(file.id));
+      
+      console.log(`Adding ${newFilesToAdd.length} new files to state (filtering out ${files.length - newFilesToAdd.length} duplicates)`);
+      const updatedFiles = [...prevFiles, ...newFilesToAdd];
+      
+      // Now call the parent's callback with ALL files
+      if (onFilesUploaded) {
+        console.log(`Calling onFilesUploaded with ${updatedFiles.length} total files`);
+        onFilesUploaded(updatedFiles);
+      }
+      
+      return updatedFiles;
+    });
 
     toast({
       title: "Upload Complete",
       description: `${files.length} file(s) uploaded successfully.`,
     });
   };
-
-  // Default room tag options
+  
+  // Default room options if none provided
   const defaultRoomOptions: RoomTagOption[] = [
     { value: "livingRoom", label: "Living Room" },
     { value: "kitchen", label: "Kitchen" },
@@ -52,14 +68,15 @@ export function PropertyFileUpload({
     <div className="space-y-4">
       <EnhancedFileUpload
         accept="image/*, .pdf, .dwg"
-        multiple
+        multiple={true}
         label="Upload Files"
         description="Upload property photos, blueprints, or drawings"
+        uploadedFiles={uploadedFiles}
+        setUploadedFiles={setUploadedFiles}
         onUploadComplete={handleUploadComplete}
         roomOptions={roomTagOptions}
         maxConcurrentUploads={5}
-        autoUpload
-        initialFiles={initialFiles} // pass these for preview only, if EnhancedFileUpload supports it
+        autoUpload={true}
       />
     </div>
   );
