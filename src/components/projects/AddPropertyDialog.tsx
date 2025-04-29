@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 import { 
   Dialog, 
@@ -38,6 +38,7 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
   const [bathrooms, setBathrooms] = useState("");
   
   const [attributes, setAttributes] = useState<string[]>([]);
+  const addressInputRef = useRef<HTMLInputElement>(null);
   
   const handleAddressSelect = (address: {
     addressLine1: string;
@@ -57,6 +58,11 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
       if (data.address.street) {
         console.log("Setting address line 1 from street:", data.address.street);
         setAddressLine1(data.address.street);
+        
+        // Focus and update the visual state of the input if needed
+        if (addressInputRef.current) {
+          addressInputRef.current.value = data.address.street;
+        }
       }
       
       data.address.city && setCity(data.address.city);
@@ -149,6 +155,7 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
                       placeholder="Street address" 
                       value={addressLine1} 
                       onChange={(e) => setAddressLine1(e.target.value)} 
+                      ref={addressInputRef}
                     />
                     <AddressAutocomplete onAddressSelect={handleAddressSelect} />
                   </div>

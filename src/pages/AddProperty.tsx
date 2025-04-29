@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -34,6 +34,7 @@ const AddProperty = () => {
   const [bathrooms, setBathrooms] = useState("");
   
   const [attributes, setAttributes] = useState<string[]>([]);
+  const addressInputRef = useRef<HTMLInputElement>(null);
   
   const [blueprintUrl, setBlueprintUrl] = useState<string | null>(null);
   const [homePhotos, setHomePhotos] = useState<string[]>([]);
@@ -55,6 +56,10 @@ const AddProperty = () => {
       if (data.address.street) {
         console.log("Setting address line 1 from street:", data.address.street);
         setAddressLine1(data.address.street);
+        
+        if (addressInputRef.current) {
+          addressInputRef.current.value = data.address.street;
+        }
       }
       
       data.address.city && setCity(data.address.city);
@@ -244,6 +249,7 @@ const AddProperty = () => {
                         value={addressLine1}
                         onChange={(e) => setAddressLine1(e.target.value)}
                         className="w-full"
+                        ref={addressInputRef}
                       />
                       <AddressAutocomplete onAddressSelect={handleAddressSelect} />
                     </div>

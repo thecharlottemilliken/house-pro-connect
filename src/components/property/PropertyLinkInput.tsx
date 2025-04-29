@@ -78,6 +78,11 @@ export function PropertyLinkInput({ onPropertyDataFetched }: PropertyLinkInputPr
       if (result.success && result.data) {
         console.log("Property data loaded successfully:", result.data);
         
+        // Ensure the street property exists and is properly formatted
+        if (result.data.address && result.data.address.street) {
+          console.log("Street address being passed to parent:", result.data.address.street);
+        }
+        
         // Map property type names to match the dropdown options in the form
         if (result.data.propertyType) {
           const propertyType = result.data.propertyType.toLowerCase();
