@@ -60,7 +60,7 @@ export function PropertyFileUpload({
         onUploadComplete={handleUploadComplete}
         roomOptions={roomTagOptions}
         maxConcurrentUploads={5}
-        autoUpload={true} // Set to auto upload
+        autoUpload={true}
       />
     </div>
   );
