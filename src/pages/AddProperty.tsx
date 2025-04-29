@@ -526,10 +526,15 @@ const AddProperty = () => {
               
               <div>
                 <h3 className="font-semibold text-gray-800 mb-3">Upload Files</h3>
-                <PropertyFileUpload 
-                  onFilesUploaded={handleFilesUploaded}
-                  initialFiles={propertyFiles}
-                  roomOptions={[
+                <EnhancedFileUpload
+  accept="image/*, .pdf, .dwg"
+  multiple={true}   // 👈 ADD THIS!!!
+  label="Upload Files"
+  description="Upload property photos, blueprints, or drawings"
+  uploadedFiles={uploadedFiles}
+  setUploadedFiles={setUploadedFiles}
+  onUploadComplete={handleUploadComplete}
+roomOptions={[
                     { value: "livingRoom", label: "Living Room" },
                     { value: "kitchen", label: "Kitchen" },
                     { value: "bathroom", label: "Bathroom" },
@@ -539,15 +544,9 @@ const AddProperty = () => {
                     { value: "blueprint", label: "Blueprint" },
                     { value: "floorPlan", label: "Floor Plan" }
                   ]}
-                />
+
+/>
               </div>
-              
-              {homePhotos.length > 0 && (
-                <div className="my-6">
-                  <h3 className="font-semibold text-gray-800 mb-3">Property Photos Preview</h3>
-                  <PropertyImageCarousel images={homePhotos} />
-                </div>
-              )}
               
               <div className="flex flex-col sm:flex-row justify-between pt-6 border-t border-gray-200 gap-4">
                 <Button 
