@@ -69,19 +69,24 @@ export function EnhancedFileUpload({
       setUploadedFiles(prevFiles => [...prevFiles, ...newFiles]);
       
       // Start uploading these files
-      for (const fileWithPreview of newFiles) {
-        const uploadedFile = await uploadFile(fileWithPreview, updateFileStatus);
-        if (uploadedFile && onUploadComplete) {
-          const completedFiles = uploadedFiles.filter(f => f.status === "complete");
-          const updatedCompletedFiles = [...completedFiles, uploadedFile];
-          onUploadComplete(updatedCompletedFiles);
-        }
+      const uploadPromises = newFiles.map(async (fileWithPreview) => {
+        return uploadFile(fileWithPreview, updateFileStatus);
+      });
+      
+      // Process all uploads in parallel
+      const uploadedFiles = (await Promise.all(uploadPromises)).filter(Boolean) as FileWithPreview[];
+      
+      if (uploadedFiles.length && onUploadComplete) {
+        // Only call onUploadComplete once with all completed files
+        onUploadComplete(uploadedFiles);
       }
       
-      toast({
-        title: "Upload Complete",
-        description: `${files.length} file(s) uploaded successfully.`,
-      });
+      if (uploadedFiles.length > 0) {
+        toast({
+          title: "Upload Complete",
+          description: `${uploadedFiles.length} file(s) uploaded successfully.`,
+        });
+      }
     } catch (error) {
       console.error("Error processing files:", error);
       toast({
@@ -219,6 +224,12 @@ export function EnhancedFileUpload({
           className="hidden"
         />
       </div>
+
+      {isUploading && (
+        <div className="flex justify-center">
+          <p className="text-sm text-gray-500">Uploading files...</p>
+        </div>
+      )}
 
       {uploadedFiles.length > 0 && (
         <div className="mt-6 space-y-4">

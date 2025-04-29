@@ -21,8 +21,6 @@ export async function processFiles(
 
   const newFiles: FileWithPreview[] = [];
 
-  console.log(`Processing ${files.length} files`);
-
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
     const previewUrl = await createPreviewUrl(file);
@@ -43,7 +41,6 @@ export async function processFiles(
     });
   }
 
-  console.log(`Added ${newFiles.length} files to upload queue`);
   return newFiles;
 }
 
@@ -89,8 +86,6 @@ export async function uploadFile(
     // Generate a unique file path
     const timestamp = Date.now();
     const filePath = `${sessionData.session.user.id}/${timestamp}-${fileWithPreview.file.name}`;
-    
-    console.log(`Uploading file: ${filePath}`);
 
     const { data, error } = await supabase.storage
       .from('properties')
@@ -112,8 +107,6 @@ export async function uploadFile(
 
     // Update file with URL and complete status
     updateFileStatusCallback(fileWithPreview.id, "complete", 100, publicUrl);
-    
-    console.log(`Upload complete: ${publicUrl}`);
 
     return {
       ...fileWithPreview,

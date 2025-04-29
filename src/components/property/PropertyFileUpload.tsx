@@ -54,8 +54,6 @@ export function PropertyFileUpload({
 
   // Handle completed uploads
   const handleUploadComplete = (files: FileWithPreview[]) => {
-    console.log(`Upload complete callback received ${files.length} files`);
-    
     // Update our internal state with the new files
     setUploadedFiles(prev => {
       // Create a map of existing file IDs to avoid duplicates
@@ -66,24 +64,14 @@ export function PropertyFileUpload({
       
       // Combine existing files with new ones
       const updatedFiles = [...prev, ...newFiles];
-      console.log(`Updated files list now has ${updatedFiles.length} files`);
       
       return updatedFiles;
     });
     
     // Call the parent's callback with all files
     if (onFilesUploaded) {
-      // We need to use the current state to ensure we pass all files
-      setUploadedFiles(currentFiles => {
-        onFilesUploaded(currentFiles);
-        return currentFiles;
-      });
+      onFilesUploaded(files);
     }
-
-    toast({
-      title: "Upload Complete",
-      description: `${files.length} file(s) uploaded successfully.`,
-    });
   };
   
   // Default room options if none provided
