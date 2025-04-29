@@ -78,7 +78,9 @@ export function PropertyLinkInput({ onPropertyDataFetched }: PropertyLinkInputPr
         
         // Check if we got images and log them
         if (formattedData.images && formattedData.images.length > 0) {
-          console.log(`Found ${formattedData.images.length} property images`);
+          console.log(`Found ${formattedData.images.length} property images:`, formattedData.images);
+        } else {
+          console.log("No property images found in the scraped data");
         }
         
         onPropertyDataFetched(formattedData);

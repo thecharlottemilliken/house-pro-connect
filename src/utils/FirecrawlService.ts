@@ -60,7 +60,7 @@ export class FirecrawlService {
         bathrooms: data.data?.bathrooms,
         sqft: data.data?.sqft,
         propertyType: data.data?.propertyType,
-        images: data.data?.images,
+        images: data.data?.images || [],
         yearBuilt: data.data?.yearBuilt,
         lotSize: data.data?.lotSize,
         price: data.data?.price,

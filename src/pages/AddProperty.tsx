@@ -20,7 +20,6 @@ const AddProperty = () => {
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Form state
   const [propertyName, setPropertyName] = useState("");
   const [isWorkingOnBehalf, setIsWorkingOnBehalf] = useState(false);
   const [addressLine1, setAddressLine1] = useState("");
@@ -34,7 +33,6 @@ const AddProperty = () => {
   const [bedrooms, setBedrooms] = useState("");
   const [bathrooms, setBathrooms] = useState("");
   
-  // Combined attributes
   const [attributes, setAttributes] = useState<string[]>([]);
   
   const [blueprintUrl, setBlueprintUrl] = useState<string | null>(null);
@@ -64,6 +62,11 @@ const AddProperty = () => {
     data.bedrooms && setBedrooms(data.bedrooms);
     data.bathrooms && setBathrooms(data.bathrooms);
     data.propertyType && setHomeType(data.propertyType.toLowerCase());
+    
+    if (data.images && Array.isArray(data.images) && data.images.length > 0) {
+      console.log(`Setting ${data.images.length} property images:`, data.images);
+      setHomePhotos(data.images);
+    }
   };
 
   const handleSubmit = async () => {
@@ -146,7 +149,6 @@ const AddProperty = () => {
       <DashboardNavbar />
       
       <div className="flex flex-col md:flex-row">
-        {/* Left Sidebar */}
         <div className="w-full md:w-80 bg-[#EFF3F7] p-4 md:p-8">
           <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">Create a Project</h1>
           <p className="text-sm md:text-base text-gray-600 mb-6 md:mb-8">
@@ -178,7 +180,6 @@ const AddProperty = () => {
           </div>
         </div>
         
-        {/* Main Content */}
         <div className="flex-1 p-4 md:p-10 overflow-auto">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-4">Select a Property</h2>
           <p className="text-sm md:text-base text-gray-700 mb-6 md:mb-8 max-w-3xl">
@@ -188,12 +189,9 @@ const AddProperty = () => {
           <div className="mb-8">
             <h3 className="text-xl font-bold text-gray-900 mb-6">Add a Property</h3>
             
-            {/* Property Form */}
+            <PropertyLinkInput onPropertyDataFetched={handlePropertyDataFetched} />
+            
             <div className="space-y-6 md:space-y-8">
-              {/* Property Link Input - Added at the top of the form */}
-              <PropertyLinkInput onPropertyDataFetched={handlePropertyDataFetched} />
-              
-              {/* Property Name */}
               <div>
                 <label htmlFor="propertyName" className="block text-sm font-medium text-gray-700 mb-1">
                   Enter a Property Nick Name
@@ -207,7 +205,6 @@ const AddProperty = () => {
                 />
               </div>
               
-              {/* Working on behalf checkbox */}
               <div className="flex items-center space-x-2">
                 <Checkbox 
                   id="workingOnBehalf" 
@@ -219,7 +216,6 @@ const AddProperty = () => {
                 </label>
               </div>
               
-              {/* Home Address Section */}
               <div>
                 <h3 className="font-semibold text-gray-800 mb-3">Home Address</h3>
                 <div className="space-y-4">
@@ -333,7 +329,6 @@ const AddProperty = () => {
                 </div>
               </div>
               
-              {/* Home Specs Section */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                 <div>
                   <h3 className="font-semibold text-gray-800 mb-3">Home Specs</h3>
@@ -423,7 +418,6 @@ const AddProperty = () => {
                   </div>
                 </div>
               
-                {/* Home Attributes Section - Using our new component */}
                 <div>
                   <h3 className="font-semibold text-gray-800 mb-3">Home Attributes</h3>
                   <HomeAttributesSelect 
@@ -433,7 +427,6 @@ const AddProperty = () => {
                 </div>
               </div>
               
-              {/* Upload Files */}
               <div>
                 <h3 className="font-semibold text-gray-800 mb-3">Upload Files</h3>
                 <div className="space-y-4">

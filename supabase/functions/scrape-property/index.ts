@@ -69,7 +69,8 @@ serve(async (req) => {
           waitForSelectors: [
             ".media-stream-container", // For Zillow images
             ".Summary__ImagesWrapper", // For Realtor images
-            ".media-column-container"  // Alternative Zillow image container
+            ".media-column-container",  // Alternative Zillow image container
+            ".photo-tile" // Additional image container
           ]
         }
       })
@@ -259,16 +260,22 @@ function extractZillowData(crawledData: any, originalUrl: string) {
   
   // Try to extract images from the response
   if (crawledData.images && crawledData.images.length > 0) {
+    console.log(`Found ${crawledData.images.length} images in the scraped data`);
+    
     crawledData.images.forEach((img: any) => {
-      if (img.src && img.src.startsWith('http') && 
-          (img.src.includes('images-')) || img.src.includes('photos')) {
-        // Filter out small icons and logos
-        if (img.width > 200 && img.height > 200) {
+      if (img.src && img.src.startsWith('http')) {
+        // Filter out small icons and logos, focus on property images
+        if ((img.width > 200 && img.height > 200) && 
+            (img.src.includes('images-') || img.src.includes('photos') || 
+             img.src.includes('pictures') || img.src.includes('zillow'))) {
+          console.log(`Adding image: ${img.src} (${img.width}x${img.height})`);
           images.push(img.src);
         }
       }
     });
   }
+  
+  console.log(`Extracted ${images.length} property images from Zillow`);
   
   // Try to extract address from content
   let street, city, state, zipCode;
@@ -370,16 +377,22 @@ function extractRealtorData(crawledData: any, originalUrl: string) {
   
   // Try to extract images from the response
   if (crawledData.images && crawledData.images.length > 0) {
+    console.log(`Found ${crawledData.images.length} images in the scraped data`);
+    
     crawledData.images.forEach((img: any) => {
-      if (img.src && img.src.startsWith('http') && 
-          (img.src.includes('mls-') || img.src.includes('photos'))) {
-        // Filter out small icons and logos
-        if (img.width > 200 && img.height > 200) {
+      if (img.src && img.src.startsWith('http')) {
+        // Filter for larger, likely property images
+        if ((img.width > 200 && img.height > 200) && 
+            (img.src.includes('mls-') || img.src.includes('photos') || 
+             img.src.includes('cdn') || img.src.includes('realtor'))) {
+          console.log(`Adding image: ${img.src} (${img.width}x${img.height})`);
           images.push(img.src);
         }
       }
     });
   }
+  
+  console.log(`Extracted ${images.length} property images from Realtor.com`);
   
   // Try to extract address from content
   let street, city, state, zipCode;
@@ -480,14 +493,19 @@ function extractGenericData(crawledData: any, originalUrl: string) {
   // Try to extract images from the response
   const images: string[] = [];
   if (crawledData.images && crawledData.images.length > 0) {
+    console.log(`Found ${crawledData.images.length} images in the scraped data`);
+    
     crawledData.images.forEach((img: any) => {
       // Only include reasonably sized images (skip icons, etc.)
       if (img.src && img.src.startsWith('http') && 
           img.width > 200 && img.height > 200) {
+        console.log(`Adding image: ${img.src} (${img.width}x${img.height})`);
         images.push(img.src);
       }
     });
   }
+  
+  console.log(`Extracted ${images.length} images from generic source`);
   
   return {
     address: {
