@@ -97,15 +97,36 @@ const PriorExperience = () => {
     
     console.log("Saving prior experience:", prior_experience);
     
-    // If we already have a project ID, update it
-    if (projectId) {
-      try {
-        // Use the edge function to update the project
+    try {
+      // Get all project preferences from all steps
+      const completeProjectData = {
+        propertyId: propertyId,
+        userId: user.id,
+        title: projectPrefs.title || "New Project",
+        renovationAreas: projectPrefs.renovationAreas || [],
+        projectPreferences: projectPrefs.projectPreferences || {},
+        constructionPreferences: projectPrefs.constructionPreferences || {},
+        designPreferences: projectPrefs.designPreferences || {},
+        managementPreferences: projectPrefs.managementPreferences || {},
+        prior_experience
+      };
+      
+      console.log("Finalizing complete project data:", completeProjectData);
+      
+      // If we already have a project ID, update it with ALL collected data
+      if (projectId) {
         const { data, error } = await supabase.functions.invoke('handle-project-update', {
           method: 'POST',
           body: { 
             projectId,
             userId: user.id,
+            propertyId: completeProjectData.propertyId,
+            title: completeProjectData.title,
+            renovationAreas: completeProjectData.renovationAreas,
+            projectPreferences: completeProjectData.projectPreferences,
+            constructionPreferences: completeProjectData.constructionPreferences,
+            designPreferences: completeProjectData.designPreferences,
+            managementPreferences: completeProjectData.managementPreferences,
             prior_experience
           }
         });
@@ -119,27 +140,51 @@ const PriorExperience = () => {
           description: "Project created successfully!",
         });
         
-        // Navigate to project dashboard - FIX: Use correct route
+        // Navigate to project dashboard
         navigate(`/project-dashboard/${projectId}`);
-      } catch (error) {
-        console.error('Error saving prior experience:', error);
-        toast({
-          title: "Error",
-          description: "Failed to save prior experience",
-          variant: "destructive"
+      } else {
+        // Create a new project with ALL collected data
+        const { data, error } = await supabase.functions.invoke('handle-project-update', {
+          method: 'POST',
+          body: { 
+            userId: user.id,
+            propertyId: completeProjectData.propertyId,
+            title: completeProjectData.title,
+            renovationAreas: completeProjectData.renovationAreas,
+            projectPreferences: completeProjectData.projectPreferences,
+            constructionPreferences: completeProjectData.constructionPreferences,
+            designPreferences: completeProjectData.designPreferences,
+            managementPreferences: completeProjectData.managementPreferences,
+            prior_experience
+          }
         });
-        setIsLoading(false);
-        return;
+        
+        if (error) {
+          throw error;
+        }
+        
+        const newProjectId = data?.id;
+        
+        if (!newProjectId) {
+          throw new Error("No project ID returned from creation");
+        }
+        
+        toast({
+          title: "Success",
+          description: "Project created successfully!",
+        });
+        
+        // Navigate to the project dashboard with the new project ID
+        navigate(`/project-dashboard/${newProjectId}`);
       }
-    } else {
-      // Project ID should exist by now, so this is an error
+    } catch (error) {
+      console.error('Error saving all project data:', error);
       toast({
         title: "Error",
-        description: "No project ID available",
+        description: "Failed to save project data",
         variant: "destructive"
       });
       setIsLoading(false);
-      return;
     }
   };
 
