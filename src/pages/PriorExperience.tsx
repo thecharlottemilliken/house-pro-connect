@@ -119,8 +119,8 @@ const PriorExperience = () => {
           description: "Project created successfully!",
         });
         
-        // Navigate to project dashboard
-        navigate(`/project/${projectId}`);
+        // Navigate to project dashboard - FIX: Use correct route
+        navigate(`/project-dashboard/${projectId}`);
       } catch (error) {
         console.error('Error saving prior experience:', error);
         toast({
