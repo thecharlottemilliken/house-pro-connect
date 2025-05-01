@@ -206,6 +206,7 @@ async function updateExistingProject(
     });
   }
   
+  // Log the data that will be used for updating
   console.log("Project data before update:", JSON.stringify({
     projectId,
     userId,
@@ -223,30 +224,30 @@ async function updateExistingProject(
   if (title) updateData.title = title;
   
   // Always include all preference data that was sent in the request
-  if ('renovationAreas' in body) {
+  if (renovationAreas !== undefined) {
     updateData.renovation_areas = renovationAreas;
   }
   
-  if ('projectPreferences' in body) {
+  if (projectPreferences !== undefined) {
     updateData.project_preferences = projectPreferences;
   }
   
-  if ('constructionPreferences' in body) {
+  if (constructionPreferences !== undefined) {
     console.log("Updating construction preferences with:", JSON.stringify(constructionPreferences, null, 2));
     updateData.construction_preferences = constructionPreferences;
   }
   
-  if ('designPreferences' in body) {
+  if (designPreferences !== undefined) {
     console.log("Updating design preferences with:", JSON.stringify(designPreferences, null, 2));
     updateData.design_preferences = designPreferences;
   }
   
-  if ('managementPreferences' in body) {
+  if (managementPreferences !== undefined) {
     console.log("Updating management preferences with:", JSON.stringify(managementPreferences, null, 2));
     updateData.management_preferences = managementPreferences;
   }
   
-  if ('prior_experience' in body) {
+  if (prior_experience !== undefined) {
     console.log("Updating prior experience with:", JSON.stringify(prior_experience, null, 2));
     updateData.prior_experience = prior_experience;
   }
