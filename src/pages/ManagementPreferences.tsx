@@ -15,7 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
 import {
   Dialog,
   DialogContent,
@@ -23,11 +22,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { format } from "date-fns";
@@ -35,6 +29,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import { CustomDatePicker } from "@/components/ui/custom-date-picker";
 
 // Define TimeSlot interface for improved type safety
 interface TimeSlot {
@@ -120,7 +115,7 @@ const ManagementPreferences = () => {
   }, [location.state, navigate]);
   
   // Helper function to convert Date objects to strings for JSON serialization
-  const formatTimeSlotsForStorage = (slots: TimeSlot[]): FormattedTimeSlot[] => {
+  const formatTimeSlotsForStorage = (slots: TimeSlot[]): Record<string, any>[] => {
     return slots.map(slot => ({
       id: slot.id,
       dateStr: slot.date ? slot.date.toISOString() : null,
@@ -130,7 +125,7 @@ const ManagementPreferences = () => {
   };
   
   // Helper function to convert stored string dates back to Date objects
-  const parseTimeSlotsFromStorage = (formattedSlots: FormattedTimeSlot[]): TimeSlot[] => {
+  const parseTimeSlotsFromStorage = (formattedSlots: any[]): TimeSlot[] => {
     return formattedSlots.map(slot => ({
       id: slot.id,
       date: slot.dateStr ? new Date(slot.dateStr) : null,
@@ -556,12 +551,9 @@ const ManagementPreferences = () => {
             </div>
             
             <div className="flex flex-col items-center">
-              <Calendar
-                mode="single"
-                selected={tempTimeSlot.date || undefined}
-                onSelect={(date) => date && setTempTimeSlot({...tempTimeSlot, date})}
-                className={cn("rounded-md border", "p-3 pointer-events-auto")}
-                initialFocus
+              <CustomDatePicker
+                onSelect={(date) => setTempTimeSlot({...tempTimeSlot, date})}
+                selectedDate={tempTimeSlot.date}
               />
             </div>
             
@@ -573,7 +565,7 @@ const ManagementPreferences = () => {
                     key={range.value}
                     type="button"
                     variant={tempTimeSlot.time === range.value && tempTimeSlot.ampm === "AM" ? "default" : "outline"}
-                    className={tempTimeSlot.time === range.value && tempTimeSlot.ampm === "AM" ? "bg-[#174c65]" : ""}
+                    className={tempTimeSlot.time === range.value && tempTimeSlot.ampm === "AM" ? "bg-[#F97316]" : ""}
                     onClick={() => setTempTimeSlot({...tempTimeSlot, time: range.value, ampm: "AM"})}
                   >
                     {range.label}
@@ -590,7 +582,7 @@ const ManagementPreferences = () => {
                     key={range.value}
                     type="button"
                     variant={tempTimeSlot.time === range.value && tempTimeSlot.ampm === "PM" ? "default" : "outline"}
-                    className={tempTimeSlot.time === range.value && tempTimeSlot.ampm === "PM" ? "bg-[#174c65]" : ""}
+                    className={tempTimeSlot.time === range.value && tempTimeSlot.ampm === "PM" ? "bg-[#F97316]" : ""}
                     onClick={() => setTempTimeSlot({...tempTimeSlot, time: range.value, ampm: "PM"})}
                   >
                     {range.label}
@@ -604,7 +596,7 @@ const ManagementPreferences = () => {
             <Button variant="outline" onClick={closeTimeSlotModal}>CANCEL</Button>
             <Button 
               onClick={saveTimeSlot}
-              className="bg-[#174c65] hover:bg-[#174c65]/90"
+              className="bg-[#F97316] hover:bg-[#F97316]/90"
               disabled={!tempTimeSlot.date || !tempTimeSlot.time}
             >
               SAVE AS COMPLETE
