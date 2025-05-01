@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
@@ -219,7 +220,7 @@ const PriorExperience = () => {
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="many" id="many" />
-                    <Label htmlFor="many">Many prior experience</Label>
+                    <Label htmlFor="many">Many prior experiences</Label>
                   </div>
                 </RadioGroup>
               </div>
