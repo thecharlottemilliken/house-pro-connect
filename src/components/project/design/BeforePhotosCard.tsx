@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import BeforePhotosSection from "./BeforePhotosSection";
 
 interface BeforePhotosCardProps {
+  area: string;
   beforePhotos: string[];
   propertyPhotos: string[];
   onSelectBeforePhotos: (photos: string[]) => void;
@@ -12,6 +13,7 @@ interface BeforePhotosCardProps {
 }
 
 const BeforePhotosCard = ({
+  area,
   beforePhotos,
   propertyPhotos,
   onSelectBeforePhotos,
@@ -34,6 +36,7 @@ const BeforePhotosCard = ({
     <Card className="shadow-lg border-gray-200/50 w-full">
       <CardContent className="p-4 sm:p-6">
         <BeforePhotosSection
+          area={area}
           beforePhotos={beforePhotos}
           propertyPhotos={propertyPhotos}
           onSelectBeforePhotos={onSelectBeforePhotos}

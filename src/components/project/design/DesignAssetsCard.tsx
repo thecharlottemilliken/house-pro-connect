@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
@@ -12,7 +13,8 @@ interface DesignAssetsCardProps {
   onAddBlueprints?: () => void;
   propertyBlueprint?: string | null;
   propertyId?: string;
-  currentRoom: string; // Add this prop to track current room
+  currentRoom: string; // Room name for tracking
+  propertyPhotos?: string[]; // Add property photos prop
 }
 
 const DesignAssetsCard = ({
@@ -23,7 +25,8 @@ const DesignAssetsCard = ({
   onAddBlueprints,
   propertyBlueprint,
   propertyId,
-  currentRoom
+  currentRoom,
+  propertyPhotos = [] // Default to empty array
 }: DesignAssetsCardProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [blueprintFile, setBlueprintFile] = useState<{name: string; size: string; type: 'pdf' | 'xls' | 'jpg' | 'png'; url?: string} | null>(
@@ -615,6 +618,7 @@ const DesignAssetsCard = ({
           files={blueprintFile ? [blueprintFile] : []}
           onUpload={handleUploadBlueprint}
           onDelete={handleRemoveBlueprint}
+          propertyPhotos={propertyPhotos}
         />
 
         <CategorySection
@@ -622,6 +626,7 @@ const DesignAssetsCard = ({
           files={renderingFiles}
           onUpload={handleAddRenderings}
           onDelete={handleRemoveRenderings}
+          propertyPhotos={propertyPhotos}
         />
 
         <CategorySection
@@ -629,6 +634,7 @@ const DesignAssetsCard = ({
           files={drawingFiles}
           onUpload={handleAddDrawings}
           onDelete={handleRemoveDrawings}
+          propertyPhotos={propertyPhotos}
         />
       </CardContent>
     </Card>

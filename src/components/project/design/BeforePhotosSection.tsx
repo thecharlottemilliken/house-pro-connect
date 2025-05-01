@@ -8,6 +8,7 @@ import SelectPropertyPhotosDialog from "./SelectPropertyPhotosDialog";
 import { GripVertical } from "lucide-react";
 
 interface BeforePhotosSectionProps {
+  area: string;
   beforePhotos: string[];
   propertyPhotos: string[];
   onSelectBeforePhotos: (photos: string[]) => void;
@@ -17,6 +18,7 @@ interface BeforePhotosSectionProps {
 }
 
 const BeforePhotosSection = ({
+  area,
   beforePhotos,
   propertyPhotos,
   onSelectBeforePhotos,
@@ -31,7 +33,7 @@ const BeforePhotosSection = ({
       <div className="flex justify-between items-center">
         <div>
           <h3 className="font-semibold text-gray-900">Before Photos</h3>
-          <p className="text-sm text-gray-500 mt-1">Document the current state of your space</p>
+          <p className="text-sm text-gray-500 mt-1">Document the current state of your {area}</p>
         </div>
         {hasBeforePhotos && (
           <Button 

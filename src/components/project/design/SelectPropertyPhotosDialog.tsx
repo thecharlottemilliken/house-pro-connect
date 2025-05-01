@@ -1,105 +1,125 @@
 
-import React from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Image, CheckCircle } from "lucide-react";
+import { PropertyImageCarousel } from "@/components/property/PropertyImageCarousel";
 
 interface SelectPropertyPhotosDialogProps {
   photos: string[];
   onSelect: (selectedPhotos: string[]) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-const SelectPropertyPhotosDialog = ({
-  photos,
-  onSelect,
+const SelectPropertyPhotosDialog = ({ 
+  photos, 
+  onSelect, 
+  open: controlledOpen, 
+  onOpenChange 
 }: SelectPropertyPhotosDialogProps) => {
-  const [selectedPhotos, setSelectedPhotos] = React.useState<string[]>([]);
-  const [isOpen, setIsOpen] = React.useState(false);
+  const [isControlled] = useState(controlledOpen !== undefined && onOpenChange !== undefined);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
 
-  const handlePhotoClick = (photo: string) => {
-    setSelectedPhotos((prev) => {
-      const isSelected = prev.includes(photo);
-      if (isSelected) {
-        return prev.filter((p) => p !== photo);
-      }
-      return [...prev, photo];
-    });
-  };
-
-  const handleConfirm = () => {
-    onSelect(selectedPhotos);
-    setIsOpen(false);
-  };
+  const isOpen = isControlled ? controlledOpen : internalOpen;
+  const setIsOpen = isControlled ? onOpenChange : setInternalOpen;
 
   const handleOpenChange = (open: boolean) => {
+    if (setIsOpen) {
+      setIsOpen(open);
+    }
     if (!open) {
       setSelectedPhotos([]);
     }
-    setIsOpen(open);
   };
 
+  const handleToggleSelect = (photo: string) => {
+    setSelectedPhotos(prev => {
+      if (prev.includes(photo)) {
+        return prev.filter(p => p !== photo);
+      } else {
+        return [...prev, photo];
+      }
+    });
+  };
+
+  const handleSelectPhotos = () => {
+    onSelect(selectedPhotos);
+    handleOpenChange(false);
+  };
+
+  if (!photos || photos.length === 0) {
+    return null;
+  }
+
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
+    <>
+      {!isControlled && (
         <Button 
-          variant="outline" 
-          className="w-full flex items-center justify-center gap-2"
+          variant="outline"
+          onClick={() => handleOpenChange(true)}
+          className="w-full"
         >
-          <Image className="h-4 w-4" />
           Select from Property Photos
         </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-4xl">
-        <DialogHeader>
-          <DialogTitle>Select Photos</DialogTitle>
-        </DialogHeader>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 my-4">
-          {photos.map((photo, idx) => (
-            <div 
-              key={idx} 
-              className={`relative aspect-video cursor-pointer rounded-lg overflow-hidden border-2 ${
-                selectedPhotos.includes(photo) ? 'border-primary' : 'border-transparent'
-              }`}
-              onClick={() => handlePhotoClick(photo)}
-            >
-              <img 
-                src={photo} 
-                alt={`Property photo ${idx + 1}`} 
-                className="w-full h-full object-cover"
-              />
-              {selectedPhotos.includes(photo) && (
-                <div className="absolute top-2 right-2 bg-primary text-white rounded-full p-1">
-                  <CheckCircle className="h-5 w-5" />
-                </div>
-              )}
-              <div className="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center">
-                <span className="text-xs">{selectedPhotos.includes(photo) ? 
-                  selectedPhotos.findIndex(p => p === photo) + 1 : ""}</span>
+      )}
+      
+      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Select Photos</DialogTitle>
+          </DialogHeader>
+          
+          {photos.length > 0 ? (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-[60vh] overflow-y-auto p-1">
+                {photos.map((photo, index) => (
+                  <div 
+                    key={index} 
+                    className={`relative aspect-square rounded-lg overflow-hidden cursor-pointer border-2 ${
+                      selectedPhotos.includes(photo) ? 'border-primary' : 'border-transparent'
+                    }`}
+                    onClick={() => handleToggleSelect(photo)}
+                  >
+                    <img 
+                      src={photo} 
+                      alt={`Property photo ${index + 1}`} 
+                      className="w-full h-full object-cover"
+                    />
+                    {selectedPhotos.includes(photo) && (
+                      <div className="absolute top-2 right-2 bg-primary text-white rounded-full h-6 w-6 flex items-center justify-center text-xs font-bold">
+                        {selectedPhotos.indexOf(photo) + 1}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
+              
+              <DialogFooter className="flex flex-col sm:flex-row gap-2">
+                <span className="text-sm text-gray-500">
+                  {selectedPhotos.length} photo{selectedPhotos.length !== 1 ? 's' : ''} selected
+                </span>
+                <div className="flex gap-2 ml-auto">
+                  <Button variant="outline" onClick={() => handleOpenChange(false)}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleSelectPhotos} 
+                    disabled={selectedPhotos.length === 0}
+                  >
+                    Select Photos
+                  </Button>
+                </div>
+              </DialogFooter>
+            </>
+          ) : (
+            <div className="text-center py-8">
+              <p>No property photos available.</p>
             </div>
-          ))}
-        </div>
-        <div className="flex justify-between items-center">
-          <div className="text-sm text-gray-500">
-            {selectedPhotos.length} photo{selectedPhotos.length !== 1 ? 's' : ''} selected
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setSelectedPhotos([])}>
-              Clear Selection
-            </Button>
-            <Button onClick={handleConfirm} disabled={selectedPhotos.length === 0}>
-              Confirm Selection
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

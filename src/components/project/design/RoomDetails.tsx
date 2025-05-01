@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { FileText } from "lucide-react";
@@ -162,6 +161,7 @@ const RoomDetails = ({
       />
 
       <BeforePhotosCard
+        area={area}
         beforePhotos={beforePhotos}
         propertyPhotos={propertyPhotos}
         onSelectBeforePhotos={onSelectBeforePhotos!}

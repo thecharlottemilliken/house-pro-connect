@@ -557,6 +557,7 @@ const ProjectDesign = () => {
                                   propertyBlueprint={propertyDetails?.blueprint_url || null}
                                   propertyId={propertyDetails?.id}
                                   currentRoom={area.area}
+                                  propertyPhotos={propertyPhotos}
                                 />
                               </div>
                             </div>
