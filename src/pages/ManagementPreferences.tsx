@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Check, X, Pencil } from "lucide-react";
@@ -121,7 +122,7 @@ const ManagementPreferences = () => {
   }, [location.state, navigate]);
   
   // Helper function to convert Date objects to strings for JSON serialization
-  const formatTimeSlotsForStorage = (slots: TimeSlot[]): Record<string, any>[] => {
+  const formatTimeSlotsForStorage = (slots: TimeSlot[]): FormattedTimeSlot[] => {
     return slots.map(slot => ({
       id: slot.id,
       dateStr: slot.date ? slot.date.toISOString() : null,
@@ -235,7 +236,7 @@ const ManagementPreferences = () => {
   };
 
   // Format time slot display to match the UI design
-  const formatTimeSlot = (slot: TimeSlot): string | FormattedTimeSlotDisplay => {
+  const formatTimeSlot = (slot: TimeSlot): { dayAndDate: string; time: string } | string => {
     if (!slot.date || !slot.time) {
       return "Select a time and date for your call";
     }
@@ -269,7 +270,7 @@ const ManagementPreferences = () => {
     // Format time slots for storage (convert Date objects to strings)
     const formattedTimeSlots = formatTimeSlotsForStorage(timeSlots);
     
-    // Create management preferences object
+    // Create management preferences object with all the data
     const managementPreferences = {
       wantProjectCoach,
       phoneNumber: form.getValues("phoneNumber"),
@@ -504,18 +505,20 @@ const ManagementPreferences = () => {
                           <h4 className="text-lg font-medium mb-1">Time Slot {index + 1}</h4>
                           {(() => {
                             const formattedSlot = formatTimeSlot(slot);
-                            return typeof formattedSlot === 'string' ? (
-                              <p className="text-sm text-gray-700">{formattedSlot}</p>
-                            ) : (
-                              <>
-                                <p className="text-xl font-normal text-gray-800">
-                                  {formattedSlot.dayAndDate}
-                                </p>
-                                <p className="text-xl font-normal text-gray-800">
-                                  {formattedSlot.time}
-                                </p>
-                              </>
-                            );
+                            if (typeof formattedSlot === 'string') {
+                              return <p className="text-sm text-gray-700">{formattedSlot}</p>;
+                            } else {
+                              return (
+                                <>
+                                  <p className="text-xl font-normal text-gray-800">
+                                    {formattedSlot.dayAndDate}
+                                  </p>
+                                  <p className="text-xl font-normal text-gray-800">
+                                    {formattedSlot.time}
+                                  </p>
+                                </>
+                              );
+                            }
                           })()}
                         </div>
                       ) : (
@@ -572,7 +575,7 @@ const ManagementPreferences = () => {
             <Button 
               variant="outline" 
               className="flex items-center text-[#174c65] order-2 sm:order-1 w-full sm:w-auto"
-              onClick={() => navigate("/design-preferences", { state: projectPrefs })}
+              onClick={goBack}
               disabled={isLoading}
             >
               <ArrowLeft className="mr-2 h-4 w-4" /> BACK
@@ -582,14 +585,16 @@ const ManagementPreferences = () => {
               <Button
                 variant="outline"
                 className="text-[#174c65] border-[#174c65] w-full sm:w-auto"
-                onClick={() => navigate("/dashboard")}
+                onClick={() => {
+                  savePreferences().then(() => navigate("/dashboard"));
+                }}
                 disabled={isLoading}
               >
                 SAVE & EXIT
               </Button>
               <Button
                 className="flex items-center bg-[#174c65] hover:bg-[#174c65]/90 text-white w-full sm:w-auto justify-center"
-                onClick={() => navigate("/prior-experience", { state: projectPrefs })}
+                onClick={goToNextStep}
                 disabled={isLoading}
               >
                 {isLoading ? "Loading..." : "NEXT"} {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
