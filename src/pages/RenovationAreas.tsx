@@ -14,8 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useProjectData } from "@/hooks/useProjectData";
 
-const roomOptions = [
+// Standard room options that should be available for all properties
+const standardRoomOptions = [
   "Kitchen", "Bathroom", "Living Room", "Dining Room", "Primary Bedroom", 
   "Guest Bedroom", "Office", "Basement", "Attic", "Garage", "Outdoor Space", 
   "Laundry Room"
@@ -36,6 +38,10 @@ const RenovationAreas = () => {
   const [selectedAreaType, setSelectedAreaType] = useState<string>("");
   const [selectedLocation, setSelectedLocation] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [roomOptions, setRoomOptions] = useState<string[]>(standardRoomOptions);
+  
+  // Fetch property details to get additional rooms if available
+  const { propertyDetails } = useProjectData(undefined, location.state);
 
   useEffect(() => {
     if (!user) {
@@ -60,6 +66,24 @@ const RenovationAreas = () => {
       navigate("/create-project");
     }
   }, [location.state, navigate, user]);
+
+  // Update room options when property details are loaded
+  useEffect(() => {
+    if (propertyDetails) {
+      // Get any additional rooms from the property data if available
+      const propertyRooms: string[] = [];
+      
+      // This is where we would extract rooms from property details
+      // For example, if propertyDetails has a rooms array or specific room fields
+      
+      // Combine standard room options with property-specific rooms
+      // Use a Set to ensure no duplicates
+      const combinedOptions = Array.from(new Set([...standardRoomOptions, ...propertyRooms]));
+      setRoomOptions(combinedOptions);
+      
+      console.log("Combined room options:", combinedOptions);
+    }
+  }, [propertyDetails]);
 
   const addArea = () => {
     if (!selectedAreaType) {
