@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Check, X, Pencil } from "lucide-react";
@@ -45,6 +46,12 @@ interface FormattedTimeSlot {
   dateStr: string | null; // ISO string format of the date or null
   time: string;
   ampm: string;
+}
+
+// Interface for formatted time slot display
+interface FormattedTimeSlotDisplay {
+  dayAndDate: string;
+  time: string;
 }
 
 const ManagementPreferences = () => {
@@ -229,7 +236,7 @@ const ManagementPreferences = () => {
   };
 
   // Format time slot display to match the UI design
-  const formatTimeSlot = (slot: TimeSlot) => {
+  const formatTimeSlot = (slot: TimeSlot): string | FormattedTimeSlotDisplay => {
     if (!slot.date || !slot.time) {
       return "Select a time and date for your call";
     }
@@ -496,12 +503,21 @@ const ManagementPreferences = () => {
                             </Button>
                           </div>
                           <h4 className="text-lg font-medium mb-1">Time Slot {index + 1}</h4>
-                          <p className="text-xl font-normal text-gray-800">
-                            {formatTimeSlot(slot).dayAndDate}
-                          </p>
-                          <p className="text-xl font-normal text-gray-800">
-                            {formatTimeSlot(slot).time}
-                          </p>
+                          {(() => {
+                            const formattedSlot = formatTimeSlot(slot);
+                            return typeof formattedSlot === 'string' ? (
+                              <p className="text-sm text-gray-700">{formattedSlot}</p>
+                            ) : (
+                              <>
+                                <p className="text-xl font-normal text-gray-800">
+                                  {formattedSlot.dayAndDate}
+                                </p>
+                                <p className="text-xl font-normal text-gray-800">
+                                  {formattedSlot.time}
+                                </p>
+                              </>
+                            );
+                          })()}
                         </div>
                       ) : (
                         <div className="flex items-center justify-between border border-gray-300 rounded-md p-3">
@@ -671,3 +687,4 @@ const ManagementPreferences = () => {
 };
 
 export default ManagementPreferences;
+
