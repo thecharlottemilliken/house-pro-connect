@@ -45,32 +45,70 @@ const SelectProjectFilesDialog = ({
       
       // Extract file information from design_preferences
       const designPreferences = projectData?.design_preferences || {};
-      const designFiles = designPreferences.designFiles || [];
-      const designFileUrls = designPreferences.designFileUrls || [];
       
-      // Transform design files to the expected format
-      const files = designFiles.map((file: any) => ({
-        id: file.id || `file-${Math.random().toString(36).substring(2, 11)}`,
-        name: file.name || 'Unnamed file',
-        url: file.url,
-        content_type: file.type || 'application/octet-stream'
-      }));
+      // Safely access properties with proper type checking
+      const files: {id: string; name: string; url: string; content_type: string}[] = [];
       
-      // Add any additional files that might only exist in designFileUrls
-      designFileUrls.forEach((url: string) => {
-        // Check if this URL already exists in the files array
-        const exists = files.some(file => file.url === url);
-        if (!exists) {
-          // Extract a filename from the URL
-          const fileName = url.split('/').pop() || 'File';
-          files.push({
-            id: `url-${Math.random().toString(36).substring(2, 11)}`,
-            name: fileName,
-            url: url,
-            content_type: url.toLowerCase().match(/\.(jpg|jpeg|png|gif)$/) ? 'image/jpeg' : 'application/octet-stream'
-          });
-        }
-      });
+      // Process designFiles if it exists and is an array
+      if (designPreferences && 
+          typeof designPreferences === 'object' && 
+          'designFiles' in designPreferences && 
+          Array.isArray(designPreferences.designFiles)) {
+        
+        designPreferences.designFiles.forEach((file: any) => {
+          if (file && typeof file === 'object' && 'url' in file) {
+            files.push({
+              id: file.id || `file-${Math.random().toString(36).substring(2, 11)}`,
+              name: file.name || 'Unnamed file',
+              url: file.url,
+              content_type: file.type || 'application/octet-stream'
+            });
+          }
+        });
+      }
+      
+      // Process designFileUrls if it exists and is an array
+      if (designPreferences && 
+          typeof designPreferences === 'object' && 
+          'designFileUrls' in designPreferences && 
+          Array.isArray(designPreferences.designFileUrls)) {
+        
+        designPreferences.designFileUrls.forEach((url: string) => {
+          // Check if this URL already exists in the files array
+          const exists = files.some(file => file.url === url);
+          if (!exists && typeof url === 'string') {
+            // Extract a filename from the URL
+            const fileName = url.split('/').pop() || 'File';
+            files.push({
+              id: `url-${Math.random().toString(36).substring(2, 11)}`,
+              name: fileName,
+              url: url,
+              content_type: url.toLowerCase().match(/\.(jpg|jpeg|png|gif)$/) ? 'image/jpeg' : 'application/octet-stream'
+            });
+          }
+        });
+      }
+      
+      // Process designAssets if it exists and is an array
+      if (designPreferences && 
+          typeof designPreferences === 'object' && 
+          'designAssets' in designPreferences && 
+          Array.isArray(designPreferences.designAssets)) {
+          
+        designPreferences.designAssets.forEach((asset: any) => {
+          if (asset && typeof asset === 'object' && 'url' in asset) {
+            const exists = files.some(file => file.url === asset.url);
+            if (!exists) {
+              files.push({
+                id: `asset-${Math.random().toString(36).substring(2, 11)}`,
+                name: asset.name || 'Asset file',
+                url: asset.url,
+                content_type: asset.type || 'application/octet-stream'
+              });
+            }
+          }
+        });
+      }
       
       setProjectFiles(files);
       setSelectedFiles([]);
