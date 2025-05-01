@@ -388,10 +388,13 @@ const ProjectDesign = () => {
     try {
       if (!projectData) return;
       
-      // Get existing design assets
+      // Get existing design preferences
       const designPreferences = projectData.design_preferences as unknown as DesignPreferences || {
         hasDesigns: false
       };
+      
+      // Get existing design assets
+      const existingAssets = [...(designPreferences.designAssets || [])];
       
       // Convert URLs to design asset format
       const newAssets = selectedFiles.map(url => {
@@ -403,11 +406,10 @@ const ProjectDesign = () => {
       });
       
       // Combine with existing assets
-      const existingAssets = designPreferences.designAssets || [];
       const updatedAssets = [...existingAssets, ...newAssets];
       
       // Update design preferences
-      const updatedDesignPreferences: Record<string, unknown> = {
+      const updatedDesignPreferences = {
         ...designPreferences,
         hasDesigns: true,
         designAssets: updatedAssets
@@ -433,6 +435,54 @@ const ProjectDesign = () => {
       toast({
         title: "Error",
         description: "Failed to add project files. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleRemoveDesignAsset = async (assetIndex: number) => {
+    try {
+      if (!projectData) return;
+      
+      // Get existing design preferences
+      const designPreferences = projectData.design_preferences as unknown as DesignPreferences || {
+        hasDesigns: false
+      };
+      
+      // Get existing design assets
+      const existingAssets = [...(designPreferences.designAssets || [])];
+      
+      // Remove the asset at the specified index
+      if (assetIndex >= 0 && assetIndex < existingAssets.length) {
+        existingAssets.splice(assetIndex, 1);
+      }
+      
+      // Update design preferences
+      const updatedDesignPreferences = {
+        ...designPreferences,
+        designAssets: existingAssets
+      };
+      
+      // Save to database
+      const { error } = await supabase
+        .from('projects')
+        .update({
+          design_preferences: updatedDesignPreferences as Json
+        })
+        .eq('id', projectData.id);
+        
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Design asset removed successfully"
+      });
+      
+    } catch (error: any) {
+      console.error('Error removing design asset:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove design asset. Please try again.",
         variant: "destructive"
       });
     }
@@ -521,6 +571,7 @@ const ProjectDesign = () => {
                                   beforePhotos={beforePhotos}
                                   projectId={projectData.id}
                                   onSelectProjectFiles={files => handleAddProjectFiles(area.area, files)}
+                                  onRemoveDesignAsset={handleRemoveDesignAsset}
                                 />
                               </div>
                               
