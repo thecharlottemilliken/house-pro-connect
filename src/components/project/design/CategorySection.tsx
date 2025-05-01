@@ -1,91 +1,90 @@
 
 import React from "react";
+import { Upload } from "lucide-react";
+import { FileListItem } from "./FileListItem";
+import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { FileUpload } from "@/components/ui/file-upload";
-import { Trash2, Upload } from "lucide-react";
-import { FileListItem } from "./FileListItem";
-import SelectProjectFilesDialog from "./SelectProjectFilesDialog";
 
 interface CategorySectionProps {
   title: string;
-  files: Array<{name: string; size: string; type: 'pdf' | 'xls' | 'jpg' | 'png'; url?: string}>;
+  files?: { name: string; size: string; type: 'pdf' | 'xls' | 'jpg' | 'png'; url?: string }[];
   onUpload: (urls: string[]) => void;
   onDelete: () => void;
-  projectFiles?: Array<{name: string; url: string; type?: string}>;
 }
 
-const CategorySection: React.FC<CategorySectionProps> = ({ 
-  title, 
-  files, 
-  onUpload, 
-  onDelete,
-  projectFiles = []
-}) => {
-  const handleSelectFromProjectFiles = (selectedUrls: string[]) => {
-    if (selectedUrls.length > 0) {
-      onUpload(selectedUrls);
+const CategorySection = ({ title, files = [], onUpload, onDelete }: CategorySectionProps) => {
+  const [showUploadDialog, setShowUploadDialog] = React.useState(false);
+
+  // Determine accepted file types based on the section title
+  const getAcceptedFileTypes = () => {
+    switch (title.toLowerCase()) {
+      case 'blueprints':
+        return "application/pdf,image/jpeg,image/png";
+      case 'renderings':
+        return "image/jpeg,image/png";
+      case 'drawings':
+        return "image/jpeg,image/png,application/pdf";
+      default:
+        return "image/*,application/pdf,application/vnd.ms-excel";
     }
   };
 
   return (
-    <div className="py-4 first:pt-0 border-b last:border-b-0 border-gray-100">
-      <h3 className="text-lg font-semibold mb-4">{title}</h3>
+    <div className="mb-6">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-xl font-bold">{title}</h3>
+        <button 
+          onClick={() => setShowUploadDialog(true)}
+          className="p-1.5 text-gray-500 hover:text-gray-700"
+        >
+          <Upload className="w-5 h-5" />
+        </button>
+      </div>
       
       {files.length > 0 ? (
-        <div className="space-y-3">
+        <div className="space-y-1">
           {files.map((file, index) => (
-            <FileListItem 
+            <FileListItem
               key={index}
-              name={file.name}
-              size={file.size}
-              type={file.type}
-              url={file.url}
-              onDownload={() => window.open(file.url, '_blank')}
-              onView={() => window.open(file.url, '_blank')}
+              {...file}
+              onDownload={() => console.log('Download:', file.name)}
+              onView={() => console.log('View:', file.name)}
               onDelete={onDelete}
             />
           ))}
-          
-          <div className="flex gap-2 mt-4">
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="text-red-500 border-red-200 hover:bg-red-50"
-              onClick={onDelete}
-            >
-              <Trash2 className="mr-2 h-4 w-4" /> Remove
-            </Button>
-            
-            <FileUpload
-              onUploadComplete={onUpload}
-              accept={title === "Blueprints" ? "image/*,.pdf,.dwg" : "image/*"}
-              multiple={title !== "Blueprints"}
-              label={`Upload ${title}`}
-              description={`Upload ${title.toLowerCase()} for your project`}
-              compact={true}
-              icon={<Upload className="mr-2 h-4 w-4" />}
-            />
-          </div>
         </div>
       ) : (
-        <div className="space-y-3">
+        <p className="text-gray-500 text-sm">None uploaded.</p>
+      )}
+
+      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Upload {title}</DialogTitle>
+            <DialogDescription>
+              Upload files for {title}. Accepted formats: PDF, JPG, PNG
+            </DialogDescription>
+          </DialogHeader>
+          
           <FileUpload
-            onUploadComplete={onUpload}
-            accept={title === "Blueprints" ? "image/*,.pdf,.dwg" : "image/*"}
-            multiple={title !== "Blueprints"}
-            label={`Upload ${title}`}
-            description={`Upload ${title.toLowerCase()} for your project`}
+            accept={getAcceptedFileTypes()}
+            multiple={false}
+            onUploadComplete={(urls) => {
+              onUpload(urls);
+              setShowUploadDialog(false);
+            }}
+            label={`${title} File`}
+            description={`Upload your ${title.toLowerCase()} file`}
           />
           
-          {projectFiles.length > 0 && (
-            <SelectProjectFilesDialog 
-              files={projectFiles}
-              onSelect={handleSelectFromProjectFiles}
-              type={title === "Blueprints" ? "pdf" : undefined}
-            />
-          )}
-        </div>
-      )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowUploadDialog(false)}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

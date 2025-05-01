@@ -21,6 +21,3 @@ export {
 // Re-export the original FileUpload component
 import { FileUpload } from './file-upload/FileUpload';
 export { FileUpload };
-
-// Export the SelectProjectFilesDialog component
-export { default as SelectProjectFilesDialog } from '../project/design/SelectProjectFilesDialog';

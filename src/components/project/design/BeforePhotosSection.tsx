@@ -8,7 +8,6 @@ import SelectPropertyPhotosDialog from "./SelectPropertyPhotosDialog";
 import { GripVertical } from "lucide-react";
 
 interface BeforePhotosSectionProps {
-  area: string;
   beforePhotos: string[];
   propertyPhotos: string[];
   onSelectBeforePhotos: (photos: string[]) => void;
@@ -18,7 +17,6 @@ interface BeforePhotosSectionProps {
 }
 
 const BeforePhotosSection = ({
-  area,
   beforePhotos,
   propertyPhotos,
   onSelectBeforePhotos,

@@ -1,116 +1,171 @@
 
 import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Plus, Users } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { FileText } from "lucide-react";
+import EmptyDesignState from "./EmptyDesignState";
+import DesignTabHeader from "./DesignTabHeader";
+import BeforePhotosCard from "./BeforePhotosCard";
 import RoomMeasurementsCard from './RoomMeasurementsCard';
-import BeforePhotosSection from './BeforePhotosSection';
-import SelectPropertyPhotosDialog from './SelectPropertyPhotosDialog';
-
-interface Designer {
-  id: string;
-  businessName: string;
-  contactName?: string;
-  email?: string;
-  phone?: string;
-  speciality?: string;
-}
+import { PropertyFileUpload } from "@/components/property/PropertyFileUpload";
+import { FileWithPreview } from "@/components/ui/file-upload";
 
 interface RoomDetailsProps {
   area: string;
   location?: string;
-  designers: Designer[];
-  designAssets?: any[];
-  measurements?: any;
-  beforePhotos?: string[];
+  designers?: Array<{ id: string; businessName: string; }>;
+  designAssets?: Array<{ name: string; url: string; }>;
+  measurements?: {
+    length?: number;
+    width?: number;
+    height?: number;
+    unit: 'ft' | 'm';
+    additionalNotes?: string;
+  };
+  onAddDesigner?: () => void;
+  onUploadAssets?: () => void;
+  onSaveMeasurements?: (measurements: any) => void;
   propertyPhotos?: string[];
-  onAddDesigner: () => void;
-  onUploadAssets: () => void;
-  onSaveMeasurements: (measurements: any) => void;
-  onSelectBeforePhotos: (photos: string[]) => void;
-  onUploadBeforePhotos: (photos: string[]) => void;
+  onSelectBeforePhotos?: (photos: string[]) => void;
+  onUploadBeforePhotos?: (photos: string[]) => void;
+  beforePhotos?: string[];
 }
 
-const RoomDetails: React.FC<RoomDetailsProps> = ({
+const RoomDetails = ({
   area,
   location,
-  designers = [],
+  designers,
   designAssets = [],
   measurements,
-  beforePhotos = [],
-  propertyPhotos = [],
   onAddDesigner,
-  onUploadAssets,
-  onSaveMeasurements,
+  onUploadAssets = () => {},
+  onSaveMeasurements = () => {},
+  propertyPhotos = [],
   onSelectBeforePhotos,
-  onUploadBeforePhotos
-}) => {
-  const [isPropertyPhotosDialogOpen, setIsPropertyPhotosDialogOpen] = useState(false);
+  onUploadBeforePhotos,
+  beforePhotos = []
+}: RoomDetailsProps) => {
+  const hasDesigner = designers && designers.length > 0;
+  const [roomFiles, setRoomFiles] = useState<FileWithPreview[]>(() => {
+    // Convert design assets to FileWithPreview format if available
+    if (designAssets && designAssets.length > 0) {
+      return designAssets.map((asset, index) => ({
+        id: `asset-${index}`,
+        name: asset.name,
+        url: asset.url,
+        size: 'Unknown',
+        type: asset.name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg',
+        progress: 100,
+        status: 'complete' as const,
+        tags: []
+      }));
+    }
+    return [];
+  });
 
-  // Mock functions for the requirements of BeforePhotosSection
-  const handleRemovePhoto = (index: number) => {
-    const newPhotos = [...beforePhotos];
-    newPhotos.splice(index, 1);
-    onSelectBeforePhotos(newPhotos);
-  };
-
-  const handleReorderPhotos = (fromIndex: number, toIndex: number) => {
-    const newPhotos = [...beforePhotos];
-    const [movedPhoto] = newPhotos.splice(fromIndex, 1);
-    newPhotos.splice(toIndex, 0, movedPhoto);
-    onSelectBeforePhotos(newPhotos);
+  const handleFilesUploaded = (files: FileWithPreview[]) => {
+    setRoomFiles(files);
+    
+    // Convert FileWithPreview to design assets format
+    const assets = files
+      .filter(file => file.status === 'complete' && file.url)
+      .map(file => ({
+        name: file.name,
+        url: file.url as string
+      }));
+    
+    // Call onUploadAssets with the new assets if needed
+    onUploadAssets();
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-gray-50 p-6 rounded-lg">
-        <h3 className="text-lg font-semibold mb-4">Room Details</h3>
-        <p className="text-gray-700">
-          Area: {area}
-          {location && `, Location: ${location}`}
-        </p>
-      </div>
+    <div className="flex flex-col space-y-6">
+      <Card>
+        <CardContent className="p-6">
+          <DesignTabHeader area={area} location={location} />
+          
+          {/* Designer Section */}
+          <div className="mt-6">
+            {hasDesigner ? (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-semibold">Designer</h3>
+                  <p className="text-sm text-gray-500 mt-1">Assigned project designer</p>
+                </div>
+                <div className="space-y-3">
+                  {designers.map((designer, index) => (
+                    <div key={index} className="flex items-center p-4 bg-gray-50 rounded-lg">
+                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 flex-shrink-0">
+                        {designer.businessName[0]}
+                      </div>
+                      <div className="ml-3">
+                        <p className="font-medium">{designer.businessName}</p>
+                        <p className="text-sm text-gray-500">Project Designer</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <EmptyDesignState 
+                type="designer" 
+                onAction={onAddDesigner}
+              />
+            )}
+          </div>
 
-      <div className="bg-gray-50 p-6 rounded-lg">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold">Designers</h3>
-          <Button variant="outline" size="sm" className="text-[#174c65] border-[#174c65]" onClick={onAddDesigner}>
-            <Plus className="w-4 h-4 mr-2" /> ADD DESIGNER
-          </Button>
-        </div>
-        {designers.length > 0 ? (
-          <ul className="list-disc pl-5">
-            {designers.map((designer) => (
-              <li key={designer.id}>
-                {designer.businessName} ({designer.speciality})
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-gray-500">No designers added yet.</p>
-        )}
-      </div>
+          {/* Combined Design Assets Section */}
+          <div className="pt-6 mt-6 border-t border-gray-100">
+            <div>
+              <h3 className="font-semibold">Design Assets</h3>
+              <p className="text-sm text-gray-500 mt-1">Project documentation</p>
+            </div>
+            
+            {designAssets && designAssets.length > 0 ? (
+              <div className="grid gap-3 mt-4">
+                {designAssets.map((asset, idx) => (
+                  <div key={idx} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <FileText className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                    <span className="text-sm text-gray-700 truncate">{asset.name}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-4">
+                <PropertyFileUpload
+                  accept="image/*, .pdf, .dwg, .doc, .docx, .xls"
+                  multiple={true}
+                  label={`Upload ${area} Design Plans and Specs`}
+                  description="Upload project documentation, plans, specifications, or materials"
+                  initialFiles={roomFiles}
+                  onFilesUploaded={handleFilesUploaded}
+                  roomOptions={[
+                    { value: "blueprint", label: "Blueprint" },
+                    { value: "floorPlan", label: "Floor Plan" },
+                    { value: "elevation", label: "Elevation" },
+                    { value: "materials", label: "Materials" },
+                    { value: "fixtures", label: "Fixtures" },
+                    { value: "finishes", label: "Finishes" },
+                    { value: "specifications", label: "Specifications" }
+                  ]}
+                />
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
+      {/* Room Measurements Section */}
       <RoomMeasurementsCard 
         area={area}
         measurements={measurements}
         onSaveMeasurements={onSaveMeasurements}
       />
 
-      <BeforePhotosSection 
-        area={area}
+      <BeforePhotosCard
         beforePhotos={beforePhotos}
         propertyPhotos={propertyPhotos}
-        onSelectBeforePhotos={onSelectBeforePhotos}
-        onUploadBeforePhotos={onUploadBeforePhotos}
-        onRemovePhoto={handleRemovePhoto}
-        onReorderPhotos={handleReorderPhotos}
-      />
-
-      <SelectPropertyPhotosDialog
-        isOpen={isPropertyPhotosDialogOpen}
-        onClose={() => setIsPropertyPhotosDialogOpen(false)}
-        photos={propertyPhotos}
-        onSelect={onSelectBeforePhotos}
+        onSelectBeforePhotos={onSelectBeforePhotos!}
+        onUploadBeforePhotos={onUploadBeforePhotos!}
       />
     </div>
   );

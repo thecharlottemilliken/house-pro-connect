@@ -37,43 +37,27 @@ export interface ProjectData {
   state?: string;
 }
 
-export type RenovationArea = {
+export interface DesignPreferences {
+  hasDesigns: boolean;
+  designers?: Array<{ id: string; businessName: string; }>;
+  designAssets?: Array<{ name: string; url: string; }>;
+  renderingImages?: string[];
+  inspirationImages?: string[];
+  pinterestBoards?: PinterestBoard[];
+  beforePhotos?: Record<string, string[]>;
+  roomMeasurements?: Record<string, {
+    length?: number;
+    width?: number;
+    height?: number;
+    unit: 'ft' | 'm';
+    additionalNotes?: string;
+  }>;
+}
+
+export interface RenovationArea {
   area: string;
   location?: string;
-};
-
-export type DesignPreferences = {
-  hasDesigns: boolean;
-  designers?: Array<{
-    businessName: string;
-    contactName: string;
-    email: string;
-    phone: string;
-    speciality: string;
-  }>;
-  designerContactInfo?: {
-    businessName: string;
-    contactName: string;
-    email: string;
-    phone: string;
-  };
-  designAssets?: any[];
-  renderingImages?: string[];
-  drawings?: string[];
-  blueprints?: string[];
-  inspirationImages?: string[];
-  beforePhotos?: Record<string, string[]>;
-  roomMeasurements?: Record<string, any>;
-  pinterestBoards?: Record<string, any>;
-  designFiles?: Array<{
-    name: string;
-    size?: string;
-    type?: string;
-    url?: string;
-    status?: string;
-  }>;
-  designFileUrls?: string[];
-};
+}
 
 interface UseProjectDataResult {
   projectData: ProjectData | null;
