@@ -123,7 +123,10 @@ const PriorExperience = () => {
             body: { 
               projectId,
               userId: user.id,
-              ...projectData
+              constructionPreferences: projectPrefs?.constructionPreferences || {},
+              designPreferences: projectPrefs?.designPreferences || {},
+              managementPreferences: projectPrefs?.managementPreferences || {},
+              prior_experience
             }
           });
 
@@ -133,7 +136,7 @@ const PriorExperience = () => {
           
           toast({
             title: "Success",
-            description: "Project created successfully!",
+            description: "Project updated successfully!",
           });
           
           // Navigate to project dashboard

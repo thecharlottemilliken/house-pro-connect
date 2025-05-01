@@ -160,6 +160,7 @@ const ConstructionPreferences = () => {
     setIsSubmitting(true);
     
     try {
+      // Prepare the construction preferences data
       const constructionPreferences: Record<string, Json> = {
         helpLevel,
         hasSpecificPros,
@@ -215,6 +216,7 @@ const ConstructionPreferences = () => {
         constructionPreferences
       };
       
+      console.log("Updated project preferences with construction preferences:", updatedProjectPrefs);
       setProjectPrefs(updatedProjectPrefs);
       
       navigate("/design-preferences", {
