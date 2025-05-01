@@ -332,14 +332,23 @@ serve(async (req) => {
             });
           }
           
+          console.log("Project data before update:", JSON.stringify({
+            projectId,
+            userId,
+            constructionPreferences,
+            designPreferences,
+            managementPreferences,
+            prior_experience
+          }, null, 2));
+
           // Update the project with the provided data
           const updateData: any = {};
           
-          // Only update fields that are provided in the request - USING IMPROVED LOGIC
+          // Basic fields that are simple to update
           if (propertyId) updateData.property_id = propertyId;
           if (title) updateData.title = title;
           
-          // Using hasOwnProperty checks instead of object length checks
+          // Always include all preference data that was sent in the request
           if (body.hasOwnProperty("renovationAreas")) {
             updateData.renovation_areas = renovationAreas;
           }
@@ -354,14 +363,17 @@ serve(async (req) => {
           }
           
           if (body.hasOwnProperty("designPreferences")) {
+            console.log("Updating design preferences with:", JSON.stringify(designPreferences, null, 2));
             updateData.design_preferences = designPreferences;
           }
           
           if (body.hasOwnProperty("managementPreferences")) {
+            console.log("Updating management preferences with:", JSON.stringify(managementPreferences, null, 2));
             updateData.management_preferences = managementPreferences;
           }
           
           if (body.hasOwnProperty("prior_experience")) {
+            console.log("Updating prior experience with:", JSON.stringify(prior_experience, null, 2));
             updateData.prior_experience = prior_experience;
           }
           
@@ -393,7 +405,10 @@ serve(async (req) => {
             propertyId,
             userId,
             title: title || "New Project",
-            constructionPreferences: JSON.stringify(constructionPreferences)
+            constructionPreferences: JSON.stringify(constructionPreferences),
+            designPreferences: JSON.stringify(designPreferences),
+            managementPreferences: JSON.stringify(managementPreferences),
+            prior_experience: JSON.stringify(prior_experience)
           });
           
           const { data, error } = await supabase
