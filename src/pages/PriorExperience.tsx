@@ -21,9 +21,10 @@ const PriorExperience = () => {
   const [projectId, setProjectId] = useState<string | null>(null);
   const [projectPrefs, setProjectPrefs] = useState<any>(null);
   
-  // Prior experience form state - simplified to match the previous format
+  // Prior experience form state - split into likes and dislikes
   const [hasPriorExperience, setHasPriorExperience] = useState<boolean>(false);
-  const [experienceFeedback, setExperienceFeedback] = useState<string>("");
+  const [experienceLikes, setExperienceLikes] = useState<string>("");
+  const [experienceDislikes, setExperienceDislikes] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -62,7 +63,8 @@ const PriorExperience = () => {
       if (data && data.prior_experience) {
         const prefs = data.prior_experience as any;
         if (prefs.hasPriorExperience !== undefined) setHasPriorExperience(prefs.hasPriorExperience);
-        if (prefs.experienceFeedback) setExperienceFeedback(prefs.experienceFeedback);
+        if (prefs.experienceLikes) setExperienceLikes(prefs.experienceLikes);
+        if (prefs.experienceDislikes) setExperienceDislikes(prefs.experienceDislikes);
       }
     } catch (error) {
       console.error('Error loading prior experience data:', error);
@@ -86,10 +88,11 @@ const PriorExperience = () => {
     
     setIsLoading(true);
     
-    // Create prior experience object - simplified structure
+    // Create prior experience object - with split likes/dislikes fields
     const prior_experience = {
       hasPriorExperience: hasPriorExperience,
-      experienceFeedback: experienceFeedback
+      experienceLikes: experienceLikes,
+      experienceDislikes: experienceDislikes
     };
     
     console.log("Saving prior experience:", prior_experience);
@@ -194,17 +197,32 @@ const PriorExperience = () => {
               </div>
               
               {hasPriorExperience && (
-                <div>
-                  <Label htmlFor="experienceFeedback" className="block text-sm font-medium text-gray-700 mb-1">
-                    Tell us what you liked and disliked about your previous renovation experience
-                  </Label>
-                  <Textarea 
-                    id="experienceFeedback"
-                    placeholder="What did you like about your previous renovation? What would you change about the experience?"
-                    className="min-h-[120px]"
-                    value={experienceFeedback}
-                    onChange={(e) => setExperienceFeedback(e.target.value)}
-                  />
+                <div className="space-y-6">
+                  <div>
+                    <Label htmlFor="experienceLikes" className="block text-sm font-medium text-gray-700 mb-1">
+                      What did you like about your previous renovation experience?
+                    </Label>
+                    <Textarea 
+                      id="experienceLikes"
+                      placeholder="Tell us what aspects of your previous renovation you enjoyed"
+                      className="min-h-[120px]"
+                      value={experienceLikes}
+                      onChange={(e) => setExperienceLikes(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="experienceDislikes" className="block text-sm font-medium text-gray-700 mb-1">
+                      What did you dislike about your previous renovation experience?
+                    </Label>
+                    <Textarea 
+                      id="experienceDislikes"
+                      placeholder="Tell us what aspects of your previous renovation you would change"
+                      className="min-h-[120px]"
+                      value={experienceDislikes}
+                      onChange={(e) => setExperienceDislikes(e.target.value)}
+                    />
+                  </div>
                 </div>
               )}
             </div>
