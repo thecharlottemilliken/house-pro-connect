@@ -104,6 +104,8 @@ const ConstructionPreferences = () => {
           throw error;
         }
 
+        console.log("Edge function response:", data);
+
         // If using the edge function worked, extract the preferences
         if (data && data.construction_preferences) {
           const prefs = data.construction_preferences as any;

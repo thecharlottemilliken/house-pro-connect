@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
@@ -99,27 +98,21 @@ const PriorExperience = () => {
     console.log("Saving prior experience:", prior_experience);
     
     try {
-      // Gather all the preferences data
-      const projectData = {
-        propertyId: propertyId,
-        userId: user.id,
-        title: projectPrefs?.title || "New Project",
-        renovationAreas: projectPrefs?.renovationAreas || [],
-        projectPreferences: projectPrefs?.projectPreferences || {},
-        constructionPreferences: projectPrefs?.constructionPreferences || {},
-        designPreferences: projectPrefs?.designPreferences || {},
-        managementPreferences: projectPrefs?.managementPreferences || {},
-        prior_experience
-      };
-
-      console.log("Saving project with all preferences:", projectData);
-      
       // If we already have a project ID, update it
       if (projectId) {
+        console.log("Updating existing project with ID:", projectId);
+        console.log("Project data before update:", {
+          projectId,
+          userId: user.id,
+          constructionPreferences: projectPrefs?.constructionPreferences || {},
+          designPreferences: projectPrefs?.designPreferences || {},
+          managementPreferences: projectPrefs?.managementPreferences || {},
+          prior_experience
+        });
+
         try {
           // Use the edge function to update the project
           const { data, error } = await supabase.functions.invoke('handle-project-update', {
-            method: 'POST',
             body: { 
               projectId,
               userId: user.id,
@@ -131,8 +124,11 @@ const PriorExperience = () => {
           });
 
           if (error) {
+            console.error("Error response from edge function:", error);
             throw error;
           }
+          
+          console.log("Success response from edge function:", data);
           
           toast({
             title: "Success",
@@ -152,16 +148,33 @@ const PriorExperience = () => {
           return;
         }
       } else {
+        // Gather all the preferences data for creating a new project
+        const projectData = {
+          propertyId: propertyId,
+          userId: user.id,
+          title: projectPrefs?.title || "New Project",
+          renovationAreas: projectPrefs?.renovationAreas || [],
+          projectPreferences: projectPrefs?.projectPreferences || {},
+          constructionPreferences: projectPrefs?.constructionPreferences || {},
+          designPreferences: projectPrefs?.designPreferences || {},
+          managementPreferences: projectPrefs?.managementPreferences || {},
+          prior_experience
+        };
+
+        console.log("Creating new project with data:", projectData);
+        
         // Create a new project with all the collected preferences
         try {
           const { data, error } = await supabase.functions.invoke('handle-project-update', {
-            method: 'POST',
             body: projectData
           });
 
           if (error) {
+            console.error("Error response from edge function for creation:", error);
             throw error;
           }
+          
+          console.log("Success response from edge function for creation:", data);
           
           toast({
             title: "Success",
@@ -169,7 +182,16 @@ const PriorExperience = () => {
           });
           
           // Navigate to project dashboard using the new project ID
-          navigate(`/project-dashboard/${data.id}`);
+          if (data && data.id) {
+            navigate(`/project-dashboard/${data.id}`);
+          } else {
+            console.error("No project ID returned from creation");
+            toast({
+              title: "Error",
+              description: "Project created but ID not returned",
+              variant: "destructive"
+            });
+          }
         } catch (error) {
           console.error('Error creating project:', error);
           toast({

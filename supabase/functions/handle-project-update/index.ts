@@ -20,6 +20,7 @@ serve(async (req) => {
 
     // Get the request body
     const body = await req.json();
+    console.log("Request body received:", JSON.stringify(body, null, 2));
     
     // Extract specific operation if provided
     const operation = body.operation;
@@ -340,7 +341,7 @@ serve(async (req) => {
           if (renovationAreas.length > 0 || body.renovationAreas !== undefined) updateData.renovation_areas = renovationAreas;
           if (Object.keys(projectPreferences).length > 0 || body.projectPreferences !== undefined) updateData.project_preferences = projectPreferences;
           if (Object.keys(constructionPreferences).length > 0 || body.constructionPreferences !== undefined) {
-            console.log("Updating construction preferences with:", constructionPreferences);
+            console.log("Updating construction preferences with:", JSON.stringify(constructionPreferences, null, 2));
             updateData.construction_preferences = constructionPreferences;
           }
           if (Object.keys(designPreferences).length > 0 || body.designPreferences !== undefined) updateData.design_preferences = designPreferences;
