@@ -106,8 +106,8 @@ const DesignPreferences = () => {
     }
   };
 
-  const handleImageUpload = (e: any) => {
-    const files = Array.from(e.target.files);
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
     
     // Limit to 3 images
     if (inspirationImages.length + files.length > 3) {
@@ -126,7 +126,7 @@ const DesignPreferences = () => {
           setInspirationImages(prevImages => [...prevImages, reader.result as string]);
         }
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(file as Blob);
     });
   };
 

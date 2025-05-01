@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import CreateProjectSteps from "@/components/project/create/CreateProjectSteps";
+import { Json } from "@/integrations/supabase/types";
 
 const ManagementPreferences = () => {
   const navigate = useNavigate();
@@ -56,8 +57,11 @@ const ManagementPreferences = () => {
 
       if (error) throw error;
       
-      if (data && data.management_preferences && data.management_preferences.selection) {
-        setSelection(data.management_preferences.selection);
+      if (data && data.management_preferences) {
+        const preferences = data.management_preferences as { selection?: string[] };
+        if (preferences && Array.isArray(preferences.selection)) {
+          setSelection(preferences.selection);
+        }
       }
     } catch (error) {
       console.error('Error loading management preferences:', error);
