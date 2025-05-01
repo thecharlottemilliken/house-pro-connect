@@ -532,7 +532,7 @@ const ManagementPreferences = () => {
 
       {/* Time Slot Selection Modal */}
       <Dialog open={isTimeSlotModalOpen} onOpenChange={setIsTimeSlotModalOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg md:max-w-xl w-[95vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
               Select a Date and Time Range for a Coach to Reach Out
@@ -542,7 +542,7 @@ const ManagementPreferences = () => {
             </DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
+          <div className="space-y-6 py-4">
             <div className="space-y-2">
               <h3 className="text-sm font-medium">Date Selection</h3>
               <p className="text-xs text-gray-500">
@@ -550,7 +550,7 @@ const ManagementPreferences = () => {
               </p>
             </div>
             
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center w-full">
               <CustomDatePicker
                 onSelect={(date) => setTempTimeSlot({...tempTimeSlot, date})}
                 selectedDate={tempTimeSlot.date}
@@ -559,13 +559,17 @@ const ManagementPreferences = () => {
             
             <div className="space-y-2">
               <h3 className="text-sm font-medium">AM Times</h3>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {timeRanges.slice(0, 4).map((range) => (
                   <Button
                     key={range.value}
                     type="button"
                     variant={tempTimeSlot.time === range.value && tempTimeSlot.ampm === "AM" ? "default" : "outline"}
-                    className={tempTimeSlot.time === range.value && tempTimeSlot.ampm === "AM" ? "bg-[#F97316]" : ""}
+                    className={cn(
+                      tempTimeSlot.time === range.value && tempTimeSlot.ampm === "AM" 
+                        ? "bg-[#F97316] text-white hover:bg-[#F97316]/90" 
+                        : "border-gray-300"
+                    )}
                     onClick={() => setTempTimeSlot({...tempTimeSlot, time: range.value, ampm: "AM"})}
                   >
                     {range.label}
@@ -576,13 +580,17 @@ const ManagementPreferences = () => {
             
             <div className="space-y-2">
               <h3 className="text-sm font-medium">PM Times</h3>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {timeRanges.slice(4).map((range) => (
                   <Button
                     key={range.value}
                     type="button"
                     variant={tempTimeSlot.time === range.value && tempTimeSlot.ampm === "PM" ? "default" : "outline"}
-                    className={tempTimeSlot.time === range.value && tempTimeSlot.ampm === "PM" ? "bg-[#F97316]" : ""}
+                    className={cn(
+                      tempTimeSlot.time === range.value && tempTimeSlot.ampm === "PM" 
+                        ? "bg-[#F97316] text-white hover:bg-[#F97316]/90" 
+                        : "border-gray-300"
+                    )}
                     onClick={() => setTempTimeSlot({...tempTimeSlot, time: range.value, ampm: "PM"})}
                   >
                     {range.label}
@@ -596,7 +604,7 @@ const ManagementPreferences = () => {
             <Button variant="outline" onClick={closeTimeSlotModal}>CANCEL</Button>
             <Button 
               onClick={saveTimeSlot}
-              className="bg-[#F97316] hover:bg-[#F97316]/90"
+              className="bg-[#F97316] hover:bg-[#F97316]/90 text-white"
               disabled={!tempTimeSlot.date || !tempTimeSlot.time}
             >
               SAVE AS COMPLETE
