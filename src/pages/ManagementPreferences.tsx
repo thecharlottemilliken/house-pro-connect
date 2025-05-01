@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Check, X } from "lucide-react";
@@ -37,6 +36,22 @@ import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
+// Define TimeSlot interface for improved type safety
+interface TimeSlot {
+  id: number;
+  date: Date | null;
+  time: string;
+  ampm: "AM" | "PM";
+}
+
+// Interface for the formatted time slot that can be stored in Supabase
+interface FormattedTimeSlot {
+  id: number;
+  dateStr: string | null; // ISO string format of the date or null
+  time: string;
+  ampm: string;
+}
+
 const ManagementPreferences = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -50,12 +65,7 @@ const ManagementPreferences = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   // Time slot state variables
-  const [timeSlots, setTimeSlots] = useState<Array<{
-    id: number;
-    date: Date | null;
-    time: string;
-    ampm: "AM" | "PM";
-  }>>([
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([
     { id: 1, date: null, time: "", ampm: "AM" },
     { id: 2, date: null, time: "", ampm: "AM" },
     { id: 3, date: null, time: "", ampm: "AM" },
@@ -109,6 +119,26 @@ const ManagementPreferences = () => {
     }
   }, [location.state, navigate]);
   
+  // Helper function to convert Date objects to strings for JSON serialization
+  const formatTimeSlotsForStorage = (slots: TimeSlot[]): FormattedTimeSlot[] => {
+    return slots.map(slot => ({
+      id: slot.id,
+      dateStr: slot.date ? slot.date.toISOString() : null,
+      time: slot.time,
+      ampm: slot.ampm
+    }));
+  };
+  
+  // Helper function to convert stored string dates back to Date objects
+  const parseTimeSlotsFromStorage = (formattedSlots: FormattedTimeSlot[]): TimeSlot[] => {
+    return formattedSlots.map(slot => ({
+      id: slot.id,
+      date: slot.dateStr ? new Date(slot.dateStr) : null,
+      time: slot.time,
+      ampm: slot.ampm as "AM" | "PM"
+    }));
+  };
+  
   // Function to load existing management preferences
   const loadExistingPreferences = async (id: string) => {
     try {
@@ -131,7 +161,11 @@ const ManagementPreferences = () => {
           if (prefs.wantProjectCoach) setWantProjectCoach(prefs.wantProjectCoach);
           if (prefs.phoneNumber) form.setValue("phoneNumber", prefs.phoneNumber);
           if (prefs.phoneType) form.setValue("phoneType", prefs.phoneType);
-          if (prefs.timeSlots) setTimeSlots(prefs.timeSlots);
+          if (prefs.timeSlots) {
+            // Parse the stored time slots from storage format back to TimeSlot format
+            const parsedTimeSlots = parseTimeSlotsFromStorage(prefs.timeSlots);
+            setTimeSlots(parsedTimeSlots);
+          }
         }
         return;
       }
@@ -152,7 +186,11 @@ const ManagementPreferences = () => {
         if (prefs.wantProjectCoach) setWantProjectCoach(prefs.wantProjectCoach);
         if (prefs.phoneNumber) form.setValue("phoneNumber", prefs.phoneNumber);
         if (prefs.phoneType) form.setValue("phoneType", prefs.phoneType);
-        if (prefs.timeSlots) setTimeSlots(prefs.timeSlots);
+        if (prefs.timeSlots) {
+          // Parse the stored time slots
+          const parsedTimeSlots = parseTimeSlotsFromStorage(prefs.timeSlots);
+          setTimeSlots(parsedTimeSlots);
+        }
       }
     } catch (error) {
       console.error('Error loading management preferences:', error);
@@ -215,12 +253,15 @@ const ManagementPreferences = () => {
     
     setIsLoading(true);
     
+    // Format time slots for storage (convert Date objects to strings)
+    const formattedTimeSlots = formatTimeSlotsForStorage(timeSlots);
+    
     // Create management preferences object
     const managementPreferences = {
       wantProjectCoach,
       phoneNumber: form.getValues("phoneNumber"),
       phoneType: form.getValues("phoneType"),
-      timeSlots: timeSlots
+      timeSlots: formattedTimeSlots
     };
     
     console.log("Saving management preferences:", managementPreferences);
