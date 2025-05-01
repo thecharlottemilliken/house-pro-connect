@@ -515,6 +515,12 @@ const ProjectDesign = () => {
     roomMeasurements: {}
   };
 
+  // Transform designers to match the expected format
+  const designersWithId = designPreferences.designers?.map((designer, index) => ({
+    ...designer,
+    id: `designer-${index}`
+  })) || [];
+
   const hasDesigns = designPreferences.hasDesigns;
   const hasRenderings = designPreferences.renderingImages && designPreferences.renderingImages.length > 0;
 
@@ -576,7 +582,7 @@ const ProjectDesign = () => {
                                 <RoomDetails
                                   area={area.area}
                                   location={area.location}
-                                  designers={designPreferences.designers}
+                                  designers={designersWithId}
                                   designAssets={designPreferences.designAssets}
                                   measurements={measurements}
                                   onAddDesigner={handleAddDesigner}
