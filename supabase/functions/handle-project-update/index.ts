@@ -288,7 +288,7 @@ serve(async (req) => {
       const projectId = body.projectId;
       const userId = body.userId;
       const propertyId = body.propertyId;
-      const title = body.title || "New Project";
+      const title = body.title || "";
       const renovationAreas = body.renovationAreas || [];
       const projectPreferences = body.projectPreferences || {};
       const constructionPreferences = body.constructionPreferences || {};
@@ -373,13 +373,7 @@ serve(async (req) => {
           console.log("Creating new project with data:", {
             propertyId,
             userId,
-            title: title || "New Project",
-            renovationAreas,
-            projectPreferences,
-            constructionPreferences,
-            designPreferences,
-            managementPreferences,
-            prior_experience
+            title: title || "New Project"
           });
           
           const { data, error } = await supabase

@@ -18,8 +18,6 @@ export interface PropertyDetails {
   home_photos: string[];
   image_url: string;
   blueprint_url?: string | null;
-  interior_attributes?: string[];
-  exterior_attributes?: string[];
 }
 
 export interface ProjectData {
@@ -81,53 +79,8 @@ export const useProjectData = (projectId: string | undefined, locationState: any
       setError(null);
 
       try {
-        if (!projectId && !locationState?.propertyId) {
-          throw new Error("Project ID or Property ID is required");
-        }
-
-        // If we have locationState with propertyId but no projectId, just fetch property details
-        if (!projectId && locationState?.propertyId) {
-          console.log(`Fetching property details for property: ${locationState.propertyId}`);
-          
-          const { data: propertyData, error: propertyError } = await supabase.functions.invoke(
-            'get-property-details',
-            { 
-              body: { 
-                propertyId: locationState.propertyId,
-                userId: user?.id 
-              }
-            }
-          );
-          
-          if (propertyError) throw propertyError;
-          
-          if (!propertyData) {
-            throw new Error("Property not found");
-          }
-
-          const propertyDetailsMapped: PropertyDetails = {
-            id: propertyData.id,
-            property_name: propertyData.property_name,
-            address: `${propertyData.address_line1}, ${propertyData.city}, ${propertyData.state} ${propertyData.zip_code}`,
-            address_line1: propertyData.address_line1,
-            city: propertyData.city,
-            state: propertyData.state,
-            zip: propertyData.zip_code,
-            zip_code: propertyData.zip_code,
-            home_photos: propertyData.home_photos || [],
-            image_url: propertyData.image_url || '',
-            blueprint_url: propertyData.blueprint_url,
-            interior_attributes: propertyData.interior_attributes || [],
-            exterior_attributes: propertyData.exterior_attributes || []
-          };
-          
-          setPropertyDetails(propertyDetailsMapped);
-          setIsLoading(false);
-          return;
-        }
-
-        if (!user) {
-          throw new Error("User is not authenticated");
+        if (!projectId || !user) {
+          throw new Error("Project ID is undefined or user is not authenticated");
         }
 
         console.log(`Fetching project data for project: ${projectId} and user: ${user.id}`);
@@ -293,9 +246,7 @@ export const useProjectData = (projectId: string | undefined, locationState: any
           zip_code: propertyData.zip_code,
           home_photos: propertyData.home_photos || [],
           image_url: propertyData.image_url || '',
-          blueprint_url: propertyData.blueprint_url,
-          interior_attributes: propertyData.interior_attributes || [],
-          exterior_attributes: propertyData.exterior_attributes || []
+          blueprint_url: propertyData.blueprint_url
         };
 
         setPropertyDetails(propertyDetailsMapped);
@@ -309,7 +260,7 @@ export const useProjectData = (projectId: string | undefined, locationState: any
     };
 
     fetchProjectData();
-  }, [projectId, locationState, user, profile]);
+  }, [projectId, user, profile]);
 
   return { projectData, propertyDetails, isLoading, error };
 };
