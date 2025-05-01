@@ -6,6 +6,9 @@ import EmptyDesignState from "./EmptyDesignState";
 import DesignTabHeader from "./DesignTabHeader";
 import BeforePhotosCard from "./BeforePhotosCard";
 import RoomMeasurementsCard from './RoomMeasurementsCard';
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 interface RoomDetailsProps {
   area: string;

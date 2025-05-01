@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Plus, Upload } from "lucide-react";
@@ -38,6 +37,14 @@ const DesignPreferences = () => {
     { businessName: "", contactName: "", email: "", phone: "", speciality: "Architecture" }
   ]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Designer contact information state
+  const [designerContactInfo, setDesignerContactInfo] = useState({
+    businessName: "",
+    contactName: "",
+    email: "",
+    phone: "",
+  });
 
   useEffect(() => {
     if (location.state) {
@@ -82,6 +89,10 @@ const DesignPreferences = () => {
           if (prefs.designers && Array.isArray(prefs.designers) && prefs.designers.length > 0) {
             setDesigners(prefs.designers);
           }
+          // Load designer contact information if it exists
+          if (prefs.designerContactInfo) {
+            setDesignerContactInfo(prefs.designerContactInfo);
+          }
         }
         return;
       }
@@ -102,6 +113,10 @@ const DesignPreferences = () => {
         if (prefs.hasDesigns !== undefined) setHasDesigns(prefs.hasDesigns);
         if (prefs.designers && Array.isArray(prefs.designers) && prefs.designers.length > 0) {
           setDesigners(prefs.designers);
+        }
+        // Load designer contact information if it exists
+        if (prefs.designerContactInfo) {
+          setDesignerContactInfo(prefs.designerContactInfo);
         }
       }
     } catch (error) {
@@ -128,6 +143,7 @@ const DesignPreferences = () => {
     const designPreferences: Record<string, unknown> = {
       hasDesigns,
       designers: !hasDesigns ? designers : [],
+      designerContactInfo: hasDesigns ? designerContactInfo : null,
       beforePhotos: {}
     };
     
@@ -210,6 +226,13 @@ const DesignPreferences = () => {
     setDesigners(updatedDesigners);
   };
 
+  const updateDesignerContactInfo = (field: string, value: string) => {
+    setDesignerContactInfo({
+      ...designerContactInfo,
+      [field]: value
+    });
+  };
+
   const steps = [
     { number: 1, title: "Select a Property", current: false },
     { number: 2, title: "Select Renovation Areas", current: false },
@@ -284,6 +307,61 @@ const DesignPreferences = () => {
             
             {hasDesigns && (
               <div className="space-y-4">
+                {/* Designer contact information */}
+                <div className="space-y-6 bg-gray-50 p-6 rounded-lg mb-6">
+                  <h3 className="text-lg font-semibold">Designer Information</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Business Name
+                      </label>
+                      <Input
+                        type="text"
+                        placeholder="Design Studio Name"
+                        value={designerContactInfo.businessName}
+                        onChange={(e) => updateDesignerContactInfo("businessName", e.target.value)}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Contact Name
+                      </label>
+                      <Input
+                        type="text"
+                        placeholder="Designer's Name"
+                        value={designerContactInfo.contactName}
+                        onChange={(e) => updateDesignerContactInfo("contactName", e.target.value)}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Email
+                      </label>
+                      <Input
+                        type="email"
+                        placeholder="email@example.com"
+                        value={designerContactInfo.email}
+                        onChange={(e) => updateDesignerContactInfo("email", e.target.value)}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Phone
+                      </label>
+                      <Input
+                        type="tel"
+                        placeholder="000 000 0000"
+                        value={designerContactInfo.phone}
+                        onChange={(e) => updateDesignerContactInfo("phone", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <h3 className="text-lg font-semibold">Upload your project's design information.</h3>
                 
                 <div className="space-y-6">
@@ -323,91 +401,105 @@ const DesignPreferences = () => {
             )}
             
             {!hasDesigns && (
-              <div className="space-y-6 bg-gray-50 p-6 rounded-lg">
-                <h3 className="text-lg font-semibold">Designer Information</h3>
-                
-                {designers.map((designer, index) => (
-                  <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Business Name
-                      </label>
-                      <Input
-                        type="text"
-                        placeholder="Name"
-                        value={designer.businessName}
-                        onChange={(e) => updateDesigner(index, "businessName", e.target.value)}
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Contact Name
-                      </label>
-                      <Input
-                        type="text"
-                        placeholder="Name"
-                        value={designer.contactName}
-                        onChange={(e) => updateDesigner(index, "contactName", e.target.value)}
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Email
-                      </label>
-                      <Input
-                        type="email"
-                        placeholder="email@gmail.com"
-                        value={designer.email}
-                        onChange={(e) => updateDesigner(index, "email", e.target.value)}
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Phone
-                      </label>
-                      <Input
-                        type="tel"
-                        placeholder="000 000 0000"
-                        value={designer.phone}
-                        onChange={(e) => updateDesigner(index, "phone", e.target.value)}
-                      />
-                    </div>
-                    
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Speciality
-                      </label>
-                      <Select 
-                        value={designer.speciality} 
-                        onValueChange={(value) => updateDesigner(index, "speciality", value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a speciality" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            <SelectItem value="Architecture">Architecture</SelectItem>
-                            <SelectItem value="Interior Design">Interior Design</SelectItem>
-                            <SelectItem value="Landscape Design">Landscape Design</SelectItem>
-                            <SelectItem value="Kitchen Design">Kitchen Design</SelectItem>
-                            <SelectItem value="Bathroom Design">Bathroom Design</SelectItem>
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                    </div>
+              <div className="space-y-6">
+                {/* Placeholder for designer-finding feature */}
+                <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                  <h3 className="text-lg font-semibold mb-4">Find a Designer</h3>
+                  <p className="text-gray-700 mb-6">
+                    This feature will help you find and connect with qualified designers for your project. We're currently building this functionality.
+                  </p>
+                  <div className="bg-blue-50 text-blue-700 p-4 rounded-lg">
+                    <p className="text-sm">We'll help you find the perfect designer for your project soon! This section is currently under development.</p>
                   </div>
-                ))}
+                </div>
                 
-                <Button 
-                  variant="outline" 
-                  className="flex items-center text-[#174c65] border-[#174c65]"
-                  onClick={addAnotherDesigner}
-                >
-                  <Plus className="w-4 h-4 mr-2" /> ADD ANOTHER DESIGNER
-                </Button>
+                {/* Keep the designer information form as a fallback */}
+                <div className="space-y-6 bg-gray-50 p-6 rounded-lg">
+                  <h3 className="text-lg font-semibold">Designer Information</h3>
+                  
+                  {designers.map((designer, index) => (
+                    <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Business Name
+                        </label>
+                        <Input
+                          type="text"
+                          placeholder="Name"
+                          value={designer.businessName}
+                          onChange={(e) => updateDesigner(index, "businessName", e.target.value)}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Contact Name
+                        </label>
+                        <Input
+                          type="text"
+                          placeholder="Name"
+                          value={designer.contactName}
+                          onChange={(e) => updateDesigner(index, "contactName", e.target.value)}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Email
+                        </label>
+                        <Input
+                          type="email"
+                          placeholder="email@gmail.com"
+                          value={designer.email}
+                          onChange={(e) => updateDesigner(index, "email", e.target.value)}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Phone
+                        </label>
+                        <Input
+                          type="tel"
+                          placeholder="000 000 0000"
+                          value={designer.phone}
+                          onChange={(e) => updateDesigner(index, "phone", e.target.value)}
+                        />
+                      </div>
+                      
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Speciality
+                        </label>
+                        <Select 
+                          value={designer.speciality} 
+                          onValueChange={(value) => updateDesigner(index, "speciality", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a speciality" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectGroup>
+                              <SelectItem value="Architecture">Architecture</SelectItem>
+                              <SelectItem value="Interior Design">Interior Design</SelectItem>
+                              <SelectItem value="Landscape Design">Landscape Design</SelectItem>
+                              <SelectItem value="Kitchen Design">Kitchen Design</SelectItem>
+                              <SelectItem value="Bathroom Design">Bathroom Design</SelectItem>
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center text-[#174c65] border-[#174c65]"
+                    onClick={addAnotherDesigner}
+                  >
+                    <Plus className="w-4 h-4 mr-2" /> ADD ANOTHER DESIGNER
+                  </Button>
+                </div>
               </div>
             )}
           </div>
