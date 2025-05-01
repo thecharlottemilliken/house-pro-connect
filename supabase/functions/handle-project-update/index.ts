@@ -266,6 +266,7 @@ serve(async (req) => {
           });
         }
 
+        console.log("Returning project data:", projectData);
         return new Response(JSON.stringify(projectData), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 200,
@@ -280,11 +281,7 @@ serve(async (req) => {
     }
 
     // Handle project update or creation
-    if ((body.projectId || (body.propertyId && body.userId)) && 
-        (body.title || body.renovationAreas || body.projectPreferences || 
-         body.constructionPreferences || body.designPreferences || 
-         body.managementPreferences || body.prior_experience)) {
-          
+    if ((body.projectId || (body.propertyId && body.userId))) {
       const projectId = body.projectId;
       const userId = body.userId;
       const propertyId = body.propertyId;
@@ -296,7 +293,7 @@ serve(async (req) => {
       const managementPreferences = body.managementPreferences || {};
       const prior_experience = body.prior_experience || {};
 
-      console.log("Processing project update with data:", JSON.stringify({
+      console.log("Processing project update/create with data:", JSON.stringify({
         projectId,
         userId,
         propertyId,
@@ -342,7 +339,10 @@ serve(async (req) => {
           if (title) updateData.title = title;
           if (renovationAreas.length > 0 || body.renovationAreas !== undefined) updateData.renovation_areas = renovationAreas;
           if (Object.keys(projectPreferences).length > 0 || body.projectPreferences !== undefined) updateData.project_preferences = projectPreferences;
-          if (Object.keys(constructionPreferences).length > 0 || body.constructionPreferences !== undefined) updateData.construction_preferences = constructionPreferences;
+          if (Object.keys(constructionPreferences).length > 0 || body.constructionPreferences !== undefined) {
+            console.log("Updating construction preferences with:", constructionPreferences);
+            updateData.construction_preferences = constructionPreferences;
+          }
           if (Object.keys(designPreferences).length > 0 || body.designPreferences !== undefined) updateData.design_preferences = designPreferences;
           if (Object.keys(managementPreferences).length > 0 || body.managementPreferences !== undefined) updateData.management_preferences = managementPreferences;
           if (Object.keys(prior_experience).length > 0 || body.prior_experience !== undefined) updateData.prior_experience = prior_experience;
@@ -364,6 +364,7 @@ serve(async (req) => {
             });
           }
 
+          console.log("Successfully updated project:", data.id);
           return new Response(JSON.stringify(data), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 200,
@@ -373,7 +374,8 @@ serve(async (req) => {
           console.log("Creating new project with data:", {
             propertyId,
             userId,
-            title: title || "New Project"
+            title: title || "New Project",
+            constructionPreferences: JSON.stringify(constructionPreferences)
           });
           
           const { data, error } = await supabase

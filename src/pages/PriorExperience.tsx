@@ -11,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import CreateProjectSteps from "@/components/project/create/CreateProjectSteps";
+import { Json } from "@/integrations/supabase/types";
 
 const PriorExperience = () => {
   const navigate = useNavigate();
@@ -89,7 +90,7 @@ const PriorExperience = () => {
     setIsLoading(true);
     
     // Create prior experience object - with split likes/dislikes fields
-    const prior_experience = {
+    const prior_experience: Record<string, Json> = {
       hasPriorExperience: hasPriorExperience,
       experienceLikes: experienceLikes,
       experienceDislikes: experienceDislikes
@@ -97,49 +98,94 @@ const PriorExperience = () => {
     
     console.log("Saving prior experience:", prior_experience);
     
-    // If we already have a project ID, update it
-    if (projectId) {
-      try {
-        // Use the edge function to update the project
-        const { data, error } = await supabase.functions.invoke('handle-project-update', {
-          method: 'POST',
-          body: { 
-            projectId,
-            userId: user.id,
-            prior_experience
-          }
-        });
+    try {
+      // Gather all the preferences data
+      const projectData = {
+        propertyId: propertyId,
+        userId: user.id,
+        title: projectPrefs?.title || "New Project",
+        renovationAreas: projectPrefs?.renovationAreas || [],
+        projectPreferences: projectPrefs?.projectPreferences || {},
+        constructionPreferences: projectPrefs?.constructionPreferences || {},
+        designPreferences: projectPrefs?.designPreferences || {},
+        managementPreferences: projectPrefs?.managementPreferences || {},
+        prior_experience
+      };
 
-        if (error) {
-          throw error;
+      console.log("Saving project with all preferences:", projectData);
+      
+      // If we already have a project ID, update it
+      if (projectId) {
+        try {
+          // Use the edge function to update the project
+          const { data, error } = await supabase.functions.invoke('handle-project-update', {
+            method: 'POST',
+            body: { 
+              projectId,
+              userId: user.id,
+              ...projectData
+            }
+          });
+
+          if (error) {
+            throw error;
+          }
+          
+          toast({
+            title: "Success",
+            description: "Project created successfully!",
+          });
+          
+          // Navigate to project dashboard
+          navigate(`/project-dashboard/${projectId}`);
+        } catch (error) {
+          console.error('Error saving prior experience:', error);
+          toast({
+            title: "Error",
+            description: "Failed to save prior experience",
+            variant: "destructive"
+          });
+          setIsLoading(false);
+          return;
         }
-        
-        toast({
-          title: "Success",
-          description: "Project created successfully!",
-        });
-        
-        // Navigate to project dashboard - FIX: Use correct route
-        navigate(`/project-dashboard/${projectId}`);
-      } catch (error) {
-        console.error('Error saving prior experience:', error);
-        toast({
-          title: "Error",
-          description: "Failed to save prior experience",
-          variant: "destructive"
-        });
-        setIsLoading(false);
-        return;
+      } else {
+        // Create a new project with all the collected preferences
+        try {
+          const { data, error } = await supabase.functions.invoke('handle-project-update', {
+            method: 'POST',
+            body: projectData
+          });
+
+          if (error) {
+            throw error;
+          }
+          
+          toast({
+            title: "Success",
+            description: "Project created successfully!",
+          });
+          
+          // Navigate to project dashboard using the new project ID
+          navigate(`/project-dashboard/${data.id}`);
+        } catch (error) {
+          console.error('Error creating project:', error);
+          toast({
+            title: "Error",
+            description: "Failed to create project",
+            variant: "destructive"
+          });
+          setIsLoading(false);
+          return;
+        }
       }
-    } else {
-      // Project ID should exist by now, so this is an error
+    } catch (error) {
+      console.error('Error in project creation process:', error);
       toast({
         title: "Error",
-        description: "No project ID available",
+        description: "An unexpected error occurred",
         variant: "destructive"
       });
       setIsLoading(false);
-      return;
     }
   };
 
