@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Plus, Upload } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -20,6 +21,8 @@ import { toast } from "@/hooks/use-toast";
 import { DesignPreferences as DesignPreferencesType } from "@/hooks/useProjectData";
 import { Json } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
+import { PropertyFileUpload } from "@/components/property/PropertyFileUpload";
+import { FileWithPreview } from "@/components/ui/file-upload";
 
 const DesignPreferences = () => {
   const navigate = useNavigate();
@@ -45,6 +48,10 @@ const DesignPreferences = () => {
     email: "",
     phone: "",
   });
+
+  // File upload state
+  const [designFiles, setDesignFiles] = useState<FileWithPreview[]>([]);
+  const [specFiles, setSpecFiles] = useState<FileWithPreview[]>([]);
 
   useEffect(() => {
     if (location.state) {
@@ -93,6 +100,14 @@ const DesignPreferences = () => {
           if (prefs.designerContactInfo) {
             setDesignerContactInfo(prefs.designerContactInfo);
           }
+          // Load design files if they exist
+          if (prefs.designFiles && Array.isArray(prefs.designFiles)) {
+            setDesignFiles(prefs.designFiles);
+          }
+          // Load spec files if they exist
+          if (prefs.specFiles && Array.isArray(prefs.specFiles)) {
+            setSpecFiles(prefs.specFiles);
+          }
         }
         return;
       }
@@ -118,6 +133,20 @@ const DesignPreferences = () => {
         if (prefs.designerContactInfo) {
           setDesignerContactInfo(prefs.designerContactInfo);
         }
+        // Load design files if they exist
+        if (prefs.designFiles && Array.isArray(prefs.designFiles)) {
+          setDesignFiles(prefs.designFiles.map((file: any) => ({
+            ...file,
+            status: 'complete'
+          })));
+        }
+        // Load spec files if they exist
+        if (prefs.specFiles && Array.isArray(prefs.specFiles)) {
+          setSpecFiles(prefs.specFiles.map((file: any) => ({
+            ...file,
+            status: 'complete'
+          })));
+        }
       }
     } catch (error) {
       console.error('Error loading design preferences:', error);
@@ -127,6 +156,16 @@ const DesignPreferences = () => {
         variant: "destructive"
       });
     }
+  };
+
+  const handleDesignFilesUploaded = (files: FileWithPreview[]) => {
+    console.log("Design files uploaded:", files);
+    setDesignFiles(files);
+  };
+
+  const handleSpecFilesUploaded = (files: FileWithPreview[]) => {
+    console.log("Spec files uploaded:", files);
+    setSpecFiles(files);
   };
 
   const savePreferences = async () => {
@@ -140,11 +179,25 @@ const DesignPreferences = () => {
     }
 
     setIsLoading(true);
+    
+    // Extract URLs from complete files
+    const designFileUrls = designFiles
+      .filter(f => f.status === 'complete' && f.url)
+      .map(f => f.url);
+      
+    const specFileUrls = specFiles
+      .filter(f => f.status === 'complete' && f.url)
+      .map(f => f.url);
+    
     const designPreferences: Record<string, unknown> = {
       hasDesigns,
       designers: !hasDesigns ? designers : [],
       designerContactInfo: hasDesigns ? designerContactInfo : null,
-      beforePhotos: {}
+      beforePhotos: {},
+      designFiles: hasDesigns ? designFiles : [],
+      specFiles: hasDesigns ? specFiles : [],
+      designFileUrls: hasDesigns ? designFileUrls : [],
+      specFileUrls: hasDesigns ? specFileUrls : []
     };
     
     if (projectId) {
@@ -305,7 +358,7 @@ const DesignPreferences = () => {
               </RadioGroup>
             </div>
             
-            {hasDesigns && (
+            {hasDesigns ? (
               <div className="space-y-4">
                 {/* Designer contact information */}
                 <div className="space-y-6 bg-gray-50 p-6 rounded-lg mb-6">
@@ -365,42 +418,45 @@ const DesignPreferences = () => {
                 <h3 className="text-lg font-semibold">Upload your project's design information.</h3>
                 
                 <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="md:col-span-2">
-                      <p className="text-sm mb-1">Upload Design Plan</p>
-                      <p className="text-xs text-gray-500 mb-2">PNG, JPG, PDF, or DWG</p>
-                    </div>
-                    <div className="flex justify-end">
-                      <Button 
-                        className="bg-[#174c65] hover:bg-[#174c65]/90 text-white"
-                        onClick={() => {}}
-                      >
-                        <Upload className="mr-2 h-4 w-4" /> UPLOAD
-                      </Button>
-                    </div>
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Design Plans</h4>
+                    <PropertyFileUpload
+                      accept="image/*, .pdf, .dwg"
+                      multiple={true}
+                      label="Upload Design Plan"
+                      description="Upload your design plans in PNG, JPG, PDF, or DWG format"
+                      initialFiles={designFiles}
+                      onFilesUploaded={handleDesignFilesUploaded}
+                      roomOptions={[
+                        { value: "blueprint", label: "Blueprint" },
+                        { value: "floorPlan", label: "Floor Plan" },
+                        { value: "elevation", label: "Elevation" },
+                        { value: "siteplan", label: "Site Plan" }
+                      ]}
+                    />
                   </div>
                   
-                  <div className="border-t border-gray-200 pt-4"></div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="md:col-span-2">
-                      <p className="text-sm mb-1">Upload Specs</p>
-                      <p className="text-xs text-gray-500 mb-2">PNG, JPG, or PDF</p>
-                    </div>
-                    <div className="flex justify-end">
-                      <Button 
-                        className="bg-[#174c65] hover:bg-[#174c65]/90 text-white"
-                        onClick={() => {}}
-                      >
-                        <Upload className="mr-2 h-4 w-4" /> UPLOAD
-                      </Button>
-                    </div>
+                  <div className="border-t border-gray-200 pt-4 mt-6">
+                    <h4 className="text-sm font-medium mb-2">Design Specifications</h4>
+                    <PropertyFileUpload
+                      accept="image/*, .pdf, .doc, .docx, .xls"
+                      multiple={true}
+                      label="Upload Specs"
+                      description="Upload your specifications in PNG, JPG, PDF, or document format"
+                      initialFiles={specFiles}
+                      onFilesUploaded={handleSpecFilesUploaded}
+                      roomOptions={[
+                        { value: "materials", label: "Materials" },
+                        { value: "fixtures", label: "Fixtures" },
+                        { value: "finishes", label: "Finishes" },
+                        { value: "electrical", label: "Electrical" },
+                        { value: "plumbing", label: "Plumbing" }
+                      ]}
+                    />
                   </div>
                 </div>
               </div>
-            )}
-            
-            {!hasDesigns && (
+            ) : (
               <div className="space-y-6">
                 {/* Placeholder for designer-finding feature */}
                 <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">

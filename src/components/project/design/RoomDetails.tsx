@@ -1,14 +1,13 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { FileText } from "lucide-react";
 import EmptyDesignState from "./EmptyDesignState";
 import DesignTabHeader from "./DesignTabHeader";
 import BeforePhotosCard from "./BeforePhotosCard";
 import RoomMeasurementsCard from './RoomMeasurementsCard';
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { PropertyFileUpload } from "@/components/property/PropertyFileUpload";
+import { FileWithPreview } from "@/components/ui/file-upload";
 
 interface RoomDetailsProps {
   area: string;
@@ -35,10 +34,10 @@ const RoomDetails = ({
   area,
   location,
   designers,
-  designAssets,
+  designAssets = [],
   measurements,
   onAddDesigner,
-  onUploadAssets,
+  onUploadAssets = () => {},
   onSaveMeasurements = () => {},
   propertyPhotos = [],
   onSelectBeforePhotos,
@@ -46,6 +45,37 @@ const RoomDetails = ({
   beforePhotos = []
 }: RoomDetailsProps) => {
   const hasDesigner = designers && designers.length > 0;
+  const [roomFiles, setRoomFiles] = useState<FileWithPreview[]>(() => {
+    // Convert design assets to FileWithPreview format if available
+    if (designAssets && designAssets.length > 0) {
+      return designAssets.map((asset, index) => ({
+        id: `asset-${index}`,
+        name: asset.name,
+        url: asset.url,
+        size: 'Unknown',
+        type: asset.name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg',
+        progress: 100,
+        status: 'complete' as const,
+        tags: []
+      }));
+    }
+    return [];
+  });
+
+  const handleFilesUploaded = (files: FileWithPreview[]) => {
+    setRoomFiles(files);
+    
+    // Convert FileWithPreview to design assets format
+    const assets = files
+      .filter(file => file.status === 'complete' && file.url)
+      .map(file => ({
+        name: file.name,
+        url: file.url as string
+      }));
+    
+    // Call onUploadAssets with the new assets if needed
+    onUploadAssets();
+  };
 
   return (
     <div className="flex flex-col space-y-6">
@@ -84,12 +114,13 @@ const RoomDetails = ({
           </div>
 
           {/* Design Assets Section */}
-          {designAssets && designAssets.length > 0 && (
-            <div className="pt-6 mt-6 border-t border-gray-100">
-              <div>
-                <h3 className="font-semibold">Design Assets</h3>
-                <p className="text-sm text-gray-500 mt-1">Project documentation</p>
-              </div>
+          <div className="pt-6 mt-6 border-t border-gray-100">
+            <div>
+              <h3 className="font-semibold">Design Assets</h3>
+              <p className="text-sm text-gray-500 mt-1">Project documentation</p>
+            </div>
+            
+            {designAssets && designAssets.length > 0 ? (
               <div className="grid gap-3 mt-4">
                 {designAssets.map((asset, idx) => (
                   <div key={idx} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
@@ -98,8 +129,25 @@ const RoomDetails = ({
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="mt-4">
+                <PropertyFileUpload
+                  accept="image/*, .pdf, .dwg"
+                  multiple={true}
+                  label={`Upload ${area} Design Files`}
+                  description="Upload project documentation, plans, or specs"
+                  initialFiles={roomFiles}
+                  onFilesUploaded={handleFilesUploaded}
+                  roomOptions={[
+                    { value: "blueprint", label: "Blueprint" },
+                    { value: "floorPlan", label: "Floor Plan" },
+                    { value: "materials", label: "Materials" },
+                    { value: "specifications", label: "Specifications" }
+                  ]}
+                />
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
