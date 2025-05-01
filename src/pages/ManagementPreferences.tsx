@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, X } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -16,12 +16,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { cn } from "@/lib/utils";
 
 const ManagementPreferences = () => {
   const navigate = useNavigate();
@@ -34,6 +48,40 @@ const ManagementPreferences = () => {
   const [projectPrefs, setProjectPrefs] = useState<any>(null);
   const [wantProjectCoach, setWantProjectCoach] = useState<string>("yes");
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Time slot state variables
+  const [timeSlots, setTimeSlots] = useState<Array<{
+    id: number;
+    date: Date | null;
+    time: string;
+    ampm: "AM" | "PM";
+  }>>([
+    { id: 1, date: null, time: "", ampm: "AM" },
+    { id: 2, date: null, time: "", ampm: "AM" },
+    { id: 3, date: null, time: "", ampm: "AM" },
+  ]);
+  
+  // Time slot modal state
+  const [isTimeSlotModalOpen, setIsTimeSlotModalOpen] = useState(false);
+  const [selectedSlotIndex, setSelectedSlotIndex] = useState<number | null>(null);
+  const [tempTimeSlot, setTempTimeSlot] = useState<{
+    date: Date | null;
+    time: string;
+    ampm: "AM" | "PM";
+  }>({ date: null, time: "", ampm: "AM" });
+  
+  // Time range options for the dialog
+  const timeRanges = [
+    { value: "8:00 - 9:00", label: "8:00 - 9:00" },
+    { value: "9:00 - 10:00", label: "9:00 - 10:00" },
+    { value: "10:00 - 11:00", label: "10:00 - 11:00" },
+    { value: "11:00 - 12:00", label: "11:00 - 12:00" },
+    { value: "12:00 - 1:00", label: "12:00 - 1:00" },
+    { value: "1:00 - 2:00", label: "1:00 - 2:00" },
+    { value: "2:00 - 3:00", label: "2:00 - 3:00" },
+    { value: "3:00 - 4:00", label: "3:00 - 4:00" },
+    { value: "4:00 - 5:00", label: "4:00 - 5:00" },
+  ];
   
   const form = useForm({
     defaultValues: {
@@ -83,6 +131,7 @@ const ManagementPreferences = () => {
           if (prefs.wantProjectCoach) setWantProjectCoach(prefs.wantProjectCoach);
           if (prefs.phoneNumber) form.setValue("phoneNumber", prefs.phoneNumber);
           if (prefs.phoneType) form.setValue("phoneType", prefs.phoneType);
+          if (prefs.timeSlots) setTimeSlots(prefs.timeSlots);
         }
         return;
       }
@@ -103,6 +152,7 @@ const ManagementPreferences = () => {
         if (prefs.wantProjectCoach) setWantProjectCoach(prefs.wantProjectCoach);
         if (prefs.phoneNumber) form.setValue("phoneNumber", prefs.phoneNumber);
         if (prefs.phoneType) form.setValue("phoneType", prefs.phoneType);
+        if (prefs.timeSlots) setTimeSlots(prefs.timeSlots);
       }
     } catch (error) {
       console.error('Error loading management preferences:', error);
@@ -112,6 +162,45 @@ const ManagementPreferences = () => {
         variant: "destructive"
       });
     }
+  };
+
+  const openTimeSlotModal = (index: number) => {
+    const slot = timeSlots[index];
+    setTempTimeSlot({
+      date: slot.date,
+      time: slot.time,
+      ampm: slot.ampm,
+    });
+    setSelectedSlotIndex(index);
+    setIsTimeSlotModalOpen(true);
+  };
+
+  const closeTimeSlotModal = () => {
+    setIsTimeSlotModalOpen(false);
+    setSelectedSlotIndex(null);
+  };
+
+  const saveTimeSlot = () => {
+    if (selectedSlotIndex === null) return;
+    
+    const newTimeSlots = [...timeSlots];
+    newTimeSlots[selectedSlotIndex] = {
+      ...newTimeSlots[selectedSlotIndex],
+      date: tempTimeSlot.date,
+      time: tempTimeSlot.time,
+      ampm: tempTimeSlot.ampm,
+    };
+    
+    setTimeSlots(newTimeSlots);
+    closeTimeSlotModal();
+  };
+
+  const formatTimeSlot = (slot: {date: Date | null; time: string; ampm: string}) => {
+    if (!slot.date || !slot.time) {
+      return "Select a time and date for your call";
+    }
+    
+    return `${format(slot.date, "MM/dd/yyyy")}, ${slot.time} ${slot.ampm}`;
   };
 
   const savePreferences = async () => {
@@ -130,7 +219,8 @@ const ManagementPreferences = () => {
     const managementPreferences = {
       wantProjectCoach,
       phoneNumber: form.getValues("phoneNumber"),
-      phoneType: form.getValues("phoneType")
+      phoneType: form.getValues("phoneType"),
+      timeSlots: timeSlots
     };
     
     console.log("Saving management preferences:", managementPreferences);
@@ -323,43 +413,19 @@ const ManagementPreferences = () => {
                 <div>
                   <h3 className="text-lg font-medium mb-4">Please select a few times you're available to be contacted.</h3>
                   
-                  {[1, 2, 3].map((index) => (
-                    <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                      <div>
-                        <Label htmlFor={`date-${index}`} className="mb-2 block">Date</Label>
-                        <div className="relative">
-                          <Input 
-                            id={`date-${index}`} 
-                            placeholder="MM / DD / YYYY" 
-                            className="pl-10"
-                          />
-                          <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M13.3333 2.66663H2.66667C1.93029 2.66663 1.33334 3.26358 1.33334 3.99996V13.3333C1.33334 14.0697 1.93029 14.6666 2.66667 14.6666H13.3333C14.0697 14.6666 14.6667 14.0697 14.6667 13.3333V3.99996C14.6667 3.26358 14.0697 2.66663 13.3333 2.66663Z" stroke="#64748B" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round"/>
-                              <path d="M1.33334 6.66663H14.6667" stroke="#64748B" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round"/>
-                              <path d="M5.33334 1.33337V4.00004" stroke="#64748B" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round"/>
-                              <path d="M10.6667 1.33337V4.00004" stroke="#64748B" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          </div>
-                        </div>
-                      </div>
-                      <div>
-                        <Label htmlFor={`time-${index}`} className="mb-2 block">Time</Label>
-                        <Input id={`time-${index}`} placeholder="0:00" />
-                      </div>
-                      <div>
-                        <Label htmlFor={`ampm-${index}`} className="mb-2 block">AM/PM</Label>
-                        <Select defaultValue="AM">
-                          <SelectTrigger id={`ampm-${index}`}>
-                            <SelectValue placeholder="Select" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectGroup>
-                              <SelectItem value="AM">AM</SelectItem>
-                              <SelectItem value="PM">PM</SelectItem>
-                            </SelectGroup>
-                          </SelectContent>
-                        </Select>
+                  {timeSlots.map((slot, index) => (
+                    <div key={index} className="mb-4">
+                      <div className="flex items-center justify-between border border-gray-300 rounded-md p-3">
+                        <p className="text-sm text-gray-700">
+                          {formatTimeSlot(slot)}
+                        </p>
+                        <Button 
+                          variant="outline" 
+                          className="border-gray-300 text-gray-700"
+                          onClick={() => openTimeSlotModal(index)}
+                        >
+                          MAKE SELECTION
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -427,6 +493,84 @@ const ManagementPreferences = () => {
           </div>
         </div>
       </div>
+
+      {/* Time Slot Selection Modal */}
+      <Dialog open={isTimeSlotModalOpen} onOpenChange={setIsTimeSlotModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              Select a Date and Time Range for a Coach to Reach Out
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={closeTimeSlotModal}>
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">Date Selection</h3>
+              <p className="text-xs text-gray-500">
+                Please pick a day when you'd like to talk to us - this is going to be the date we'll try to contact you within, and you'll receive a calendar invite once a time is ready.
+              </p>
+            </div>
+            
+            <div className="flex flex-col items-center">
+              <Calendar
+                mode="single"
+                selected={tempTimeSlot.date || undefined}
+                onSelect={(date) => date && setTempTimeSlot({...tempTimeSlot, date})}
+                className={cn("rounded-md border", "p-3 pointer-events-auto")}
+                initialFocus
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">AM Times</h3>
+              <div className="grid grid-cols-3 gap-2">
+                {timeRanges.slice(0, 4).map((range) => (
+                  <Button
+                    key={range.value}
+                    type="button"
+                    variant={tempTimeSlot.time === range.value && tempTimeSlot.ampm === "AM" ? "default" : "outline"}
+                    className={tempTimeSlot.time === range.value && tempTimeSlot.ampm === "AM" ? "bg-[#174c65]" : ""}
+                    onClick={() => setTempTimeSlot({...tempTimeSlot, time: range.value, ampm: "AM"})}
+                  >
+                    {range.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">PM Times</h3>
+              <div className="grid grid-cols-3 gap-2">
+                {timeRanges.slice(4).map((range) => (
+                  <Button
+                    key={range.value}
+                    type="button"
+                    variant={tempTimeSlot.time === range.value && tempTimeSlot.ampm === "PM" ? "default" : "outline"}
+                    className={tempTimeSlot.time === range.value && tempTimeSlot.ampm === "PM" ? "bg-[#174c65]" : ""}
+                    onClick={() => setTempTimeSlot({...tempTimeSlot, time: range.value, ampm: "PM"})}
+                  >
+                    {range.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="sm:justify-between">
+            <Button variant="outline" onClick={closeTimeSlotModal}>CANCEL</Button>
+            <Button 
+              onClick={saveTimeSlot}
+              className="bg-[#174c65] hover:bg-[#174c65]/90"
+              disabled={!tempTimeSlot.date || !tempTimeSlot.time}
+            >
+              SAVE AS COMPLETE
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
