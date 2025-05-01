@@ -27,20 +27,58 @@ const PriorExperience = () => {
   const [experienceDislikes, setExperienceDislikes] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // Store all data from previous steps
+  const [title, setTitle] = useState<string>("New Project");
+  const [renovationAreas, setRenovationAreas] = useState<any[]>([]);
+  const [projectPreferences, setProjectPreferences] = useState<any>({});
+  const [constructionPreferences, setConstructionPreferences] = useState<any>({});
+  const [designPreferences, setDesignPreferences] = useState<any>({});
+  const [managementPreferences, setManagementPreferences] = useState<any>({});
+  const [propertyName, setPropertyName] = useState<string>("");
+
   useEffect(() => {
     if (location.state) {
+      console.log("Location state received in PriorExperience:", location.state);
+      
       if (location.state.propertyId) {
         setPropertyId(location.state.propertyId);
       }
+      
       if (location.state.projectId) {
         setProjectId(location.state.projectId);
-      }
-      setProjectPrefs(location.state);
-      
-      // Load existing prior experience data if available
-      if (location.state.projectId) {
         loadExistingExperienceData(location.state.projectId);
       }
+      
+      if (location.state.propertyName) {
+        setPropertyName(location.state.propertyName);
+      }
+      
+      if (location.state.title) {
+        setTitle(location.state.title);
+      }
+      
+      if (location.state.renovationAreas) {
+        setRenovationAreas(location.state.renovationAreas);
+      }
+      
+      // Store all preferences data from previous steps
+      if (location.state.projectPreferences) {
+        setProjectPreferences(location.state.projectPreferences);
+      }
+      
+      if (location.state.constructionPreferences) {
+        setConstructionPreferences(location.state.constructionPreferences);
+      }
+      
+      if (location.state.designPreferences) {
+        setDesignPreferences(location.state.designPreferences);
+      }
+      
+      if (location.state.managementPreferences) {
+        setManagementPreferences(location.state.managementPreferences);
+      }
+      
+      setProjectPrefs(location.state);
     } else {
       navigate("/create-project");
     }
@@ -59,12 +97,24 @@ const PriorExperience = () => {
 
       if (error) throw error;
       
+      console.log("Existing project data loaded:", data);
+      
       // If we have prior experience data, load it
       if (data && data.prior_experience) {
         const prefs = data.prior_experience as any;
         if (prefs.hasPriorExperience !== undefined) setHasPriorExperience(prefs.hasPriorExperience);
         if (prefs.experienceLikes) setExperienceLikes(prefs.experienceLikes);
         if (prefs.experienceDislikes) setExperienceDislikes(prefs.experienceDislikes);
+      }
+      
+      // Also load all other preferences if available
+      if (data) {
+        if (data.project_preferences) setProjectPreferences(data.project_preferences);
+        if (data.construction_preferences) setConstructionPreferences(data.construction_preferences);
+        if (data.design_preferences) setDesignPreferences(data.design_preferences);
+        if (data.management_preferences) setManagementPreferences(data.management_preferences);
+        if (data.renovation_areas) setRenovationAreas(data.renovation_areas);
+        if (data.title) setTitle(data.title);
       }
     } catch (error) {
       console.error('Error loading prior experience data:', error);
@@ -102,12 +152,12 @@ const PriorExperience = () => {
       const completeProjectData = {
         propertyId: propertyId,
         userId: user.id,
-        title: projectPrefs.title || "New Project",
-        renovationAreas: projectPrefs.renovationAreas || [],
-        projectPreferences: projectPrefs.projectPreferences || {},
-        constructionPreferences: projectPrefs.constructionPreferences || {},
-        designPreferences: projectPrefs.designPreferences || {},
-        managementPreferences: projectPrefs.managementPreferences || {},
+        title: title || "New Project",
+        renovationAreas: renovationAreas || [],
+        projectPreferences: projectPreferences || {},
+        constructionPreferences: constructionPreferences || {},
+        designPreferences: designPreferences || {},
+        managementPreferences: managementPreferences || {},
         prior_experience
       };
       
@@ -135,9 +185,11 @@ const PriorExperience = () => {
           throw error;
         }
         
+        console.log("Project updated successfully:", data);
+        
         toast({
           title: "Success",
-          description: "Project created successfully!",
+          description: "Project updated successfully!",
         });
         
         // Navigate to project dashboard
@@ -168,6 +220,8 @@ const PriorExperience = () => {
         if (!newProjectId) {
           throw new Error("No project ID returned from creation");
         }
+        
+        console.log("New project created successfully with ID:", newProjectId);
         
         toast({
           title: "Success",
