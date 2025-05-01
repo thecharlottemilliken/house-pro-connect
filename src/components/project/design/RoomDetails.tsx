@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Plus, Users } from "lucide-react";
@@ -45,6 +46,20 @@ const RoomDetails: React.FC<RoomDetailsProps> = ({
 }) => {
   const [isPropertyPhotosDialogOpen, setIsPropertyPhotosDialogOpen] = useState(false);
 
+  // Mock functions for the requirements of BeforePhotosSection
+  const handleRemovePhoto = (index: number) => {
+    const newPhotos = [...beforePhotos];
+    newPhotos.splice(index, 1);
+    onSelectBeforePhotos(newPhotos);
+  };
+
+  const handleReorderPhotos = (fromIndex: number, toIndex: number) => {
+    const newPhotos = [...beforePhotos];
+    const [movedPhoto] = newPhotos.splice(fromIndex, 1);
+    newPhotos.splice(toIndex, 0, movedPhoto);
+    onSelectBeforePhotos(newPhotos);
+  };
+
   return (
     <div className="space-y-6">
       <div className="bg-gray-50 p-6 rounded-lg">
@@ -85,14 +100,16 @@ const RoomDetails: React.FC<RoomDetailsProps> = ({
         area={area}
         beforePhotos={beforePhotos}
         propertyPhotos={propertyPhotos}
-        onSelectPhotos={() => setIsPropertyPhotosDialogOpen(true)}
-        onUploadPhotos={onUploadBeforePhotos}
+        onSelectBeforePhotos={onSelectBeforePhotos}
+        onUploadBeforePhotos={onUploadBeforePhotos}
+        onRemovePhoto={handleRemovePhoto}
+        onReorderPhotos={handleReorderPhotos}
       />
 
       <SelectPropertyPhotosDialog
         isOpen={isPropertyPhotosDialogOpen}
         onClose={() => setIsPropertyPhotosDialogOpen(false)}
-        propertyPhotos={propertyPhotos}
+        photos={propertyPhotos}
         onSelect={onSelectBeforePhotos}
       />
     </div>
