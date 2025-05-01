@@ -26,6 +26,8 @@ const ManagementPreferences = () => {
   const [managementLevel, setManagementLevel] = useState<string>("full-service");
   const [specialRequirements, setSpecialRequirements] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
+  const [wantProjectCoach, setWantProjectCoach] = useState<boolean>(true);
+  const [phoneNumber, setPhoneNumber] = useState<string>("");
 
   useEffect(() => {
     if (location.state) {
@@ -38,42 +40,17 @@ const ManagementPreferences = () => {
       setProjectPrefs(location.state);
       
       // Load existing management preferences if available
-      if (location.state.projectId) {
-        loadExistingPreferences(location.state.projectId);
+      if (location.state.managementPreferences) {
+        const prefs = location.state.managementPreferences;
+        if (prefs.managementLevel) setManagementLevel(prefs.managementLevel);
+        if (prefs.specialRequirements) setSpecialRequirements(prefs.specialRequirements);
+        if (prefs.wantProjectCoach !== undefined) setWantProjectCoach(prefs.wantProjectCoach);
+        if (prefs.phoneNumber) setPhoneNumber(prefs.phoneNumber);
       }
     } else {
       navigate("/create-project");
     }
   }, [location.state, navigate]);
-  
-  const loadExistingPreferences = async (id: string) => {
-    try {
-      // Use the edge function to fetch project data
-      const { data, error } = await supabase.functions.invoke('handle-project-update', {
-        method: 'POST',
-        body: { 
-          projectId: id,
-          userId: user?.id
-        }
-      });
-
-      if (error) throw error;
-      
-      // If we have management preferences data, load it
-      if (data && data.management_preferences) {
-        const prefs = data.management_preferences as any;
-        if (prefs.managementLevel) setManagementLevel(prefs.managementLevel);
-        if (prefs.specialRequirements) setSpecialRequirements(prefs.specialRequirements);
-      }
-    } catch (error) {
-      console.error('Error loading management preferences:', error);
-      toast({
-        title: "Error",
-        description: "Could not load management preferences",
-        variant: "destructive"
-      });
-    }
-  };
 
   const savePreferences = async () => {
     if (!user?.id) {
@@ -87,34 +64,15 @@ const ManagementPreferences = () => {
     
     setIsLoading(true);
     
-    // Create management preferences object
+    // Create management preferences object with all collected data
     const managementPreferences = {
       managementLevel,
-      specialRequirements
+      specialRequirements,
+      wantProjectCoach,
+      phoneNumber
     };
     
     try {
-      if (projectId) {
-        // Update existing project with management preferences
-        console.log("Updating existing project with management preferences:", projectId);
-        
-        const { data, error } = await supabase.functions.invoke('handle-project-update', {
-          method: 'POST',
-          body: { 
-            projectId,
-            userId: user.id,
-            managementPreferences: managementPreferences as Json
-          }
-        });
-
-        if (error) throw error;
-        
-        toast({
-          title: "Success",
-          description: "Management preferences saved successfully!",
-        });
-      }
-      
       const updatedProjectPrefs = {
         ...projectPrefs,
         propertyId,
@@ -214,6 +172,38 @@ const ManagementPreferences = () => {
                   </div>
                 </div>
               </RadioGroup>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium mb-2">Would you like a project coach?</h3>
+              <RadioGroup 
+                value={wantProjectCoach ? "yes" : "no"} 
+                onValueChange={(value) => setWantProjectCoach(value === "yes")}
+                className="flex flex-col space-y-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="yes" id="coach-yes" />
+                  <Label htmlFor="coach-yes">Yes, I would like a project coach</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="no" id="coach-no" />
+                  <Label htmlFor="coach-no">No, I don't need a project coach</Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">
+                Contact Phone Number (Optional)
+              </Label>
+              <input
+                id="phoneNumber"
+                type="tel"
+                className="w-full p-2 border border-gray-300 rounded-md"
+                placeholder="Your phone number"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+              />
             </div>
             
             <div className="space-y-2">

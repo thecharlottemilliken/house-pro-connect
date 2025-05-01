@@ -29,6 +29,7 @@ const PriorExperience = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    console.log("Location state in PriorExperience:", location.state);
     if (location.state) {
       if (location.state.propertyId) {
         setPropertyId(location.state.propertyId);
@@ -42,44 +43,17 @@ const PriorExperience = () => {
       setProjectPrefs(location.state);
       
       // Load existing prior experience data if available
-      if (location.state.projectId) {
-        loadExistingExperienceData(location.state.projectId);
+      if (location.state.prior_experience) {
+        const prefs = location.state.prior_experience;
+        if (prefs.hasPriorExperience !== undefined) setHasPriorExperience(prefs.hasPriorExperience);
+        if (prefs.experienceLikes) setExperienceLikes(prefs.experienceLikes);
+        if (prefs.experienceDislikes) setExperienceDislikes(prefs.experienceDislikes);
       }
     } else {
       navigate("/create-project");
     }
   }, [location.state, navigate]);
   
-  const loadExistingExperienceData = async (id: string) => {
-    try {
-      // Use the edge function to fetch project data
-      const { data, error } = await supabase.functions.invoke('handle-project-update', {
-        method: 'POST',
-        body: { 
-          projectId: id,
-          userId: user?.id
-        }
-      });
-
-      if (error) throw error;
-      
-      // If we have prior experience data, load it
-      if (data && data.prior_experience) {
-        const prefs = data.prior_experience as any;
-        if (prefs.hasPriorExperience !== undefined) setHasPriorExperience(prefs.hasPriorExperience);
-        if (prefs.experienceLikes) setExperienceLikes(prefs.experienceLikes);
-        if (prefs.experienceDislikes) setExperienceDislikes(prefs.experienceDislikes);
-      }
-    } catch (error) {
-      console.error('Error loading prior experience data:', error);
-      toast({
-        title: "Error",
-        description: "Could not load prior experience data",
-        variant: "destructive"
-      });
-    }
-  };
-
   const createProject = async () => {
     if (!user?.id) {
       toast({
@@ -90,83 +64,68 @@ const PriorExperience = () => {
       return;
     }
     
+    if (!propertyId) {
+      toast({
+        title: "Error",
+        description: "Property ID is required",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
     // Create prior experience object - with split likes/dislikes fields
     const prior_experience = {
-      hasPriorExperience: hasPriorExperience,
-      experienceLikes: experienceLikes,
-      experienceDislikes: experienceDislikes
+      hasPriorExperience,
+      experienceLikes,
+      experienceDislikes
     };
     
     try {
-      // IF there's an existing project ID, use it, otherwise create a new project
-      if (projectId) {
-        // Update existing project with all data
-        console.log("Updating existing project:", projectId);
-        
-        const projectData = {
-          projectId,
-          userId: user.id,
-          propertyId,
-          title: projectPrefs.title || projectTitle,
-          renovationAreas: projectPrefs.renovationAreas || [],
-          projectPreferences: projectPrefs.projectPreferences || {},
-          constructionPreferences: projectPrefs.constructionPreferences || {},
-          designPreferences: projectPrefs.designPreferences || {},
-          managementPreferences: projectPrefs.managementPreferences || {},
-          prior_experience
-        };
+      console.log("Collected data for project creation/update:", {
+        projectId,
+        propertyId,
+        title: projectPrefs.title || projectTitle,
+        renovationAreas: projectPrefs.renovationAreas || [],
+        projectPreferences: projectPrefs.projectPreferences || {},
+        constructionPreferences: projectPrefs.constructionPreferences || {},
+        designPreferences: projectPrefs.designPreferences || {},
+        managementPreferences: projectPrefs.managementPreferences || {},
+        prior_experience
+      });
+      
+      // Create or update project with ALL collected data at the final step
+      const projectData = {
+        projectId,
+        userId: user.id,
+        propertyId,
+        title: projectPrefs.title || projectTitle,
+        renovationAreas: projectPrefs.renovationAreas || [],
+        projectPreferences: projectPrefs.projectPreferences || {},
+        constructionPreferences: projectPrefs.constructionPreferences || {},
+        designPreferences: projectPrefs.designPreferences || {},
+        managementPreferences: projectPrefs.managementPreferences || {},
+        prior_experience
+      };
 
-        console.log("Final project data being saved:", projectData);
-        
-        // Use the edge function to update the project with ALL data
-        const { data, error } = await supabase.functions.invoke('handle-project-update', {
-          method: 'POST',
-          body: projectData
-        });
+      console.log("Final project data being saved:", projectData);
+      
+      // Use the edge function to create/update the project with ALL data
+      const { data, error } = await supabase.functions.invoke('handle-project-update', {
+        method: 'POST',
+        body: projectData
+      });
 
-        if (error) throw error;
-        
-        toast({
-          title: "Success",
-          description: "Project updated successfully!",
-        });
-        
-        navigate(`/project-dashboard/${projectId}`);
-      } else {
-        // Create a new project with ALL collected data
-        console.log("Creating new project with all collected data");
-        
-        const projectData = {
-          userId: user.id,
-          propertyId,
-          title: projectPrefs.title || projectTitle,
-          renovationAreas: projectPrefs.renovationAreas || [],
-          projectPreferences: projectPrefs.projectPreferences || {},
-          constructionPreferences: projectPrefs.constructionPreferences || {},
-          designPreferences: projectPrefs.designPreferences || {},
-          managementPreferences: projectPrefs.managementPreferences || {},
-          prior_experience
-        };
-
-        console.log("New project data being saved:", projectData);
-        
-        // Use the edge function to create the project with ALL data
-        const { data, error } = await supabase.functions.invoke('handle-project-update', {
-          method: 'POST',
-          body: projectData
-        });
-
-        if (error) throw error;
-        
-        toast({
-          title: "Success",
-          description: "Project created successfully!",
-        });
-        
-        navigate(`/project-dashboard/${data.id}`);
-      }
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: projectId ? "Project updated successfully!" : "Project created successfully!",
+      });
+      
+      // Navigate to the project dashboard
+      navigate(`/project-dashboard/${projectId || data.id}`);
     } catch (error: any) {
       console.error('Error creating/updating project:', error);
       toast({
@@ -184,8 +143,19 @@ const PriorExperience = () => {
   };
   
   const goBack = () => {
+    // Create prior experience object to pass back
+    const prior_experience = {
+      hasPriorExperience,
+      experienceLikes,
+      experienceDislikes
+    };
+    
+    // Make sure to include prior_experience in the state we pass back
     navigate("/management-preferences", {
-      state: projectPrefs
+      state: {
+        ...projectPrefs,
+        prior_experience
+      }
     });
   };
 
