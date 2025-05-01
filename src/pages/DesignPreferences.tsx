@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Plus } from "lucide-react";
@@ -49,9 +48,8 @@ const DesignPreferences = () => {
     phone: "",
   });
 
-  // File upload state
+  // Consolidated file upload state
   const [designFiles, setDesignFiles] = useState<FileWithPreview[]>([]);
-  const [specFiles, setSpecFiles] = useState<FileWithPreview[]>([]);
 
   useEffect(() => {
     if (location.state) {
@@ -104,10 +102,6 @@ const DesignPreferences = () => {
           if (prefs.designFiles && Array.isArray(prefs.designFiles)) {
             setDesignFiles(prefs.designFiles);
           }
-          // Load spec files if they exist
-          if (prefs.specFiles && Array.isArray(prefs.specFiles)) {
-            setSpecFiles(prefs.specFiles);
-          }
         }
         return;
       }
@@ -140,13 +134,6 @@ const DesignPreferences = () => {
             status: 'complete'
           })));
         }
-        // Load spec files if they exist
-        if (prefs.specFiles && Array.isArray(prefs.specFiles)) {
-          setSpecFiles(prefs.specFiles.map((file: any) => ({
-            ...file,
-            status: 'complete'
-          })));
-        }
       }
     } catch (error) {
       console.error('Error loading design preferences:', error);
@@ -158,14 +145,9 @@ const DesignPreferences = () => {
     }
   };
 
-  const handleDesignFilesUploaded = (files: FileWithPreview[]) => {
-    console.log("Design files uploaded:", files);
+  const handleFilesUploaded = (files: FileWithPreview[]) => {
+    console.log("Files uploaded:", files);
     setDesignFiles(files);
-  };
-
-  const handleSpecFilesUploaded = (files: FileWithPreview[]) => {
-    console.log("Spec files uploaded:", files);
-    setSpecFiles(files);
   };
 
   const savePreferences = async () => {
@@ -184,10 +166,6 @@ const DesignPreferences = () => {
     const designFileUrls = designFiles
       .filter(f => f.status === 'complete' && f.url)
       .map(f => f.url);
-      
-    const specFileUrls = specFiles
-      .filter(f => f.status === 'complete' && f.url)
-      .map(f => f.url);
     
     const designPreferences: Record<string, unknown> = {
       hasDesigns,
@@ -195,9 +173,7 @@ const DesignPreferences = () => {
       designerContactInfo: hasDesigns ? designerContactInfo : null,
       beforePhotos: {},
       designFiles: hasDesigns ? designFiles : [],
-      specFiles: hasDesigns ? specFiles : [],
-      designFileUrls: hasDesigns ? designFileUrls : [],
-      specFileUrls: hasDesigns ? specFileUrls : []
+      designFileUrls: hasDesigns ? designFileUrls : []
     };
     
     if (projectId) {
@@ -415,45 +391,29 @@ const DesignPreferences = () => {
                   </div>
                 </div>
 
-                <h3 className="text-lg font-semibold">Upload your project's design information.</h3>
+                <h3 className="text-lg font-semibold">Upload your project's design information</h3>
                 
-                <div className="space-y-6">
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">Design Plans</h4>
-                    <PropertyFileUpload
-                      accept="image/*, .pdf, .dwg"
-                      multiple={true}
-                      label="Upload Design Plan"
-                      description="Upload your design plans in PNG, JPG, PDF, or DWG format"
-                      initialFiles={designFiles}
-                      onFilesUploaded={handleDesignFilesUploaded}
-                      roomOptions={[
-                        { value: "blueprint", label: "Blueprint" },
-                        { value: "floorPlan", label: "Floor Plan" },
-                        { value: "elevation", label: "Elevation" },
-                        { value: "siteplan", label: "Site Plan" }
-                      ]}
-                    />
-                  </div>
-                  
-                  <div className="border-t border-gray-200 pt-4 mt-6">
-                    <h4 className="text-sm font-medium mb-2">Design Specifications</h4>
-                    <PropertyFileUpload
-                      accept="image/*, .pdf, .doc, .docx, .xls"
-                      multiple={true}
-                      label="Upload Specs"
-                      description="Upload your specifications in PNG, JPG, PDF, or document format"
-                      initialFiles={specFiles}
-                      onFilesUploaded={handleSpecFilesUploaded}
-                      roomOptions={[
-                        { value: "materials", label: "Materials" },
-                        { value: "fixtures", label: "Fixtures" },
-                        { value: "finishes", label: "Finishes" },
-                        { value: "electrical", label: "Electrical" },
-                        { value: "plumbing", label: "Plumbing" }
-                      ]}
-                    />
-                  </div>
+                {/* Combined upload area for design plans and specs */}
+                <div className="space-y-4">
+                  <PropertyFileUpload
+                    accept="image/*, .pdf, .dwg, .doc, .docx, .xls"
+                    multiple={true}
+                    label="Upload Design Plans and Specs"
+                    description="Upload your design plans, specifications, and documentation in PNG, JPG, PDF, or document format"
+                    initialFiles={designFiles}
+                    onFilesUploaded={handleFilesUploaded}
+                    roomOptions={[
+                      { value: "blueprint", label: "Blueprint" },
+                      { value: "floorPlan", label: "Floor Plan" },
+                      { value: "elevation", label: "Elevation" },
+                      { value: "siteplan", label: "Site Plan" },
+                      { value: "materials", label: "Materials" },
+                      { value: "fixtures", label: "Fixtures" },
+                      { value: "finishes", label: "Finishes" },
+                      { value: "electrical", label: "Electrical" },
+                      { value: "plumbing", label: "Plumbing" }
+                    ]}
+                  />
                 </div>
               </div>
             ) : (

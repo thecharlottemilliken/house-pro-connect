@@ -113,7 +113,7 @@ const RoomDetails = ({
             )}
           </div>
 
-          {/* Design Assets Section */}
+          {/* Combined Design Assets Section */}
           <div className="pt-6 mt-6 border-t border-gray-100">
             <div>
               <h3 className="font-semibold">Design Assets</h3>
@@ -132,16 +132,19 @@ const RoomDetails = ({
             ) : (
               <div className="mt-4">
                 <PropertyFileUpload
-                  accept="image/*, .pdf, .dwg"
+                  accept="image/*, .pdf, .dwg, .doc, .docx, .xls"
                   multiple={true}
-                  label={`Upload ${area} Design Files`}
-                  description="Upload project documentation, plans, or specs"
+                  label={`Upload ${area} Design Plans and Specs`}
+                  description="Upload project documentation, plans, specifications, or materials"
                   initialFiles={roomFiles}
                   onFilesUploaded={handleFilesUploaded}
                   roomOptions={[
                     { value: "blueprint", label: "Blueprint" },
                     { value: "floorPlan", label: "Floor Plan" },
+                    { value: "elevation", label: "Elevation" },
                     { value: "materials", label: "Materials" },
+                    { value: "fixtures", label: "Fixtures" },
+                    { value: "finishes", label: "Finishes" },
                     { value: "specifications", label: "Specifications" }
                   ]}
                 />
