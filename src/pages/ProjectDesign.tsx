@@ -17,6 +17,7 @@ import PinterestInspirationSection from "@/components/project/design/PinterestIn
 import PinterestConnector from "@/components/project/design/PinterestConnector";
 import { type PinterestBoard } from "@/types/pinterest";
 import { useEffect, useState, useCallback } from "react";
+
 const ProjectDesign = () => {
   const location = useLocation();
   const params = useParams();
@@ -383,6 +384,60 @@ const ProjectDesign = () => {
       });
     }
   };
+  const handleAddProjectFiles = async (area: string, selectedFiles: string[]) => {
+    try {
+      if (!projectData) return;
+      
+      // Get existing design assets
+      const designPreferences = projectData.design_preferences as unknown as DesignPreferences || {
+        hasDesigns: false
+      };
+      
+      // Convert URLs to design asset format
+      const newAssets = selectedFiles.map(url => {
+        const fileName = url.split('/').pop() || 'File';
+        return {
+          name: fileName,
+          url: url
+        };
+      });
+      
+      // Combine with existing assets
+      const existingAssets = designPreferences.designAssets || [];
+      const updatedAssets = [...existingAssets, ...newAssets];
+      
+      // Update design preferences
+      const updatedDesignPreferences: Record<string, unknown> = {
+        ...designPreferences,
+        hasDesigns: true,
+        designAssets: updatedAssets
+      };
+      
+      // Save to database
+      const { error } = await supabase
+        .from('projects')
+        .update({
+          design_preferences: updatedDesignPreferences as Json
+        })
+        .eq('id', projectData.id);
+        
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: `${newAssets.length} project file(s) added to ${area} designs`
+      });
+      
+    } catch (error: any) {
+      console.error('Error adding project files:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add project files. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (isLoading || !projectData) {
     return <div className="min-h-screen flex flex-col bg-white">
         <DashboardNavbar />
@@ -422,45 +477,99 @@ const ProjectDesign = () => {
               
               <div className="mb-8">
                 <h2 className="text-lg font-medium mb-3">Select a room</h2>
-                {renovationAreas.length > 0 ? <Tabs defaultValue={defaultTab} className="w-full">
+                {renovationAreas.length > 0 ? 
+                  <Tabs defaultValue={defaultTab} className="w-full">
                     <TabsList className="mb-4">
-                      {renovationAreas.map((area, index) => <TabsTrigger key={area.area} value={area.area.toLowerCase()} className="flex items-center gap-2">
+                      {renovationAreas.map((area, index) => (
+                        <TabsTrigger 
+                          key={area.area} 
+                          value={area.area.toLowerCase()} 
+                          className="flex items-center gap-2"
+                        >
                           <span className={`w-5 h-5 flex items-center justify-center ${index === 0 ? 'bg-[#174c65] text-white' : 'bg-gray-300 text-gray-600'} rounded-full text-xs`}>
                             {index + 1}
                           </span>
                           {area.area}
-                        </TabsTrigger>)}
+                        </TabsTrigger>
+                      ))}
                     </TabsList>
 
                     {renovationAreas.map(area => {
-                  const areaKey = area.area.toLowerCase().replace(/\s+/g, '_');
-                  const beforePhotos = designPreferences.beforePhotos?.[areaKey] || [];
-                  const measurements = designPreferences.roomMeasurements?.[areaKey];
-                  const roomId = getRoomIdByName(area.area);
-                  const roomPrefs = roomId ? roomPreferences[roomId] : null;
-                  return <TabsContent key={area.area} value={area.area.toLowerCase()} className="w-full">
-                          {hasDesigns ? <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 w-full">
+                      const areaKey = area.area.toLowerCase().replace(/\s+/g, '_');
+                      const beforePhotos = designPreferences.beforePhotos?.[areaKey] || [];
+                      const measurements = designPreferences.roomMeasurements?.[areaKey];
+                      const roomId = getRoomIdByName(area.area);
+                      const roomPrefs = roomId ? roomPreferences[roomId] : null;
+                      
+                      return (
+                        <TabsContent key={area.area} value={area.area.toLowerCase()} className="w-full">
+                          {hasDesigns ? (
+                            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 w-full">
                               <div className="col-span-1 lg:col-span-2 w-full">
-                                <RoomDetails area={area.area} location={area.location} designers={designPreferences.designers} designAssets={designPreferences.designAssets} measurements={measurements} onAddDesigner={handleAddDesigner} onUploadAssets={() => console.log("Upload assets clicked")} onSaveMeasurements={newMeasurements => handleSaveMeasurements(area.area, newMeasurements)} propertyPhotos={propertyPhotos} onSelectBeforePhotos={photos => handleSelectBeforePhotos(area.area, photos)} onUploadBeforePhotos={photos => handleUploadBeforePhotos(area.area, photos)} beforePhotos={beforePhotos} />
+                                <RoomDetails 
+                                  area={area.area}
+                                  location={area.location}
+                                  designers={designPreferences.designers}
+                                  designAssets={designPreferences.designAssets}
+                                  measurements={measurements}
+                                  onAddDesigner={handleAddDesigner}
+                                  onUploadAssets={() => console.log("Upload assets clicked")}
+                                  onSaveMeasurements={newMeasurements => handleSaveMeasurements(area.area, newMeasurements)}
+                                  propertyPhotos={propertyPhotos}
+                                  onSelectBeforePhotos={photos => handleSelectBeforePhotos(area.area, photos)}
+                                  onUploadBeforePhotos={photos => handleUploadBeforePhotos(area.area, photos)}
+                                  beforePhotos={beforePhotos}
+                                  projectId={projectData.id}
+                                  onSelectProjectFiles={files => handleAddProjectFiles(area.area, files)}
+                                />
                               </div>
                               
                               <div className="col-span-1 lg:col-span-3 w-full">
-                                <DesignAssetsCard hasRenderings={hasRenderings} renderingImages={designPreferences.renderingImages} onAddRenderings={handleAddRenderings} onAddDrawings={handleAddDrawings} onAddBlueprints={handleAddBlueprints} propertyBlueprint={propertyDetails?.blueprint_url || null} propertyId={propertyDetails?.id} currentRoom={area.area} propertyPhotos={propertyPhotos} />
+                                <DesignAssetsCard 
+                                  hasRenderings={hasRenderings}
+                                  renderingImages={designPreferences.renderingImages}
+                                  onAddRenderings={handleAddRenderings}
+                                  onAddDrawings={handleAddDrawings}
+                                  onAddBlueprints={handleAddBlueprints}
+                                  propertyBlueprint={propertyDetails?.blueprint_url || null}
+                                  propertyId={propertyDetails?.id}
+                                  currentRoom={area.area}
+                                  propertyPhotos={propertyPhotos}
+                                />
                               </div>
-                            </div> : <EmptyDesignState type="no-designs" onAction={handleAddDesignPlans} />}
+                            </div>
+                          ) : (
+                            <EmptyDesignState 
+                              type="no-designs"
+                              onAction={handleAddDesignPlans}
+                            />
+                          )}
                           
                           <div className="mt-8 w-full">
-                            {roomId && <PinterestInspirationSection inspirationImages={roomPrefs?.inspirationImages || []} pinterestBoards={roomPrefs?.pinterestBoards || []} onAddInspiration={handleAddInspirationImages} onAddPinterestBoards={handleAddPinterestBoards} currentRoom={area.area} roomId={roomId} />}
+                            {roomId && (
+                              <PinterestInspirationSection 
+                                inspirationImages={roomPrefs?.inspirationImages || []}
+                                pinterestBoards={roomPrefs?.pinterestBoards || []}
+                                onAddInspiration={handleAddInspirationImages}
+                                onAddPinterestBoards={handleAddPinterestBoards}
+                                currentRoom={area.area}
+                                roomId={roomId}
+                              />
+                            )}
                           </div>
 
                           <div className="mt-8 w-full">
                             <RecommendedContent />
                           </div>
-                        </TabsContent>;
-                })}
-                  </Tabs> : <div className="p-8 text-center bg-gray-50 rounded-lg">
+                        </TabsContent>
+                      );
+                    })}
+                  </Tabs>
+                : (
+                  <div className="p-8 text-center bg-gray-50 rounded-lg">
                     <p className="text-gray-500">No renovation areas defined for this project.</p>
-                  </div>}
+                  </div>
+                )}
               </div>
               
               <div className="mt-8 w-full">
@@ -472,4 +581,5 @@ const ProjectDesign = () => {
       </SidebarProvider>
     </div>;
 };
+
 export default ProjectDesign;

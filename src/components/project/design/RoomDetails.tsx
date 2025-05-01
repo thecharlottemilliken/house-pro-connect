@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { FileText } from "lucide-react";
@@ -7,6 +8,8 @@ import BeforePhotosCard from "./BeforePhotosCard";
 import RoomMeasurementsCard from './RoomMeasurementsCard';
 import { PropertyFileUpload } from "@/components/property/PropertyFileUpload";
 import { FileWithPreview } from "@/components/ui/file-upload";
+import { Button } from "@/components/ui/button";
+import SelectProjectFilesDialog from "./SelectProjectFilesDialog";
 
 interface RoomDetailsProps {
   area: string;
@@ -27,6 +30,8 @@ interface RoomDetailsProps {
   onSelectBeforePhotos?: (photos: string[]) => void;
   onUploadBeforePhotos?: (photos: string[]) => void;
   beforePhotos?: string[];
+  projectId?: string;
+  onSelectProjectFiles?: (files: string[]) => void;
 }
 
 const RoomDetails = ({
@@ -41,7 +46,9 @@ const RoomDetails = ({
   propertyPhotos = [],
   onSelectBeforePhotos,
   onUploadBeforePhotos,
-  beforePhotos = []
+  beforePhotos = [],
+  projectId,
+  onSelectProjectFiles
 }: RoomDetailsProps) => {
   const hasDesigner = designers && designers.length > 0;
   const [roomFiles, setRoomFiles] = useState<FileWithPreview[]>(() => {
@@ -60,6 +67,7 @@ const RoomDetails = ({
     }
     return [];
   });
+  const [showProjectFilesDialog, setShowProjectFilesDialog] = useState(false);
 
   const handleFilesUploaded = (files: FileWithPreview[]) => {
     setRoomFiles(files);
@@ -74,6 +82,12 @@ const RoomDetails = ({
     
     // Call onUploadAssets with the new assets if needed
     onUploadAssets();
+  };
+
+  const handleSelectProjectFiles = (files: string[]) => {
+    if (onSelectProjectFiles) {
+      onSelectProjectFiles(files);
+    }
   };
 
   return (
@@ -130,6 +144,18 @@ const RoomDetails = ({
               </div>
             ) : (
               <div className="mt-4">
+                <div className="flex justify-between items-center mb-4">
+                  <div className="text-sm">Upload project documentation</div>
+                  {projectId && (
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => setShowProjectFilesDialog(true)}
+                    >
+                      Select from Project Files
+                    </Button>
+                  )}
+                </div>
                 <PropertyFileUpload
                   accept="image/*, .pdf, .dwg, .doc, .docx, .xls"
                   multiple={true}
@@ -167,6 +193,16 @@ const RoomDetails = ({
         onSelectBeforePhotos={onSelectBeforePhotos!}
         onUploadBeforePhotos={onUploadBeforePhotos!}
       />
+
+      {/* Project Files Selection Dialog */}
+      {projectId && (
+        <SelectProjectFilesDialog
+          open={showProjectFilesDialog}
+          onOpenChange={setShowProjectFilesDialog}
+          projectId={projectId}
+          onSelect={handleSelectProjectFiles}
+        />
+      )}
     </div>
   );
 };
