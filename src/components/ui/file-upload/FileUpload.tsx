@@ -12,6 +12,10 @@ interface FileUploadProps {
   label: string;
   description: string;
   uploadedFiles?: string[];
+  buttonVariant?: string;
+  buttonSize?: string;
+  compact?: boolean;
+  icon?: React.ReactNode;
 }
 
 export function FileUpload({ 
@@ -20,7 +24,11 @@ export function FileUpload({
   onUploadComplete,
   label,
   description,
-  uploadedFiles = []
+  uploadedFiles = [],
+  buttonVariant = "default",
+  buttonSize = "default",
+  compact = false,
+  icon
 }: FileUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
 
@@ -86,18 +94,20 @@ export function FileUpload({
   };
 
   return (
-    <div className="border border-gray-200 rounded-md p-4">
+    <div className={compact ? "" : "border border-gray-200 rounded-md p-4"}>
       <div className="flex justify-between items-center">
-        <div>
-          <p className="font-medium">{label}</p>
-          <p className="text-gray-500 text-sm">{description}</p>
-          {uploadedFiles.length > 0 && (
-            <p className="text-green-600 text-sm mt-1 flex items-center">
-              <CheckCircle2 className="w-4 h-4 mr-1" />
-              {uploadedFiles.length} file{uploadedFiles.length !== 1 ? 's' : ''} uploaded
-            </p>
-          )}
-        </div>
+        {!compact && (
+          <div>
+            <p className="font-medium">{label}</p>
+            <p className="text-gray-500 text-sm">{description}</p>
+            {uploadedFiles.length > 0 && (
+              <p className="text-green-600 text-sm mt-1 flex items-center">
+                <CheckCircle2 className="w-4 h-4 mr-1" />
+                {uploadedFiles.length} file{uploadedFiles.length !== 1 ? 's' : ''} uploaded
+              </p>
+            )}
+          </div>
+        )}
         <div className="relative">
           <input
             type="file"
@@ -107,9 +117,14 @@ export function FileUpload({
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             disabled={isUploading}
           />
-          <Button className="bg-[#174c65]" disabled={isUploading}>
-            <ArrowUpFromLine className="mr-2 h-4 w-4" />
-            {isUploading ? 'UPLOADING...' : 'UPLOAD'}
+          <Button 
+            variant={buttonVariant as any} 
+            size={buttonSize as any} 
+            className={buttonVariant === "default" ? "bg-[#174c65]" : ""}
+            disabled={isUploading}
+          >
+            {icon || <ArrowUpFromLine className="mr-2 h-4 w-4" />}
+            {isUploading ? 'UPLOADING...' : compact ? label : 'UPLOAD'}
           </Button>
         </div>
       </div>

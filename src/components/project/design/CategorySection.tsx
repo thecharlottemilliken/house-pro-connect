@@ -3,7 +3,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { FileUpload } from "@/components/ui/file-upload";
 import { Trash2, Upload } from "lucide-react";
-import FileListItem from "./FileListItem";
+import { FileListItem } from "./FileListItem";
 import SelectProjectFilesDialog from "./SelectProjectFilesDialog";
 
 interface CategorySectionProps {
@@ -40,6 +40,9 @@ const CategorySection: React.FC<CategorySectionProps> = ({
               size={file.size}
               type={file.type}
               url={file.url}
+              onDownload={() => window.open(file.url, '_blank')}
+              onView={() => window.open(file.url, '_blank')}
+              onDelete={onDelete}
             />
           ))}
           
@@ -59,8 +62,6 @@ const CategorySection: React.FC<CategorySectionProps> = ({
               multiple={title !== "Blueprints"}
               label={`Upload ${title}`}
               description={`Upload ${title.toLowerCase()} for your project`}
-              buttonVariant="outline"
-              buttonSize="sm"
               compact={true}
               icon={<Upload className="mr-2 h-4 w-4" />}
             />
