@@ -166,6 +166,8 @@ const ConstructionPreferences = () => {
         pros: hasSpecificPros ? pros : []
       };
 
+      console.log("Saving construction preferences:", constructionPreferences);
+
       if (projectId && !isCreationMode) {
         console.log("Updating existing project:", projectId);
 

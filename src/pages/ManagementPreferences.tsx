@@ -133,6 +133,8 @@ const ManagementPreferences = () => {
       phoneType: form.getValues("phoneType")
     };
     
+    console.log("Saving management preferences:", managementPreferences);
+    
     // If we already have a project ID, update it
     if (projectId) {
       try {

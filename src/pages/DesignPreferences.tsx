@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Plus } from "lucide-react";
@@ -175,6 +176,8 @@ const DesignPreferences = () => {
       designFiles: hasDesigns ? designFiles : [],
       designFileUrls: hasDesigns ? designFileUrls : []
     };
+    
+    console.log("Saving design preferences:", JSON.stringify(designPreferences, null, 2));
     
     if (projectId) {
       try {

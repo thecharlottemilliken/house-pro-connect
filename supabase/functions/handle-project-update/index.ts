@@ -296,6 +296,19 @@ serve(async (req) => {
       const managementPreferences = body.managementPreferences || {};
       const prior_experience = body.prior_experience || {};
 
+      console.log("Processing project update with data:", JSON.stringify({
+        projectId,
+        userId,
+        propertyId,
+        title,
+        renovationAreas: Array.isArray(renovationAreas) ? renovationAreas.length : 'not array',
+        hasProjectPrefs: !!Object.keys(projectPreferences || {}).length,
+        hasConstructionPrefs: !!Object.keys(constructionPreferences || {}).length,
+        hasDesignPrefs: !!Object.keys(designPreferences || {}).length,
+        hasManagementPrefs: !!Object.keys(managementPreferences || {}).length,
+        hasPriorExp: !!Object.keys(prior_experience || {}).length
+      }, null, 2));
+
       try {
         if (projectId) {
           // First get the existing project to verify it exists
@@ -334,6 +347,8 @@ serve(async (req) => {
           if (Object.keys(managementPreferences).length > 0 || body.managementPreferences !== undefined) updateData.management_preferences = managementPreferences;
           if (Object.keys(prior_experience).length > 0 || body.prior_experience !== undefined) updateData.prior_experience = prior_experience;
           
+          console.log("Updating project with data:", JSON.stringify(updateData, null, 2));
+          
           const { data, error } = await supabase
             .from('projects')
             .update(updateData)
@@ -355,6 +370,12 @@ serve(async (req) => {
           });
         } else if (propertyId && userId) {
           // Create a new project
+          console.log("Creating new project with data:", {
+            propertyId,
+            userId,
+            title: title || "New Project"
+          });
+          
           const { data, error } = await supabase
             .from('projects')
             .insert({
@@ -379,6 +400,7 @@ serve(async (req) => {
             });
           }
 
+          console.log("Created new project successfully:", data.id);
           return new Response(JSON.stringify(data), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 200,

@@ -1,32 +1,26 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
 
 const PriorExperience = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const isMobile = useIsMobile();
   const { user } = useAuth();
   
   const [propertyId, setPropertyId] = useState<string | null>(null);
   const [projectId, setProjectId] = useState<string | null>(null);
   const [projectPrefs, setProjectPrefs] = useState<any>(null);
-  const [hasPriorRenos, setHasPriorRenos] = useState<string>("no");
-  const [description, setDescription] = useState<string>("");
-  const [pastSources, setPastSources] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(false);
   
+  // Prior experience form state
+  const [priorExperienceLevel, setPriorExperienceLevel] = useState<string>("none");
+  const [priorExperienceDetail, setPriorExperienceDetail] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
+
   useEffect(() => {
     if (location.state) {
       if (location.state.propertyId) {
@@ -37,20 +31,19 @@ const PriorExperience = () => {
       }
       setProjectPrefs(location.state);
       
-      // Load existing prior experience if available
+      // Load existing prior experience data if available
       if (location.state.projectId) {
-        loadExistingExperience(location.state.projectId);
+        loadExistingExperienceData(location.state.projectId);
       }
     } else {
       navigate("/create-project");
     }
   }, [location.state, navigate]);
   
-  // Function to load existing prior experience
-  const loadExistingExperience = async (id: string) => {
+  const loadExistingExperienceData = async (id: string) => {
     try {
-      // First attempt to use the edge function for bypassing RLS issues
-      const { data: edgeData, error: edgeError } = await supabase.functions.invoke('handle-project-update', {
+      // Use the edge function to fetch project data
+      const { data, error } = await supabase.functions.invoke('handle-project-update', {
         method: 'POST',
         body: { 
           projectId: id,
@@ -58,48 +51,25 @@ const PriorExperience = () => {
         }
       });
 
-      if (!edgeError && edgeData) {
-        // Successfully got data from the edge function
-        console.log('Retrieved project data via edge function');
-        
-        if (edgeData.prior_experience) {
-          const prefs = edgeData.prior_experience as any;
-          
-          if (prefs.hasPriorRenos) setHasPriorRenos(prefs.hasPriorRenos);
-          if (prefs.description) setDescription(prefs.description);
-          if (prefs.pastSources) setPastSources(prefs.pastSources);
-        }
-        return;
-      }
-      
-      // Fallback to direct query - this will only work if RLS permissions allow
-      console.log('Falling back to direct query for project data');
-      const { data, error } = await supabase
-        .from('projects')
-        .select('prior_experience')
-        .eq('id', id)
-        .single();
-        
       if (error) throw error;
       
+      // If we have prior experience data, load it
       if (data && data.prior_experience) {
         const prefs = data.prior_experience as any;
-        
-        if (prefs.hasPriorRenos) setHasPriorRenos(prefs.hasPriorRenos);
-        if (prefs.description) setDescription(prefs.description);
-        if (prefs.pastSources) setPastSources(prefs.pastSources);
+        if (prefs.level) setPriorExperienceLevel(prefs.level);
+        if (prefs.detail) setPriorExperienceDetail(prefs.detail);
       }
     } catch (error) {
-      console.error('Error loading prior experience:', error);
+      console.error('Error loading prior experience data:', error);
       toast({
         title: "Error",
-        description: "Could not load prior experience data. Please try again.",
+        description: "Could not load prior experience data",
         variant: "destructive"
       });
     }
   };
-  
-  const saveExperience = async () => {
+
+  const savePreferences = async () => {
     if (!user?.id) {
       toast({
         title: "Error",
@@ -112,43 +82,37 @@ const PriorExperience = () => {
     setIsLoading(true);
     
     // Create prior experience object
-    const priorExperience = {
-      hasPriorRenos,
-      description,
-      pastSources
+    const prior_experience = {
+      level: priorExperienceLevel,
+      detail: priorExperienceDetail
     };
+    
+    console.log("Saving prior experience:", prior_experience);
     
     // If we already have a project ID, update it
     if (projectId) {
       try {
-        // First try using the edge function (bypasses RLS issues)
-        const { data: updateData, error: updateError } = await supabase.functions.invoke('handle-project-update', {
+        // Use the edge function to update the project
+        const { data, error } = await supabase.functions.invoke('handle-project-update', {
           method: 'POST',
           body: { 
             projectId,
             userId: user.id,
-            prior_experience: priorExperience
+            prior_experience
           }
         });
 
-        if (updateError) {
-          console.error('Error updating via edge function:', updateError);
-          
-          // Fall back to direct update
-          const { error } = await supabase
-            .from('projects')
-            .update({
-              prior_experience: priorExperience
-            })
-            .eq('id', projectId);
-
-          if (error) throw error;
+        if (error) {
+          throw error;
         }
         
         toast({
           title: "Success",
-          description: "Prior experience saved successfully",
+          description: "Project created successfully!",
         });
+        
+        // Navigate to project dashboard
+        navigate(`/project/${projectId}`);
       } catch (error) {
         console.error('Error saving prior experience:', error);
         toast({
@@ -160,94 +124,19 @@ const PriorExperience = () => {
         return;
       }
     } else {
-      // Create project if it doesn't exist yet
-      await createProject(priorExperience);
-    }
-    
-    setIsLoading(false);
-    
-    // Navigate to next step (dashboard in this case)
-    navigate("/dashboard");
-  };
-  
-  const createProject = async (priorExperience: any) => {
-    try {
-      console.log("Creating new project with preferences:", {
-        propertyId,
-        userId: user?.id,
-        title: projectPrefs.title || "New Project",
-        renovationAreas: projectPrefs.renovationAreas || [],
-        projectPreferences: projectPrefs.projectPreferences || {},
-        constructionPreferences: projectPrefs.constructionPreferences || {},
-        designPreferences: projectPrefs.designPreferences || {},
-        managementPreferences: projectPrefs.managementPreferences || {},
-        priorExperience
-      });
-      
-      // Try creating project via edge function
-      const { data: createData, error: createError } = await supabase.functions.invoke('handle-project-update', {
-        method: 'POST',
-        body: { 
-          propertyId,
-          userId: user?.id,
-          title: projectPrefs.title || "New Project",
-          renovationAreas: projectPrefs.renovationAreas || [],
-          projectPreferences: projectPrefs.projectPreferences || {},
-          constructionPreferences: projectPrefs.constructionPreferences || {},
-          designPreferences: projectPrefs.designPreferences || {},
-          managementPreferences: projectPrefs.managementPreferences || {},
-          prior_experience: priorExperience
-        }
-      });
-      
-      if (createError) {
-        console.error("Error creating project:", createError);
-        
-        // Fall back to direct creation
-        const { data, error } = await supabase
-          .from('projects')
-          .insert({
-            property_id: propertyId,
-            user_id: user?.id,
-            title: projectPrefs.title || "New Project",
-            renovation_areas: projectPrefs.renovationAreas || [],
-            project_preferences: projectPrefs.projectPreferences || {},
-            construction_preferences: projectPrefs.constructionPreferences || {},
-            design_preferences: projectPrefs.designPreferences || {},
-            management_preferences: projectPrefs.managementPreferences || {},
-            prior_experience: priorExperience
-          })
-          .select()
-          .single();
-        
-        if (error) {
-          throw error;
-        }
-        
-        setProjectId(data.id);
-        toast({
-          title: "Success",
-          description: "Project created successfully",
-        });
-      } else {
-        setProjectId(createData.id);
-        toast({
-          title: "Success",
-          description: "Project created successfully",
-        });
-      }
-    } catch (error: any) {
-      console.error("Error creating/updating project:", error);
+      // Project ID should exist by now, so this is an error
       toast({
         title: "Error",
-        description: "Failed to create/update project. " + (error.message || ""),
+        description: "No project ID available",
         variant: "destructive"
       });
+      setIsLoading(false);
+      return;
     }
   };
-  
+
   const finishProcess = async () => {
-    await saveExperience();
+    await savePreferences();
   };
   
   const goBack = () => {
@@ -271,7 +160,7 @@ const PriorExperience = () => {
       <DashboardNavbar />
       
       <div className="flex flex-col md:flex-row flex-1">
-        <div className={`${isMobile ? 'w-full' : 'w-80'} bg-[#EFF3F7] p-4 md:p-8`}>
+        <div className="w-full bg-[#EFF3F7] p-4 md:p-8">
           <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">Create a Project</h1>
           <p className="text-sm md:text-base text-gray-600 mb-6 md:mb-8">
             Lorem ipsum dolor sit amet consectetur.
@@ -313,50 +202,37 @@ const PriorExperience = () => {
               <div>
                 <h3 className="text-lg font-medium mb-4">Have you done a renovation before?</h3>
                 <RadioGroup 
-                  value={hasPriorRenos} 
-                  onValueChange={setHasPriorRenos}
+                  value={priorExperienceLevel} 
+                  onValueChange={setPriorExperienceLevel}
                   className="flex flex-col space-y-3"
                 >
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="yes" id="yes" />
-                    <Label htmlFor="yes">Yes, I've been through this before</Label>
+                    <RadioGroupItem value="none" id="none" />
+                    <Label htmlFor="none">No prior experience</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="no" id="no" />
-                    <Label htmlFor="no">No, this is my first time</Label>
+                    <RadioGroupItem value="some" id="some" />
+                    <Label htmlFor="some">Some prior experience</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="many" id="many" />
+                    <Label htmlFor="many">Many prior experience</Label>
                   </div>
                 </RadioGroup>
               </div>
               
-              {hasPriorRenos === "yes" && (
-                <div className="space-y-6">
-                  <div>
-                    <Label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                      Tell us a bit about your past renovation projects
-                    </Label>
-                    <Textarea 
-                      id="description"
-                      placeholder="What kind of projects have you done before? What went well? What could have been better?"
-                      className="min-h-[120px]"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="pastSources" className="block text-sm font-medium text-gray-700 mb-1">
-                      Where did you source materials, contractors, etc for your past projects?
-                    </Label>
-                    <Textarea 
-                      id="pastSources"
-                      placeholder="Which stores, websites, or services did you use? How did you find contractors?"
-                      className="min-h-[120px]"
-                      value={pastSources}
-                      onChange={(e) => setPastSources(e.target.value)}
-                    />
-                  </div>
-                </div>
-              )}
+              <div>
+                <Label htmlFor="priorExperienceDetail" className="block text-sm font-medium text-gray-700 mb-1">
+                  Tell us a bit about your past renovation projects
+                </Label>
+                <Textarea 
+                  id="priorExperienceDetail"
+                  placeholder="What kind of projects have you done before? What went well? What could have been better?"
+                  className="min-h-[120px]"
+                  value={priorExperienceDetail}
+                  onChange={(e) => setPriorExperienceDetail(e.target.value)}
+                />
+              </div>
             </div>
             
             <div className="w-full md:w-80 bg-gray-50 p-5 rounded-lg">
