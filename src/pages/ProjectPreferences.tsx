@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Check, Info } from "lucide-react";
@@ -47,8 +48,6 @@ const ProjectPreferences = () => {
 
   useEffect(() => {
     if (location.state) {
-      console.log("Location state received in ProjectPreferences:", location.state);
-      
       if (location.state.propertyId) {
         setPropertyId(location.state.propertyId);
       }
@@ -112,22 +111,113 @@ const ProjectPreferences = () => {
         eventName
       };
       
-      // Store all data in state to pass to next step
-      // Do NOT create a project yet
-      const updatedPrefs = {
+      let newProjectId = projectId;
+      
+      if (!projectId && propertyId && user) {
+        try {
+          console.log('Creating new project with data:', {
+            property_id: propertyId,
+            user_id: user.id,
+            title: `${propertyName || 'New'} Renovation Project`,
+            project_preferences: projectPreferences,
+            renovation_areas: renovationAreas
+          });
+          
+          const { data, error } = await supabase.rpc('handle_project_update', {
+            p_project_id: null,
+            p_property_id: propertyId,
+            p_user_id: user.id,
+            p_title: `${propertyName || 'New'} Renovation Project`,
+            p_renovation_areas: renovationAreas,
+            p_project_preferences: projectPreferences,
+            p_construction_preferences: {},
+            p_design_preferences: {},
+            p_management_preferences: {},
+            p_prior_experience: {}
+          });
+
+          if (error) {
+            console.error('Supabase error creating project:', error);
+            throw error;
+          }
+          
+          newProjectId = data;
+          setProjectId(newProjectId);
+          
+          toast({
+            title: "Success",
+            description: "Project created successfully",
+          });
+        } catch (error: any) {
+          console.error('Error creating project:', error);
+          toast({
+            title: "Error",
+            description: `Failed to create project: ${error.message || 'Unknown error'}`,
+            variant: "destructive"
+          });
+          setIsSubmitting(false);
+          return;
+        }
+      } else if (projectId) {
+        try {
+          console.log('Updating project with ID:', projectId);
+          
+          const { data, error } = await supabase.rpc('handle_project_update', {
+            p_project_id: projectId,
+            p_property_id: propertyId,
+            p_user_id: user?.id,
+            p_title: `${propertyName || 'New'} Renovation Project`,
+            p_renovation_areas: renovationAreas,
+            p_project_preferences: projectPreferences,
+            p_construction_preferences: {},
+            p_design_preferences: {},
+            p_management_preferences: {},
+            p_prior_experience: {}
+          });
+
+          if (error) {
+            console.error('Supabase error updating project:', error);
+            throw error;
+          }
+          
+          toast({
+            title: "Success",
+            description: "Project preferences saved successfully",
+          });
+        } catch (error: any) {
+          console.error('Error saving project preferences:', error);
+          toast({
+            title: "Error",
+            description: `Failed to save project preferences: ${error.message || 'Unknown error'}`,
+            variant: "destructive"
+          });
+          setIsSubmitting(false);
+          return;
+        }
+      } else {
+        console.error('Missing required information:', { user, propertyId });
+        toast({
+          title: "Error",
+          description: "Missing required information to save preferences",
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      const updatedProjectPrefs = {
         ...projectPrefs,
         propertyId,
         propertyName,
-        projectId,
-        title: `${propertyName || 'New'} Renovation Project`,
+        projectId: newProjectId,
         projectPreferences,
         renovationAreas
       };
       
-      console.log("Continuing to next step with data:", updatedPrefs);
+      setProjectPrefs(updatedProjectPrefs);
       
       navigate("/construction-preferences", {
-        state: updatedPrefs
+        state: updatedProjectPrefs
       });
     } catch (error: any) {
       console.error('Unexpected error in savePreferences:', error);

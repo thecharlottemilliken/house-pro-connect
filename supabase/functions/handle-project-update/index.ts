@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -372,13 +373,7 @@ serve(async (req) => {
           console.log("Creating new project with data:", {
             propertyId,
             userId,
-            title: title || "New Project",
-            renovationAreas,
-            projectPreferences,
-            constructionPreferences,
-            designPreferences,
-            managementPreferences,
-            prior_experience
+            title: title || "New Project"
           });
           
           const { data, error } = await supabase
