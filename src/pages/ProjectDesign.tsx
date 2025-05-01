@@ -31,6 +31,7 @@ const ProjectDesign = () => {
   }>>({});
   
   const [defaultTab, setDefaultTab] = useState<string>("kitchen");
+  const [projectFiles, setProjectFiles] = useState<Array<{name: string; url: string; type?: string}>>([]);
   
   const handleAddDesignPlans = useCallback(() => console.log("Add design plans clicked"), []);
   const handleAddDesigner = useCallback(() => console.log("Add designer clicked"), []);
@@ -38,6 +39,47 @@ const ProjectDesign = () => {
   const handleAddDrawings = useCallback(() => console.log("Add drawings clicked"), []);
   const handleAddBlueprints = useCallback(() => console.log("Add blueprints clicked"), []);
   const handleAddInspiration = useCallback(() => console.log("Add inspiration clicked"), []);
+  
+  // New function to fetch project files
+  const fetchProjectFiles = useCallback(async (projectId: string) => {
+    try {
+      // First fetch design files from design preferences
+      if (!projectData?.design_preferences) return;
+      
+      const designPreferences = projectData.design_preferences as unknown as DesignPreferences;
+      let files: Array<{name: string; url: string; type?: string}> = [];
+      
+      // Add design files if they exist
+      if (designPreferences.designFiles && Array.isArray(designPreferences.designFiles)) {
+        const designFiles = designPreferences.designFiles.map(file => ({
+          name: file.name,
+          url: file.url || '',
+          type: file.type || 'application/octet-stream'
+        }));
+        files = [...files, ...designFiles];
+      }
+      
+      // Add before photos to the project files
+      const beforePhotos = designPreferences.beforePhotos || {};
+      Object.entries(beforePhotos).forEach(([room, photos]) => {
+        if (Array.isArray(photos)) {
+          const photoFiles = photos.map((url, index) => ({
+            name: `${room.replace(/_/g, ' ')} Photo ${index + 1}`,
+            url,
+            type: 'image/jpeg'
+          }));
+          files = [...files, ...photoFiles];
+        }
+      });
+      
+      // Fetch shared docs from project documents (if we had that endpoint)
+      // This would be the place to add additional document fetching logic
+      
+      setProjectFiles(files);
+    } catch (error) {
+      console.error('Error fetching project files:', error);
+    }
+  }, [projectData]);
   
   const fetchRoomDesignPreferences = useCallback(async (roomId: string) => {
     try {
@@ -557,6 +599,7 @@ const ProjectDesign = () => {
                                   propertyBlueprint={propertyDetails?.blueprint_url || null}
                                   propertyId={propertyDetails?.id}
                                   currentRoom={area.area}
+                                  projectFiles={projectFiles}
                                 />
                               </div>
                             </div>

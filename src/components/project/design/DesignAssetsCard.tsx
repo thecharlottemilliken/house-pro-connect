@@ -13,6 +13,7 @@ interface DesignAssetsCardProps {
   propertyBlueprint?: string | null;
   propertyId?: string;
   currentRoom: string; // Add this prop to track current room
+  projectFiles?: Array<{name: string; url: string; type?: string}>;
 }
 
 const DesignAssetsCard = ({
@@ -23,7 +24,8 @@ const DesignAssetsCard = ({
   onAddBlueprints,
   propertyBlueprint,
   propertyId,
-  currentRoom
+  currentRoom,
+  projectFiles = []
 }: DesignAssetsCardProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [blueprintFile, setBlueprintFile] = useState<{name: string; size: string; type: 'pdf' | 'xls' | 'jpg' | 'png'; url?: string} | null>(
@@ -615,6 +617,7 @@ const DesignAssetsCard = ({
           files={blueprintFile ? [blueprintFile] : []}
           onUpload={handleUploadBlueprint}
           onDelete={handleRemoveBlueprint}
+          projectFiles={projectFiles}
         />
 
         <CategorySection
@@ -622,6 +625,7 @@ const DesignAssetsCard = ({
           files={renderingFiles}
           onUpload={handleAddRenderings}
           onDelete={handleRemoveRenderings}
+          projectFiles={projectFiles}
         />
 
         <CategorySection
@@ -629,6 +633,7 @@ const DesignAssetsCard = ({
           files={drawingFiles}
           onUpload={handleAddDrawings}
           onDelete={handleRemoveDrawings}
+          projectFiles={projectFiles}
         />
       </CardContent>
     </Card>
