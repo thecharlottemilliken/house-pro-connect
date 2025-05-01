@@ -299,7 +299,7 @@ const ProjectDesign = () => {
       const {
         error
       } = await supabase.from('projects').update({
-        design_preferences: updatedDesignPreferences as Json
+        design_preferences: updatedDesignPreferences as unknown as Json
       }).eq('id', projectData.id);
       if (error) throw error;
       toast({
@@ -334,7 +334,7 @@ const ProjectDesign = () => {
       const {
         error
       } = await supabase.from('projects').update({
-        design_preferences: updatedDesignPreferences as Json
+        design_preferences: updatedDesignPreferences as unknown as Json
       }).eq('id', projectData.id);
       if (error) throw error;
       toast({
@@ -368,7 +368,7 @@ const ProjectDesign = () => {
       const {
         error
       } = await supabase.from('projects').update({
-        design_preferences: updatedDesignPreferences as Json
+        design_preferences: updatedDesignPreferences as unknown as Json
       }).eq('id', projectData.id);
       if (error) throw error;
       toast({
@@ -408,18 +408,18 @@ const ProjectDesign = () => {
       // Combine with existing assets
       const updatedAssets = [...existingAssets, ...newAssets];
       
-      // Update design preferences
-      const updatedDesignPreferences = {
+      // Create a JSON-compatible version of design preferences
+      const updatedDesignPreferences: Record<string, unknown> = {
         ...designPreferences,
         hasDesigns: true,
         designAssets: updatedAssets
       };
       
-      // Save to database
+      // Save to database with proper type casting
       const { error } = await supabase
         .from('projects')
         .update({
-          design_preferences: updatedDesignPreferences as Json
+          design_preferences: updatedDesignPreferences as unknown as Json
         })
         .eq('id', projectData.id);
         
@@ -457,17 +457,17 @@ const ProjectDesign = () => {
         existingAssets.splice(assetIndex, 1);
       }
       
-      // Update design preferences
-      const updatedDesignPreferences = {
+      // Create a JSON-compatible version of design preferences
+      const updatedDesignPreferences: Record<string, unknown> = {
         ...designPreferences,
         designAssets: existingAssets
       };
       
-      // Save to database
+      // Save to database with proper type casting
       const { error } = await supabase
         .from('projects')
         .update({
-          design_preferences: updatedDesignPreferences as Json
+          design_preferences: updatedDesignPreferences as unknown as Json
         })
         .eq('id', projectData.id);
         
