@@ -79,6 +79,60 @@ export const useProjectData = (projectId: string | undefined, locationState: any
       setError(null);
 
       try {
+        // If we have locationState with propertyId but no projectId, we're in the create project flow
+        // Just fetch property details directly
+        if (!projectId && locationState?.propertyId) {
+          console.log(`No project ID provided, but propertyId found: ${locationState.propertyId}`);
+          
+          if (!user) {
+            throw new Error("User is not authenticated");
+          }
+          
+          // Fetch property details directly
+          const { data: propertyData, error: propertyError } = await supabase.functions.invoke(
+            'get-property-details',
+            { 
+              body: { 
+                propertyId: locationState.propertyId,
+                userId: user.id 
+              }
+            }
+          );
+          
+          if (propertyError) {
+            throw propertyError;
+          }
+          
+          if (!propertyData) {
+            throw new Error("Property not found");
+          }
+          
+          const propertyDetailsMapped: PropertyDetails = {
+            id: propertyData.id,
+            property_name: propertyData.property_name,
+            address: `${propertyData.address_line1}, ${propertyData.city}, ${propertyData.state} ${propertyData.zip_code}`,
+            address_line1: propertyData.address_line1,
+            city: propertyData.city,
+            state: propertyData.state,
+            zip: propertyData.zip_code,
+            zip_code: propertyData.zip_code,
+            home_photos: propertyData.home_photos || [],
+            image_url: propertyData.image_url || '',
+            blueprint_url: propertyData.blueprint_url
+          };
+
+          setPropertyDetails(propertyDetailsMapped);
+          setIsLoading(false);
+          return;
+        }
+        
+        // Skip fetching if no projectId and no propertyId in locationState
+        if (!projectId && !locationState?.propertyId) {
+          console.log("No project ID or property ID provided, skipping data fetch");
+          setIsLoading(false);
+          return;
+        }
+
         if (!projectId || !user) {
           throw new Error("Project ID is undefined or user is not authenticated");
         }
@@ -253,14 +307,18 @@ export const useProjectData = (projectId: string | undefined, locationState: any
       } catch (err: any) {
         setError(err);
         console.error("Error fetching project data:", err);
-        toast.error(`Error loading project: ${err.message}`);
+        
+        // Only show toast for actual project fetch errors, not when we're just missing IDs
+        if (projectId) {
+          toast.error(`Error loading project: ${err.message}`);
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchProjectData();
-  }, [projectId, user, profile]);
+  }, [projectId, user, profile, locationState]);
 
   return { projectData, propertyDetails, isLoading, error };
 };

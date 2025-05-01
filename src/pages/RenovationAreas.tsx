@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -41,7 +40,7 @@ const RenovationAreas = () => {
   const [roomOptions, setRoomOptions] = useState<string[]>(standardRoomOptions);
   
   // Fetch property details to get additional rooms if available
-  const { propertyDetails } = useProjectData(undefined, location.state);
+  const { propertyDetails, isLoading: isPropertyLoading, error } = useProjectData(undefined, location.state);
 
   useEffect(() => {
     if (!user) {
@@ -73,8 +72,28 @@ const RenovationAreas = () => {
       // Get any additional rooms from the property data if available
       const propertyRooms: string[] = [];
       
-      // This is where we would extract rooms from property details
-      // For example, if propertyDetails has a rooms array or specific room fields
+      // Extract rooms from property attributes if available
+      const interiorAttributes = propertyDetails?.interior_attributes || [];
+      const exteriorAttributes = propertyDetails?.exterior_attributes || [];
+      
+      // Look for attributes that might represent rooms
+      const roomKeywords = ["room", "bedroom", "bathroom", "kitchen", "office", "living", "dining", "basement", "attic"];
+      
+      // Extract potential room names from attributes
+      [...interiorAttributes, ...exteriorAttributes].forEach(attr => {
+        if (typeof attr === 'string') {
+          // Check if this attribute contains any room-related keywords
+          const isRoom = roomKeywords.some(keyword => 
+            attr.toLowerCase().includes(keyword.toLowerCase())
+          );
+          
+          if (isRoom && !propertyRooms.includes(attr)) {
+            propertyRooms.push(attr);
+          }
+        }
+      });
+      
+      console.log("Extracted property rooms:", propertyRooms);
       
       // Combine standard room options with property-specific rooms
       // Use a Set to ensure no duplicates
