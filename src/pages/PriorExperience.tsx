@@ -100,27 +100,28 @@ const PriorExperience = () => {
     try {
       // If we already have a project ID, update it
       if (projectId) {
-        console.log("Updating existing project with ID:", projectId);
-        console.log("Project data before update:", {
+        // Create a deep copy of all preference data to ensure we don't lose anything
+        const constructionPreferences = projectPrefs?.constructionPreferences || {};
+        const designPreferences = projectPrefs?.designPreferences || {};
+        const managementPreferences = projectPrefs?.managementPreferences || {};
+        
+        // Construct the final payload with all preference data
+        const finalPayload = {
           projectId,
           userId: user.id,
-          constructionPreferences: projectPrefs?.constructionPreferences || {},
-          designPreferences: projectPrefs?.designPreferences || {},
-          managementPreferences: projectPrefs?.managementPreferences || {},
+          constructionPreferences,
+          designPreferences,
+          managementPreferences,
           prior_experience
-        });
+        };
+        
+        console.log("Updating existing project with ID:", projectId);
+        console.log("Final payload being sent to edge function:", JSON.stringify(finalPayload, null, 2));
 
         try {
           // Use the edge function to update the project
           const { data, error } = await supabase.functions.invoke('handle-project-update', {
-            body: { 
-              projectId,
-              userId: user.id,
-              constructionPreferences: projectPrefs?.constructionPreferences || {},
-              designPreferences: projectPrefs?.designPreferences || {},
-              managementPreferences: projectPrefs?.managementPreferences || {},
-              prior_experience
-            }
+            body: finalPayload
           });
 
           if (error) {
@@ -161,7 +162,7 @@ const PriorExperience = () => {
           prior_experience
         };
 
-        console.log("Creating new project with data:", projectData);
+        console.log("Creating new project with data:", JSON.stringify(projectData, null, 2));
         
         // Create a new project with all the collected preferences
         try {
