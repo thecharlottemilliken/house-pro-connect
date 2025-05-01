@@ -162,7 +162,6 @@ const RoomDetails = ({
       />
 
       <BeforePhotosCard
-        area={area} // Pass the area to the BeforePhotosCard
         beforePhotos={beforePhotos}
         propertyPhotos={propertyPhotos}
         onSelectBeforePhotos={onSelectBeforePhotos!}

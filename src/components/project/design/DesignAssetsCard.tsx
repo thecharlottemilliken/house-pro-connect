@@ -3,8 +3,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import CategorySection from "./CategorySection";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 
 interface DesignAssetsCardProps {
   hasRenderings: boolean;
@@ -15,14 +13,6 @@ interface DesignAssetsCardProps {
   propertyBlueprint?: string | null;
   propertyId?: string;
   currentRoom: string; // Add this prop to track current room
-}
-
-// Define a ProjectFile type for consistency
-interface ProjectFile {
-  name: string;
-  size: string;
-  type: 'pdf' | 'xls' | 'jpg' | 'png';
-  url: string;
 }
 
 const DesignAssetsCard = ({
@@ -43,12 +33,6 @@ const DesignAssetsCard = ({
   const [drawingFiles, setDrawingFiles] = useState<{name: string; size: string; type: 'jpg' | 'png' | 'pdf'; url?: string}[]>([]);
   const [roomId, setRoomId] = useState<string | null>(null);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
-
-  // New states for the select from project files modal
-  const [showSelectFilesDialog, setShowSelectFilesDialog] = useState(false);
-  const [selectingFileType, setSelectingFileType] = useState<'blueprints' | 'renderings' | 'drawings' | null>(null);
-  const [projectFiles, setProjectFiles] = useState<ProjectFile[]>([]);
-  const [selectedFiles, setSelectedFiles] = useState<ProjectFile[]>([]);
 
   // Effect to load data when component mounts or room changes
   useEffect(() => {
@@ -623,101 +607,6 @@ const DesignAssetsCard = ({
     }
   };
 
-  // New function to fetch project files
-  const fetchProjectFiles = async () => {
-    if (!propertyId) return;
-
-    try {
-      // Fetch files from the property_file_metadata table or similar
-      // This is a placeholder - you'll need to implement according to your data model
-      const { data, error } = await supabase
-        .from('properties')
-        .select('file_metadata')
-        .eq('id', propertyId)
-        .single();
-
-      if (error) throw error;
-      
-      if (data && data.file_metadata) {
-        const files: ProjectFile[] = [];
-        
-        // Convert the file metadata to ProjectFile format
-        const metadata = data.file_metadata;
-        if (Array.isArray(metadata)) {
-          metadata.forEach((file: any) => {
-            if (file.url) {
-              const fileType = file.url.toLowerCase();
-              let type: 'pdf' | 'xls' | 'jpg' | 'png' = 'jpg';
-              
-              if (fileType.endsWith('.pdf')) type = 'pdf';
-              else if (fileType.endsWith('.xls') || fileType.endsWith('.xlsx')) type = 'xls';
-              else if (fileType.endsWith('.png')) type = 'png';
-              
-              files.push({
-                name: file.name || `File-${files.length + 1}`,
-                size: file.size || "1MB",
-                type,
-                url: file.url
-              });
-            }
-          });
-        }
-        
-        setProjectFiles(files);
-      }
-    } catch (error) {
-      console.error('Error fetching project files:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load project files",
-        variant: "destructive"
-      });
-    }
-  };
-
-  // Handle opening the select files dialog
-  const handleSelectFromProjectFiles = (fileType: 'blueprints' | 'renderings' | 'drawings') => {
-    setSelectingFileType(fileType);
-    fetchProjectFiles();
-    setSelectedFiles([]);
-    setShowSelectFilesDialog(true);
-  };
-
-  // Handle file selection in the dialog
-  const toggleFileSelection = (file: ProjectFile) => {
-    if (selectedFiles.some(f => f.url === file.url)) {
-      setSelectedFiles(selectedFiles.filter(f => f.url !== file.url));
-    } else {
-      setSelectedFiles([...selectedFiles, file]);
-    }
-  };
-
-  // Handle confirming file selection
-  const handleConfirmFileSelection = () => {
-    if (!selectedFiles.length) {
-      setShowSelectFilesDialog(false);
-      return;
-    }
-
-    const urls = selectedFiles.map(file => file.url);
-
-    switch (selectingFileType) {
-      case 'blueprints':
-        if (urls.length > 0) {
-          handleUploadBlueprint([urls[0]]); // Only use the first URL for blueprints
-        }
-        break;
-      case 'renderings':
-        handleAddRenderings(urls);
-        break;
-      case 'drawings':
-        handleAddDrawings(urls);
-        break;
-    }
-
-    setShowSelectFilesDialog(false);
-  };
-
   return (
     <Card>
       <CardContent className="p-6">
@@ -726,7 +615,6 @@ const DesignAssetsCard = ({
           files={blueprintFile ? [blueprintFile] : []}
           onUpload={handleUploadBlueprint}
           onDelete={handleRemoveBlueprint}
-          onSelectFromProjectFiles={() => handleSelectFromProjectFiles('blueprints')}
         />
 
         <CategorySection
@@ -734,7 +622,6 @@ const DesignAssetsCard = ({
           files={renderingFiles}
           onUpload={handleAddRenderings}
           onDelete={handleRemoveRenderings}
-          onSelectFromProjectFiles={() => handleSelectFromProjectFiles('renderings')}
         />
 
         <CategorySection
@@ -742,60 +629,7 @@ const DesignAssetsCard = ({
           files={drawingFiles}
           onUpload={handleAddDrawings}
           onDelete={handleRemoveDrawings}
-          onSelectFromProjectFiles={() => handleSelectFromProjectFiles('drawings')}
         />
-
-        {/* Dialog for selecting from project files */}
-        <Dialog open={showSelectFilesDialog} onOpenChange={setShowSelectFilesDialog}>
-          <DialogContent className="max-w-3xl">
-            <DialogHeader>
-              <DialogTitle>Select from Project Files</DialogTitle>
-            </DialogHeader>
-            
-            <div className="my-4">
-              {projectFiles.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {projectFiles.map((file, index) => (
-                    <div 
-                      key={index}
-                      onClick={() => toggleFileSelection(file)}
-                      className={`cursor-pointer border rounded-md p-2 ${
-                        selectedFiles.some(f => f.url === file.url) 
-                          ? 'border-primary bg-primary/10' 
-                          : 'border-gray-200'
-                      }`}
-                    >
-                      <div className="aspect-square bg-gray-100 flex items-center justify-center mb-2 overflow-hidden rounded">
-                        {file.type === 'pdf' ? (
-                          <div className="text-gray-400 text-xs font-medium">PDF</div>
-                        ) : file.type === 'xls' ? (
-                          <div className="text-gray-400 text-xs font-medium">XLS</div>
-                        ) : (
-                          <img src={file.url} className="object-cover w-full h-full" alt={file.name} />
-                        )}
-                      </div>
-                      <div className="text-xs truncate">{file.name}</div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-10">
-                  <p className="text-gray-500">No project files available.</p>
-                </div>
-              )}
-            </div>
-            
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowSelectFilesDialog(false)}>Cancel</Button>
-              <Button 
-                onClick={handleConfirmFileSelection}
-                disabled={selectedFiles.length === 0}
-              >
-                Add {selectedFiles.length > 0 ? `Selected Files (${selectedFiles.length})` : 'Files'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </CardContent>
     </Card>
   );

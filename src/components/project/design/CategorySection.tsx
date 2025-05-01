@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Upload, FolderOpen } from "lucide-react";
+import { Upload } from "lucide-react";
 import { FileListItem } from "./FileListItem";
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -11,16 +11,9 @@ interface CategorySectionProps {
   files?: { name: string; size: string; type: 'pdf' | 'xls' | 'jpg' | 'png'; url?: string }[];
   onUpload: (urls: string[]) => void;
   onDelete: () => void;
-  onSelectFromProjectFiles?: () => void; // New prop for selecting from project files
 }
 
-const CategorySection = ({ 
-  title, 
-  files = [], 
-  onUpload, 
-  onDelete,
-  onSelectFromProjectFiles
-}: CategorySectionProps) => {
+const CategorySection = ({ title, files = [], onUpload, onDelete }: CategorySectionProps) => {
   const [showUploadDialog, setShowUploadDialog] = React.useState(false);
 
   // Determine accepted file types based on the section title
@@ -41,24 +34,12 @@ const CategorySection = ({
     <div className="mb-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-xl font-bold">{title}</h3>
-        <div className="flex gap-2">
-          {onSelectFromProjectFiles && (
-            <button 
-              onClick={onSelectFromProjectFiles}
-              className="p-1.5 text-gray-500 hover:text-gray-700"
-              title="Select from project files"
-            >
-              <FolderOpen className="w-5 h-5" />
-            </button>
-          )}
-          <button 
-            onClick={() => setShowUploadDialog(true)}
-            className="p-1.5 text-gray-500 hover:text-gray-700"
-            title="Upload new file"
-          >
-            <Upload className="w-5 h-5" />
-          </button>
-        </div>
+        <button 
+          onClick={() => setShowUploadDialog(true)}
+          className="p-1.5 text-gray-500 hover:text-gray-700"
+        >
+          <Upload className="w-5 h-5" />
+        </button>
       </div>
       
       {files.length > 0 ? (
