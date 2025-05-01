@@ -335,20 +335,37 @@ serve(async (req) => {
           // Update the project with the provided data
           const updateData: any = {};
           
-          // Only update fields that are provided in the request
+          // Only update fields that are provided in the request - USING IMPROVED LOGIC
           if (propertyId) updateData.property_id = propertyId;
           if (title) updateData.title = title;
-          if (renovationAreas.length > 0 || body.renovationAreas !== undefined) updateData.renovation_areas = renovationAreas;
-          if (Object.keys(projectPreferences).length > 0 || body.projectPreferences !== undefined) updateData.project_preferences = projectPreferences;
-          if (Object.keys(constructionPreferences).length > 0 || body.constructionPreferences !== undefined) {
+          
+          // Using hasOwnProperty checks instead of object length checks
+          if (body.hasOwnProperty("renovationAreas")) {
+            updateData.renovation_areas = renovationAreas;
+          }
+          
+          if (body.hasOwnProperty("projectPreferences")) {
+            updateData.project_preferences = projectPreferences;
+          }
+          
+          if (body.hasOwnProperty("constructionPreferences")) {
             console.log("Updating construction preferences with:", JSON.stringify(constructionPreferences, null, 2));
             updateData.construction_preferences = constructionPreferences;
           }
-          if (Object.keys(designPreferences).length > 0 || body.designPreferences !== undefined) updateData.design_preferences = designPreferences;
-          if (Object.keys(managementPreferences).length > 0 || body.managementPreferences !== undefined) updateData.management_preferences = managementPreferences;
-          if (Object.keys(prior_experience).length > 0 || body.prior_experience !== undefined) updateData.prior_experience = prior_experience;
           
-          console.log("Updating project with data:", JSON.stringify(updateData, null, 2));
+          if (body.hasOwnProperty("designPreferences")) {
+            updateData.design_preferences = designPreferences;
+          }
+          
+          if (body.hasOwnProperty("managementPreferences")) {
+            updateData.management_preferences = managementPreferences;
+          }
+          
+          if (body.hasOwnProperty("prior_experience")) {
+            updateData.prior_experience = prior_experience;
+          }
+          
+          console.log("Final update data being sent:", JSON.stringify(updateData, null, 2));
           
           const { data, error } = await supabase
             .from('projects')
