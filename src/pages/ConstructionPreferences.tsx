@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -212,7 +211,8 @@ const ConstructionPreferences = () => {
         ...projectPrefs,
         propertyId,
         projectId,
-        constructionPreferences
+        constructionPreferences,
+        title: projectPrefs?.title || "New Project"
       };
       
       setProjectPrefs(updatedProjectPrefs);
