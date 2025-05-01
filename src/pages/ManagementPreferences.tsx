@@ -10,13 +10,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Json } from "@/integrations/supabase/types";
 import CreateProjectSteps from "@/components/project/create/CreateProjectSteps";
+import { useProjectFlow } from "@/hooks/useProjectFlow";
 
 const ManagementPreferences = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { flowData, setFlowData, updateFlowData } = useProjectFlow(location.state);
   
   const [propertyId, setPropertyId] = useState<string | null>(null);
   const [projectId, setProjectId] = useState<string | null>(null);
@@ -82,6 +83,16 @@ const ManagementPreferences = () => {
       };
       
       setProjectPrefs(updatedProjectPrefs);
+
+      // Update flow data to make sure it contains all information
+      updateFlowData('managementPreferences', managementPreferences);
+      setFlowData({
+        ...flowData,
+        managementPreferences,
+        propertyId,
+        projectId,
+        title: projectPrefs?.title || "New Project"
+      });
       
       navigate("/prior-experience", {
         state: updatedProjectPrefs
