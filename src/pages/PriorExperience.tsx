@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
@@ -29,6 +30,8 @@ const PriorExperience = () => {
 
   useEffect(() => {
     if (location.state) {
+      console.log("Location state received:", JSON.stringify(location.state, null, 2));
+      
       if (location.state.propertyId) {
         setPropertyId(location.state.propertyId);
       }
@@ -58,6 +61,8 @@ const PriorExperience = () => {
       });
 
       if (error) throw error;
+      
+      console.log("Loaded existing project data:", JSON.stringify(data, null, 2));
       
       // If we have prior experience data, load it
       if (data && data.prior_experience) {
@@ -98,24 +103,37 @@ const PriorExperience = () => {
     console.log("Saving prior experience:", prior_experience);
     
     try {
+      // Ensure all preference objects exist and are initialized
+      const constructionPreferences = projectPrefs?.constructionPreferences || {};
+      const designPreferences = projectPrefs?.designPreferences || {};
+      const managementPreferences = projectPrefs?.managementPreferences || {};
+      const renovationAreas = projectPrefs?.renovationAreas || [];
+      const projectPreferences = projectPrefs?.projectPreferences || {};
+      
+      console.log("Project prefs before payload construction:", {
+        projectId: projectId,
+        propertyId: propertyId,
+        title: projectPrefs?.title,
+        constructionPrefs: JSON.stringify(constructionPreferences),
+        designPrefs: JSON.stringify(designPreferences),
+        managementPrefs: JSON.stringify(managementPreferences),
+        projectPreferences: JSON.stringify(projectPreferences),
+        renovationAreas: renovationAreas.length
+      });
+      
       // If we already have a project ID, update it
       if (projectId) {
-        // Create a deep copy of all preference data to ensure we don't lose anything
-        const constructionPreferences = projectPrefs?.constructionPreferences || {};
-        const designPreferences = projectPrefs?.designPreferences || {};
-        const managementPreferences = projectPrefs?.managementPreferences || {};
-        
         // Construct the final payload with all preference data
         const finalPayload = {
-           projectId,
+          projectId,
           userId: user.id,
-          propertyId: projectPrefs?.propertyId,
-          title: projectPrefs?.title,
-          renovationAreas: projectPrefs?.renovationAreas || [],
-          projectPreferences: projectPrefs?.projectPreferences || {},
-          constructionPreferences: projectPrefs?.constructionPreferences || {},
-          designPreferences: projectPrefs?.designPreferences || {},
-          managementPreferences: projectPrefs?.managementPreferences || {},
+          propertyId: propertyId,
+          title: projectPrefs?.title || "New Project",
+          renovationAreas,
+          projectPreferences,
+          constructionPreferences,
+          designPreferences,
+          managementPreferences,
           prior_experience
         };
         
@@ -158,11 +176,11 @@ const PriorExperience = () => {
           propertyId: propertyId,
           userId: user.id,
           title: projectPrefs?.title || "New Project",
-          renovationAreas: projectPrefs?.renovationAreas || [],
-          projectPreferences: projectPrefs?.projectPreferences || {},
-          constructionPreferences: projectPrefs?.constructionPreferences || {},
-          designPreferences: projectPrefs?.designPreferences || {},
-          managementPreferences: projectPrefs?.managementPreferences || {},
+          renovationAreas,
+          projectPreferences,
+          constructionPreferences,
+          designPreferences,
+          managementPreferences,
           prior_experience
         };
 

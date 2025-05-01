@@ -2,6 +2,9 @@
 import { corsHeaders } from "./index.ts";
 
 export async function handleProjectUpdate(supabase: any, body: any, corsHeaders: any) {
+  // Log the full input body for debugging
+  console.log("Project handler received body:", JSON.stringify(body, null, 2));
+  
   // If just getting project details without modifying
   if (body.projectId && body.userId && !body.propertyId && !body.title) {
     return await getProjectDetails(supabase, body, corsHeaders);
@@ -106,7 +109,13 @@ async function updateOrCreateProject(supabase: any, body: any, corsHeaders: any)
     hasConstructionPrefs: !!Object.keys(constructionPreferences || {}).length,
     hasDesignPrefs: !!Object.keys(designPreferences || {}).length,
     hasManagementPrefs: !!Object.keys(managementPreferences || {}).length,
-    hasPriorExp: !!Object.keys(prior_experience || {}).length
+    hasPriorExp: !!Object.keys(prior_experience || {}).length,
+    renovationAreas,
+    projectPreferences,
+    constructionPreferences, 
+    designPreferences,
+    managementPreferences,
+    prior_experience
   }, null, 2));
 
   try {
@@ -283,10 +292,12 @@ async function createNewProject(
     propertyId,
     userId,
     title: title || "New Project",
-    constructionPreferences: JSON.stringify(constructionPreferences),
-    designPreferences: JSON.stringify(designPreferences),
-    managementPreferences: JSON.stringify(managementPreferences),
-    prior_experience: JSON.stringify(prior_experience)
+    renovationAreas,
+    projectPreferences,
+    constructionPreferences,
+    designPreferences,
+    managementPreferences,
+    prior_experience
   });
   
   const { data, error } = await supabase
