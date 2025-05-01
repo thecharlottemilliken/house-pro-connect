@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Check, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, X, Pencil } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -228,12 +228,24 @@ const ManagementPreferences = () => {
     closeTimeSlotModal();
   };
 
-  const formatTimeSlot = (slot: {date: Date | null; time: string; ampm: string}) => {
+  // Format time slot display to match the UI design
+  const formatTimeSlot = (slot: TimeSlot) => {
     if (!slot.date || !slot.time) {
       return "Select a time and date for your call";
     }
     
-    return `${format(slot.date, "MM/dd/yyyy")}, ${slot.time} ${slot.ampm}`;
+    const dayOfWeek = format(slot.date, "EEEE");
+    const month = format(slot.date, "MMMM");
+    const dayOfMonth = format(slot.date, "do");
+    
+    // Extract time range parts (e.g., "8:00 - 9:00")
+    const timeRange = slot.time;
+    const [startTime] = timeRange.split(" - ");
+    
+    return {
+      dayAndDate: `${dayOfWeek}, ${month} ${dayOfMonth}`,
+      time: `${startTime}${slot.ampm.toLowerCase()} - ${timeRange.split(" - ")[1]}${slot.ampm.toLowerCase()} EST`
+    };
   };
 
   const savePreferences = async () => {
@@ -334,20 +346,8 @@ const ManagementPreferences = () => {
     });
   };
 
-  const steps = [
-    { number: 1, title: "Select a Property", current: false },
-    { number: 2, title: "Select Renovation Areas", current: false },
-    { number: 3, title: "Project Preferences", current: false },
-    { number: 4, title: "Construction Preferences", current: false },
-    { number: 5, title: "Design Preferences", current: false },
-    { number: 6, title: "Management Preferences", current: true },
-    { number: 7, title: "Prior Experience", current: false },
-  ];
-
-  return (
-    <div className="min-h-screen flex flex-col bg-white">
-      <DashboardNavbar />
-      
+  const CreateProjectSteps = ({ steps }) => {
+    return (
       <div className="flex flex-col md:flex-row flex-1">
         <div className={`${isMobile ? 'w-full' : 'w-80'} bg-[#EFF3F7] p-4 md:p-8`}>
           <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">Create a Project</h1>
@@ -379,6 +379,26 @@ const ManagementPreferences = () => {
             ))}
           </div>
         </div>
+      </div>
+    );
+  };
+
+  const steps = [
+    { number: 1, title: "Select a Property", current: false },
+    { number: 2, title: "Select Renovation Areas", current: false },
+    { number: 3, title: "Project Preferences", current: false },
+    { number: 4, title: "Construction Preferences", current: false },
+    { number: 5, title: "Design Preferences", current: false },
+    { number: 6, title: "Management Preferences", current: true },
+    { number: 7, title: "Prior Experience", current: false },
+  ];
+
+  return (
+    <div className="min-h-screen flex flex-col bg-white">
+      <DashboardNavbar />
+      
+      <div className="flex flex-col md:flex-row flex-1">
+        <CreateProjectSteps steps={steps} />
         
         <div className="flex-1 p-4 md:p-10 overflow-auto">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-4">Management Preferences</h2>
@@ -451,18 +471,52 @@ const ManagementPreferences = () => {
                   
                   {timeSlots.map((slot, index) => (
                     <div key={index} className="mb-4">
-                      <div className="flex items-center justify-between border border-gray-300 rounded-md p-3">
-                        <p className="text-sm text-gray-700">
-                          {formatTimeSlot(slot)}
-                        </p>
-                        <Button 
-                          variant="outline" 
-                          className="border-gray-300 text-gray-700"
-                          onClick={() => openTimeSlotModal(index)}
-                        >
-                          MAKE SELECTION
-                        </Button>
-                      </div>
+                      {slot.date && slot.time ? (
+                        <div className="bg-gray-50 rounded-md p-5 relative">
+                          <div className="absolute top-4 right-4 flex space-x-2">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8"
+                              onClick={() => openTimeSlotModal(index)}
+                            >
+                              <Pencil className="h-5 w-5 text-gray-600" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8"
+                              onClick={() => {
+                                const newTimeSlots = [...timeSlots];
+                                newTimeSlots[index] = { ...newTimeSlots[index], date: null, time: "", ampm: "AM" };
+                                setTimeSlots(newTimeSlots);
+                              }}
+                            >
+                              <X className="h-5 w-5 text-gray-600" />
+                            </Button>
+                          </div>
+                          <h4 className="text-lg font-medium mb-1">Time Slot {index + 1}</h4>
+                          <p className="text-xl font-normal text-gray-800">
+                            {formatTimeSlot(slot).dayAndDate}
+                          </p>
+                          <p className="text-xl font-normal text-gray-800">
+                            {formatTimeSlot(slot).time}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between border border-gray-300 rounded-md p-3">
+                          <p className="text-sm text-gray-700">
+                            Select a time and date for your call
+                          </p>
+                          <Button 
+                            variant="outline" 
+                            className="border-gray-300 text-gray-700"
+                            onClick={() => openTimeSlotModal(index)}
+                          >
+                            MAKE SELECTION
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -503,7 +557,7 @@ const ManagementPreferences = () => {
             <Button 
               variant="outline" 
               className="flex items-center text-[#174c65] order-2 sm:order-1 w-full sm:w-auto"
-              onClick={goBack}
+              onClick={() => navigate("/design-preferences", { state: projectPrefs })}
               disabled={isLoading}
             >
               <ArrowLeft className="mr-2 h-4 w-4" /> BACK
@@ -520,7 +574,7 @@ const ManagementPreferences = () => {
               </Button>
               <Button
                 className="flex items-center bg-[#174c65] hover:bg-[#174c65]/90 text-white w-full sm:w-auto justify-center"
-                onClick={goToNextStep}
+                onClick={() => navigate("/prior-experience", { state: projectPrefs })}
                 disabled={isLoading}
               >
                 {isLoading ? "Loading..." : "NEXT"} {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
