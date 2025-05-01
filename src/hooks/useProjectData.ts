@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
@@ -18,6 +17,8 @@ export interface PropertyDetails {
   home_photos: string[];
   image_url: string;
   blueprint_url?: string | null;
+  interior_attributes?: any;
+  exterior_attributes?: any;
 }
 
 export interface ProjectData {
@@ -118,7 +119,9 @@ export const useProjectData = (projectId: string | undefined, locationState: any
             zip_code: propertyData.zip_code,
             home_photos: propertyData.home_photos || [],
             image_url: propertyData.image_url || '',
-            blueprint_url: propertyData.blueprint_url
+            blueprint_url: propertyData.blueprint_url,
+            interior_attributes: propertyData.interior_attributes,
+            exterior_attributes: propertyData.exterior_attributes
           };
 
           setPropertyDetails(propertyDetailsMapped);
@@ -300,7 +303,9 @@ export const useProjectData = (projectId: string | undefined, locationState: any
           zip_code: propertyData.zip_code,
           home_photos: propertyData.home_photos || [],
           image_url: propertyData.image_url || '',
-          blueprint_url: propertyData.blueprint_url
+          blueprint_url: propertyData.blueprint_url,
+          interior_attributes: propertyData.interior_attributes,
+          exterior_attributes: propertyData.exterior_attributes
         };
 
         setPropertyDetails(propertyDetailsMapped);
