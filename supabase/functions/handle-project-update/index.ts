@@ -280,15 +280,12 @@ serve(async (req) => {
     }
 
     // Handle project update or creation
-    if ((body.projectId || (body.propertyId && body.userId)) && 
-        (body.title || body.renovationAreas || body.projectPreferences || 
-         body.constructionPreferences || body.designPreferences || 
-         body.managementPreferences || body.prior_experience)) {
+    if ((body.projectId || (body.propertyId && body.userId))) {
           
       const projectId = body.projectId;
       const userId = body.userId;
       const propertyId = body.propertyId;
-      const title = body.title || "";
+      const title = body.title || "New Project";
       const renovationAreas = body.renovationAreas || [];
       const projectPreferences = body.projectPreferences || {};
       const constructionPreferences = body.constructionPreferences || {};
@@ -369,11 +366,17 @@ serve(async (req) => {
             status: 200,
           });
         } else if (propertyId && userId) {
-          // Create a new project
-          console.log("Creating new project with data:", {
+          // Create a new project with ALL data from all steps
+          console.log("Creating new project with complete data:", {
             propertyId,
             userId,
-            title: title || "New Project"
+            title,
+            renovationAreas,
+            projectPreferences,
+            constructionPreferences,
+            designPreferences,
+            managementPreferences,
+            prior_experience
           });
           
           const { data, error } = await supabase
@@ -381,7 +384,7 @@ serve(async (req) => {
             .insert({
               property_id: propertyId,
               user_id: userId,
-              title: title || "New Project",
+              title,
               renovation_areas: renovationAreas,
               project_preferences: projectPreferences,
               construction_preferences: constructionPreferences,
@@ -400,7 +403,7 @@ serve(async (req) => {
             });
           }
 
-          console.log("Created new project successfully:", data.id);
+          console.log("Created new project successfully with ID:", data.id);
           return new Response(JSON.stringify(data), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 200,
