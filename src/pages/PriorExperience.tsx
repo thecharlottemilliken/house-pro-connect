@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
@@ -20,9 +21,9 @@ const PriorExperience = () => {
   const [projectId, setProjectId] = useState<string | null>(null);
   const [projectPrefs, setProjectPrefs] = useState<any>(null);
   
-  // Prior experience form state
-  const [priorExperienceLevel, setPriorExperienceLevel] = useState<string>("none");
-  const [priorExperienceDetail, setPriorExperienceDetail] = useState<string>("");
+  // Prior experience form state - simplified to match the previous format
+  const [hasPriorExperience, setHasPriorExperience] = useState<boolean>(false);
+  const [experienceFeedback, setExperienceFeedback] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -60,8 +61,8 @@ const PriorExperience = () => {
       // If we have prior experience data, load it
       if (data && data.prior_experience) {
         const prefs = data.prior_experience as any;
-        if (prefs.level) setPriorExperienceLevel(prefs.level);
-        if (prefs.detail) setPriorExperienceDetail(prefs.detail);
+        if (prefs.hasPriorExperience !== undefined) setHasPriorExperience(prefs.hasPriorExperience);
+        if (prefs.experienceFeedback) setExperienceFeedback(prefs.experienceFeedback);
       }
     } catch (error) {
       console.error('Error loading prior experience data:', error);
@@ -85,10 +86,10 @@ const PriorExperience = () => {
     
     setIsLoading(true);
     
-    // Create prior experience object
+    // Create prior experience object - simplified structure
     const prior_experience = {
-      level: priorExperienceLevel,
-      detail: priorExperienceDetail
+      hasPriorExperience: hasPriorExperience,
+      experienceFeedback: experienceFeedback
     };
     
     console.log("Saving prior experience:", prior_experience);
@@ -177,37 +178,35 @@ const PriorExperience = () => {
               <div>
                 <h3 className="text-lg font-medium mb-4">Have you done a renovation before?</h3>
                 <RadioGroup 
-                  value={priorExperienceLevel} 
-                  onValueChange={setPriorExperienceLevel}
+                  value={hasPriorExperience ? "yes" : "no"} 
+                  onValueChange={(value) => setHasPriorExperience(value === "yes")}
                   className="flex flex-col space-y-3"
                 >
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="none" id="none" />
-                    <Label htmlFor="none">No prior experience</Label>
+                    <RadioGroupItem value="yes" id="yes" />
+                    <Label htmlFor="yes">Yes, I have prior renovation experience</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="some" id="some" />
-                    <Label htmlFor="some">Some prior experience</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="many" id="many" />
-                    <Label htmlFor="many">Many prior experiences</Label>
+                    <RadioGroupItem value="no" id="no" />
+                    <Label htmlFor="no">No, this is my first renovation</Label>
                   </div>
                 </RadioGroup>
               </div>
               
-              <div>
-                <Label htmlFor="priorExperienceDetail" className="block text-sm font-medium text-gray-700 mb-1">
-                  Tell us a bit about your past renovation projects
-                </Label>
-                <Textarea 
-                  id="priorExperienceDetail"
-                  placeholder="What kind of projects have you done before? What went well? What could have been better?"
-                  className="min-h-[120px]"
-                  value={priorExperienceDetail}
-                  onChange={(e) => setPriorExperienceDetail(e.target.value)}
-                />
-              </div>
+              {hasPriorExperience && (
+                <div>
+                  <Label htmlFor="experienceFeedback" className="block text-sm font-medium text-gray-700 mb-1">
+                    Tell us what you liked and disliked about your previous renovation experience
+                  </Label>
+                  <Textarea 
+                    id="experienceFeedback"
+                    placeholder="What did you like about your previous renovation? What would you change about the experience?"
+                    className="min-h-[120px]"
+                    value={experienceFeedback}
+                    onChange={(e) => setExperienceFeedback(e.target.value)}
+                  />
+                </div>
+              )}
             </div>
             
             <div className="w-full md:w-80 bg-gray-50 p-5 rounded-lg">
