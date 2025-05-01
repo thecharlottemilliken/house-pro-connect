@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { FileText, File } from "lucide-react";
+import { FileText, File, Image } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 interface SelectProjectFilesDialogProps {
@@ -34,14 +34,45 @@ const SelectProjectFilesDialog = ({
     
     setLoading(true);
     try {
-      const { data: projectFilesData, error } = await supabase
-        .from('project_files')
-        .select('id, name, url, content_type')
-        .eq('project_id', projectId);
+      // Get project information to access design preferences
+      const { data: projectData, error: projectError } = await supabase
+        .from('projects')
+        .select('design_preferences')
+        .eq('id', projectId)
+        .single();
         
-      if (error) throw error;
+      if (projectError) throw projectError;
       
-      setProjectFiles(projectFilesData || []);
+      // Extract file information from design_preferences
+      const designPreferences = projectData?.design_preferences || {};
+      const designFiles = designPreferences.designFiles || [];
+      const designFileUrls = designPreferences.designFileUrls || [];
+      
+      // Transform design files to the expected format
+      const files = designFiles.map((file: any) => ({
+        id: file.id || `file-${Math.random().toString(36).substring(2, 11)}`,
+        name: file.name || 'Unnamed file',
+        url: file.url,
+        content_type: file.type || 'application/octet-stream'
+      }));
+      
+      // Add any additional files that might only exist in designFileUrls
+      designFileUrls.forEach((url: string) => {
+        // Check if this URL already exists in the files array
+        const exists = files.some(file => file.url === url);
+        if (!exists) {
+          // Extract a filename from the URL
+          const fileName = url.split('/').pop() || 'File';
+          files.push({
+            id: `url-${Math.random().toString(36).substring(2, 11)}`,
+            name: fileName,
+            url: url,
+            content_type: url.toLowerCase().match(/\.(jpg|jpeg|png|gif)$/) ? 'image/jpeg' : 'application/octet-stream'
+          });
+        }
+      });
+      
+      setProjectFiles(files);
       setSelectedFiles([]);
     } catch (error) {
       console.error('Error loading project files:', error);
@@ -71,7 +102,7 @@ const SelectProjectFilesDialog = ({
   };
 
   const isImageFile = (contentType: string) => {
-    return contentType?.startsWith('image/');
+    return contentType?.startsWith('image/') || contentType?.toLowerCase().includes('image');
   };
 
   return (
