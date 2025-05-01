@@ -100,26 +100,14 @@ const PriorExperience = () => {
     // If we already have a project ID, update it
     if (projectId) {
       try {
-        // Make sure to include ALL preferences from the entire flow
-        const projectData = {
-          projectId,
-          userId: user.id,
-          prior_experience,
-          propertyId,
-          // Include all other preferences from previous steps
-          constructionPreferences: projectPrefs.constructionPreferences || {},
-          designPreferences: projectPrefs.designPreferences || {},
-          managementPreferences: projectPrefs.managementPreferences || {},
-          projectPreferences: projectPrefs.projectPreferences || {},
-          renovationAreas: projectPrefs.renovationAreas || []
-        };
-
-        console.log("Final project data being saved:", projectData);
-        
-        // Use the edge function to update the project with ALL data
+        // Use the edge function to update the project
         const { data, error } = await supabase.functions.invoke('handle-project-update', {
           method: 'POST',
-          body: projectData
+          body: { 
+            projectId,
+            userId: user.id,
+            prior_experience
+          }
         });
 
         if (error) {
@@ -131,7 +119,7 @@ const PriorExperience = () => {
           description: "Project created successfully!",
         });
         
-        // Navigate to project dashboard with correct route
+        // Navigate to project dashboard - FIX: Use correct route
         navigate(`/project-dashboard/${projectId}`);
       } catch (error) {
         console.error('Error saving prior experience:', error);
