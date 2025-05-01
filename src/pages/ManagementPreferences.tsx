@@ -41,6 +41,7 @@ interface TimeSlot {
 }
 
 // Interface for the formatted time slot that can be stored in Supabase
+// This needs to be a JSON-serializable object
 interface FormattedTimeSlot {
   id: number;
   dateStr: string | null; // ISO string format of the date or null
@@ -122,7 +123,7 @@ const ManagementPreferences = () => {
   }, [location.state, navigate]);
   
   // Helper function to convert Date objects to strings for JSON serialization
-  const formatTimeSlotsForStorage = (slots: TimeSlot[]): FormattedTimeSlot[] => {
+  const formatTimeSlotsForStorage = (slots: TimeSlot[]): Record<string, any>[] => {
     return slots.map(slot => ({
       id: slot.id,
       dateStr: slot.date ? slot.date.toISOString() : null,
@@ -271,6 +272,7 @@ const ManagementPreferences = () => {
     const formattedTimeSlots = formatTimeSlotsForStorage(timeSlots);
     
     // Create management preferences object with all the data
+    // Make sure all properties are JSON serializable
     const managementPreferences = {
       wantProjectCoach,
       phoneNumber: form.getValues("phoneNumber"),
