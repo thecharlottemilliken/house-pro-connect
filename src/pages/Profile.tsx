@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -5,16 +6,18 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Separator } from "@/components/ui/separator";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useAuth } from "@/contexts/AuthContext";
-import { LogOut, User } from "lucide-react";
+import { LogOut, User, Trash2 } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { useProfileRole } from '@/profile/ProfileRole';
 import LoadingState from '@/components/coach/LoadingState';
+import DeleteAccountDialog from '@/components/account/DeleteAccountDialog';
 
 const Profile = () => {
   const navigate = useNavigate();
   const { profile, user, signOut } = useAuth();
   const { toast } = useToast();
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isDeleteAccountDialogOpen, setIsDeleteAccountDialogOpen] = useState(false);
   const { displayRole, isLoading: isRoleLoading } = useProfileRole();
 
   const handleSignOut = async () => {
@@ -113,34 +116,53 @@ const Profile = () => {
             
             <Separator />
             
-            <CardFooter className="flex justify-between pt-6">
-              <Button 
-                variant="outline" 
-                onClick={() => navigate('/dashboard')}
-              >
-                Back to Dashboard
-              </Button>
+            <CardFooter className="flex flex-col sm:flex-row gap-4 pt-6">
+              <div className="w-full sm:w-auto order-2 sm:order-1">
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate('/dashboard')}
+                  className="w-full sm:w-auto"
+                >
+                  Back to Dashboard
+                </Button>
+              </div>
               
-              <Button 
-                variant="destructive"
-                onClick={handleSignOut}
-                disabled={isSigningOut}
-              >
-                {isSigningOut ? (
-                  <>
-                    <span className="mr-2">Signing Out</span>
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  </>
-                ) : (
-                  <>
-                    <LogOut className="h-4 w-4 mr-2" /> Sign Out
-                  </>
-                )}
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-2 ml-auto w-full sm:w-auto order-1 sm:order-2">
+                <Button 
+                  variant="destructive"
+                  onClick={() => setIsDeleteAccountDialogOpen(true)}
+                  className="w-full sm:w-auto"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" /> Delete Account
+                </Button>
+                
+                <Button 
+                  variant="destructive"
+                  onClick={handleSignOut}
+                  disabled={isSigningOut}
+                  className="w-full sm:w-auto"
+                >
+                  {isSigningOut ? (
+                    <>
+                      <span className="mr-2">Signing Out</span>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    </>
+                  ) : (
+                    <>
+                      <LogOut className="h-4 w-4 mr-2" /> Sign Out
+                    </>
+                  )}
+                </Button>
+              </div>
             </CardFooter>
           </Card>
         </div>
       </main>
+      
+      <DeleteAccountDialog 
+        open={isDeleteAccountDialogOpen}
+        onOpenChange={setIsDeleteAccountDialogOpen}
+      />
     </div>
   );
 };
