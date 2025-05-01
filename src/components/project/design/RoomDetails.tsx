@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { FileText, Eye, Download, X } from "lucide-react";
@@ -174,9 +173,20 @@ const RoomDetails = ({
 
           {/* Combined Design Assets Section */}
           <div className="pt-6 mt-6 border-t border-gray-100">
-            <div>
-              <h3 className="font-semibold">Design Assets</h3>
-              <p className="text-sm text-gray-500 mt-1">Project documentation</p>
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="font-semibold">Design Assets</h3>
+                <p className="text-sm text-gray-500 mt-1">Project documentation</p>
+              </div>
+              {projectId && (
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => setShowProjectFilesDialog(true)}
+                >
+                  Select from Project Files
+                </Button>
+              )}
             </div>
             
             {designAssets && designAssets.length > 0 ? (
@@ -215,18 +225,6 @@ const RoomDetails = ({
               </div>
             ) : (
               <div className="mt-4">
-                <div className="flex justify-between items-center mb-4">
-                  <div className="text-sm">Upload project documentation</div>
-                  {projectId && (
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => setShowProjectFilesDialog(true)}
-                    >
-                      Select from Project Files
-                    </Button>
-                  )}
-                </div>
                 <PropertyFileUpload
                   accept="image/*, .pdf, .dwg, .doc, .docx, .xls"
                   multiple={true}
