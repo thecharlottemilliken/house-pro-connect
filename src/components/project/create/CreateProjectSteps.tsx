@@ -1,5 +1,5 @@
 
-import { useIsMobile } from "@/hooks/use-mobile";
+import React from "react";
 
 interface Step {
   number: number;
@@ -11,11 +11,9 @@ interface CreateProjectStepsProps {
   steps: Step[];
 }
 
-const CreateProjectSteps = ({ steps }: CreateProjectStepsProps) => {
-  const isMobile = useIsMobile();
-
+const CreateProjectSteps: React.FC<CreateProjectStepsProps> = ({ steps }) => {
   return (
-    <div className={`${isMobile ? 'w-full' : 'w-80'} bg-[#EFF3F7] p-4 md:p-8`}>
+    <div className="w-full md:w-64 lg:w-80 shrink-0 bg-[#EFF3F7] p-4 md:p-8">
       <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">Create a Project</h1>
       <p className="text-sm md:text-base text-gray-600 mb-6 md:mb-8">
         Lorem ipsum dolor sit amet consectetur.
