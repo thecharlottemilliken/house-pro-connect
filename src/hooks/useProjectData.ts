@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
@@ -17,8 +18,6 @@ export interface PropertyDetails {
   home_photos: string[];
   image_url: string;
   blueprint_url?: string | null;
-  interior_attributes?: any;
-  exterior_attributes?: any;
 }
 
 export interface ProjectData {
@@ -80,62 +79,6 @@ export const useProjectData = (projectId: string | undefined, locationState: any
       setError(null);
 
       try {
-        // If we have locationState with propertyId but no projectId, we're in the create project flow
-        // Just fetch property details directly
-        if (!projectId && locationState?.propertyId) {
-          console.log(`No project ID provided, but propertyId found: ${locationState.propertyId}`);
-          
-          if (!user) {
-            throw new Error("User is not authenticated");
-          }
-          
-          // Fetch property details directly
-          const { data: propertyData, error: propertyError } = await supabase.functions.invoke(
-            'get-property-details',
-            { 
-              body: { 
-                propertyId: locationState.propertyId,
-                userId: user.id 
-              }
-            }
-          );
-          
-          if (propertyError) {
-            throw propertyError;
-          }
-          
-          if (!propertyData) {
-            throw new Error("Property not found");
-          }
-          
-          const propertyDetailsMapped: PropertyDetails = {
-            id: propertyData.id,
-            property_name: propertyData.property_name,
-            address: `${propertyData.address_line1}, ${propertyData.city}, ${propertyData.state} ${propertyData.zip_code}`,
-            address_line1: propertyData.address_line1,
-            city: propertyData.city,
-            state: propertyData.state,
-            zip: propertyData.zip_code,
-            zip_code: propertyData.zip_code,
-            home_photos: propertyData.home_photos || [],
-            image_url: propertyData.image_url || '',
-            blueprint_url: propertyData.blueprint_url,
-            interior_attributes: propertyData.interior_attributes,
-            exterior_attributes: propertyData.exterior_attributes
-          };
-
-          setPropertyDetails(propertyDetailsMapped);
-          setIsLoading(false);
-          return;
-        }
-        
-        // Skip fetching if no projectId and no propertyId in locationState
-        if (!projectId && !locationState?.propertyId) {
-          console.log("No project ID or property ID provided, skipping data fetch");
-          setIsLoading(false);
-          return;
-        }
-
         if (!projectId || !user) {
           throw new Error("Project ID is undefined or user is not authenticated");
         }
@@ -303,27 +246,21 @@ export const useProjectData = (projectId: string | undefined, locationState: any
           zip_code: propertyData.zip_code,
           home_photos: propertyData.home_photos || [],
           image_url: propertyData.image_url || '',
-          blueprint_url: propertyData.blueprint_url,
-          interior_attributes: propertyData.interior_attributes,
-          exterior_attributes: propertyData.exterior_attributes
+          blueprint_url: propertyData.blueprint_url
         };
 
         setPropertyDetails(propertyDetailsMapped);
       } catch (err: any) {
         setError(err);
         console.error("Error fetching project data:", err);
-        
-        // Only show toast for actual project fetch errors, not when we're just missing IDs
-        if (projectId) {
-          toast.error(`Error loading project: ${err.message}`);
-        }
+        toast.error(`Error loading project: ${err.message}`);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchProjectData();
-  }, [projectId, user, profile, locationState]);
+  }, [projectId, user, profile]);
 
   return { projectData, propertyDetails, isLoading, error };
 };

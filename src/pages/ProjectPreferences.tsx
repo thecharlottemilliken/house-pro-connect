@@ -1,118 +1,246 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Info } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
-import { toast } from "@/hooks/use-toast";
-import CreateProjectSteps from "@/components/project/create/CreateProjectSteps";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Slider } from "@/components/ui/slider";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import { Json } from "@/integrations/supabase/types";
+import { useAuth } from "@/contexts/AuthContext";
+import CreateProjectSteps from "@/components/project/create/CreateProjectSteps";
+
+interface ProjectPreferences {
+  budget: number;
+  useFinancing: boolean;
+  completionDate: string;
+  readiness: string;
+  isLifeEventDependent: boolean;
+  eventDate: string;
+  eventName: string;
+  [key: string]: Json;
+}
 
 const ProjectPreferences = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const isMobile = useIsMobile();
   const { user } = useAuth();
-  
   const [propertyId, setPropertyId] = useState<string | null>(null);
-  const [propertyName, setPropertyName] = useState<string>("");
+  const [projectId, setProjectId] = useState<string | null>(null);
   const [renovationAreas, setRenovationAreas] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [budget, setBudget] = useState<number>(50000);
+  const [useFinancing, setUseFinancing] = useState<boolean>(false);
+  const [completionDate, setCompletionDate] = useState<string>("");
+  const [readiness, setReadiness] = useState<string>("");
+  const [isLifeEventDependent, setIsLifeEventDependent] = useState<boolean>(false);
+  const [eventDate, setEventDate] = useState<string>("");
+  const [eventName, setEventName] = useState<string>("");
+  const [propertyName, setPropertyName] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   
-  // Project preferences form state
-  const [timeframe, setTimeframe] = useState<string>("flexible");
-  const [budget, setBudget] = useState<string>("moderate");
-  const [involvement, setInvolvement] = useState<string>("somewhat");
-  const [moveOut, setMoveOut] = useState<string>("yes");
-  const [priorities, setPriorities] = useState<string[]>([]);
-  
-  useEffect(() => {
-    if (!user) {
-      navigate("/signin");
-      return;
-    }
+  const [projectPrefs, setProjectPrefs] = useState<any>({});
 
+  useEffect(() => {
     if (location.state) {
-      // Extract data from previous step
-      const { propertyId: propId, propertyName: propName, renovationAreas: areas } = location.state;
-      
-      if (propId) setPropertyId(propId);
-      if (propName) setPropertyName(propName);
-      if (areas) setRenovationAreas(areas);
-      
-      // Load existing project preferences if available
-      if (location.state.projectPreferences) {
-        const prefs = location.state.projectPreferences;
-        if (prefs.timeframe) setTimeframe(prefs.timeframe);
-        if (prefs.budget) setBudget(prefs.budget);
-        if (prefs.involvement) setInvolvement(prefs.involvement);
-        if (prefs.moveOut) setMoveOut(prefs.moveOut);
-        if (Array.isArray(prefs.priorities)) setPriorities(prefs.priorities);
+      if (location.state.propertyId) {
+        setPropertyId(location.state.propertyId);
       }
+      
+      if (location.state.projectId) {
+        setProjectId(location.state.projectId);
+        loadExistingPreferences(location.state.projectId);
+      }
+      
+      if (location.state.renovationAreas) {
+        setRenovationAreas(location.state.renovationAreas);
+      }
+
+      if (location.state.propertyName) {
+        setPropertyName(location.state.propertyName);
+      }
+      
+      setProjectPrefs(location.state);
     } else {
-      toast({
-        title: "Error",
-        description: "Missing renovation areas data",
-        variant: "destructive"
-      });
       navigate("/create-project");
     }
-  }, [location.state, navigate, user]);
-  
-  const handlePriorityToggle = (value: string) => {
-    setPriorities(current => 
-      current.includes(value)
-        ? current.filter(p => p !== value)
-        : [...current, value]
-    );
+  }, [location.state, navigate]);
+
+  const loadExistingPreferences = async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('project_preferences')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      
+      if (data && data.project_preferences) {
+        const prefs = data.project_preferences as unknown as ProjectPreferences;
+        
+        if (prefs.budget !== undefined) setBudget(prefs.budget);
+        if (prefs.useFinancing !== undefined) setUseFinancing(prefs.useFinancing);
+        if (prefs.completionDate) setCompletionDate(prefs.completionDate);
+        if (prefs.readiness) setReadiness(prefs.readiness);
+        if (prefs.isLifeEventDependent !== undefined) setIsLifeEventDependent(prefs.isLifeEventDependent);
+        if (prefs.eventDate) setEventDate(prefs.eventDate);
+        if (prefs.eventName) setEventName(prefs.eventName);
+      }
+    } catch (error) {
+      console.error('Error loading project preferences:', error);
+    }
   };
-  
-  const continueToNextStep = () => {
-    // Gather project preferences data
-    const projectPreferences = {
-      timeframe,
-      budget,
-      involvement,
-      moveOut,
-      priorities
-    };
+
+  const savePreferences = async () => {
+    setIsSubmitting(true);
     
-    // Pass all collected data to the next step
-    navigate("/construction-preferences", {
-      state: {
+    try {
+      const projectPreferences = {
+        budget,
+        useFinancing,
+        completionDate,
+        readiness,
+        isLifeEventDependent,
+        eventDate,
+        eventName
+      };
+      
+      let newProjectId = projectId;
+      
+      if (!projectId && propertyId && user) {
+        try {
+          console.log('Creating new project with data:', {
+            property_id: propertyId,
+            user_id: user.id,
+            title: `${propertyName || 'New'} Renovation Project`,
+            project_preferences: projectPreferences,
+            renovation_areas: renovationAreas
+          });
+          
+          const { data, error } = await supabase.rpc('handle_project_update', {
+            p_project_id: null,
+            p_property_id: propertyId,
+            p_user_id: user.id,
+            p_title: `${propertyName || 'New'} Renovation Project`,
+            p_renovation_areas: renovationAreas,
+            p_project_preferences: projectPreferences,
+            p_construction_preferences: {},
+            p_design_preferences: {},
+            p_management_preferences: {},
+            p_prior_experience: {}
+          });
+
+          if (error) {
+            console.error('Supabase error creating project:', error);
+            throw error;
+          }
+          
+          newProjectId = data;
+          setProjectId(newProjectId);
+          
+          toast({
+            title: "Success",
+            description: "Project created successfully",
+          });
+        } catch (error: any) {
+          console.error('Error creating project:', error);
+          toast({
+            title: "Error",
+            description: `Failed to create project: ${error.message || 'Unknown error'}`,
+            variant: "destructive"
+          });
+          setIsSubmitting(false);
+          return;
+        }
+      } else if (projectId) {
+        try {
+          console.log('Updating project with ID:', projectId);
+          
+          const { data, error } = await supabase.rpc('handle_project_update', {
+            p_project_id: projectId,
+            p_property_id: propertyId,
+            p_user_id: user?.id,
+            p_title: `${propertyName || 'New'} Renovation Project`,
+            p_renovation_areas: renovationAreas,
+            p_project_preferences: projectPreferences,
+            p_construction_preferences: {},
+            p_design_preferences: {},
+            p_management_preferences: {},
+            p_prior_experience: {}
+          });
+
+          if (error) {
+            console.error('Supabase error updating project:', error);
+            throw error;
+          }
+          
+          toast({
+            title: "Success",
+            description: "Project preferences saved successfully",
+          });
+        } catch (error: any) {
+          console.error('Error saving project preferences:', error);
+          toast({
+            title: "Error",
+            description: `Failed to save project preferences: ${error.message || 'Unknown error'}`,
+            variant: "destructive"
+          });
+          setIsSubmitting(false);
+          return;
+        }
+      } else {
+        console.error('Missing required information:', { user, propertyId });
+        toast({
+          title: "Error",
+          description: "Missing required information to save preferences",
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      const updatedProjectPrefs = {
+        ...projectPrefs,
         propertyId,
         propertyName,
-        renovationAreas,
+        projectId: newProjectId,
         projectPreferences,
-        // Also pass through existing data if available
-        constructionPreferences: location.state?.constructionPreferences,
-        designPreferences: location.state?.designPreferences,
-        managementPreferences: location.state?.managementPreferences,
-        prior_experience: location.state?.prior_experience
-      }
-    });
+        renovationAreas
+      };
+      
+      setProjectPrefs(updatedProjectPrefs);
+      
+      navigate("/construction-preferences", {
+        state: updatedProjectPrefs
+      });
+    } catch (error: any) {
+      console.error('Unexpected error in savePreferences:', error);
+      toast({
+        title: "Error",
+        description: `An unexpected error occurred: ${error.message || 'Unknown error'}`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-  
+
+  const goToNextStep = async () => {
+    await savePreferences();
+  };
+
   const goBack = () => {
     navigate("/renovation-areas", {
-      state: {
+      state: { 
         propertyId,
         propertyName,
-        renovationAreas,
-        // Also pass through existing data if available
-        projectPreferences: {
-          timeframe,
-          budget,
-          involvement,
-          moveOut,
-          priorities
-        },
-        constructionPreferences: location.state?.constructionPreferences,
-        designPreferences: location.state?.designPreferences,
-        managementPreferences: location.state?.managementPreferences,
-        prior_experience: location.state?.prior_experience
+        projectId 
       }
     });
   };
@@ -135,179 +263,188 @@ const ProjectPreferences = () => {
         <CreateProjectSteps steps={steps} />
         
         <div className="flex-1 p-4 md:p-10 overflow-auto">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-4">
-            Project Preferences
-          </h2>
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-4">Project Preferences</h2>
           <p className="text-sm md:text-base text-gray-700 mb-6 md:mb-8 max-w-3xl">
-            Let us know your general preferences for this renovation project.
+            To get started, fill out a high-level summary of the project so specialists can get an idea of the type of project underway. Next, select when you want your bids due by.
           </p>
           
-          <div className="flex flex-col md:flex-row gap-8 mb-10">
-            <div className="flex-1 space-y-8">
-              <div>
-                <h3 className="text-lg font-medium mb-4">Timeframe</h3>
-                <RadioGroup 
-                  value={timeframe} 
-                  onValueChange={setTimeframe}
-                  className="space-y-3"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="asap" id="timeframe-asap" />
-                    <Label htmlFor="timeframe-asap">As soon as possible</Label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="md:col-span-2 space-y-10">
+              <div className="space-y-4">
+                <h3 className="text-xl font-semibold">Budget</h3>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    What is your preferred budget range?
+                  </label>
+                  <p className="text-sm text-gray-500 mb-4">
+                    This range will help us understand what you are prepared to invest in this renovation. 
+                    The final quote will be dependent on the final project specs.
+                  </p>
+                  
+                  <div className="flex items-center mb-4">
+                    <Checkbox
+                      id="financing"
+                      checked={useFinancing}
+                      onCheckedChange={(checked) => setUseFinancing(!!checked)}
+                      className="border-gray-400"
+                    />
+                    <label htmlFor="financing" className="ml-2 text-sm text-gray-700">
+                      I am open to using financing and would like to learn about my options.
+                    </label>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="within_3_months" id="timeframe-3months" />
-                    <Label htmlFor="timeframe-3months">Within 3 months</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="within_6_months" id="timeframe-6months" />
-                    <Label htmlFor="timeframe-6months">Within 6 months</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="flexible" id="timeframe-flexible" />
-                    <Label htmlFor="timeframe-flexible">Flexible / Not sure yet</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-              
-              <div>
-                <h3 className="text-lg font-medium mb-4">Budget Range</h3>
-                <RadioGroup 
-                  value={budget} 
-                  onValueChange={setBudget}
-                  className="space-y-3"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="economy" id="budget-economy" />
-                    <Label htmlFor="budget-economy">Economy (Basic materials and finishes)</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="moderate" id="budget-moderate" />
-                    <Label htmlFor="budget-moderate">Moderate (Mid-range materials and finishes)</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="premium" id="budget-premium" />
-                    <Label htmlFor="budget-premium">Premium (High-end materials and finishes)</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="unsure" id="budget-unsure" />
-                    <Label htmlFor="budget-unsure">Not sure, need guidance</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-              
-              <div>
-                <h3 className="text-lg font-medium mb-4">How involved do you want to be?</h3>
-                <RadioGroup 
-                  value={involvement} 
-                  onValueChange={setInvolvement}
-                  className="space-y-3"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="very" id="involvement-very" />
-                    <Label htmlFor="involvement-very">Very involved (Hands-on with decisions and oversight)</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="somewhat" id="involvement-somewhat" />
-                    <Label htmlFor="involvement-somewhat">Somewhat involved (Key decisions only)</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="minimal" id="involvement-minimal" />
-                    <Label htmlFor="involvement-minimal">Minimal involvement (Trust professionals to handle most decisions)</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-              
-              <div>
-                <h3 className="text-lg font-medium mb-4">Are you willing to move out during renovation?</h3>
-                <RadioGroup 
-                  value={moveOut} 
-                  onValueChange={setMoveOut}
-                  className="space-y-3"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="yes" id="moveout-yes" />
-                    <Label htmlFor="moveout-yes">Yes, I can move out</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="no" id="moveout-no" />
-                    <Label htmlFor="moveout-no">No, I need to stay in the home</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="partial" id="moveout-partial" />
-                    <Label htmlFor="moveout-partial">Could move out partially or for short periods</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-              
-              <div>
-                <h3 className="text-lg font-medium mb-4">Project Priorities (select all that apply)</h3>
-                <div className="space-y-2">
-                  {[
-                    { id: "speed", label: "Completion speed" },
-                    { id: "quality", label: "Quality of work" },
-                    { id: "cost", label: "Minimizing costs" },
-                    { id: "aesthetics", label: "Aesthetics and design" },
-                    { id: "functionality", label: "Functionality and practicality" },
-                    { id: "sustainability", label: "Sustainability and eco-friendliness" },
-                    { id: "minimal-disruption", label: "Minimal disruption to daily life" }
-                  ].map((item) => (
-                    <div key={item.id} className="flex items-center space-x-2">
-                      <Checkbox 
-                        id={item.id} 
-                        checked={priorities.includes(item.id)}
-                        onCheckedChange={() => handlePriorityToggle(item.id)}
+                  
+                  <div className="mt-6 mb-2">
+                    <div className="relative">
+                      <div className="absolute top-1/2 -translate-y-1/2 w-full">
+                        <div className="h-2 bg-[#f0f0f0] rounded-full">
+                          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white border-4 border-orange-500 rounded-full"></div>
+                        </div>
+                      </div>
+                      <Slider 
+                        value={[budget]} 
+                        min={5000} 
+                        max={100000} 
+                        step={1000}
+                        onValueChange={(value) => setBudget(value[0])}
+                        className="mt-6"
                       />
-                      <label
-                        htmlFor={item.id}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                      >
-                        {item.label}
-                      </label>
                     </div>
-                  ))}
+                    
+                    <div className="flex justify-between mt-2">
+                      <span className="text-sm font-medium">$5,000</span>
+                      <div className="text-center">
+                        <span className="bg-[#174c65] text-white text-xs px-3 py-1 rounded">Suggested</span>
+                      </div>
+                      <span className="text-sm font-medium">$100,000</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <h3 className="text-xl font-semibold">Timeline</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Ideal completion date
+                    </label>
+                    <Select value={completionDate} onValueChange={setCompletionDate}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem value="1month">Within 1 month</SelectItem>
+                          <SelectItem value="3months">Within 3 months</SelectItem>
+                          <SelectItem value="6months">Within 6 months</SelectItem>
+                          <SelectItem value="flexible">Flexible</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      How ready are you?
+                    </label>
+                    <Select value={readiness} onValueChange={setReadiness}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem value="ready">Ready to start</SelectItem>
+                          <SelectItem value="planning">Still planning</SelectItem>
+                          <SelectItem value="exploring">Just exploring</SelectItem>
+                          <SelectItem value="unsure">Not sure yet</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <div className="mt-4">
+                  <div className="flex items-center mb-4">
+                    <Checkbox
+                      id="lifeEvent"
+                      checked={isLifeEventDependent}
+                      onCheckedChange={(checked) => setIsLifeEventDependent(!!checked)}
+                      className="border-gray-400"
+                    />
+                    <label htmlFor="lifeEvent" className="ml-2 text-sm text-gray-700">
+                      This timeline is dependent on a life event
+                    </label>
+                  </div>
+                  
+                  {isLifeEventDependent && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Event Date
+                        </label>
+                        <Input 
+                          type="date" 
+                          value={eventDate} 
+                          onChange={(e) => setEventDate(e.target.value)}
+                          className="w-full"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Name of the Event
+                        </label>
+                        <Input 
+                          type="text" 
+                          value={eventName} 
+                          onChange={(e) => setEventName(e.target.value)}
+                          placeholder="Event Name"
+                          className="w-full"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
             
-            <div className="w-full md:w-80 bg-gray-50 p-5 rounded-lg h-fit">
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-2">Why we ask about project preferences</h3>
-                <p className="text-sm text-gray-600">
-                  Understanding your goals, budget, and level of involvement helps us create a renovation plan that matches your expectations and needs.
-                </p>
-              </div>
+            <div className="bg-gray-50 p-6 rounded-lg">
+              <h3 className="text-lg font-semibold mb-4">How estimates work</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Lorem ipsum dolor sit amet consectetur. Pellentesque feugiat augue enim fringilla orci elit tincidunt at. Id fames ut sapien etiam pulvinar. Non posuere vel sit sed morbi sit cursus magna id. Ut blandit cras etiam est amet maecenas.
+              </p>
               
-              <div>
-                <h3 className="text-lg font-semibold mb-3">How this helps your project</h3>
+              <h3 className="text-lg font-semibold mt-6 mb-4">Getting to a final proposal</h3>
+              
+              <div className="space-y-4">
+                <div className="flex items-start">
+                  <Check className="w-5 h-5 text-gray-700 mt-1 mr-2" />
+                  <div>
+                    <h4 className="text-sm font-medium">Step one description here</h4>
+                    <p className="text-xs text-gray-500">
+                      Lorem ipsum dolor sit amet consectetur. Pellentesque feugiat augue enim fringilla orci elit tincidunt at.
+                    </p>
+                  </div>
+                </div>
                 
-                <div className="space-y-4">
-                  {[
-                    {
-                      title: "Tailored recommendations",
-                      description: "Get suggestions specific to your budget and preferences."
-                    },
-                    {
-                      title: "Better contractor matches",
-                      description: "We can find professionals who align with your priorities."
-                    },
-                    {
-                      title: "Realistic timeline",
-                      description: "Set expectations based on your desired level of involvement."
-                    }
-                  ].map((item, index) => (
-                    <div key={index} className="flex items-start">
-                      <div className="mt-1 mr-3 h-5 w-5 flex items-center justify-center rounded-full bg-[#174c65] text-white">
-                        <Check className="h-3 w-3" />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-medium">{item.title}</h4>
-                        <p className="text-xs text-gray-600">
-                          {item.description}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                <div className="flex items-start">
+                  <Check className="w-5 h-5 text-gray-700 mt-1 mr-2" />
+                  <div>
+                    <h4 className="text-sm font-medium">Step one description here</h4>
+                    <p className="text-xs text-gray-500">
+                      Lorem ipsum dolor sit amet consectetur. Pellentesque feugiat augue enim fringilla orci elit tincidunt at.
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start">
+                  <Check className="w-5 h-5 text-gray-700 mt-1 mr-2" />
+                  <div>
+                    <h4 className="text-sm font-medium">Step one description here</h4>
+                    <p className="text-xs text-gray-500">
+                      Lorem ipsum dolor sit amet consectetur. Pellentesque feugiat augue enim fringilla orci elit tincidunt at.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -318,7 +455,7 @@ const ProjectPreferences = () => {
               variant="outline" 
               className="flex items-center text-[#174c65] order-2 sm:order-1 w-full sm:w-auto"
               onClick={goBack}
-              disabled={isLoading}
+              disabled={isSubmitting}
             >
               <ArrowLeft className="mr-2 h-4 w-4" /> BACK
             </Button>
@@ -328,16 +465,16 @@ const ProjectPreferences = () => {
                 variant="outline"
                 className="text-[#174c65] border-[#174c65] w-full sm:w-auto"
                 onClick={() => navigate("/dashboard")}
-                disabled={isLoading}
+                disabled={isSubmitting}
               >
                 SAVE & EXIT
               </Button>
               <Button
                 className="flex items-center bg-[#174c65] hover:bg-[#174c65]/90 text-white w-full sm:w-auto justify-center"
-                onClick={continueToNextStep}
-                disabled={isLoading}
+                onClick={goToNextStep}
+                disabled={isSubmitting}
               >
-                {isLoading ? "Loading..." : "CONTINUE"} {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
+                {isSubmitting ? "SAVING..." : "NEXT"} {!isSubmitting && <ArrowRight className="ml-2 h-4 w-4" />}
               </Button>
             </div>
           </div>
