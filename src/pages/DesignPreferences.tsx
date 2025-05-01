@@ -1,146 +1,267 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
-import { Checkbox } from "@/components/ui/checkbox";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { 
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { DesignPreferences as DesignPreferencesType } from "@/hooks/useProjectData";
+import { Json } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
-import CreateProjectSteps from "@/components/project/create/CreateProjectSteps";
+import { PropertyFileUpload } from "@/components/property/PropertyFileUpload";
+import { FileWithPreview } from "@/components/ui/file-upload";
 
 const DesignPreferences = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const isMobile = useIsMobile();
   const { user } = useAuth();
   
   const [propertyId, setPropertyId] = useState<string | null>(null);
-  const [propertyName, setPropertyName] = useState<string>("");
   const [projectId, setProjectId] = useState<string | null>(null);
-  const [projectPrefs, setProjectPrefs] = useState<any>({});
+  const [renovationAreas, setRenovationAreas] = useState<any[]>([]);
+  const [projectPrefs, setProjectPrefs] = useState<any>(null);
+  const [hasDesigns, setHasDesigns] = useState<boolean>(true);
   
-  const [stylePreference, setStylePreference] = useState<string>("");
-  const [colorPalette, setColorPalette] = useState<string>("");
-  const [materialSelectionHelp, setMaterialSelectionHelp] = useState<boolean>(false);
-  const [inspirationImages, setInspirationImages] = useState<string[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [designers, setDesigners] = useState([
+    { businessName: "", contactName: "", email: "", phone: "", speciality: "Architecture" }
+  ]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Designer contact information state
+  const [designerContactInfo, setDesignerContactInfo] = useState({
+    businessName: "",
+    contactName: "",
+    email: "",
+    phone: "",
+  });
+
+  // Consolidated file upload state
+  const [designFiles, setDesignFiles] = useState<FileWithPreview[]>([]);
 
   useEffect(() => {
     if (location.state) {
-      console.log("Location state received in DesignPreferences:", location.state);
-      
       if (location.state.propertyId) {
         setPropertyId(location.state.propertyId);
       }
-      
       if (location.state.projectId) {
         setProjectId(location.state.projectId);
+      }
+      if (location.state.renovationAreas) {
+        setRenovationAreas(location.state.renovationAreas);
+      }
+      setProjectPrefs(location.state);
+      
+      // Load existing design preferences if available
+      if (location.state.projectId) {
         loadExistingPreferences(location.state.projectId);
       }
-
-      if (location.state.propertyName) {
-        setPropertyName(location.state.propertyName);
-      }
-      
-      setProjectPrefs(location.state);
     } else {
       navigate("/create-project");
     }
-  }, [location, navigate]);
-
+  }, [location.state, navigate]);
+  
   const loadExistingPreferences = async (id: string) => {
     try {
+      // First attempt to use the edge function for bypassing RLS issues
+      const { data: edgeData, error: edgeError } = await supabase.functions.invoke('handle-project-update', {
+        method: 'POST',
+        body: { 
+          projectId: id,
+          userId: user?.id
+        }
+      });
+
+      if (!edgeError && edgeData) {
+        // Successfully got data from the edge function
+        console.log('Retrieved project data via edge function');
+        
+        if (edgeData.design_preferences) {
+          const prefs = edgeData.design_preferences as any;
+          if (prefs.hasDesigns !== undefined) setHasDesigns(prefs.hasDesigns);
+          if (prefs.designers && Array.isArray(prefs.designers) && prefs.designers.length > 0) {
+            setDesigners(prefs.designers);
+          }
+          // Load designer contact information if it exists
+          if (prefs.designerContactInfo) {
+            setDesignerContactInfo(prefs.designerContactInfo);
+          }
+          // Load design files if they exist
+          if (prefs.designFiles && Array.isArray(prefs.designFiles)) {
+            setDesignFiles(prefs.designFiles);
+          }
+        }
+        return;
+      }
+      
+      // Fallback to direct query - this will only work if RLS permissions allow
+      console.log('Falling back to direct query for project data');
       const { data, error } = await supabase
         .from('projects')
         .select('design_preferences')
         .eq('id', id)
         .single();
-
+        
       if (error) throw error;
       
       if (data && data.design_preferences) {
         const prefs = data.design_preferences as any;
         
-        if (prefs.stylePreference) setStylePreference(prefs.stylePreference);
-        if (prefs.colorPalette) setColorPalette(prefs.colorPalette);
-        if (prefs.materialSelectionHelp !== undefined) setMaterialSelectionHelp(prefs.materialSelectionHelp);
-        if (prefs.inspirationImages) setInspirationImages(prefs.inspirationImages);
+        if (prefs.hasDesigns !== undefined) setHasDesigns(prefs.hasDesigns);
+        if (prefs.designers && Array.isArray(prefs.designers) && prefs.designers.length > 0) {
+          setDesigners(prefs.designers);
+        }
+        // Load designer contact information if it exists
+        if (prefs.designerContactInfo) {
+          setDesignerContactInfo(prefs.designerContactInfo);
+        }
+        // Load design files if they exist
+        if (prefs.designFiles && Array.isArray(prefs.designFiles)) {
+          setDesignFiles(prefs.designFiles.map((file: any) => ({
+            ...file,
+            status: 'complete'
+          })));
+        }
       }
     } catch (error) {
       console.error('Error loading design preferences:', error);
+      toast({
+        title: "Error",
+        description: "Could not load design preferences. Please try again.",
+        variant: "destructive"
+      });
     }
+  };
+
+  const handleFilesUploaded = (files: FileWithPreview[]) => {
+    console.log("Files uploaded:", files);
+    setDesignFiles(files);
   };
 
   const savePreferences = async () => {
-    setIsSubmitting(true);
-    
-    try {
-      const designPreferences = {
-        stylePreference,
-        colorPalette,
-        materialSelectionHelp,
-        inspirationImages
-      };
-      
-      // Store preferences in state
-      const updatedPrefs = {
-        ...projectPrefs,
-        designPreferences
-      };
-      
-      console.log("Continuing to next step with data:", updatedPrefs);
-      
-      // No need to save to database here, we'll save everything at the final step
-      navigate("/management-preferences", { state: updatedPrefs });
-    } catch (error: any) {
-      console.error('Error preparing design preferences:', error);
+    if (!user?.id) {
       toast({
         title: "Error",
-        description: "Failed to proceed to the next step",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleImageUpload = (e: any) => {
-    const files = Array.from(e.target.files);
-    
-    // Limit to 3 images
-    if (inspirationImages.length + files.length > 3) {
-      toast({
-        title: "Error",
-        description: "You can only upload up to 3 inspiration images.",
+        description: "You must be logged in to save preferences",
         variant: "destructive"
       });
       return;
     }
 
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (reader.result) {
-          setInspirationImages(prevImages => [...prevImages, reader.result as string]);
+    setIsLoading(true);
+    
+    // Extract URLs from complete files
+    const designFileUrls = designFiles
+      .filter(f => f.status === 'complete' && f.url)
+      .map(f => f.url);
+    
+    const designPreferences: Record<string, unknown> = {
+      hasDesigns,
+      designers: !hasDesigns ? designers : [],
+      designerContactInfo: hasDesigns ? designerContactInfo : null,
+      beforePhotos: {},
+      designFiles: hasDesigns ? designFiles : [],
+      designFileUrls: hasDesigns ? designFileUrls : []
+    };
+    
+    console.log("Saving design preferences:", JSON.stringify(designPreferences, null, 2));
+    
+    if (projectId) {
+      try {
+        // First try using the edge function (bypasses RLS issues)
+        const { data: updateData, error: updateError } = await supabase.functions.invoke('handle-project-update', {
+          method: 'POST',
+          body: { 
+            projectId,
+            userId: user.id,
+            designPreferences: designPreferences as Json
+          }
+        });
+
+        if (updateError) {
+          console.error('Error updating via edge function:', updateError);
+          
+          // Fall back to direct update
+          const { error } = await supabase
+            .from('projects')
+            .update({
+              design_preferences: designPreferences as Json
+            })
+            .eq('id', projectId);
+
+          if (error) throw error;
         }
-      };
-      reader.readAsDataURL(file);
+        
+        toast({
+          title: "Success",
+          description: "Design preferences saved successfully",
+        });
+      } catch (error) {
+        console.error('Error saving design preferences:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save design preferences",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
+    } else {
+      console.log("No project ID available, storing preferences in state only");
+    }
+    
+    const updatedProjectPrefs = {
+      ...projectPrefs,
+      projectId,
+      propertyId,
+      designPreferences
+    };
+    
+    setProjectPrefs(updatedProjectPrefs);
+    setIsLoading(false);
+    
+    navigate("/management-preferences", {
+      state: updatedProjectPrefs
     });
   };
 
-  const removeImage = (indexToRemove: number) => {
-    setInspirationImages(prevImages => prevImages.filter((_, index) => index !== indexToRemove));
-  };
-
-  const goToNextStep = () => {
-    savePreferences();
+  const goToNextStep = async () => {
+    await savePreferences();
   };
 
   const goBack = () => {
     navigate("/construction-preferences", {
       state: projectPrefs
+    });
+  };
+
+  const addAnotherDesigner = () => {
+    setDesigners([...designers, { businessName: "", contactName: "", email: "", phone: "", speciality: "Architecture" }]);
+  };
+
+  const updateDesigner = (index: number, field: string, value: string) => {
+    const updatedDesigners = [...designers];
+    updatedDesigners[index] = { ...updatedDesigners[index], [field]: value };
+    setDesigners(updatedDesigners);
+  };
+
+  const updateDesignerContactInfo = (field: string, value: string) => {
+    setDesignerContactInfo({
+      ...designerContactInfo,
+      [field]: value
     });
   };
 
@@ -159,139 +280,247 @@ const DesignPreferences = () => {
       <DashboardNavbar />
       
       <div className="flex flex-col md:flex-row flex-1">
-        <CreateProjectSteps steps={steps} />
+        <div className={`${isMobile ? 'w-full' : 'w-80'} bg-[#EFF3F7] p-4 md:p-8`}>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">Create a Project</h1>
+          <p className="text-sm md:text-base text-gray-600 mb-6 md:mb-8">
+            Lorem ipsum dolor sit amet consectetur.
+          </p>
+          
+          <div className="space-y-4 md:space-y-6">
+            {steps.map((step) => (
+              <div key={step.number} className="flex items-start">
+                <div className={`w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center mr-2 md:mr-3 ${
+                  step.current ? "bg-[#174c65] text-white" : "bg-gray-200 text-gray-500"
+                }`}>
+                  {step.number}
+                </div>
+                <div>
+                  <h3 className={`text-sm md:text-base font-medium ${
+                    step.current ? "text-[#174c65]" : "text-gray-500"
+                  }`}>
+                    Step {step.number}
+                  </h3>
+                  <p className={`text-xs md:text-sm ${
+                    step.current ? "text-black" : "text-gray-500"
+                  }`}>
+                    {step.title}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
         
         <div className="flex-1 p-4 md:p-10 overflow-auto">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-4">Design Preferences</h2>
           <p className="text-sm md:text-base text-gray-700 mb-6 md:mb-8 max-w-3xl">
-            Share your design preferences to help us match you with the right specialists.
+            To get started, fill out a high-level summary of the project so specialists can get an idea of the type of project underway. Next, select when you want your bids due by.
           </p>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            <div className="md:col-span-2 space-y-8">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Preferred Style
-                </label>
-                <RadioGroup value={stylePreference} onValueChange={setStylePreference} className="flex flex-col space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="modern" id="modern" className="data-[state=checked]:bg-[#174c65] data-[state=checked]:border-[#174c65]" />
-                    <Label htmlFor="modern">Modern</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="traditional" id="traditional" className="data-[state=checked]:bg-[#174c65] data-[state=checked]:border-[#174c65]" />
-                    <Label htmlFor="traditional">Traditional</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="rustic" id="rustic" className="data-[state=checked]:bg-[#174c65] data-[state=checked]:border-[#174c65]" />
-                    <Label htmlFor="rustic">Rustic</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="eclectic" id="eclectic" className="data-[state=checked]:bg-[#174c65] data-[state=checked]:border-[#174c65]" />
-                    <Label htmlFor="eclectic">Eclectic</Label>
-                  </div>
-                </RadioGroup>
-              </div>
+          <div className="space-y-8 mb-10">
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Have you worked with a designer?</h3>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Color Palette
-                </label>
-                <input
-                  type="text"
-                  value={colorPalette}
-                  onChange={(e) => setColorPalette(e.target.value)}
-                  placeholder="Enter your preferred color palette"
-                  className="shadow-sm focus:ring-[#174c65] focus:border-[#174c65] block w-full sm:text-sm border-gray-300 rounded-md py-3"
-                />
-              </div>
-              
-              <div className="flex items-center space-x-3">
-                <Checkbox 
-                  id="materialHelp" 
-                  checked={materialSelectionHelp}
-                  onCheckedChange={(checked) => setMaterialSelectionHelp(!!checked)}
-                  className="data-[state=checked]:bg-[#174c65] data-[state=checked]:border-[#174c65]"
-                />
-                <label htmlFor="materialHelp" className="text-sm font-medium text-gray-700">
-                  I'd like help selecting materials
-                </label>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Inspiration Images (up to 3)
-                </label>
-                <div className="flex space-x-4">
-                  {inspirationImages.map((image, index) => (
-                    <div key={index} className="relative w-24 h-24 rounded-md overflow-hidden">
-                      <img src={image} alt={`Inspiration ${index + 1}`} className="w-full h-full object-cover" />
-                      <button
-                        onClick={() => removeImage(index)}
-                        className="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-opacity-80 transition-opacity"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
-                  {inspirationImages.length < 3 && (
-                    <div className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center text-gray-500">
-                      <label htmlFor="imageUpload" className="cursor-pointer">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
-                        <input
-                          type="file"
-                          id="imageUpload"
-                          multiple
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleImageUpload}
-                        />
-                      </label>
-                    </div>
-                  )}
+              <RadioGroup 
+                value={hasDesigns ? "has-designs" : "need-designer"} 
+                onValueChange={(value) => setHasDesigns(value === "has-designs")}
+                className="flex flex-col space-y-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="has-designs" id="has-designs" />
+                  <Label htmlFor="has-designs">I have designs</Label>
                 </div>
-                <p className="text-sm text-gray-500 mt-2">Upload images that inspire your design (max 3).</p>
-              </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="need-designer" id="need-designer" />
+                  <Label htmlFor="need-designer">I need a designer</Label>
+                </div>
+              </RadioGroup>
             </div>
             
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <h3 className="text-lg font-semibold mb-4">Design tips</h3>
-              <p className="text-sm text-gray-600 mb-6">
-                Consider the overall style of your home and choose design elements that complement it.
-              </p>
-              
-              <h4 className="font-medium text-gray-900 mb-2">Key design considerations:</h4>
-              <ul className="text-sm text-gray-600 space-y-2 mb-6">
-                <li className="flex items-center">
-                  <div className="w-1.5 h-1.5 bg-[#174c65] rounded-full mr-2"></div>
-                  <span>Color schemes</span>
-                </li>
-                <li className="flex items-center">
-                  <div className="w-1.5 h-1.5 bg-[#174c65] rounded-full mr-2"></div>
-                  <span>Material choices</span>
-                </li>
-                <li className="flex items-center">
-                  <div className="w-1.5 h-1.5 bg-[#174c65] rounded-full mr-2"></div>
-                  <span>Furniture selection</span>
-                </li>
-                <li className="flex items-center">
-                  <div className="w-1.5 h-1.5 bg-[#174c65] rounded-full mr-2"></div>
-                  <span>Lighting options</span>
-                </li>
-                <li className="flex items-center">
-                  <div className="w-1.5 h-1.5 bg-[#174c65] rounded-full mr-2"></div>
-                  <span>Layout and space planning</span>
-                </li>
-              </ul>
-              
-              <p className="text-sm text-gray-500">
-                Our specialists can help you bring your vision to life.
-              </p>
-            </div>
+            {hasDesigns ? (
+              <div className="space-y-4">
+                {/* Designer contact information */}
+                <div className="space-y-6 bg-gray-50 p-6 rounded-lg mb-6">
+                  <h3 className="text-lg font-semibold">Designer Information</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Business Name
+                      </label>
+                      <Input
+                        type="text"
+                        placeholder="Design Studio Name"
+                        value={designerContactInfo.businessName}
+                        onChange={(e) => updateDesignerContactInfo("businessName", e.target.value)}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Contact Name
+                      </label>
+                      <Input
+                        type="text"
+                        placeholder="Designer's Name"
+                        value={designerContactInfo.contactName}
+                        onChange={(e) => updateDesignerContactInfo("contactName", e.target.value)}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Email
+                      </label>
+                      <Input
+                        type="email"
+                        placeholder="email@example.com"
+                        value={designerContactInfo.email}
+                        onChange={(e) => updateDesignerContactInfo("email", e.target.value)}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Phone
+                      </label>
+                      <Input
+                        type="tel"
+                        placeholder="000 000 0000"
+                        value={designerContactInfo.phone}
+                        onChange={(e) => updateDesignerContactInfo("phone", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <h3 className="text-lg font-semibold">Upload your project's design information</h3>
+                
+                {/* Combined upload area for design plans and specs */}
+                <div className="space-y-4">
+                  <PropertyFileUpload
+                    accept="image/*, .pdf, .dwg, .doc, .docx, .xls"
+                    multiple={true}
+                    label="Upload Design Plans and Specs"
+                    description="Upload your design plans, specifications, and documentation in PNG, JPG, PDF, or document format"
+                    initialFiles={designFiles}
+                    onFilesUploaded={handleFilesUploaded}
+                    roomOptions={[
+                      { value: "blueprint", label: "Blueprint" },
+                      { value: "floorPlan", label: "Floor Plan" },
+                      { value: "elevation", label: "Elevation" },
+                      { value: "siteplan", label: "Site Plan" },
+                      { value: "materials", label: "Materials" },
+                      { value: "fixtures", label: "Fixtures" },
+                      { value: "finishes", label: "Finishes" },
+                      { value: "electrical", label: "Electrical" },
+                      { value: "plumbing", label: "Plumbing" }
+                    ]}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Placeholder for designer-finding feature */}
+                <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                  <h3 className="text-lg font-semibold mb-4">Find a Designer</h3>
+                  <p className="text-gray-700 mb-6">
+                    This feature will help you find and connect with qualified designers for your project. We're currently building this functionality.
+                  </p>
+                  <div className="bg-blue-50 text-blue-700 p-4 rounded-lg">
+                    <p className="text-sm">We'll help you find the perfect designer for your project soon! This section is currently under development.</p>
+                  </div>
+                </div>
+                
+                {/* Keep the designer information form as a fallback */}
+                <div className="space-y-6 bg-gray-50 p-6 rounded-lg">
+                  <h3 className="text-lg font-semibold">Designer Information</h3>
+                  
+                  {designers.map((designer, index) => (
+                    <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Business Name
+                        </label>
+                        <Input
+                          type="text"
+                          placeholder="Name"
+                          value={designer.businessName}
+                          onChange={(e) => updateDesigner(index, "businessName", e.target.value)}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Contact Name
+                        </label>
+                        <Input
+                          type="text"
+                          placeholder="Name"
+                          value={designer.contactName}
+                          onChange={(e) => updateDesigner(index, "contactName", e.target.value)}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Email
+                        </label>
+                        <Input
+                          type="email"
+                          placeholder="email@gmail.com"
+                          value={designer.email}
+                          onChange={(e) => updateDesigner(index, "email", e.target.value)}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Phone
+                        </label>
+                        <Input
+                          type="tel"
+                          placeholder="000 000 0000"
+                          value={designer.phone}
+                          onChange={(e) => updateDesigner(index, "phone", e.target.value)}
+                        />
+                      </div>
+                      
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Speciality
+                        </label>
+                        <Select 
+                          value={designer.speciality} 
+                          onValueChange={(value) => updateDesigner(index, "speciality", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a speciality" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectGroup>
+                              <SelectItem value="Architecture">Architecture</SelectItem>
+                              <SelectItem value="Interior Design">Interior Design</SelectItem>
+                              <SelectItem value="Landscape Design">Landscape Design</SelectItem>
+                              <SelectItem value="Kitchen Design">Kitchen Design</SelectItem>
+                              <SelectItem value="Bathroom Design">Bathroom Design</SelectItem>
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center text-[#174c65] border-[#174c65]"
+                    onClick={addAnotherDesigner}
+                  >
+                    <Plus className="w-4 h-4 mr-2" /> ADD ANOTHER DESIGNER
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
           
           <div className="flex flex-col sm:flex-row justify-between pt-4 border-t border-gray-200 gap-3 sm:gap-0">
@@ -299,7 +528,7 @@ const DesignPreferences = () => {
               variant="outline" 
               className="flex items-center text-[#174c65] order-2 sm:order-1 w-full sm:w-auto"
               onClick={goBack}
-              disabled={isSubmitting}
+              disabled={isLoading}
             >
               <ArrowLeft className="mr-2 h-4 w-4" /> BACK
             </Button>
@@ -309,16 +538,16 @@ const DesignPreferences = () => {
                 variant="outline"
                 className="text-[#174c65] border-[#174c65] w-full sm:w-auto"
                 onClick={() => navigate("/dashboard")}
-                disabled={isSubmitting}
+                disabled={isLoading}
               >
                 SAVE & EXIT
               </Button>
               <Button
                 className="flex items-center bg-[#174c65] hover:bg-[#174c65]/90 text-white w-full sm:w-auto justify-center"
                 onClick={goToNextStep}
-                disabled={isSubmitting}
+                disabled={isLoading}
               >
-                {isSubmitting ? "SAVING..." : "NEXT"} {!isSubmitting && <ArrowRight className="ml-2 h-4 w-4" />}
+                {isLoading ? "Loading..." : "NEXT"} {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
               </Button>
             </div>
           </div>
