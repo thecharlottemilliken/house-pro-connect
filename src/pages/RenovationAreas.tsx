@@ -1,19 +1,28 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { toast } from "sonner";
 import CreateProjectSteps from "@/components/project/create/CreateProjectSteps";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const roomOptions = [
   "Kitchen", "Bathroom", "Living Room", "Dining Room", "Primary Bedroom", 
   "Guest Bedroom", "Office", "Basement", "Attic", "Garage", "Outdoor Space", 
-  "Laundry Room", "Other"
+  "Laundry Room"
+];
+
+const locationOptions = [
+  "First Floor", "Second Floor", "Third Floor", "Basement", "Ground Floor", "Attic"
 ];
 
 const RenovationAreas = () => {
@@ -24,7 +33,8 @@ const RenovationAreas = () => {
   const [propertyId, setPropertyId] = useState<string | null>(null);
   const [propertyName, setPropertyName] = useState<string>("");
   const [selectedAreas, setSelectedAreas] = useState<Array<{area: string, location?: string}>>([]);
-  const [otherRoomName, setOtherRoomName] = useState<string>("");
+  const [selectedAreaType, setSelectedAreaType] = useState<string>("");
+  const [selectedLocation, setSelectedLocation] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   useEffect(() => {
@@ -51,26 +61,24 @@ const RenovationAreas = () => {
     }
   }, [location.state, navigate, user]);
 
-  const handleAreaToggle = (area: string) => {
-    setSelectedAreas(prev => {
-      // Check if this area already exists in the array
-      const exists = prev.some(item => item.area === area);
-      
-      if (exists) {
-        // Remove it if it exists
-        return prev.filter(item => item.area !== area);
-      } else {
-        // Add it if it doesn't exist
-        return [...prev, { area }];
-      }
-    });
+  const addArea = () => {
+    if (!selectedAreaType) {
+      toast.error("Please select an area type");
+      return;
+    }
+
+    const newArea = {
+      area: selectedAreaType,
+      location: selectedLocation || undefined
+    };
+
+    setSelectedAreas(prev => [...prev, newArea]);
+    setSelectedAreaType("");
+    setSelectedLocation("");
   };
 
-  const addOtherRoom = () => {
-    if (otherRoomName.trim()) {
-      setSelectedAreas(prev => [...prev, { area: otherRoomName.trim() }]);
-      setOtherRoomName("");
-    }
+  const removeArea = (index: number) => {
+    setSelectedAreas(prev => prev.filter((_, i) => i !== index));
   };
 
   const continueToNextStep = () => {
@@ -93,6 +101,10 @@ const RenovationAreas = () => {
     navigate("/create-project");
   };
 
+  const saveAndExit = () => {
+    navigate("/dashboard");
+  };
+
   const steps = [
     { number: 1, title: "Select a Property", current: false },
     { number: 2, title: "Select Renovation Areas", current: true },
@@ -111,150 +123,121 @@ const RenovationAreas = () => {
         <CreateProjectSteps steps={steps} />
         
         <div className="flex-1 p-4 md:p-10 overflow-auto">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-4">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
             Select Renovation Areas
           </h2>
-          <p className="text-sm md:text-base text-gray-700 mb-6 md:mb-8 max-w-3xl">
-            Select all the areas of your property that will be included in this renovation project.
+          <p className="text-gray-700 mb-8 max-w-3xl">
+            To get started, fill out a high-level summary of the project so specialists can get an idea of the type of project underway. Next, select when you want your bids due by.
           </p>
           
-          <div className="flex flex-col md:flex-row gap-8 mb-10">
-            <div className="flex-1">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-                {roomOptions.map((room) => (
-                  <div key={room} className="flex items-center space-x-3 p-3 border rounded-lg bg-white hover:bg-gray-50">
-                    <Checkbox 
-                      id={`room-${room}`} 
-                      checked={selectedAreas.some(item => item.area === room)}
-                      onCheckedChange={() => handleAreaToggle(room)}
-                    />
-                    <label
-                      htmlFor={`room-${room}`}
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer w-full"
-                    >
-                      {room}
-                    </label>
-                  </div>
-                ))}
-              </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+            <div className="bg-white border rounded-lg p-6">
+              <h3 className="text-xl font-semibold mb-6">Add Areas</h3>
               
-              <div className="flex items-end gap-2 mb-8">
-                <div className="flex-1">
-                  <label className="text-sm font-medium mb-1 block text-gray-700">
-                    Add another area
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Add Area
                   </label>
-                  <Input
-                    type="text"
-                    placeholder="Enter area name"
-                    value={otherRoomName}
-                    onChange={(e) => setOtherRoomName(e.target.value)}
-                  />
+                  <Select
+                    value={selectedAreaType}
+                    onValueChange={setSelectedAreaType}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select area type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {roomOptions.map((room) => (
+                        <SelectItem key={room} value={room}>
+                          {room}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Location
+                  </label>
+                  <Select
+                    value={selectedLocation}
+                    onValueChange={setSelectedLocation}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select location" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {locationOptions.map((loc) => (
+                        <SelectItem key={loc} value={loc}>
+                          {loc}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
                 <Button 
-                  type="button"
-                  onClick={addOtherRoom}
-                  variant="outline"
-                  className="border-[#174c65] text-[#174c65]"
-                  disabled={!otherRoomName.trim()}
+                  onClick={addArea}
+                  className="w-full bg-gray-400 hover:bg-gray-500 text-white"
+                  disabled={!selectedAreaType}
                 >
-                  Add
+                  ADD AREA
                 </Button>
               </div>
-              
-              {selectedAreas.length > 0 && (
-                <div className="p-4 bg-[#f7f9fa] rounded-lg mb-8">
-                  <h3 className="text-lg font-semibold mb-3">Selected Areas</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedAreas.map((item, index) => (
-                      <div 
-                        key={index} 
-                        className="bg-[#174c65]/10 text-[#174c65] px-3 py-1 rounded-full flex items-center"
-                      >
-                        <span>{item.area}</span>
-                        <button 
-                          onClick={() => setSelectedAreas(prev => prev.filter((_, i) => i !== index))}
-                          className="ml-2 h-4 w-4 rounded-full bg-[#174c65]/20 flex items-center justify-center hover:bg-[#174c65]/30"
-                        >
-                          <span className="sr-only">Remove</span>
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
             
-            <div className="w-full md:w-80 bg-gray-50 p-5 rounded-lg h-fit">
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-2">Why we ask about renovation areas</h3>
-                <p className="text-sm text-gray-600">
-                  Knowing which areas you want to renovate helps us provide better guidance and connect you with the right professionals.
-                </p>
-              </div>
+            <div className="bg-white border rounded-lg p-6">
+              <h3 className="text-xl font-semibold mb-6">Renovation Areas</h3>
               
-              <div>
-                <h3 className="text-lg font-semibold mb-3">How this helps your project</h3>
-                
+              {selectedAreas.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">No areas added yet</p>
+              ) : (
                 <div className="space-y-4">
-                  {[
-                    {
-                      title: "Focused planning",
-                      description: "We'll help you create a plan specific to the areas you want to renovate."
-                    },
-                    {
-                      title: "Budget allocation",
-                      description: "Understanding your renovation scope helps with budget planning."
-                    },
-                    {
-                      title: "Timeline expectations",
-                      description: "Different areas require different timelines for completion."
-                    }
-                  ].map((item, index) => (
-                    <div key={index} className="flex items-start">
-                      <div className="mt-1 mr-3 h-5 w-5 flex items-center justify-center rounded-full bg-[#174c65] text-white">
-                        <Check className="h-3 w-3" />
-                      </div>
+                  {selectedAreas.map((item, index) => (
+                    <div key={index} className="flex justify-between items-center border-b pb-4">
                       <div>
-                        <h4 className="text-sm font-medium">{item.title}</h4>
-                        <p className="text-xs text-gray-600">
-                          {item.description}
-                        </p>
+                        <h4 className="font-medium">{item.area} {index + 1}</h4>
+                        {item.location && <p className="text-sm text-gray-600">{item.location}</p>}
                       </div>
+                      <Button 
+                        variant="ghost" 
+                        className="text-red-500 hover:text-red-700 hover:bg-transparent"
+                        onClick={() => removeArea(index)}
+                      >
+                        Remove
+                      </Button>
                     </div>
                   ))}
                 </div>
-              </div>
+              )}
             </div>
           </div>
           
-          <div className="flex flex-col sm:flex-row justify-between pt-4 border-t border-gray-200 gap-3 sm:gap-0">
+          <div className="flex justify-between pt-6 border-t border-gray-200">
             <Button 
               variant="outline" 
-              className="flex items-center text-[#174c65] order-2 sm:order-1 w-full sm:w-auto"
               onClick={goBack}
               disabled={isLoading}
+              className="flex items-center"
             >
               <ArrowLeft className="mr-2 h-4 w-4" /> BACK
             </Button>
             
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 order-1 sm:order-2 w-full sm:w-auto">
+            <div className="flex gap-4">
               <Button
                 variant="outline"
-                className="text-[#174c65] border-[#174c65] w-full sm:w-auto"
-                onClick={() => navigate("/dashboard")}
+                onClick={saveAndExit}
                 disabled={isLoading}
               >
                 SAVE & EXIT
               </Button>
               <Button
-                className="flex items-center bg-[#174c65] hover:bg-[#174c65]/90 text-white w-full sm:w-auto justify-center"
+                className="bg-[#174c65] hover:bg-[#174c65]/90 text-white flex items-center"
                 onClick={continueToNextStep}
                 disabled={isLoading}
               >
-                {isLoading ? "Loading..." : "CONTINUE"} {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
+                NEXT <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           </div>
