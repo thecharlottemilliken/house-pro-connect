@@ -9,6 +9,7 @@ interface BeforePhotosCardProps {
   propertyPhotos: string[];
   onSelectBeforePhotos: (photos: string[]) => void;
   onUploadBeforePhotos: (photos: string[]) => void;
+  area: string; // Add the area property
 }
 
 const BeforePhotosCard = ({
@@ -16,6 +17,7 @@ const BeforePhotosCard = ({
   propertyPhotos,
   onSelectBeforePhotos,
   onUploadBeforePhotos,
+  area, // Include the area in the props
 }: BeforePhotosCardProps) => {
   const handleRemovePhoto = (index: number) => {
     const updatedPhotos = [...beforePhotos];
@@ -34,6 +36,7 @@ const BeforePhotosCard = ({
     <Card className="shadow-lg border-gray-200/50 w-full">
       <CardContent className="p-4 sm:p-6">
         <BeforePhotosSection
+          area={area} // Pass the area to the BeforePhotosSection
           beforePhotos={beforePhotos}
           propertyPhotos={propertyPhotos}
           onSelectBeforePhotos={onSelectBeforePhotos}
