@@ -279,11 +279,8 @@ serve(async (req) => {
       }
     }
 
-    // Handle project update or creation
-    if ((body.projectId || (body.propertyId && body.userId)) && 
-        (body.title || body.renovationAreas || body.projectPreferences || 
-         body.constructionPreferences || body.designPreferences || 
-         body.managementPreferences || body.prior_experience)) {
+    // Handle project update or creation - now with all preferences
+    if ((body.projectId || (body.propertyId && body.userId))) {
           
       const projectId = body.projectId;
       const userId = body.userId;

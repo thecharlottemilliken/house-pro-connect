@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -16,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Json } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
+import CreateProjectSteps from "@/components/project/create/CreateProjectSteps";
 
 interface RenovationArea {
   area: string;
@@ -209,12 +211,14 @@ const RenovationAreas = () => {
 
   const fetchExistingAreas = async (projectId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('projects')
-        .select('renovation_areas')
-        .eq('id', projectId)
-        .single();
-
+      const { data, error } = await supabase.functions.invoke('handle-project-update', {
+        method: 'POST',
+        body: { 
+          projectId,
+          userId: user?.id || null,
+        }
+      });
+      
       if (error) throw error;
       
       if (data && data.renovation_areas) {
