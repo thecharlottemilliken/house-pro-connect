@@ -107,11 +107,15 @@ const PriorExperience = () => {
         
         // Construct the final payload with all preference data
         const finalPayload = {
-          projectId,
+           projectId,
           userId: user.id,
-          constructionPreferences,
-          designPreferences,
-          managementPreferences,
+          propertyId: projectPrefs?.propertyId,
+          title: projectPrefs?.title,
+          renovationAreas: projectPrefs?.renovationAreas || [],
+          projectPreferences: projectPrefs?.projectPreferences || {},
+          constructionPreferences: projectPrefs?.constructionPreferences || {},
+          designPreferences: projectPrefs?.designPreferences || {},
+          managementPreferences: projectPrefs?.managementPreferences || {},
           prior_experience
         };
         
