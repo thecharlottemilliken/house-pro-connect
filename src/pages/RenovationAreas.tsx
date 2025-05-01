@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -16,6 +17,8 @@ import {
 } from "@/components/ui/select";
 import { Json } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
+import CreateProjectSteps from "@/components/project/create/CreateProjectSteps";
+import { PropertyDetails } from "@/hooks/useProjectData";
 
 interface RenovationArea {
   area: string;
@@ -29,6 +32,8 @@ interface Property {
   bathrooms: string | null;
   living_rooms?: number;
   dining_rooms?: number;
+  interior_attributes?: string[];
+  exterior_attributes?: string[];
 }
 
 const RenovationAreas = () => {
@@ -57,6 +62,11 @@ const RenovationAreas = () => {
       if (location.state.projectId) {
         setProjectId(location.state.projectId);
         fetchExistingAreas(location.state.projectId);
+      }
+
+      // If there are existing renovation areas passed from previous step, set them
+      if (location.state.renovationAreas) {
+        setRenovationAreas(location.state.renovationAreas);
       }
     } else {
       navigate("/create-project");
@@ -100,7 +110,9 @@ const RenovationAreas = () => {
             bedrooms: directData.bedrooms,
             bathrooms: directData.bathrooms,
             living_rooms: 1,
-            dining_rooms: 1
+            dining_rooms: 1,
+            interior_attributes: directData.interior_attributes,
+            exterior_attributes: directData.exterior_attributes
           });
           
           if (!propertyName) {
@@ -116,7 +128,9 @@ const RenovationAreas = () => {
             bedrooms: data[0].bedrooms,
             bathrooms: data[0].bathrooms,
             living_rooms: 1,
-            dining_rooms: 1
+            dining_rooms: 1,
+            interior_attributes: data[0].interior_attributes,
+            exterior_attributes: data[0].exterior_attributes
           };
           
           setPropertyDetails(propertyData);
@@ -159,7 +173,9 @@ const RenovationAreas = () => {
               bedrooms: data[0].bedrooms,
               bathrooms: data[0].bathrooms,
               living_rooms: 1,
-              dining_rooms: 1
+              dining_rooms: 1,
+              interior_attributes: data[0].interior_attributes,
+              exterior_attributes: data[0].exterior_attributes
             };
             
             setPropertyDetails(propertyData);
@@ -188,7 +204,9 @@ const RenovationAreas = () => {
         bedrooms: data.bedrooms,
         bathrooms: data.bathrooms,
         living_rooms: 1,
-        dining_rooms: 1
+        dining_rooms: 1,
+        interior_attributes: data.interior_attributes,
+        exterior_attributes: data.exterior_attributes
       };
       
       setPropertyDetails(propertyData);
@@ -243,6 +261,24 @@ const RenovationAreas = () => {
       "Other"
     ];
 
+    // Add rooms from interior attributes if available
+    if (propertyDetails?.interior_attributes && propertyDetails.interior_attributes.length > 0) {
+      propertyDetails.interior_attributes.forEach(attr => {
+        if (!options.includes(attr)) {
+          options.push(attr);
+        }
+      });
+    }
+
+    // Add rooms from exterior attributes if available
+    if (propertyDetails?.exterior_attributes && propertyDetails.exterior_attributes.length > 0) {
+      propertyDetails.exterior_attributes.forEach(attr => {
+        if (!options.includes(attr)) {
+          options.push(attr);
+        }
+      });
+    }
+
     if (propertyDetails) {
       const bedroomsCount = propertyDetails.bedrooms ? parseInt(propertyDetails.bedrooms) : 0;
       for (let i = 1; i <= bedroomsCount; i++) {
@@ -281,7 +317,8 @@ const RenovationAreas = () => {
   };
 
   const goToNextStep = () => {
-    // Navigate to next page with both property ID and project preferences
+    // Navigate to next page with both property ID and renovation areas
+    // But DO NOT create a project yet
     navigate("/project-preferences", {
       state: {
         propertyId,
@@ -320,36 +357,7 @@ const RenovationAreas = () => {
       <DashboardNavbar />
       
       <div className="flex flex-col md:flex-row flex-1">
-        <div className={`${isMobile ? 'w-full' : 'w-80'} bg-[#EFF3F7] p-4 md:p-8`}>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">Create a Project</h1>
-          <p className="text-sm md:text-base text-gray-600 mb-6 md:mb-8">
-            Lorem ipsum dolor sit amet consectetur.
-          </p>
-          
-          <div className="space-y-4 md:space-y-6">
-            {steps.map((step) => (
-              <div key={step.number} className="flex items-start">
-                <div className={`w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center mr-2 md:mr-3 ${
-                  step.current ? "bg-[#174c65] text-white" : "bg-gray-200 text-gray-500"
-                }`}>
-                  {step.number}
-                </div>
-                <div>
-                  <h3 className={`text-sm md:text-base font-medium ${
-                    step.current ? "text-[#174c65]" : "text-gray-500"
-                  }`}>
-                    Step {step.number}
-                  </h3>
-                  <p className={`text-xs md:text-sm ${
-                    step.current ? "text-black" : "text-gray-500"
-                  }`}>
-                    {step.title}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <CreateProjectSteps steps={steps} />
         
         <div className="flex-1 p-4 md:p-10 overflow-auto">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-4">Select Renovation Areas</h2>
