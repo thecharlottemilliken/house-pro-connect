@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 interface MeetupTime {
   date: string;
+  dateStr?: string; // Added optional dateStr property to handle both formats
   time: string;
   ampm: "AM" | "PM";
 }
@@ -108,7 +110,8 @@ export const MeetupScheduleWidget = () => {
       }
       
       // Format date and time for display
-      const formattedDate = formatDateSafely(selectedTimeSlot.date);
+      const dateToFormat = selectedTimeSlot.dateStr || selectedTimeSlot.date;
+      const formattedDate = formatDateSafely(dateToFormat);
       const formattedTime = `${selectedTimeSlot.time} ${selectedTimeSlot.ampm}`;
       
       // Send a notification message to the project owner
@@ -140,15 +143,15 @@ export const MeetupScheduleWidget = () => {
       }
       
       // 3. Add event to the project calendar
-      // Fix: Create valid Date objects from the selected time slot
       try {
-        // Parse the date from the time slot safely
-        if (!selectedTimeSlot.date) {
+        // Use dateStr if available, otherwise fallback to date property
+        const dateSource = selectedTimeSlot.dateStr || selectedTimeSlot.date;
+        if (!dateSource) {
           throw new Error("Invalid meeting date");
         }
         
         // Create a Date object for the meeting
-        const meetingDate = new Date(selectedTimeSlot.date);
+        const meetingDate = new Date(dateSource);
         if (!isValid(meetingDate)) {
           throw new Error("Invalid date format");
         }
@@ -211,9 +214,16 @@ export const MeetupScheduleWidget = () => {
     if (!dateString) return "Invalid date";
     
     try {
-      // Make sure we're working with a properly formatted ISO string
-      const isoDateString = ensureISODateString(dateString);
-      const parsedDate = parseISO(isoDateString);
+      // Try to parse the date - handling both ISO strings and other formats
+      let parsedDate: Date;
+      
+      // For ISO format strings
+      if (dateString.includes('T')) {
+        parsedDate = parseISO(dateString);
+      } else {
+        // For other formats
+        parsedDate = new Date(dateString);
+      }
       
       // Check if date is valid before formatting
       if (!isValid(parsedDate)) {
@@ -221,43 +231,29 @@ export const MeetupScheduleWidget = () => {
         return "Invalid date";
       }
       
-      // Format as "Monday, December 25th, 2023" (including year)
-      return format(parsedDate, "EEEE, MMMM do, yyyy");
+      // Format as "Monday, May 05, 2025" (updated format to match requirement)
+      return format(parsedDate, "EEEE, MMMM dd, yyyy");
     } catch (error) {
       console.error("Error formatting date:", error, dateString);
       return "Invalid date";
     }
   };
 
-  // Ensure date string is in ISO format
-  const ensureISODateString = (dateStr: string): string => {
-    // If it's already a valid ISO string, return it
-    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/.test(dateStr) || 
-        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(dateStr) ||
-        /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-      return dateStr;
-    }
-    
-    // Try to convert it to an ISO string
-    const date = new Date(dateStr);
-    if (isValid(date)) {
-      return date.toISOString();
-    }
-    
-    console.warn("Could not parse date string:", dateStr);
-    // Return a fallback ISO string if we can't parse it
-    return new Date().toISOString();
-  };
-
   // Format time slot display
   const formatTimeSlot = (meetupTime: MeetupTime) => {
-    if (!meetupTime || !meetupTime.date) {
+    if (!meetupTime) {
       return { date: "Invalid date", time: "" };
     }
     
     try {
+      // Prioritize using dateStr if available, otherwise use date
+      const dateSource = meetupTime.dateStr || meetupTime.date;
+      if (!dateSource) {
+        return { date: "Invalid date", time: "" };
+      }
+      
       // Format the date safely
-      const formattedDate = formatDateSafely(meetupTime.date);
+      const formattedDate = formatDateSafely(dateSource);
       
       // Handle the time values safely
       const timeStr = meetupTime.time || "";
@@ -370,8 +366,11 @@ export const MeetupScheduleWidget = () => {
               let isPastDate = false;
               
               try {
-                const isoDate = ensureISODateString(meetup.date);
-                const parsedDate = parseISO(isoDate);
+                // Use dateStr if available, otherwise fallback to date
+                const dateSource = meetup.dateStr || meetup.date;
+                const parsedDate = dateSource && dateSource.includes('T') 
+                  ? parseISO(dateSource) 
+                  : new Date(dateSource || '');
                 
                 // Only check if it's a past date if parsing was successful
                 if (isValid(parsedDate)) {
@@ -380,7 +379,7 @@ export const MeetupScheduleWidget = () => {
                   console.error("Invalid date format:", meetup.date);
                 }
               } catch (error) {
-                console.error("Error parsing date:", error, meetup.date);
+                console.error("Error parsing date:", error, meetup);
               }
               
               const timeSlotFormat = formatTimeSlot(meetup);
@@ -397,7 +396,7 @@ export const MeetupScheduleWidget = () => {
                 >
                   <div>
                     <p className="font-medium text-gray-900">{timeSlotFormat.date}</p>
-                    <p className="text-gray-600">{meetup.time}:00 {meetup.ampm} EST</p>
+                    <p className="text-gray-600">{meetup.time} {meetup.ampm} EST</p>
                   </div>
                   
                   {isSelected ? (
@@ -453,10 +452,10 @@ export const MeetupScheduleWidget = () => {
                   <p className="font-medium text-gray-800">Project: {selectedProject?.title}</p>
                   <div className="mt-3 bg-blue-50 p-3 rounded-md border border-blue-100">
                     <p className="font-bold text-blue-800">
-                      {formatDateSafely(selectedTimeSlot.date)}
+                      {formatDateSafely(selectedTimeSlot.dateStr || selectedTimeSlot.date)}
                     </p>
                     <p className="text-blue-700">
-                      {selectedTimeSlot.time}:00 {selectedTimeSlot.ampm} EST
+                      {selectedTimeSlot.time} {selectedTimeSlot.ampm} EST
                     </p>
                   </div>
                 </div>
@@ -480,3 +479,4 @@ export const MeetupScheduleWidget = () => {
     </Card>
   );
 };
+

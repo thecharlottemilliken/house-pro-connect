@@ -52,14 +52,15 @@ export const formatTimeSlot = (slot: TimeSlot): { dayAndDate: string; time: stri
   
   const dayOfWeek = format(slot.date, "EEEE");
   const month = format(slot.date, "MMMM");
-  const dayOfMonth = format(slot.date, "do");
+  const dayOfMonth = format(slot.date, "dd"); // Changed from 'do' to 'dd' for "DD" format
+  const year = format(slot.date, "yyyy");
   
   // Extract time range parts (e.g., "8:00 - 9:00")
   const timeRange = slot.time;
   const [startTime] = timeRange.split(" - ");
   
   return {
-    dayAndDate: `${dayOfWeek}, ${month} ${dayOfMonth}`,
+    dayAndDate: `${dayOfWeek}, ${month} ${dayOfMonth}, ${year}`, // Added year and changed format to match request
     time: `${startTime}${slot.ampm.toLowerCase()} - ${timeRange.split(" - ")[1]}${slot.ampm.toLowerCase()} EST`
   };
 };
