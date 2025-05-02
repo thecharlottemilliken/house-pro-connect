@@ -7,6 +7,10 @@ import { Filter, Search } from "lucide-react";
 interface PropertiesFilterBarProps {
   searchQuery: string;
   setSearchQuery: (q: string) => void;
+  selectedType: string | null;
+  setSelectedType: (type: string | null) => void;
+  selectedPrice: string | null;
+  setSelectedPrice: (price: string | null) => void;
 }
 
 const homeTypes = ["House", "Apartment", "Condo", "Townhouse", "Multi-family"];
@@ -21,7 +25,12 @@ const priceRanges = [
 const barBg = "bg-white/90";
 
 export function PropertiesFilterBar({
-  searchQuery, setSearchQuery
+  searchQuery, 
+  setSearchQuery,
+  selectedType,
+  setSelectedType,
+  selectedPrice,
+  setSelectedPrice
 }: PropertiesFilterBarProps) {
   return (
     <div className={`flex flex-col gap-3 md:flex-row md:items-center md:justify-between px-4 py-3 ${barBg} w-full border-b border-gray-200`}>
@@ -43,7 +52,7 @@ export function PropertiesFilterBar({
         </div>
         
         {/* Property Type */}
-        <Select>
+        <Select value={selectedType || ""} onValueChange={setSelectedType}>
           <SelectTrigger className="w-[140px] bg-[#F5F8FA] border-gray-300">
             <SelectValue placeholder="Property Type" />
           </SelectTrigger>
@@ -56,7 +65,7 @@ export function PropertiesFilterBar({
         </Select>
         
         {/* Price */}
-        <Select>
+        <Select value={selectedPrice || ""} onValueChange={setSelectedPrice}>
           <SelectTrigger className="w-[140px] bg-[#F5F8FA] border-gray-300">
             <SelectValue placeholder="Price Range" />
           </SelectTrigger>
@@ -69,6 +78,6 @@ export function PropertiesFilterBar({
       </div>
     </div>
   );
-};
+}
 
 export default PropertiesFilterBar;

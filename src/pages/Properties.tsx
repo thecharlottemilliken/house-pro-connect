@@ -10,7 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import PropertiesFilterBar from "@/components/properties/PropertiesFilterBar";
-import MapboxMap from "@/components/properties/PropertyMapView";
+import PropertyMapView from "@/components/properties/PropertyMapView";
 import { formatCurrency } from "@/utils/formatters";
 
 interface Property {
@@ -38,7 +38,8 @@ const Properties = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [activePropertyId, setActivePropertyId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
+  const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [selectedPrice, setSelectedPrice] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [activeTab, setActiveTab] = useState<"active" | "sold">("active");
   const [mapboxToken, setMapboxToken] = useState<string>("");
@@ -130,6 +131,23 @@ const Properties = () => {
       return false;
     }
     
+    // Filter by property type
+    if (selectedType && selectedType !== 'all' && property.home_type?.toLowerCase() !== selectedType) {
+      return false;
+    }
+
+    // Filter by price
+    if (selectedPrice && selectedPrice !== 'any') {
+      const [minStr, maxStr] = selectedPrice.split('-');
+      const min = parseInt(minStr || '0', 10);
+      const max = maxStr ? parseInt(maxStr, 10) : Infinity;
+      const price = property.price || 0;
+      
+      if (price < min || price > max) {
+        return false;
+      }
+    }
+    
     // Filter by status tab
     if (activeTab === "active" && property.status !== "active") return false;
     if (activeTab === "sold" && property.status !== "sold") return false;
@@ -215,6 +233,10 @@ const Properties = () => {
             <PropertiesFilterBar
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
+              selectedType={selectedType}
+              setSelectedType={setSelectedType}
+              selectedPrice={selectedPrice}
+              setSelectedPrice={setSelectedPrice}
             />
 
             <div className="relative flex-1 min-h-0 flex max-w-screen">
@@ -229,7 +251,7 @@ const Properties = () => {
                       </div>
                     </div>
                   ) : (
-                    <MapboxMap
+                    <PropertyMapView
                       properties={mapProperties}
                       activePropertyId={activePropertyId}
                       onPinClick={handlePinClick}
