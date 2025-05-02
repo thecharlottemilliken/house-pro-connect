@@ -99,14 +99,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (email: string, password: string, userData: any) => {
     try {
       setIsLoading(true);
+      
+      // First, validate the data and prepare the user metadata
+      const userMetadata = {
+        name: userData.name || '',
+        role: userData.role || 'resident',
+      };
+      
+      console.log("Creating account with metadata:", userMetadata);
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: {
-            name: userData.name,
-            role: userData.role || 'resident',
-          },
+          data: userMetadata,
         },
       });
 
@@ -129,6 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (userData.role === 'coach' && data?.user) {
         try {
           console.log("Setting coach claims for user:", data.user.id);
+          
           // Call the set-claims edge function directly
           const response = await supabase.functions.invoke('set-claims', {
             body: { user_id: data.user.id }
@@ -138,7 +145,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           if (response.error) {
             console.error("Error setting coach claims:", response.error);
-            // Don't return here, continue with sign-in attempt
+            // We continue with sign-in attempt regardless
           }
         } catch (setClaimError) {
           console.error("Error calling set-claims function:", setClaimError);
