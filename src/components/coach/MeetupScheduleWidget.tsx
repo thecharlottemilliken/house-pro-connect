@@ -4,8 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { CalendarIcon, Calendar, CheckIcon } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { CalendarIcon, Calendar, CheckIcon, X } from "lucide-react";
+import { formatDistanceToNow, format } from "date-fns";
 import { useCoachProjects } from "@/hooks/useCoachProjects";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -14,8 +14,8 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface MeetupTime {
   date: string;
@@ -40,6 +40,8 @@ export const MeetupScheduleWidget = () => {
   const [schedulingProject, setSchedulingProject] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<ProjectWithMeetups | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<MeetupTime | null>(null);
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   
   // Filter projects that have meetup times and haven't been scheduled yet
   const projectsWithMeetups = projects
@@ -61,8 +63,10 @@ export const MeetupScheduleWidget = () => {
       };
     });
 
-  const handleScheduleMeeting = async (projectId: string, meetupTime: MeetupTime) => {
-    setSchedulingProject(projectId);
+  const handleScheduleMeeting = async () => {
+    if (!selectedProject || !selectedTimeSlot) return;
+    
+    setSchedulingProject(selectedProject.id);
     
     try {
       // Get the current project data
@@ -76,7 +80,7 @@ export const MeetupScheduleWidget = () => {
       }
       
       // Find the project to update
-      const projectToUpdate = projectData.projects.find((p: any) => p.id === projectId);
+      const projectToUpdate = projectData.projects.find((p: any) => p.id === selectedProject.id);
       
       if (!projectToUpdate) {
         throw new Error("Project not found");
@@ -90,10 +94,10 @@ export const MeetupScheduleWidget = () => {
         'handle-project-update',
         {
           body: { 
-            projectId,
+            projectId: selectedProject.id,
             managementPreferences: {
               ...managementPrefs,
-              scheduledMeetupTime: meetupTime,
+              scheduledMeetupTime: selectedTimeSlot,
             }
           }
         }
@@ -104,19 +108,21 @@ export const MeetupScheduleWidget = () => {
       }
       
       // Send a notification message to the project owner
-      const formattedDate = new Date(meetupTime.date).toLocaleDateString();
-      const formattedTime = `${meetupTime.time} ${meetupTime.ampm}`;
+      const formattedDate = new Date(selectedTimeSlot.date).toLocaleDateString();
+      const formattedTime = `${selectedTimeSlot.time} ${selectedTimeSlot.ampm}`;
       
       await supabase.from('coach_messages').insert({
         resident_id: projectToUpdate.owner.id,
         coach_id: (await supabase.auth.getUser()).data.user?.id,
-        project_id: projectId,
+        project_id: selectedProject.id,
         message: `I've scheduled a coaching session with you for ${formattedDate} at ${formattedTime}. Looking forward to discussing your project!`
       });
       
       toast.success("Meeting scheduled successfully!");
       fetchProjects();
       setIsDialogOpen(false);
+      setIsConfirmDialogOpen(false);
+      setSelectedTimeSlot(null);
     } catch (error) {
       console.error("Error scheduling meeting:", error);
       toast.error("Failed to schedule meeting. Please try again.");
@@ -127,7 +133,32 @@ export const MeetupScheduleWidget = () => {
 
   const openScheduleDialog = (project: ProjectWithMeetups) => {
     setSelectedProject(project);
+    setSelectedTimeSlot(null);
     setIsDialogOpen(true);
+  };
+
+  const formatTimeSlot = (meetupTime: MeetupTime) => {
+    if (!meetupTime.date) return "";
+    
+    try {
+      const meetupDate = new Date(meetupTime.date);
+      const formattedDate = format(meetupDate, "EEEE, MMMM do");
+      return {
+        date: formattedDate,
+        time: `${meetupTime.time}:00${meetupTime.ampm.toLowerCase()}`
+      };
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return { date: "Invalid date", time: `${meetupTime.time}:00${meetupTime.ampm.toLowerCase()}` };
+    }
+  };
+
+  const handleSelectTimeSlot = (timeSlot: MeetupTime) => {
+    setSelectedTimeSlot(timeSlot);
+  };
+
+  const handleSendInvite = () => {
+    setIsConfirmDialogOpen(true);
   };
 
   if (isLoading) {
@@ -187,43 +218,113 @@ export const MeetupScheduleWidget = () => {
         </div>
       </CardContent>
 
-      {/* Meeting time selection dialog */}
+      {/* Schedule Meeting Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Schedule Meeting Time</DialogTitle>
-            <DialogDescription>
-              Select a time slot for your coaching session with {selectedProject?.owner.name}
+            <div className="flex justify-between items-center">
+              <DialogTitle className="text-2xl font-bold">Schedule a Meeting</DialogTitle>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-6 w-6" 
+                onClick={() => setIsDialogOpen(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <DialogDescription className="text-xl font-semibold mt-6">
+              Select from the available time slots.
             </DialogDescription>
+            <p className="text-gray-600 mt-2">
+              Choose a time to meet with {selectedProject?.owner.name} to discuss their project: {selectedProject?.title}.
+            </p>
           </DialogHeader>
           
-          <div className="mt-4">
-            <h4 className="text-sm font-medium mb-2">Available meeting times:</h4>
-            <div className="grid grid-cols-1 gap-2 max-h-72 overflow-y-auto">
-              {selectedProject?.meetupTimes.filter(time => time.date).map((meetup, index) => {
-                const meetupDate = new Date(meetup.date);
-                const isPastDate = meetupDate < new Date();
-                
-                return (
-                  <Button
-                    key={index}
-                    variant="outline"
-                    size="sm"
-                    className={`flex items-center justify-start gap-2 ${isPastDate ? 'opacity-50' : ''}`}
-                    onClick={() => !isPastDate && handleScheduleMeeting(selectedProject.id, meetup)}
-                    disabled={isPastDate || schedulingProject === selectedProject?.id}
-                  >
-                    <CalendarIcon className="h-4 w-4" />
-                    <span>
-                      {meetupDate.toLocaleDateString()} {meetup.time} {meetup.ampm}
-                    </span>
-                  </Button>
-                );
-              })}
-            </div>
+          <div className="mt-6 space-y-4 max-h-96 overflow-y-auto">
+            {selectedProject?.meetupTimes.filter(time => time.date).map((meetup, index) => {
+              const meetupDate = new Date(meetup.date);
+              const isPastDate = meetupDate < new Date();
+              const timeSlotFormat = formatTimeSlot(meetup);
+              const isSelected = selectedTimeSlot === meetup;
+              
+              return (
+                <div 
+                  key={index}
+                  className={`p-4 rounded-md flex justify-between items-center ${
+                    isSelected 
+                      ? "bg-blue-50 border border-blue-200" 
+                      : "bg-gray-50 hover:bg-gray-100"
+                  }`}
+                >
+                  <div>
+                    <p className="font-medium">{timeSlotFormat.date}</p>
+                    <p>{meetup.time}:00 {meetup.ampm} EST</p>
+                  </div>
+                  
+                  {isSelected ? (
+                    <div className="bg-blue-700 text-white px-4 py-2 rounded">
+                      SELECTED
+                    </div>
+                  ) : (
+                    <Button 
+                      variant="outline"
+                      className="border-blue-700 text-blue-700 hover:bg-blue-50"
+                      disabled={isPastDate || schedulingProject === selectedProject?.id}
+                      onClick={() => handleSelectTimeSlot(meetup)}
+                    >
+                      SELECT SLOT
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          
+          <div className="flex justify-between mt-6">
+            <Button 
+              variant="default"
+              className="bg-blue-700 hover:bg-blue-800"
+              disabled={!selectedTimeSlot || schedulingProject === selectedProject?.id}
+              onClick={handleSendInvite}
+            >
+              SEND INVITE
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              onClick={() => setIsDialogOpen(false)}
+            >
+              CANCEL
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Meeting Schedule</AlertDialogTitle>
+            <AlertDialogDescription>
+              {selectedTimeSlot && (
+                <>
+                  Are you sure you want to schedule a meeting with {selectedProject?.owner.name} for {format(new Date(selectedTimeSlot.date), "EEEE, MMMM do")} at {selectedTimeSlot.time}:00 {selectedTimeSlot.ampm}?
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleScheduleMeeting}
+              disabled={schedulingProject === selectedProject?.id}
+            >
+              {schedulingProject === selectedProject?.id ? "Scheduling..." : "Confirm Schedule"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };
