@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { CalendarIcon, Calendar, CheckIcon, X } from "lucide-react";
-import { formatDistanceToNow, format } from "date-fns";
+import { formatDistanceToNow, format, isValid, parseISO } from "date-fns";
 import { useCoachProjects } from "@/hooks/useCoachProjects";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -108,7 +108,7 @@ export const MeetupScheduleWidget = () => {
       }
       
       // Send a notification message to the project owner
-      const formattedDate = new Date(selectedTimeSlot.date).toLocaleDateString();
+      const formattedDate = formatDateSafely(selectedTimeSlot.date);
       const formattedTime = `${selectedTimeSlot.time} ${selectedTimeSlot.ampm}`;
       
       await supabase.from('coach_messages').insert({
@@ -137,20 +137,55 @@ export const MeetupScheduleWidget = () => {
     setIsDialogOpen(true);
   };
 
-  // Fixed the formatTimeSlot function to handle potential empty string input
-  const formatTimeSlot = (meetupTime: MeetupTime) => {
-    if (!meetupTime || !meetupTime.date) return { date: "", time: "" };
+  // Safe date formatting helper function
+  const formatDateSafely = (dateString: string): string => {
+    if (!dateString) return "Invalid date";
     
     try {
-      const meetupDate = new Date(meetupTime.date);
-      const formattedDate = format(meetupDate, "EEEE, MMMM do");
+      const parsedDate = parseISO(dateString);
+      
+      // Check if date is valid before formatting
+      if (!isValid(parsedDate)) {
+        console.error("Invalid date:", dateString);
+        return "Invalid date";
+      }
+      
+      return format(parsedDate, "EEEE, MMMM do");
+    } catch (error) {
+      console.error("Error formatting date:", error, dateString);
+      return "Invalid date";
+    }
+  };
+
+  // Fixed the formatTimeSlot function to handle potential errors
+  const formatTimeSlot = (meetupTime: MeetupTime) => {
+    if (!meetupTime || !meetupTime.date) return { date: "Invalid date", time: "" };
+    
+    try {
+      // Parse the date string safely
+      const parsedDate = parseISO(meetupTime.date);
+      
+      // Validate the date before formatting
+      if (!isValid(parsedDate)) {
+        console.error("Invalid date in formatTimeSlot:", meetupTime.date);
+        return { 
+          date: "Invalid date", 
+          time: meetupTime.time ? `${meetupTime.time}:00${meetupTime.ampm.toLowerCase()}` : "" 
+        };
+      }
+      
+      const formattedDate = format(parsedDate, "EEEE, MMMM do");
+      
       return {
         date: formattedDate,
         time: `${meetupTime.time}:00${meetupTime.ampm.toLowerCase()}`
       };
     } catch (error) {
-      console.error("Error formatting date:", error);
-      return { date: "Invalid date", time: `${meetupTime.time}:00${meetupTime.ampm.toLowerCase()}` };
+      console.error("Error in formatTimeSlot:", error, meetupTime);
+      return { 
+        date: "Invalid date", 
+        time: meetupTime.time ? `${meetupTime.time}:00${meetupTime.ampm.toLowerCase()}` : "" 
+      };
     }
   };
 
@@ -244,8 +279,22 @@ export const MeetupScheduleWidget = () => {
           
           <div className="mt-6 space-y-4 max-h-96 overflow-y-auto">
             {selectedProject?.meetupTimes.map((meetup, index) => {
-              const meetupDate = new Date(meetup.date);
-              const isPastDate = meetupDate < new Date();
+              // Parse and validate date before further processing
+              let parsedDate;
+              let isPastDate = false;
+              
+              try {
+                parsedDate = parseISO(meetup.date);
+                // Only check if it's a past date if parsing was successful
+                if (isValid(parsedDate)) {
+                  isPastDate = parsedDate < new Date();
+                } else {
+                  console.error("Invalid date format:", meetup.date);
+                }
+              } catch (error) {
+                console.error("Error parsing date:", error, meetup.date);
+              }
+              
               const timeSlotFormat = formatTimeSlot(meetup);
               const isSelected = selectedTimeSlot === meetup;
               
@@ -316,7 +365,7 @@ export const MeetupScheduleWidget = () => {
                   <p className="font-medium text-gray-800">Project: {selectedProject?.title}</p>
                   <div className="mt-3 bg-blue-50 p-3 rounded-md border border-blue-100">
                     <p className="font-bold text-blue-800">
-                      {format(new Date(selectedTimeSlot.date), "EEEE, MMMM do, yyyy")}
+                      {formatDateSafely(selectedTimeSlot.date)}
                     </p>
                     <p className="text-blue-700">
                       {selectedTimeSlot.time}:00 {selectedTimeSlot.ampm} EST
