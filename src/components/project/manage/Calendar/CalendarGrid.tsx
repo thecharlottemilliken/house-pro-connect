@@ -10,12 +10,14 @@ interface CalendarDay {
 }
 
 interface Event {
-  id: number | string;
+  id: string | number;
   title: string;
   date: Date;
   color: string;
   description?: string;
   location?: string;
+  project_id?: string;
+  project_title?: string;
 }
 
 interface TimeSlot {
@@ -116,7 +118,10 @@ const CalendarGrid = ({ days, timeSlots, events, viewMode }: CalendarGridProps) 
                         }}
                       >
                         <span className="text-xs whitespace-nowrap">{format(event.date, 'h:mm a')}</span>
-                        <span className="font-medium text-sm whitespace-nowrap overflow-hidden text-ellipsis">{event.title}</span>
+                        <span className="font-medium text-sm whitespace-nowrap overflow-hidden text-ellipsis">
+                          {event.title}
+                          {event.project_title && viewMode !== "Day" ? ` - ${event.project_title}` : ''}
+                        </span>
                       </div>
                     ))}
                   </div>

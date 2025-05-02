@@ -4,7 +4,7 @@ import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, UserPlus } from "lucide-react";
+import { RefreshCw, UserPlus, Calendar as CalendarIcon } from "lucide-react";
 import ProjectList from "@/components/coach/ProjectList";
 import MessageCenter from "@/components/coach/MessageCenter";
 import JWTDebugger from "@/components/debug/JWTDebugger";
@@ -12,6 +12,7 @@ import { useCoachProjects } from "@/hooks/useCoachProjects";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { MeetupScheduleWidget } from "@/components/coach/MeetupScheduleWidget";
+import CoachCalendarView from "@/components/coach/CoachCalendarView";
 
 const CoachDashboard = () => {
   const [activeTab, setActiveTab] = useState("projects");
@@ -81,14 +82,24 @@ const CoachDashboard = () => {
         {/* Add the MeetupScheduleWidget here, above the tabs */}
         <MeetupScheduleWidget />
         
-        <Tabs defaultValue="projects" value={activeTab} onValueChange={setActiveTab}>
+        <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-8">
-            <TabsTrigger value="projects">All Projects</TabsTrigger>
+            <TabsTrigger value="projects">Open Projects</TabsTrigger>
+            <TabsTrigger value="calendar">
+              <CalendarIcon className="h-4 w-4 mr-2" />
+              Calendar
+            </TabsTrigger>
             <TabsTrigger value="messages">Message Center</TabsTrigger>
           </TabsList>
           
           <TabsContent value="projects" className="space-y-6">
             <ProjectList />
+          </TabsContent>
+          
+          <TabsContent value="calendar" className="space-y-6">
+            <Card className="p-6">
+              <CoachCalendarView />
+            </Card>
           </TabsContent>
           
           <TabsContent value="messages" className="space-y-6">
