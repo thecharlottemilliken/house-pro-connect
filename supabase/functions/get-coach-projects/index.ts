@@ -70,7 +70,8 @@ serve(async (req) => {
         created_at,
         state,
         user_id,
-        property_id
+        property_id,
+        management_preferences
       `)
       .order("created_at", { ascending: false });
 
@@ -153,7 +154,8 @@ serve(async (req) => {
         created_at: project.created_at,
         state: project.state,
         property,
-        owner
+        owner,
+        management_preferences: project.management_preferences
       };
     });
 

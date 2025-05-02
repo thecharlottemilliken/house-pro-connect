@@ -11,6 +11,7 @@ import JWTDebugger from "@/components/debug/JWTDebugger";
 import { useCoachProjects } from "@/hooks/useCoachProjects";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { MeetupScheduleWidget } from "@/components/coach/MeetupScheduleWidget";
 
 const CoachDashboard = () => {
   const [activeTab, setActiveTab] = useState("projects");
@@ -76,6 +77,9 @@ const CoachDashboard = () => {
             </Button>
           </div>
         </div>
+        
+        {/* Add the MeetupScheduleWidget here, above the tabs */}
+        <MeetupScheduleWidget />
         
         <Tabs defaultValue="projects" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-8">

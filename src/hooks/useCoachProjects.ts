@@ -19,6 +19,7 @@ export interface Project {
     name: string;
     email: string;
   };
+  management_preferences?: any; // Added management preferences
 }
 
 export const useCoachProjects = () => {
