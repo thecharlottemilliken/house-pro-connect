@@ -37,10 +37,19 @@ const EventsCard = () => {
   }, [projectId]);
   
   const formatEventTime = (startTime: string, endTime: string) => {
-    const start = parseISO(startTime);
-    const end = parseISO(endTime);
-    
-    return `${format(start, 'h:mm a')} - ${format(end, 'h:mm a')}`;
+    try {
+      const start = parseISO(startTime);
+      const end = parseISO(endTime);
+      
+      if (!isValid(start) || !isValid(end)) {
+        return "Invalid time";
+      }
+      
+      return `${format(start, 'h:mm a')} - ${format(end, 'h:mm a')}`;
+    } catch (error) {
+      console.error("Error formatting event time:", error);
+      return "Invalid time";
+    }
   };
 
   return (

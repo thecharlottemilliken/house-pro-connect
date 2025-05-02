@@ -140,20 +140,38 @@ export const MeetupScheduleWidget = () => {
       }
       
       // 3. Add event to the project calendar
-      const [startTime] = selectedTimeSlot.time.split(":00");
-      const meetingDate = new Date(selectedTimeSlot.date);
-      
-      // Set the hours based on AM/PM
-      const hour = parseInt(startTime);
-      const adjustedHour = selectedTimeSlot.ampm === "PM" && hour < 12 
-        ? hour + 12 
-        : (selectedTimeSlot.ampm === "AM" && hour === 12 ? 0 : hour);
-      
-      meetingDate.setHours(adjustedHour, 0, 0, 0);
-      const endTime = new Date(meetingDate);
-      endTime.setHours(endTime.getHours() + 1); // 1-hour meeting
-      
+      // Fix: Create valid Date objects from the selected time slot
       try {
+        // Parse the date from the time slot safely
+        if (!selectedTimeSlot.date) {
+          throw new Error("Invalid meeting date");
+        }
+        
+        // Create a Date object for the meeting
+        const meetingDate = new Date(selectedTimeSlot.date);
+        if (!isValid(meetingDate)) {
+          throw new Error("Invalid date format");
+        }
+        
+        // Extract the hour from the time string (e.g., "8:00 - 9:00" -> "8")
+        let startHour = 0;
+        if (selectedTimeSlot.time) {
+          // Make sure we correctly extract the hour value
+          const timeMatch = selectedTimeSlot.time.match(/^(\d+)/);
+          if (timeMatch && timeMatch[1]) {
+            startHour = parseInt(timeMatch[1]);
+          }
+        }
+        
+        // Set the hours based on AM/PM
+        const adjustedHour = selectedTimeSlot.ampm === "PM" && startHour < 12 
+          ? startHour + 12 
+          : (selectedTimeSlot.ampm === "AM" && startHour === 12 ? 0 : startHour);
+        
+        meetingDate.setHours(adjustedHour, 0, 0, 0);
+        const endTime = new Date(meetingDate);
+        endTime.setHours(endTime.getHours() + 1); // 1-hour meeting
+        
         await EventsService.createProjectEvent({
           project_id: selectedProject.id,
           title: `Coaching Session: ${selectedProject.title}`,
@@ -226,8 +244,9 @@ export const MeetupScheduleWidget = () => {
       return date.toISOString();
     }
     
-    // Return original if we can't parse it
-    return dateStr;
+    console.warn("Could not parse date string:", dateStr);
+    // Return a fallback ISO string if we can't parse it
+    return new Date().toISOString();
   };
 
   // Format time slot display
@@ -240,15 +259,19 @@ export const MeetupScheduleWidget = () => {
       // Format the date safely
       const formattedDate = formatDateSafely(meetupTime.date);
       
+      // Handle the time values safely
+      const timeStr = meetupTime.time || "";
+      const ampmStr = meetupTime.ampm ? meetupTime.ampm.toLowerCase() : "";
+      
       return {
         date: formattedDate,
-        time: `${meetupTime.time}:00${meetupTime.ampm.toLowerCase()}`
+        time: timeStr ? `${timeStr}${ampmStr}` : ""
       };
     } catch (error) {
       console.error("Error in formatTimeSlot:", error, meetupTime);
       return { 
         date: "Invalid date", 
-        time: meetupTime.time ? `${meetupTime.time}:00${meetupTime.ampm.toLowerCase()}` : "" 
+        time: meetupTime.time ? `${meetupTime.time}${meetupTime.ampm?.toLowerCase() || ""}` : "" 
       };
     }
   };
