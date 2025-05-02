@@ -64,16 +64,24 @@ export const parseTimeRange = (timeString: string): { startHour: number; endHour
   };
 };
 
-// Parse a time slot to get a Date object with the correct time
-export const parseTimeSlotToDate = (timeSlot: FormattedTimeSlot | TimeSlot): { startDate: Date | null; endDate: Date | null } => {
+// Updated interface for more generic time slot input to handle MeetupTime
+export interface GenericTimeSlot {
+  dateStr?: string | null;
+  date?: Date | string | null;
+  time: string;
+  ampm: string | "AM" | "PM";
+}
+
+// Parse a time slot to get a Date object with the correct time - updated to accept more generic inputs
+export const parseTimeSlotToDate = (timeSlot: GenericTimeSlot): { startDate: Date | null; endDate: Date | null } => {
   if (!timeSlot) {
     return { startDate: null, endDate: null };
   }
   
   // Get the date source - either dateStr or date property
-  const dateSource = 'dateStr' in timeSlot ? 
+  const dateSource = timeSlot.dateStr !== undefined ? 
     timeSlot.dateStr : 
-    (timeSlot.date instanceof Date ? timeSlot.date : null);
+    (timeSlot.date !== undefined ? timeSlot.date : null);
   
   if (!dateSource) {
     return { startDate: null, endDate: null };
@@ -82,7 +90,9 @@ export const parseTimeSlotToDate = (timeSlot: FormattedTimeSlot | TimeSlot): { s
   // Create a Date object
   let baseDate: Date;
   try {
-    baseDate = typeof dateSource === 'string' ? new Date(dateSource) : dateSource;
+    baseDate = typeof dateSource === 'string' ? new Date(dateSource) : 
+              dateSource instanceof Date ? dateSource : new Date();
+              
     if (isNaN(baseDate.getTime())) {
       console.error("Invalid date:", dateSource);
       return { startDate: null, endDate: null };
@@ -96,13 +106,14 @@ export const parseTimeSlotToDate = (timeSlot: FormattedTimeSlot | TimeSlot): { s
   const { startHour, endHour } = parseTimeRange(timeSlot.time);
   
   // Adjust hours for AM/PM
-  const adjustedStartHour = timeSlot.ampm === "PM" && startHour < 12 ? 
+  const ampm = typeof timeSlot.ampm === 'string' ? timeSlot.ampm.toUpperCase() as "AM" | "PM" : timeSlot.ampm;
+  const adjustedStartHour = ampm === "PM" && startHour < 12 ? 
     startHour + 12 : 
-    (timeSlot.ampm === "AM" && startHour === 12 ? 0 : startHour);
+    (ampm === "AM" && startHour === 12 ? 0 : startHour);
     
-  const adjustedEndHour = timeSlot.ampm === "PM" && endHour < 12 ? 
+  const adjustedEndHour = ampm === "PM" && endHour < 12 ? 
     endHour + 12 : 
-    (timeSlot.ampm === "AM" && endHour === 12 ? 0 : endHour);
+    (ampm === "AM" && endHour === 12 ? 0 : endHour);
   
   // Create start and end date objects
   const startDate = new Date(baseDate);
