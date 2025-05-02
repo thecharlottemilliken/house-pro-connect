@@ -137,8 +137,9 @@ export const MeetupScheduleWidget = () => {
     setIsDialogOpen(true);
   };
 
+  // Fixed the formatTimeSlot function to handle potential empty string input
   const formatTimeSlot = (meetupTime: MeetupTime) => {
-    if (!meetupTime.date) return "";
+    if (!meetupTime || !meetupTime.date) return { date: "", time: "" };
     
     try {
       const meetupDate = new Date(meetupTime.date);
