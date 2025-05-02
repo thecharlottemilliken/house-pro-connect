@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
@@ -28,7 +29,7 @@ interface Property {
   status?: string;
   lat?: number;
   lng?: number;
-  home_type?: string | null;  // Adding the missing property
+  home_type?: string | null;
 }
 
 const Properties = () => {

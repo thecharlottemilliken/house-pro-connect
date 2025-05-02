@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -236,6 +237,7 @@ function App() {
           </ProtectedRoute>
         } />
         <Route path="/properties" element={<Properties />} />
+        <Route path="/your-properties" element={<Properties />} />
         <Route path="/property/:id" element={<PropertyDetails />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
