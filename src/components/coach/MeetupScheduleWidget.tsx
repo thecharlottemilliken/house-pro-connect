@@ -142,7 +142,9 @@ export const MeetupScheduleWidget = () => {
     if (!dateString) return "Invalid date";
     
     try {
-      const parsedDate = parseISO(dateString);
+      // Make sure we're working with a properly formatted ISO string
+      const isoDateString = ensureISODateString(dateString);
+      const parsedDate = parseISO(isoDateString);
       
       // Check if date is valid before formatting
       if (!isValid(parsedDate)) {
@@ -158,25 +160,34 @@ export const MeetupScheduleWidget = () => {
     }
   };
 
-  // Fixed the formatTimeSlot function to handle potential errors
+  // Ensure date string is in ISO format
+  const ensureISODateString = (dateStr: string): string => {
+    // If it's already a valid ISO string, return it
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/.test(dateStr) || 
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(dateStr) ||
+        /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      return dateStr;
+    }
+    
+    // Try to convert it to an ISO string
+    const date = new Date(dateStr);
+    if (isValid(date)) {
+      return date.toISOString();
+    }
+    
+    // Return original if we can't parse it
+    return dateStr;
+  };
+
+  // Format time slot display
   const formatTimeSlot = (meetupTime: MeetupTime) => {
-    if (!meetupTime || !meetupTime.date) return { date: "Invalid date", time: "" };
+    if (!meetupTime || !meetupTime.date) {
+      return { date: "Invalid date", time: "" };
+    }
     
     try {
-      // Parse the date string safely
-      const parsedDate = parseISO(meetupTime.date);
-      
-      // Validate the date before formatting
-      if (!isValid(parsedDate)) {
-        console.error("Invalid date in formatTimeSlot:", meetupTime.date);
-        return { 
-          date: "Invalid date", 
-          time: meetupTime.time ? `${meetupTime.time}:00${meetupTime.ampm.toLowerCase()}` : "" 
-        };
-      }
-      
-      // Format as "Monday, December 25th, 2023" (including year)
-      const formattedDate = format(parsedDate, "EEEE, MMMM do, yyyy");
+      // Format the date safely
+      const formattedDate = formatDateSafely(meetupTime.date);
       
       return {
         date: formattedDate,
@@ -282,11 +293,12 @@ export const MeetupScheduleWidget = () => {
           <div className="mt-6 space-y-4 max-h-96 overflow-y-auto">
             {selectedProject?.meetupTimes.map((meetup, index) => {
               // Parse and validate date before further processing
-              let parsedDate;
               let isPastDate = false;
               
               try {
-                parsedDate = parseISO(meetup.date);
+                const isoDate = ensureISODateString(meetup.date);
+                const parsedDate = parseISO(isoDate);
+                
                 // Only check if it's a past date if parsing was successful
                 if (isValid(parsedDate)) {
                   isPastDate = parsedDate < new Date();
