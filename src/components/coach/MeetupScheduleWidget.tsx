@@ -137,7 +137,7 @@ export const MeetupScheduleWidget = () => {
     setIsDialogOpen(true);
   };
 
-  // Safe date formatting helper function
+  // Safe date formatting helper function with proper format
   const formatDateSafely = (dateString: string): string => {
     if (!dateString) return "Invalid date";
     
@@ -150,7 +150,8 @@ export const MeetupScheduleWidget = () => {
         return "Invalid date";
       }
       
-      return format(parsedDate, "EEEE, MMMM do");
+      // Format as "Monday, December 25th, 2023" (including year)
+      return format(parsedDate, "EEEE, MMMM do, yyyy");
     } catch (error) {
       console.error("Error formatting date:", error, dateString);
       return "Invalid date";
@@ -174,7 +175,8 @@ export const MeetupScheduleWidget = () => {
         };
       }
       
-      const formattedDate = format(parsedDate, "EEEE, MMMM do");
+      // Format as "Monday, December 25th, 2023" (including year)
+      const formattedDate = format(parsedDate, "EEEE, MMMM do, yyyy");
       
       return {
         date: formattedDate,
