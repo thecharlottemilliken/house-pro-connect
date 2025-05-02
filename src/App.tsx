@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -37,8 +36,10 @@ import ProjectSOW from "./pages/ProjectSOW";
 import SOWReviewPage from "@/components/project/sow/SOWReviewPage";
 import Jobs from "./pages/Jobs";
 import JobDetails from "./pages/JobDetails";
+import Properties from "./pages/Properties";
+import PropertyDetails from "./pages/PropertyDetails";
 
-const App = () => {
+function App() {
   return (
     <>
       <Routes>
@@ -234,12 +235,14 @@ const App = () => {
             </TooltipProvider>
           </ProtectedRoute>
         } />
+        <Route path="/properties" element={<Properties />} />
+        <Route path="/property/:id" element={<PropertyDetails />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Toaster />
       <Sonner />
     </>
   );
-};
+}
 
 export default App;
