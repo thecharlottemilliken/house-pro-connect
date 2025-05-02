@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
@@ -29,6 +28,7 @@ interface Property {
   status?: string;
   lat?: number;
   lng?: number;
+  home_type?: string | null;  // Adding the missing property
 }
 
 const Properties = () => {
@@ -91,7 +91,8 @@ const Properties = () => {
         price: Math.floor(Math.random() * 800000) + 200000, // Random price between 200k and 1M
         status: Math.random() > 0.2 ? 'active' : 'sold',
         lat: 40.7608 + (Math.random() * 0.02 - 0.01), // Default to SLC coordinates with slight randomness
-        lng: -111.8910 + (Math.random() * 0.02 - 0.01)
+        lng: -111.8910 + (Math.random() * 0.02 - 0.01),
+        home_type: property.home_type || (Math.random() > 0.5 ? 'house' : 'apartment') // Ensure home_type is populated
       }));
       
       setProperties(enhancedProperties);
