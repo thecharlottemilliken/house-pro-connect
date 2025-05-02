@@ -37,7 +37,7 @@ const DesignPreferences = () => {
   const [hasDesigns, setHasDesigns] = useState<boolean>(true);
   
   const [designers, setDesigners] = useState([
-    { businessName: "", contactName: "", email: "", phone: "", speciality: "Architecture" }
+    { businessName: "", contactName: "", email: "", phone: "", speciality: "Architecture", assignedArea: "" }
   ]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -47,6 +47,7 @@ const DesignPreferences = () => {
     contactName: "",
     email: "",
     phone: "",
+    assignedArea: "",
   });
 
   // Consolidated file upload state
@@ -249,7 +250,7 @@ const DesignPreferences = () => {
   };
 
   const addAnotherDesigner = () => {
-    setDesigners([...designers, { businessName: "", contactName: "", email: "", phone: "", speciality: "Architecture" }]);
+    setDesigners([...designers, { businessName: "", contactName: "", email: "", phone: "", speciality: "Architecture", assignedArea: "" }]);
   };
 
   const updateDesigner = (index: number, field: string, value: string) => {
@@ -391,6 +392,28 @@ const DesignPreferences = () => {
                         onChange={(e) => updateDesignerContactInfo("phone", e.target.value)}
                       />
                     </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Assigned Room
+                      </label>
+                      <Select 
+                        value={designerContactInfo.assignedArea} 
+                        onValueChange={(value) => updateDesignerContactInfo("assignedArea", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a room to assign" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectItem value="">All Rooms</SelectItem>
+                            {renovationAreas.map((area) => (
+                              <SelectItem key={area.area} value={area.area}>{area.area}</SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
 
@@ -504,6 +527,28 @@ const DesignPreferences = () => {
                               <SelectItem value="Landscape Design">Landscape Design</SelectItem>
                               <SelectItem value="Kitchen Design">Kitchen Design</SelectItem>
                               <SelectItem value="Bathroom Design">Bathroom Design</SelectItem>
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Assigned Room
+                        </label>
+                        <Select 
+                          value={designer.assignedArea} 
+                          onValueChange={(value) => updateDesigner(index, "assignedArea", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a room to assign" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectGroup>
+                              <SelectItem value="">All Rooms</SelectItem>
+                              {renovationAreas.map((area) => (
+                                <SelectItem key={area.area} value={area.area}>{area.area}</SelectItem>
+                              ))}
                             </SelectGroup>
                           </SelectContent>
                         </Select>
