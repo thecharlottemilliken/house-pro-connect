@@ -219,22 +219,22 @@ export const MeetupScheduleWidget = () => {
         </div>
       </CardContent>
 
-      {/* Schedule Meeting Dialog */}
+      {/* Schedule Meeting Dialog - Updated for on-brand styling */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-lg bg-white border-none shadow-lg">
+          <DialogHeader className="border-b pb-4">
             <div className="flex justify-between items-center">
-              <DialogTitle className="text-2xl font-bold">Schedule a Meeting</DialogTitle>
+              <DialogTitle className="text-2xl font-bold text-gray-900">Schedule a Meeting</DialogTitle>
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="h-6 w-6" 
+                className="h-8 w-8 rounded-full" 
                 onClick={() => setIsDialogOpen(false)}
               >
                 <X className="h-4 w-4" />
               </Button>
             </div>
-            <DialogDescription className="text-xl font-semibold mt-6">
+            <DialogDescription className="text-xl font-semibold mt-6 text-gray-800">
               Select from the available time slots.
             </DialogDescription>
             <p className="text-gray-600 mt-2">
@@ -259,12 +259,13 @@ export const MeetupScheduleWidget = () => {
                   }`}
                 >
                   <div>
-                    <p className="font-medium">{timeSlotFormat.date}</p>
-                    <p>{meetup.time}:00 {meetup.ampm} EST</p>
+                    <p className="font-medium text-gray-900">{timeSlotFormat.date}</p>
+                    <p className="text-gray-600">{meetup.time}:00 {meetup.ampm} EST</p>
                   </div>
                   
                   {isSelected ? (
-                    <div className="bg-blue-700 text-white px-4 py-2 rounded">
+                    <div className="bg-blue-700 text-white px-4 py-2 rounded flex items-center gap-2">
+                      <CheckIcon className="h-4 w-4" />
                       SELECTED
                     </div>
                   ) : (
@@ -282,7 +283,7 @@ export const MeetupScheduleWidget = () => {
             })}
           </div>
           
-          <div className="flex justify-between mt-6">
+          <div className="flex justify-between mt-6 pt-4 border-t">
             <Button 
               variant="default"
               className="bg-blue-700 hover:bg-blue-800"
@@ -302,24 +303,37 @@ export const MeetupScheduleWidget = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Confirmation Dialog */}
+      {/* Confirmation Dialog - Updated for on-brand styling */}
       <AlertDialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-white border-none shadow-lg max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Meeting Schedule</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-xl font-bold text-gray-900">Confirm Meeting Schedule</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-600">
               {selectedTimeSlot && (
-                <>
-                  Are you sure you want to schedule a meeting with {selectedProject?.owner.name} for {format(new Date(selectedTimeSlot.date), "EEEE, MMMM do")} at {selectedTimeSlot.time}:00 {selectedTimeSlot.ampm}?
-                </>
+                <div className="text-left mt-2">
+                  <p>Are you sure you want to schedule a meeting with:</p>
+                  <p className="font-medium text-gray-800 mt-3">Resident: {selectedProject?.owner.name}</p>
+                  <p className="font-medium text-gray-800">Project: {selectedProject?.title}</p>
+                  <div className="mt-3 bg-blue-50 p-3 rounded-md border border-blue-100">
+                    <p className="font-bold text-blue-800">
+                      {format(new Date(selectedTimeSlot.date), "EEEE, MMMM do, yyyy")}
+                    </p>
+                    <p className="text-blue-700">
+                      {selectedTimeSlot.time}:00 {selectedTimeSlot.ampm} EST
+                    </p>
+                  </div>
+                </div>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogFooter className="border-t pt-4 mt-4">
+            <AlertDialogCancel className="text-gray-600 hover:text-gray-900 hover:bg-gray-100">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleScheduleMeeting}
               disabled={schedulingProject === selectedProject?.id}
+              className="bg-blue-700 hover:bg-blue-800 text-white"
             >
               {schedulingProject === selectedProject?.id ? "Scheduling..." : "Confirm Schedule"}
             </AlertDialogAction>
@@ -329,4 +343,3 @@ export const MeetupScheduleWidget = () => {
     </Card>
   );
 };
-
