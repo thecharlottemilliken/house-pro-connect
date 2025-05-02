@@ -108,6 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       console.log("Creating account with metadata:", userMetadata);
       
+      // First create the user account
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -126,10 +127,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       console.log("Account created successfully with role:", userData.role);
-      toast({
-        title: "Account created successfully",
-        description: "You can now sign in with your credentials",
-      });
+      
+      // Make sure a profile record is properly created in the database
+      if (data?.user) {
+        try {
+          // Check if profile exists
+          const { data: profileData, error: profileCheckError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('id', data.user.id)
+            .single();
+            
+          // If profile doesn't exist, create it manually
+          if (profileCheckError || !profileData) {
+            const { error: insertError } = await supabase
+              .from('profiles')
+              .insert({
+                id: data.user.id,
+                name: userMetadata.name,
+                email: email,
+                role: userMetadata.role,
+              });
+              
+            if (insertError) {
+              console.error("Error creating profile record:", insertError);
+            } else {
+              console.log("Profile record created successfully");
+            }
+          }
+        } catch (profileError) {
+          console.error("Error checking/creating profile:", profileError);
+        }
+      }
       
       // For coaching accounts, explicitly call the set-claims function after signup
       if (userData.role === 'coach' && data?.user) {
@@ -153,6 +182,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
       
+      toast({
+        title: "Account created successfully",
+        description: "You can now sign in with your credentials",
+      });
+
       // Now sign in with the credentials
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
