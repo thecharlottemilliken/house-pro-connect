@@ -10,10 +10,12 @@ interface CalendarDay {
 }
 
 interface Event {
-  id: number;
+  id: number | string;
   title: string;
   date: Date;
   color: string;
+  description?: string;
+  location?: string;
 }
 
 interface TimeSlot {
@@ -30,8 +32,8 @@ interface CalendarGridProps {
 
 const CalendarGrid = ({ days, timeSlots, events, viewMode }: CalendarGridProps) => {
   // Get events for a specific day and timeSlot
-  const getEventForTimeSlot = (date: Date, time: number) => {
-    return events.find(event => {
+  const getEventsForTimeSlot = (date: Date, time: number) => {
+    return events.filter(event => {
       const eventHour = event.date.getHours();
       return isSameDay(event.date, date) && eventHour === time;
     });
@@ -95,7 +97,7 @@ const CalendarGrid = ({ days, timeSlots, events, viewMode }: CalendarGridProps) 
               isToday(day.fullDate) && "bg-blue-50"
             )}>
               {timeSlots.map((timeSlot, timeIndex) => {
-                const event = getEventForTimeSlot(day.fullDate, timeSlot.time);
+                const eventsForSlot = getEventsForTimeSlot(day.fullDate, timeSlot.time);
                 return (
                   <div 
                     key={timeIndex} 
@@ -104,15 +106,19 @@ const CalendarGrid = ({ days, timeSlots, events, viewMode }: CalendarGridProps) 
                       timeIndex < timeSlots.length - 1 && "border-b border-gray-200"
                     )}
                   >
-                    {event && (
+                    {eventsForSlot.length > 0 && eventsForSlot.map((event, eventIndex) => (
                       <div 
-                        className="absolute inset-1 rounded-md p-2 text-white flex flex-col"
-                        style={{ backgroundColor: event.color }}
+                        key={`${event.id}-${eventIndex}`}
+                        className="absolute inset-1 rounded-md p-2 text-white flex flex-col overflow-hidden"
+                        style={{ 
+                          backgroundColor: event.color,
+                          top: eventIndex > 0 ? `${eventIndex * 5}px` : '4px'
+                        }}
                       >
-                        <span className="text-xs">{format(event.date, 'h:mm a')}</span>
-                        <span className="font-medium">{event.title}</span>
+                        <span className="text-xs whitespace-nowrap">{format(event.date, 'h:mm a')}</span>
+                        <span className="font-medium text-sm whitespace-nowrap overflow-hidden text-ellipsis">{event.title}</span>
                       </div>
-                    )}
+                    ))}
                   </div>
                 );
               })}

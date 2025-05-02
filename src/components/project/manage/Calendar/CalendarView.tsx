@@ -1,30 +1,82 @@
 
 import { useState, useEffect } from "react";
-import { format, addDays, startOfWeek, endOfWeek, addMonths, parseISO, isSameDay } from "date-fns";
+import { format, addDays, startOfWeek, endOfWeek, addMonths, parseISO, isSameDay, isAfter } from "date-fns";
 import CalendarHeader from "./CalendarHeader";
 import MiniCalendar from "./MiniCalendar";
 import EventsList from "./EventsList";
 import CalendarGrid from "./CalendarGrid";
+import { useParams } from "react-router-dom";
+import { EventsService, ProjectEvent } from "@/components/project/calendar/EventsService";
+import { toast } from "sonner";
+
+interface CalendarDay {
+  day: number;
+  name: string;
+  month: string;
+  fullDate: Date;
+}
 
 interface Event {
-  id: number;
+  id: number | string;
   title: string;
   date: Date;
   color: string;
+  description?: string;
+  location?: string;
 }
 
 const CalendarView = () => {
+  const { projectId } = useParams<{ projectId: string }>();
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<"Day" | "Week" | "Month">("Week");
+  const [events, setEvents] = useState<Event[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   // Set up days for the week view
-  const [days, setDays] = useState<Array<{
-    day: number;
-    name: string;
-    month: string;
-    fullDate: Date;
-  }>>([]);
+  const [days, setDays] = useState<Array<CalendarDay>>([]);
+  
+  // Fetch real events from database
+  useEffect(() => {
+    const fetchEvents = async () => {
+      if (!projectId) return;
+      
+      try {
+        setIsLoading(true);
+        const projectEvents = await EventsService.getProjectEvents(projectId);
+        
+        // Map database events to calendar events
+        const mappedEvents = projectEvents.map(event => {
+          // Color based on event type
+          let color = "#4bc8eb"; // Default blue
+          
+          if (event.event_type === "coaching_session") {
+            color = "#9b74e9"; // Purple for coaching sessions
+          } else if (event.event_type === "milestone") {
+            color = "#e84c88"; // Pink for milestones
+          }
+          
+          return {
+            id: event.id || "",
+            title: event.title,
+            date: parseISO(event.start_time),
+            color: color,
+            description: event.description,
+            location: event.location
+          };
+        });
+        
+        setEvents(mappedEvents);
+      } catch (error) {
+        console.error("Error fetching calendar events:", error);
+        toast.error("Failed to load calendar events");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchEvents();
+  }, [projectId]);
   
   // Update days when current date changes
   useEffect(() => {
@@ -60,29 +112,10 @@ const CalendarView = () => {
     { label: "12 PM", time: 12 },
     { label: "1 PM", time: 13 },
     { label: "2 PM", time: 14 },
-    { label: "3 PM", time: 15 }
-  ];
-  
-  // Sample events data with real dates
-  const events: Event[] = [
-    { 
-      id: 1, 
-      title: "Tile Delivery", 
-      date: addDays(new Date(), -1), 
-      color: "#e84c88"
-    },
-    { 
-      id: 2, 
-      title: "Tile Labor", 
-      date: addDays(new Date(), 2), 
-      color: "#4bc8eb"
-    },
-    { 
-      id: 3, 
-      title: "Coach Call", 
-      date: addDays(new Date(), 2), 
-      color: "#9b74e9"
-    }
+    { label: "3 PM", time: 15 },
+    { label: "4 PM", time: 16 },
+    { label: "5 PM", time: 17 },
+    { label: "6 PM", time: 18 }
   ];
   
   // Navigation functions
@@ -135,12 +168,14 @@ const CalendarView = () => {
   // Filter events for today and tomorrow
   const getTodayEvents = () => {
     const today = new Date();
-    return events.filter(event => isSameDay(event.date, today));
+    return events.filter(event => isSameDay(event.date, today))
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
   };
   
   const getTomorrowEvents = () => {
     const tomorrow = addDays(new Date(), 1);
-    return events.filter(event => isSameDay(event.date, tomorrow));
+    return events.filter(event => isSameDay(event.date, tomorrow))
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
   };
   
   // Handle date selection in the mini calendar
