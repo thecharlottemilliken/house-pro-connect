@@ -4,10 +4,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { CalendarIcon, CheckIcon } from "lucide-react";
+import { CalendarIcon, Calendar, CheckIcon } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useCoachProjects } from "@/hooks/useCoachProjects";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface MeetupTime {
   date: string;
@@ -30,6 +38,8 @@ interface ProjectWithMeetups {
 export const MeetupScheduleWidget = () => {
   const { projects, isLoading, fetchProjects } = useCoachProjects();
   const [schedulingProject, setSchedulingProject] = useState<string | null>(null);
+  const [selectedProject, setSelectedProject] = useState<ProjectWithMeetups | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   // Filter projects that have meetup times and haven't been scheduled yet
   const projectsWithMeetups = projects
@@ -106,12 +116,18 @@ export const MeetupScheduleWidget = () => {
       
       toast.success("Meeting scheduled successfully!");
       fetchProjects();
+      setIsDialogOpen(false);
     } catch (error) {
       console.error("Error scheduling meeting:", error);
       toast.error("Failed to schedule meeting. Please try again.");
     } finally {
       setSchedulingProject(null);
     }
+  };
+
+  const openScheduleDialog = (project: ProjectWithMeetups) => {
+    setSelectedProject(project);
+    setIsDialogOpen(true);
   };
 
   if (isLoading) {
@@ -156,37 +172,58 @@ export const MeetupScheduleWidget = () => {
                     Created {formatDistanceToNow(new Date(project.created_at), { addSuffix: true })}
                   </p>
                 </div>
-              </div>
-              
-              <div className="mt-4">
-                <h4 className="text-sm font-medium mb-2">Available meeting times:</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                  {project.meetupTimes.filter(time => time.date).map((meetup, index) => {
-                    const meetupDate = new Date(meetup.date);
-                    const isPastDate = meetupDate < new Date();
-                    
-                    return (
-                      <Button
-                        key={index}
-                        variant="outline"
-                        size="sm"
-                        className={`flex items-center justify-start gap-2 ${isPastDate ? 'opacity-50' : ''}`}
-                        onClick={() => !isPastDate && handleScheduleMeeting(project.id, meetup)}
-                        disabled={isPastDate || schedulingProject === project.id}
-                      >
-                        <CalendarIcon className="h-4 w-4" />
-                        <span>
-                          {meetupDate.toLocaleDateString()} {meetup.time} {meetup.ampm}
-                        </span>
-                      </Button>
-                    );
-                  })}
-                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                  onClick={() => openScheduleDialog(project)}
+                >
+                  <Calendar className="h-4 w-4" />
+                  Schedule Meeting
+                </Button>
               </div>
             </div>
           ))}
         </div>
       </CardContent>
+
+      {/* Meeting time selection dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Schedule Meeting Time</DialogTitle>
+            <DialogDescription>
+              Select a time slot for your coaching session with {selectedProject?.owner.name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="mt-4">
+            <h4 className="text-sm font-medium mb-2">Available meeting times:</h4>
+            <div className="grid grid-cols-1 gap-2 max-h-72 overflow-y-auto">
+              {selectedProject?.meetupTimes.filter(time => time.date).map((meetup, index) => {
+                const meetupDate = new Date(meetup.date);
+                const isPastDate = meetupDate < new Date();
+                
+                return (
+                  <Button
+                    key={index}
+                    variant="outline"
+                    size="sm"
+                    className={`flex items-center justify-start gap-2 ${isPastDate ? 'opacity-50' : ''}`}
+                    onClick={() => !isPastDate && handleScheduleMeeting(selectedProject.id, meetup)}
+                    disabled={isPastDate || schedulingProject === selectedProject?.id}
+                  >
+                    <CalendarIcon className="h-4 w-4" />
+                    <span>
+                      {meetupDate.toLocaleDateString()} {meetup.time} {meetup.ampm}
+                    </span>
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
