@@ -17,9 +17,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { parseTimeSlotToDate } from "@/utils/timeSlotFormatters";
 
 interface MeetupTime {
-  date: string;
+  id: number;
+  date?: string;
   dateStr?: string; // Added optional dateStr property to handle both formats
   time: string;
   ampm: "AM" | "PM";
@@ -144,53 +146,31 @@ export const MeetupScheduleWidget = () => {
       
       // 3. Add event to the project calendar
       try {
-        // Use dateStr if available, otherwise fallback to date property
-        const dateSource = selectedTimeSlot.dateStr || selectedTimeSlot.date;
-        if (!dateSource) {
-          throw new Error("Invalid meeting date");
+        // Parse the time slot to get proper Date objects for the event
+        const { startDate, endDate } = parseTimeSlotToDate(selectedTimeSlot);
+        
+        if (!startDate || !endDate) {
+          throw new Error("Could not parse meeting date and time");
         }
         
-        // Create a Date object for the meeting
-        const meetingDate = new Date(dateSource);
-        if (!isValid(meetingDate)) {
-          throw new Error("Invalid date format");
-        }
-        
-        // Extract the hour from the time string (e.g., "8:00 - 9:00" -> "8")
-        let startHour = 0;
-        if (selectedTimeSlot.time) {
-          // Make sure we correctly extract the hour value
-          const timeMatch = selectedTimeSlot.time.match(/^(\d+)/);
-          if (timeMatch && timeMatch[1]) {
-            startHour = parseInt(timeMatch[1]);
-          }
-        }
-        
-        // Set the hours based on AM/PM
-        const adjustedHour = selectedTimeSlot.ampm === "PM" && startHour < 12 
-          ? startHour + 12 
-          : (selectedTimeSlot.ampm === "AM" && startHour === 12 ? 0 : startHour);
-        
-        meetingDate.setHours(adjustedHour, 0, 0, 0);
-        const endTime = new Date(meetingDate);
-        endTime.setHours(endTime.getHours() + 1); // 1-hour meeting
-        
+        // Create the calendar event
         await EventsService.createProjectEvent({
           project_id: selectedProject.id,
           title: `Coaching Session: ${selectedProject.title}`,
           description: `Initial coaching session for project: ${selectedProject.title}`,
-          start_time: meetingDate.toISOString(),
-          end_time: endTime.toISOString(),
+          start_time: startDate.toISOString(),
+          end_time: endDate.toISOString(),
           location: "Video Call",
           event_type: "coaching_session",
           created_by: (await supabase.auth.getUser()).data.user?.id || ''
         });
+        
+        toast.success("Meeting scheduled and added to project calendar!");
       } catch (calendarError) {
         console.error("Error adding calendar event:", calendarError);
         toast.warning("Meeting scheduled, but calendar event creation failed.");
       }
       
-      toast.success("Meeting scheduled successfully!");
       fetchProjects(); // 2. Refresh to remove the project from pending list
       setIsDialogOpen(false);
       setIsConfirmDialogOpen(false);
@@ -452,7 +432,7 @@ export const MeetupScheduleWidget = () => {
                   <p className="font-medium text-gray-800">Project: {selectedProject?.title}</p>
                   <div className="mt-3 bg-blue-50 p-3 rounded-md border border-blue-100">
                     <p className="font-bold text-blue-800">
-                      {formatDateSafely(selectedTimeSlot.dateStr || selectedTimeSlot.date)}
+                      {formatDateSafely(selectedTimeSlot.dateStr || selectedTimeSlot.date || '')}
                     </p>
                     <p className="text-blue-700">
                       {selectedTimeSlot.time} {selectedTimeSlot.ampm} EST
@@ -479,4 +459,3 @@ export const MeetupScheduleWidget = () => {
     </Card>
   );
 };
-

@@ -44,6 +44,76 @@ export const parseTimeSlotsFromStorage = (formattedSlots: any[]): TimeSlot[] => 
   }));
 };
 
+// Parse time string like "8:00 - 9:00" to get start and end hours
+export const parseTimeRange = (timeString: string): { startHour: number; endHour: number } => {
+  const parts = timeString.split(" - ");
+  
+  if (parts.length !== 2) {
+    return { startHour: 0, endHour: 0 };
+  }
+  
+  const startParts = parts[0].split(":");
+  const endParts = parts[1].split(":");
+  
+  const startHour = parseInt(startParts[0], 10);
+  const endHour = parseInt(endParts[0], 10);
+  
+  return {
+    startHour: isNaN(startHour) ? 0 : startHour,
+    endHour: isNaN(endHour) ? 0 : endHour
+  };
+};
+
+// Parse a time slot to get a Date object with the correct time
+export const parseTimeSlotToDate = (timeSlot: FormattedTimeSlot | TimeSlot): { startDate: Date | null; endDate: Date | null } => {
+  if (!timeSlot) {
+    return { startDate: null, endDate: null };
+  }
+  
+  // Get the date source - either dateStr or date property
+  const dateSource = 'dateStr' in timeSlot ? 
+    timeSlot.dateStr : 
+    (timeSlot.date instanceof Date ? timeSlot.date : null);
+  
+  if (!dateSource) {
+    return { startDate: null, endDate: null };
+  }
+  
+  // Create a Date object
+  let baseDate: Date;
+  try {
+    baseDate = typeof dateSource === 'string' ? new Date(dateSource) : dateSource;
+    if (isNaN(baseDate.getTime())) {
+      console.error("Invalid date:", dateSource);
+      return { startDate: null, endDate: null };
+    }
+  } catch (error) {
+    console.error("Error parsing date:", error);
+    return { startDate: null, endDate: null };
+  }
+  
+  // Parse time range from time string
+  const { startHour, endHour } = parseTimeRange(timeSlot.time);
+  
+  // Adjust hours for AM/PM
+  const adjustedStartHour = timeSlot.ampm === "PM" && startHour < 12 ? 
+    startHour + 12 : 
+    (timeSlot.ampm === "AM" && startHour === 12 ? 0 : startHour);
+    
+  const adjustedEndHour = timeSlot.ampm === "PM" && endHour < 12 ? 
+    endHour + 12 : 
+    (timeSlot.ampm === "AM" && endHour === 12 ? 0 : endHour);
+  
+  // Create start and end date objects
+  const startDate = new Date(baseDate);
+  startDate.setHours(adjustedStartHour, 0, 0, 0);
+  
+  const endDate = new Date(baseDate);
+  endDate.setHours(adjustedEndHour, 0, 0, 0);
+  
+  return { startDate, endDate };
+};
+
 // Format time slot display to match the UI design
 export const formatTimeSlot = (slot: TimeSlot): { dayAndDate: string; time: string } | string => {
   if (!slot.date || !slot.time) {

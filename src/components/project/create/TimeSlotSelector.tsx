@@ -3,14 +3,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { X, Pencil } from "lucide-react";
 import { format } from "date-fns";
-
-// Define TimeSlot interface for improved type safety
-export interface TimeSlot {
-  id: number;
-  date: Date | null;
-  time: string;
-  ampm: "AM" | "PM";
-}
+import { TimeSlot, formatTimeSlot } from "@/utils/timeSlotFormatters";
 
 interface TimeSlotSelectorProps {
   timeSlots: TimeSlot[];
@@ -23,26 +16,6 @@ export const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
   onEditTimeSlot,
   onClearTimeSlot,
 }) => {
-  // Format time slot display to match the UI design
-  const formatTimeSlot = (slot: TimeSlot): { dayAndDate: string; time: string } | string => {
-    if (!slot.date || !slot.time) {
-      return "Select a time and date for your call";
-    }
-    
-    const dayOfWeek = format(slot.date, "EEEE");
-    const month = format(slot.date, "MMMM");
-    const dayOfMonth = format(slot.date, "do");
-    
-    // Extract time range parts (e.g., "8:00 - 9:00")
-    const timeRange = slot.time;
-    const [startTime] = timeRange.split(" - ");
-    
-    return {
-      dayAndDate: `${dayOfWeek}, ${month} ${dayOfMonth}`,
-      time: `${startTime}${slot.ampm.toLowerCase()} - ${timeRange.split(" - ")[1]}${slot.ampm.toLowerCase()} EST`
-    };
-  };
-  
   return (
     <>
       {timeSlots.map((slot, index) => (
