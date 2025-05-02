@@ -243,7 +243,7 @@ export const MeetupScheduleWidget = () => {
           </DialogHeader>
           
           <div className="mt-6 space-y-4 max-h-96 overflow-y-auto">
-            {selectedProject?.meetupTimes.filter(time => time.date).map((meetup, index) => {
+            {selectedProject?.meetupTimes.map((meetup, index) => {
               const meetupDate = new Date(meetup.date);
               const isPastDate = meetupDate < new Date();
               const timeSlotFormat = formatTimeSlot(meetup);
@@ -329,3 +329,4 @@ export const MeetupScheduleWidget = () => {
     </Card>
   );
 };
+
