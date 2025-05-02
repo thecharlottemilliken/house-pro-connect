@@ -115,6 +115,23 @@ export const MeetupScheduleWidget = () => {
       const formattedDate = formatDateSafely(dateToFormat);
       const formattedTime = `${selectedTimeSlot.time} ${selectedTimeSlot.ampm}`;
       
+      // Get the current coach's data for the meeting title
+      const currentUser = await supabase.auth.getUser();
+      const coachId = currentUser.data.user?.id;
+      
+      // Get the coach's name for the event title
+      const { data: coachData, error: coachNameError } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', coachId)
+        .single();
+        
+      if (coachNameError) {
+        console.error("Error getting coach name:", coachNameError);
+      }
+      
+      const coachName = coachData?.name || "Your Coach";
+      
       // Send a notification message to the project owner
       await supabase.from('coach_messages').insert({
         resident_id: projectToUpdate.owner.id,
@@ -152,10 +169,10 @@ export const MeetupScheduleWidget = () => {
           throw new Error("Could not parse meeting date and time");
         }
         
-        // Create the calendar event
+        // Create the calendar event with coach's name in the title
         await EventsService.createProjectEvent({
           project_id: selectedProject.id,
-          title: `Coaching Session: ${selectedProject.title}`,
+          title: `Meeting with ${coachName}`,
           description: `Initial coaching session for project: ${selectedProject.title}`,
           start_time: startDate.toISOString(),
           end_time: endDate.toISOString(),
