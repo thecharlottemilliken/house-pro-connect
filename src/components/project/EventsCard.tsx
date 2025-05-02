@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock } from "lucide-react";
-import { format, parseISO, isAfter } from "date-fns";
+import { format, parseISO, isAfter, isValid } from "date-fns";
 import { EventsService, ProjectEvent } from "./calendar/EventsService";
 import { useParams } from "react-router-dom";
 
