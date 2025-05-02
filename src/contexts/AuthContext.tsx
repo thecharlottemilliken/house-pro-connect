@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
@@ -118,7 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error };
       }
       
-      // Account created successfully
+      console.log("Account created successfully with role:", userData.role);
       toast({
         title: "Account created successfully",
         description: "You can now sign in with your credentials",
@@ -137,6 +138,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           if (response.error) {
             console.error("Error setting coach claims:", response.error);
+            // Don't return here, continue with sign-in attempt
           }
         } catch (setClaimError) {
           console.error("Error calling set-claims function:", setClaimError);

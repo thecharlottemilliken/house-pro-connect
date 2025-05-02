@@ -68,7 +68,7 @@ export function useProfileRole() {
           
           // Last attempt - call set-claims to ensure claims are set
           try {
-            const { data: claimResponse } = await supabase.functions.invoke('set-claims', {
+            const { data: claimResponse, error: claimError } = await supabase.functions.invoke('set-claims', {
               body: { user_id: user.id }
             });
             
@@ -76,6 +76,8 @@ export function useProfileRole() {
               console.log("Role determined from set-claims:", claimResponse.role);
               setRoleData(claimResponse.role);
               refreshProfile();
+            } else {
+              console.log("No role returned from set-claims or error:", claimError);
             }
           } catch (claimError) {
             console.error("Error calling set-claims:", claimError);

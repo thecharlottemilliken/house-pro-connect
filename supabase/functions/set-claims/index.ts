@@ -84,29 +84,44 @@ serve(async (req) => {
     if (profile?.role === 'coach') {
       console.log('Setting coach claim');
       
-      const { error: claimError } = await supabaseAdmin.auth.admin.updateUserById(
-        userId,
-        { app_metadata: { app_role: 'coach' } }
-      );
+      try {
+        const { data, error: claimError } = await supabaseAdmin.auth.admin.updateUserById(
+          userId,
+          { 
+            app_metadata: { app_role: 'coach' },
+          }
+        );
 
-      if (claimError) {
-        console.error('Error setting claim:', claimError);
+        if (claimError) {
+          console.error('Error setting claim:', claimError);
+          return new Response(
+            JSON.stringify({ error: 'Error setting claim', details: claimError }),
+            { 
+              status: 500, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
+        
+        console.log('Coach claim set successfully:', data);
+        
         return new Response(
-          JSON.stringify({ error: 'Error setting claim', details: claimError }),
+          JSON.stringify({ success: true, role: 'coach' }),
+          { 
+            status: 200, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      } catch (updateError) {
+        console.error('Error in updateUserById:', updateError);
+        return new Response(
+          JSON.stringify({ error: 'Error updating user metadata', details: updateError.message }),
           { 
             status: 500, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
           }
         );
       }
-      
-      return new Response(
-        JSON.stringify({ success: true, role: 'coach' }),
-        { 
-          status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
     } else {
       console.log('User is not a coach, no claim to set');
       return new Response(
