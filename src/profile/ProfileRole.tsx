@@ -36,8 +36,13 @@ export function useProfileRole() {
         if (session?.access_token) {
           try {
             const decodedToken = jwtDecode(session.access_token);
+            console.log("Decoded JWT token:", decodedToken);
+            
+            // Check for app_role in various locations in the token
             // @ts-ignore - allow flexible token type
-            const tokenRole = decodedToken.app_metadata?.app_role || null;
+            const tokenRole = decodedToken.app_role || 
+              // @ts-ignore - allow flexible token type
+              decodedToken.app_metadata?.app_role || null;
             
             if (tokenRole) {
               console.log("Using role from JWT token:", tokenRole);
@@ -68,16 +73,27 @@ export function useProfileRole() {
           
           // Last attempt - call set-claims to ensure claims are set
           try {
+            console.log("Calling set-claims to ensure role claims are set");
             const { data: claimResponse, error: claimError } = await supabase.functions.invoke('set-claims', {
               body: { user_id: user.id }
             });
             
-            if (claimResponse?.role) {
+            if (claimError) {
+              console.error("Error calling set-claims:", claimError);
+            } else if (claimResponse?.role) {
               console.log("Role determined from set-claims:", claimResponse.role);
               setRoleData(claimResponse.role);
-              refreshProfile();
+              
+              // Refresh the session to get updated JWT with claims
+              try {
+                await supabase.auth.refreshSession();
+                console.log("Session refreshed to get updated claims");
+                refreshProfile();
+              } catch (refreshError) {
+                console.error("Error refreshing session:", refreshError);
+              }
             } else {
-              console.log("No role returned from set-claims or error:", claimError);
+              console.log("No role returned from set-claims");
             }
           } catch (claimError) {
             console.error("Error calling set-claims:", claimError);
@@ -90,7 +106,9 @@ export function useProfileRole() {
       }
     };
 
-    checkRole();
+    if (user) {
+      checkRole();
+    }
   }, [user, profile?.role, refreshProfile, session]);
   
   // Format the role for display (capitalize first letter)

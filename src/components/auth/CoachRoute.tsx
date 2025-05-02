@@ -14,6 +14,7 @@ const CoachRoute = ({ children }: CoachRouteProps) => {
   const { user, profile, isLoading, refreshProfile, session } = useAuth();
   const [isCoach, setIsCoach] = useState<boolean | null>(null);
   const [checking, setChecking] = useState(true);
+  const [retryAttempts, setRetryAttempts] = useState(0);
 
   useEffect(() => {
     const checkCoachRole = async () => {
@@ -48,8 +49,13 @@ const CoachRoute = ({ children }: CoachRouteProps) => {
             const decodedToken = jwtDecode(session.access_token);
             console.log("Decoded JWT token:", decodedToken);
             
+            // Check for app_role in various locations in the token
             // @ts-ignore - allow flexible token type
-            if (decodedToken.app_role === 'coach' || decodedToken.app_metadata?.app_role === 'coach') {
+            const appRole = decodedToken.app_role || 
+              // @ts-ignore - allow flexible token type
+              decodedToken.app_metadata?.app_role;
+              
+            if (appRole === 'coach') {
               console.log("User is a coach according to JWT claim");
               setIsCoach(true);
               setChecking(false);
@@ -95,19 +101,39 @@ const CoachRoute = ({ children }: CoachRouteProps) => {
             console.log("Set-claims confirmed coach role");
             setIsCoach(true);
             setChecking(false);
+            
+            // Refresh the session to get updated JWT with claims
+            try {
+              await supabase.auth.refreshSession();
+              console.log("Session refreshed after setting claims");
+              refreshProfile();
+            } catch (refreshError) {
+              console.error("Error refreshing session:", refreshError);
+            }
             return;
           }
         } catch (claimInvokeError) {
           console.error("Error invoking set-claims function:", claimInvokeError);
         }
 
+        // If we've tried multiple times and still can't confirm, check if we need to retry
+        if (retryAttempts < 2) {
+          console.log(`Retry attempt ${retryAttempts + 1} for coach check`);
+          setRetryAttempts(retryAttempts + 1);
+          // Retry after a short delay
+          setTimeout(() => {
+            checkCoachRole();
+          }, 1500);
+          return;
+        }
+
         // Default to false if we can't confirm coach status
         console.log("Unable to verify coach role, defaulting to false");
         setIsCoach(false);
+        setChecking(false);
       } catch (error) {
         console.error("Error in coach check:", error);
         setIsCoach(false);
-      } finally {
         setChecking(false);
       }
     };
@@ -115,7 +141,7 @@ const CoachRoute = ({ children }: CoachRouteProps) => {
     if (!isLoading) {
       checkCoachRole();
     }
-  }, [user, isLoading, profile, refreshProfile, session]);
+  }, [user, isLoading, profile, refreshProfile, session, retryAttempts]);
 
   // While checking authentication status or coach role, show loading state
   if (isLoading || checking) {

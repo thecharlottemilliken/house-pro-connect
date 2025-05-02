@@ -78,6 +78,63 @@ serve(async (req) => {
       );
     }
 
+    // If no profile found, try to get user metadata directly
+    if (!profile) {
+      console.log("No profile found, trying to get user metadata directly");
+      const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(userId);
+      
+      if (userError || !userData) {
+        console.error('Error fetching user data:', userError);
+        return new Response(
+          JSON.stringify({ error: 'User not found', details: userError }),
+          { 
+            status: 404, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+      
+      // Check if user metadata contains role information
+      const role = userData.user.user_metadata?.role;
+      console.log(`Found role in user metadata: ${role}`);
+      
+      if (role === 'coach') {
+        // Set the coach claim
+        const { data, error: claimError } = await supabaseAdmin.auth.admin.updateUserById(
+          userId, 
+          { app_metadata: { app_role: 'coach' } }
+        );
+        
+        if (claimError) {
+          console.error('Error setting claim from user metadata:', claimError);
+          return new Response(
+            JSON.stringify({ error: 'Error setting claim', details: claimError }),
+            { 
+              status: 500, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
+        
+        console.log('Coach claim set from user metadata');
+        return new Response(
+          JSON.stringify({ success: true, role: 'coach' }),
+          { 
+            status: 200, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+      
+      return new Response(
+        JSON.stringify({ success: true, role: role || 'unknown' }),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
     console.log(`User profile found with role: ${profile?.role}`);
     
     // If the user is a coach, set the app_role claim
