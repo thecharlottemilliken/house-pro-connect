@@ -20,23 +20,18 @@ api_url = "http://localhost"
 enabled = true
 port = 54324
 
-[auth]
-enabled = true
-port = 9999
-uri = "http://localhost"
-
 [storage]
 enabled = true
-port = 5000
+file_size_limit = "50MiB"
 
-[realtime]
+[auth]
 enabled = true
-port = 5001
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["https://localhost:3000"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_expiry = 3600
+enable_signup = true
 
-[analytics]
-enabled = true
-port = 54327
-
-[edge_functions]
-[edge_functions.delete-account]
+[functions.send-meeting-confirmation]
 verify_jwt = true

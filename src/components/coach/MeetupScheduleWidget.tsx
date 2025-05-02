@@ -107,10 +107,11 @@ export const MeetupScheduleWidget = () => {
         throw updateError;
       }
       
-      // Send a notification message to the project owner
+      // Format date and time for display
       const formattedDate = formatDateSafely(selectedTimeSlot.date);
       const formattedTime = `${selectedTimeSlot.time} ${selectedTimeSlot.ampm}`;
       
+      // Send a notification message to the project owner
       await supabase.from('coach_messages').insert({
         resident_id: projectToUpdate.owner.id,
         coach_id: (await supabase.auth.getUser()).data.user?.id,
@@ -118,8 +119,58 @@ export const MeetupScheduleWidget = () => {
         message: `I've scheduled a coaching session with you for ${formattedDate} at ${formattedTime}. Looking forward to discussing your project!`
       });
       
+      // 1. Send an email confirmation to the project owner
+      const { data: emailData, error: emailError } = await supabase.functions.invoke(
+        'send-meeting-confirmation',
+        {
+          body: {
+            projectId: selectedProject.id,
+            projectTitle: selectedProject.title,
+            ownerEmail: selectedProject.owner.email,
+            ownerName: selectedProject.owner.name,
+            meetingDate: formattedDate,
+            meetingTime: formattedTime
+          }
+        }
+      );
+      
+      if (emailError) {
+        console.error("Error sending email confirmation:", emailError);
+        toast.warning("Meeting scheduled, but email notification failed to send.");
+      }
+      
+      // 3. Add event to the project calendar
+      const [startTime] = selectedTimeSlot.time.split(":00");
+      const meetingDate = new Date(selectedTimeSlot.date);
+      
+      // Set the hours based on AM/PM
+      const hour = parseInt(startTime);
+      const adjustedHour = selectedTimeSlot.ampm === "PM" && hour < 12 
+        ? hour + 12 
+        : (selectedTimeSlot.ampm === "AM" && hour === 12 ? 0 : hour);
+      
+      meetingDate.setHours(adjustedHour, 0, 0, 0);
+      const endTime = new Date(meetingDate);
+      endTime.setHours(endTime.getHours() + 1); // 1-hour meeting
+      
+      const { error: calendarError } = await supabase.from('project_events').insert({
+        project_id: selectedProject.id,
+        title: `Coaching Session: ${selectedProject.title}`,
+        description: `Initial coaching session for project: ${selectedProject.title}`,
+        start_time: meetingDate.toISOString(),
+        end_time: endTime.toISOString(),
+        location: "Video Call",
+        event_type: "coaching_session",
+        created_by: (await supabase.auth.getUser()).data.user?.id
+      });
+      
+      if (calendarError) {
+        console.error("Error adding calendar event:", calendarError);
+        toast.warning("Meeting scheduled, but calendar event creation failed.");
+      }
+      
       toast.success("Meeting scheduled successfully!");
-      fetchProjects();
+      fetchProjects(); // 2. Refresh to remove the project from pending list
       setIsDialogOpen(false);
       setIsConfirmDialogOpen(false);
       setSelectedTimeSlot(null);
