@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+
+import React, { useState, useRef } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { FileText, Eye, Download, X } from "lucide-react";
+import { FileText, Eye, Download, X, Upload } from "lucide-react";
 import EmptyDesignState from "./EmptyDesignState";
 import DesignTabHeader from "./DesignTabHeader";
 import BeforePhotosCard from "./BeforePhotosCard";
@@ -17,6 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface RoomDetailsProps {
   area: string;
@@ -78,6 +80,7 @@ const RoomDetails = ({
   });
   const [showProjectFilesDialog, setShowProjectFilesDialog] = useState(false);
   const [previewAsset, setPreviewAsset] = useState<{name: string; url: string; type: string} | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFilesUploaded = (files: FileWithPreview[]) => {
     setRoomFiles(files);
@@ -135,6 +138,77 @@ const RoomDetails = ({
     }
   };
 
+  const handleQuickUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files?.length) return;
+
+    // Check authentication
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      toast({
+        title: "Authentication required",
+        description: "You must be signed in to upload files.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const uploadedUrls: {name: string; url: string}[] = [];
+    
+    try {
+      toast({
+        title: "Uploading files",
+        description: "Please wait while your files are being uploaded."
+      });
+
+      for (const file of files) {
+        const fileExt = file.name.split('.').pop();
+        const filePath = `${Math.random()}-${Date.now()}.${fileExt}`;
+
+        const { error: uploadError, data } = await supabase.storage
+          .from('properties')
+          .upload(filePath, file);
+
+        if (uploadError) {
+          console.error("Upload error:", uploadError);
+          throw uploadError;
+        }
+
+        if (data) {
+          const { data: { publicUrl } } = supabase.storage
+            .from('properties')
+            .getPublicUrl(filePath);
+          
+          uploadedUrls.push({
+            name: file.name,
+            url: publicUrl
+          });
+        }
+      }
+
+      if (uploadedUrls.length > 0 && onSelectProjectFiles) {
+        onSelectProjectFiles(uploadedUrls.map(item => item.url));
+      }
+
+      toast({
+        title: "Files uploaded successfully",
+        description: `${uploadedUrls.length} file(s) have been uploaded.`
+      });
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: "Upload failed",
+        description: "There was an error uploading your files.",
+        variant: "destructive"
+      });
+    } finally {
+      // Reset the input
+      if (event.target) {
+        event.target.value = '';
+      }
+    }
+  };
+
   return (
     <div className="flex flex-col space-y-6">
       <Card>
@@ -178,15 +252,39 @@ const RoomDetails = ({
                 <h3 className="font-semibold">Design Assets</h3>
                 <p className="text-sm text-gray-500 mt-1">Project documentation</p>
               </div>
-              {projectId && (
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => setShowProjectFilesDialog(true)}
-                >
-                  Select from Project Files
-                </Button>
-              )}
+              <div className="flex gap-2">
+                {/* Quick upload button */}
+                <div className="relative">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*, .pdf, .dwg, .doc, .docx, .xls"
+                    multiple
+                    onChange={handleQuickUpload}
+                    className="hidden"
+                  />
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    title="Upload files"
+                  >
+                    <Upload className="h-4 w-4" />
+                    <span className="ml-1 hidden sm:inline">Upload</span>
+                  </Button>
+                </div>
+                
+                {/* Select from project files */}
+                {projectId && (
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => setShowProjectFilesDialog(true)}
+                  >
+                    Select from Project Files
+                  </Button>
+                )}
+              </div>
             </div>
             
             {designAssets && designAssets.length > 0 ? (
