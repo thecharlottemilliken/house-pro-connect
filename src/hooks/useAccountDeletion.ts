@@ -13,11 +13,7 @@ export const useAccountDeletion = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        toast({
-          title: "Error",
-          description: "You must be logged in to delete your account",
-          variant: "destructive",
-        });
+        toast.error("You must be logged in to delete your account");
         setIsDeleting(false);
         return { success: false };
       }
@@ -28,21 +24,13 @@ export const useAccountDeletion = () => {
       
       if (error) {
         console.error("Error deleting account:", error);
-        toast({
-          title: "Account deletion failed",
-          description: error.message || "An error occurred while deleting your account",
-          variant: "destructive",
-        });
+        toast.error(error.message || "An error occurred while deleting your account");
         setIsDeleting(false);
         return { success: false };
       }
       
       if (data?.error) {
-        toast({
-          title: "Account deletion failed",
-          description: data.error,
-          variant: "destructive",
-        });
+        toast.error(data.error);
         setIsDeleting(false);
         return { success: false };
       }
@@ -50,19 +38,12 @@ export const useAccountDeletion = () => {
       // Sign out after successful deletion
       await supabase.auth.signOut();
       
-      toast({
-        title: "Account deleted",
-        description: "Your account and all associated data have been deleted",
-      });
+      toast.success("Your account and all associated data have been deleted");
       
       return { success: true };
     } catch (error: any) {
       console.error("Error in deleteAccount:", error);
-      toast({
-        title: "Account deletion failed",
-        description: error.message || "An unexpected error occurred",
-        variant: "destructive",
-      });
+      toast.error(error.message || "An unexpected error occurred");
       setIsDeleting(false);
       return { success: false };
     } finally {
