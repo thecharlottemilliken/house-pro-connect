@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
@@ -111,6 +110,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) return { error };
       
+      // If the user role is coach, we need to set up the custom claims after signup
+      // But first we need to make sure the user is signed in
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -129,6 +130,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         title: "Account created successfully",
         description: "You have been automatically signed in",
       });
+
+      // For coaches, set up the custom claims
+      if (userData.role === 'coach' && data?.user) {
+        try {
+          // Call the set-claims edge function
+          await supabase.functions.invoke('set-claims', {
+            body: { user_id: data.user.id }
+          });
+        } catch (setClaimError) {
+          console.error("Error setting coach claim:", setClaimError);
+          // Even if this fails, we can continue as the user is created
+        }
+      }
       
       navigate('/dashboard');
       
