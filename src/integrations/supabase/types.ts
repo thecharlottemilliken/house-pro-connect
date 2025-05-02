@@ -91,6 +91,56 @@ export type Database = {
         }
         Relationships: []
       }
+      project_events: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          end_time: string
+          event_type: string
+          id: string
+          location: string | null
+          project_id: string
+          start_time: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          end_time: string
+          event_type: string
+          id?: string
+          location?: string | null
+          project_id: string
+          start_time: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          end_time?: string
+          event_type?: string
+          id?: string
+          location?: string | null
+          project_id?: string
+          start_time?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_events_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_messages: {
         Row: {
           created_at: string

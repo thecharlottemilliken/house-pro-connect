@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import { CalendarIcon, Calendar, CheckIcon, X } from "lucide-react";
 import { formatDistanceToNow, format, isValid, parseISO } from "date-fns";
 import { useCoachProjects } from "@/hooks/useCoachProjects";
 import { supabase } from "@/integrations/supabase/client";
+import { EventsService } from "@/components/project/calendar/EventsService";
 import {
   Dialog,
   DialogContent,
@@ -153,18 +153,18 @@ export const MeetupScheduleWidget = () => {
       const endTime = new Date(meetingDate);
       endTime.setHours(endTime.getHours() + 1); // 1-hour meeting
       
-      const { error: calendarError } = await supabase.from('project_events').insert({
-        project_id: selectedProject.id,
-        title: `Coaching Session: ${selectedProject.title}`,
-        description: `Initial coaching session for project: ${selectedProject.title}`,
-        start_time: meetingDate.toISOString(),
-        end_time: endTime.toISOString(),
-        location: "Video Call",
-        event_type: "coaching_session",
-        created_by: (await supabase.auth.getUser()).data.user?.id
-      });
-      
-      if (calendarError) {
+      try {
+        await EventsService.createProjectEvent({
+          project_id: selectedProject.id,
+          title: `Coaching Session: ${selectedProject.title}`,
+          description: `Initial coaching session for project: ${selectedProject.title}`,
+          start_time: meetingDate.toISOString(),
+          end_time: endTime.toISOString(),
+          location: "Video Call",
+          event_type: "coaching_session",
+          created_by: (await supabase.auth.getUser()).data.user?.id || ''
+        });
+      } catch (calendarError) {
         console.error("Error adding calendar event:", calendarError);
         toast.warning("Meeting scheduled, but calendar event creation failed.");
       }
