@@ -2,7 +2,7 @@
 import { CalendarIcon } from "lucide-react";
 
 interface Event {
-  id: number;
+  id: number | string;
   title: string;
   day: number;
   time: string;
