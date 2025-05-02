@@ -16,6 +16,8 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Set-claims function called");
+    
     // Create a Supabase client with the service role key
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -32,9 +34,11 @@ serve(async (req) => {
     let body;
     try {
       body = await req.json();
+      console.log("Request body:", JSON.stringify(body));
     } catch (e) {
+      console.error("Error parsing request body:", e);
       return new Response(
-        JSON.stringify({ error: 'Invalid request body' }),
+        JSON.stringify({ error: 'Invalid request body', details: e.message }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -44,6 +48,7 @@ serve(async (req) => {
 
     const userId = body.user_id;
     if (!userId) {
+      console.error("Missing user_id in request body");
       return new Response(
         JSON.stringify({ error: 'Missing user_id in request body' }),
         { 

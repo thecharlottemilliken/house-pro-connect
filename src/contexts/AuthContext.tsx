@@ -97,6 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string, userData: any) => {
     try {
+      setIsLoading(true);
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -108,47 +109,66 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
       });
 
-      if (error) return { error };
+      if (error) {
+        toast({
+          title: "Signup error",
+          description: error.message || "Failed to create account",
+          variant: "destructive",
+        });
+        return { error };
+      }
       
-      // If the user role is coach, we need to set up the custom claims after signup
-      // But first we need to make sure the user is signed in
+      // Account created successfully
+      toast({
+        title: "Account created successfully",
+        description: "You can now sign in with your credentials",
+      });
+      
+      // For coaching accounts, explicitly call the set-claims function after signup
+      if (userData.role === 'coach' && data?.user) {
+        try {
+          console.log("Setting coach claims for user:", data.user.id);
+          // Call the set-claims edge function directly
+          const response = await supabase.functions.invoke('set-claims', {
+            body: { user_id: data.user.id }
+          });
+          
+          console.log("Set-claims response:", response);
+          
+          if (response.error) {
+            console.error("Error setting coach claims:", response.error);
+          }
+        } catch (setClaimError) {
+          console.error("Error calling set-claims function:", setClaimError);
+          // Even if this fails, we continue with sign-in
+        }
+      }
+      
+      // Now sign in with the credentials
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
       if (signInError) {
-        console.error("Auto sign in failed after signup:", signInError);
-        toast({
-          title: "Account created successfully",
-          description: "You can now sign in with your credentials",
-        });
-        return { error: null };
+        console.error("Sign in after signup failed:", signInError);
+        // Don't navigate since login failed
+        return { data, error: null };
       }
       
-      toast({
-        title: "Account created successfully",
-        description: "You have been automatically signed in",
-      });
-
-      // For coaches, set up the custom claims
-      if (userData.role === 'coach' && data?.user) {
-        try {
-          // Call the set-claims edge function
-          await supabase.functions.invoke('set-claims', {
-            body: { user_id: data.user.id }
-          });
-        } catch (setClaimError) {
-          console.error("Error setting coach claim:", setClaimError);
-          // Even if this fails, we can continue as the user is created
-        }
-      }
-      
+      // Sign in succeeded, navigate to dashboard
       navigate('/dashboard');
-      
       return { data, error: null };
     } catch (error: any) {
+      console.error("Unexpected error during signup:", error);
+      toast({
+        title: "Signup error",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive",
+      });
       return { error };
+    } finally {
+      setIsLoading(false);
     }
   };
 

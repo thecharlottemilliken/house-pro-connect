@@ -25,7 +25,6 @@ const CoachRoute = ({ children }: CoachRouteProps) => {
 
       try {
         console.log("Checking coach role for user:", user.id);
-        console.log("Current profile from context:", profile);
         
         // Method 1: Try using the profile from context first
         if (profile && profile.role === 'coach') {
@@ -35,16 +34,23 @@ const CoachRoute = ({ children }: CoachRouteProps) => {
           return;
         }
         
-        // Optional: Decode JWT to check for custom claims if needed
+        // Method 2: Try checking user metadata from auth (if available)
+        if (user.user_metadata && user.user_metadata.role === 'coach') {
+          console.log("User is a coach according to auth metadata");
+          setIsCoach(true);
+          setChecking(false);
+          return;
+        }
+        
+        // Method 3: Try to decode token to check for custom claims
         if (session?.access_token) {
           try {
             const decodedToken = jwtDecode(session.access_token);
-            console.log("Decoded token:", decodedToken);
+            console.log("Decoded JWT token:", decodedToken);
             
-            // Check for coach role in JWT claims
             // @ts-ignore - allow flexible token type
-            if (decodedToken.app_role === 'coach') {
-              console.log("User is a coach according to JWT token");
+            if (decodedToken.app_role === 'coach' || decodedToken.app_metadata?.app_role === 'coach') {
+              console.log("User is a coach according to JWT claim");
               setIsCoach(true);
               setChecking(false);
               return;
@@ -53,16 +59,8 @@ const CoachRoute = ({ children }: CoachRouteProps) => {
             console.error("Error decoding JWT:", decodeError);
           }
         }
-        
-        // Method 2: Try checking user metadata from auth (if available)
-        if (user.user_metadata && user.user_metadata.role === 'coach') {
-          console.log("User is a coach according to auth metadata");
-          setIsCoach(true);
-          setChecking(false);
-          return;
-        }
 
-        // Method 3: Check directly from database if needed
+        // Method 4: Check directly from database if needed
         console.log("Using direct database check for role");
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
@@ -71,12 +69,36 @@ const CoachRoute = ({ children }: CoachRouteProps) => {
           .maybeSingle();
         
         if (profileError) {
-          console.error("Error fetching profile:", profileError);
+          console.error("Error fetching profile from DB:", profileError);
         } else if (profileData && profileData.role === 'coach') {
           console.log("User is a coach according to direct database check");
           setIsCoach(true);
           setChecking(false);
+          
+          // Update profile context for future checks
+          refreshProfile();
           return;
+        }
+
+        // Method 5: Call set-claims function to ensure claims are set properly
+        try {
+          console.log("Calling set-claims to ensure coach claims are set");
+          const { data: claimResponse, error: claimError } = await supabase.functions.invoke('set-claims', {
+            body: { user_id: user.id }
+          });
+          
+          console.log("Set-claims response:", claimResponse);
+          
+          if (claimError) {
+            console.error("Error calling set-claims:", claimError);
+          } else if (claimResponse && claimResponse.role === 'coach') {
+            console.log("Set-claims confirmed coach role");
+            setIsCoach(true);
+            setChecking(false);
+            return;
+          }
+        } catch (claimInvokeError) {
+          console.error("Error invoking set-claims function:", claimInvokeError);
         }
 
         // Default to false if we can't confirm coach status
