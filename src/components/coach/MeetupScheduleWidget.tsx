@@ -16,7 +16,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { useAuth } from "@/contexts/AuthContext";
 
 interface MeetupTime {
   date: string;
@@ -43,7 +42,6 @@ export const MeetupScheduleWidget = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<MeetupTime | null>(null);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
-  const { user, profile } = useAuth();
   
   // Filter projects that have meetup times and haven't been scheduled yet
   const projectsWithMeetups = projects
@@ -91,34 +89,7 @@ export const MeetupScheduleWidget = () => {
       // Update the management preferences to include the scheduled meetup
       const managementPrefs = projectToUpdate.management_preferences || {};
       
-      // Format date and time for calendar event
-      const formattedDate = formatDateSafely(selectedTimeSlot.date);
-      const formattedTime = `${selectedTimeSlot.time} ${selectedTimeSlot.ampm}`;
-      
-      // Create Google Calendar event
-      const calendarResponse = await supabase.functions.invoke(
-        'google-calendar-integration',
-        {
-          body: {
-            projectId: selectedProject.id,
-            projectTitle: selectedProject.title,
-            ownerEmail: selectedProject.owner.email,
-            ownerName: selectedProject.owner.name,
-            coachName: profile?.name || "Coach",
-            meetingDate: selectedTimeSlot.date,
-            meetingTime: `${selectedTimeSlot.time} ${selectedTimeSlot.ampm}`,
-            meetingDuration: 60, // Default to 1-hour meetings
-            coachEmail: user?.email || ""
-          }
-        }
-      );
-      
-      if (calendarResponse.error) {
-        console.error("Calendar error:", calendarResponse.error);
-        throw new Error("Failed to create calendar event");
-      }
-      
-      // Update the project with the selected meetup time and calendar event info
+      // Update the project with the selected meetup time
       const { error: updateError } = await supabase.functions.invoke(
         'handle-project-update',
         {
@@ -127,8 +98,6 @@ export const MeetupScheduleWidget = () => {
             managementPreferences: {
               ...managementPrefs,
               scheduledMeetupTime: selectedTimeSlot,
-              calendarEventId: calendarResponse.data?.eventId,
-              calendarEventLink: calendarResponse.data?.htmlLink
             }
           }
         }
@@ -139,14 +108,17 @@ export const MeetupScheduleWidget = () => {
       }
       
       // Send a notification message to the project owner
+      const formattedDate = formatDateSafely(selectedTimeSlot.date);
+      const formattedTime = `${selectedTimeSlot.time} ${selectedTimeSlot.ampm}`;
+      
       await supabase.from('coach_messages').insert({
         resident_id: projectToUpdate.owner.id,
         coach_id: (await supabase.auth.getUser()).data.user?.id,
         project_id: selectedProject.id,
-        message: `I've scheduled a coaching session with you for ${formattedDate} at ${formattedTime}. You should receive a calendar invitation in your email. Looking forward to discussing your project!`
+        message: `I've scheduled a coaching session with you for ${formattedDate} at ${formattedTime}. Looking forward to discussing your project!`
       });
       
-      toast.success("Meeting scheduled and calendar invitation sent!");
+      toast.success("Meeting scheduled successfully!");
       fetchProjects();
       setIsDialogOpen(false);
       setIsConfirmDialogOpen(false);
@@ -403,9 +375,6 @@ export const MeetupScheduleWidget = () => {
                   </div>
                 </div>
               )}
-              <p className="mt-3">
-                A calendar invitation will be sent to {selectedProject?.owner.email}.
-              </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="border-t pt-4 mt-4">
