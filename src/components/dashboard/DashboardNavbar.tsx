@@ -1,7 +1,8 @@
+
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { Menu, Settings, User, X } from "lucide-react";
+import { Menu, Settings, User, X, BellDot } from "lucide-react";
 import { useState } from 'react';
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -10,6 +11,7 @@ const DashboardNavbar = () => {
   const { user, profile, signOut } = useAuth();
   const isMobile = useIsMobile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [hasNotifications, setHasNotifications] = useState(true);
   
   const toggleMobileMenu = () => {
     setMobileMenuOpen(prev => !prev);
@@ -57,6 +59,19 @@ const DashboardNavbar = () => {
         
         {/* User Actions */}
         <div className="hidden md:flex items-center space-x-4">
+          {/* Notification Bell */}
+          <Button 
+            variant="ghost" 
+            size="icon"
+            className="rounded-full text-white hover:bg-[#174c65]/90 relative"
+            onClick={() => navigate('/notifications')}
+          >
+            <BellDot className="h-6 w-6" />
+            {hasNotifications && (
+              <span className="absolute top-0 right-0 block h-2.5 w-2.5 rounded-full bg-orange-500 ring-2 ring-[#174c65]"></span>
+            )}
+          </Button>
+          
           <Button 
             variant="ghost" 
             size="icon"
@@ -92,6 +107,22 @@ const DashboardNavbar = () => {
             <MobileNavItem label="MESSAGES" path="/messages" isActive={currentPath === '/messages'} onClick={() => setMobileMenuOpen(false)} />
             
             <div className="flex justify-between pt-2 border-t border-[#174c65]/30">
+              {/* Mobile Notification Bell */}
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="text-white hover:bg-[#174c65]/90 relative"
+                onClick={() => {
+                  navigate('/notifications');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                <BellDot className="h-4 w-4 mr-2" /> Notifications
+                {hasNotifications && (
+                  <span className="absolute top-2 left-6 block h-2 w-2 rounded-full bg-orange-500 ring-1 ring-[#174c65]"></span>
+                )}
+              </Button>
+              
               <Button 
                 variant="ghost" 
                 size="sm"
@@ -173,3 +204,4 @@ const MobileNavItem = ({ label, path, isActive, onClick }: MobileNavItemProps) =
 };
 
 export default DashboardNavbar;
+
