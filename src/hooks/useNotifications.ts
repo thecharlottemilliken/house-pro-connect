@@ -1,8 +1,10 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Notification, NotificationType } from '@/types/notifications';
 import { toast } from '@/hooks/use-toast';
+import { notificationTemplates } from '@/lib/notificationTemplates';
 
 export const useNotifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -18,28 +20,36 @@ export const useNotifications = () => {
       try {
         setLoading(true);
         
-        // In a real implementation, this would fetch from a notifications table
-        // For now, we'll use the mock data
-        const { data, error } = await supabase
-          .from('notifications')
-          .select('*')
-          .eq('recipient_id', user.id)
-          .order('created_at', { ascending: false });
-        
-        if (error) throw error;
-        
-        // If we have no notifications table or data yet, use mock data
-        if (!data || data.length === 0) {
-          // We keep using the mock data for demonstration
-          const mockNotifications = getMockNotifications();
-          setNotifications(mockNotifications);
-          setUnreadCount(mockNotifications.filter(n => !n.read).length);
-        } else {
-          setNotifications(data as Notification[]);
-          setUnreadCount(data.filter((n: any) => !n.read).length);
+        // Try to fetch from a notifications table if it exists
+        try {
+          // This code will be used when we actually create the notifications table
+          // Currently, this will throw an error since the table doesn't exist
+          const { data, error } = await supabase
+            .from('notifications')
+            .select('*')
+            .eq('recipient_id', user.id)
+            .order('created_at', { ascending: false });
+          
+          if (error) throw error;
+          
+          if (data && data.length > 0) {
+            setNotifications(data as unknown as Notification[]);
+            setUnreadCount(data.filter((n: any) => !n.read).length);
+            return; // Exit if we successfully got notifications from the database
+          }
+        } catch (error) {
+          console.error('Error fetching notifications:', error);
+          // If there's an error (likely because the table doesn't exist),
+          // we'll fall through to use mock data below
         }
+        
+        // If we reach here, either the table doesn't exist or is empty
+        // We'll use mock data for demonstration purposes
+        const mockNotifications = getMockNotifications();
+        setNotifications(mockNotifications);
+        setUnreadCount(mockNotifications.filter(n => !n.read).length);
       } catch (error) {
-        console.error('Error fetching notifications:', error);
+        console.error('Error in notification system:', error);
         // For demo purposes, still set mock data on error
         const mockNotifications = getMockNotifications();
         setNotifications(mockNotifications);
@@ -109,6 +119,60 @@ export const useNotifications = () => {
         description: "Failed to mark all notifications as read",
         variant: "destructive"
       });
+    }
+  };
+
+  // Create a notification function (would be used by other parts of the app)
+  const createNotification = async (
+    type: NotificationType,
+    data: any,
+    recipientId: string
+  ) => {
+    if (!notificationTemplates[type]) return null;
+
+    try {
+      const template = notificationTemplates[type];
+      
+      const notification: Omit<Notification, 'id'> = {
+        type,
+        title: template.generateTitle(data),
+        content: template.generateContent(data),
+        date: new Date().toISOString(),
+        read: false,
+        users: data.users || [],
+        priority: template.priority,
+        availableActions: template.defaultActions,
+      };
+
+      if (data.project) notification.project = data.project;
+      if (data.meeting) notification.meeting = data.meeting;
+      if (data.message) notification.message = data.message;
+      if (data.sow) notification.sow = data.sow;
+
+      // In a real app, this would be saved to the database
+      // For now, we'll just return the notification object
+      // which could be used to update local state
+      
+      // TODO: In a real app, save to database
+      // const { data: savedNotification, error } = await supabase
+      //   .from('notifications')
+      //   .insert({
+      //     ...notification,
+      //     recipient_id: recipientId
+      //   })
+      //   .select()
+      //   .single();
+      
+      // if (error) throw error;
+      // return savedNotification;
+      
+      return {
+        ...notification,
+        id: Date.now().toString() // Mock ID for now
+      };
+    } catch (error) {
+      console.error('Error creating notification:', error);
+      return null;
     }
   };
 
@@ -184,6 +248,7 @@ export const useNotifications = () => {
     loading,
     unreadCount,
     markAsRead,
-    markAllAsRead
+    markAllAsRead,
+    createNotification
   };
 };
