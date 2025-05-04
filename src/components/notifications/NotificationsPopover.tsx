@@ -41,11 +41,12 @@ const NotificationsPopover = ({ hasNotifications, setHasNotifications }: Notific
   useEffect(() => {
     if (!user) return;
     
-    console.log('Setting up notification subscription for user:', user.id);
+    const channelName = `notifications_popover_${user.id}`;
+    console.log(`Setting up ${channelName} subscription for user:`, user.id);
     
     // Subscribe to new notifications
     const channel = supabase
-      .channel('notifications_channel')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -60,9 +61,12 @@ const NotificationsPopover = ({ hasNotifications, setHasNotifications }: Notific
           refreshNotifications();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log(`Notification popover subscription status: ${status}`);
+      });
     
     return () => {
+      console.log(`Removing ${channelName} subscription`);
       supabase.removeChannel(channel);
     };
   }, [user, refreshNotifications]);
@@ -162,6 +166,7 @@ const NotificationsPopover = ({ hasNotifications, setHasNotifications }: Notific
                 notification={notification} 
                 onMarkAsRead={markAsRead}
                 compact
+                onClick={handleNotificationClick}
               />
             ))
           )}

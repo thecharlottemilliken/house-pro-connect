@@ -8,6 +8,8 @@ import { toast } from '@/hooks/use-toast';
  */
 export const formatNotificationFromDB = (dbNotification: any): Notification => {
   try {
+    console.log('Formatting notification from DB:', dbNotification);
+    
     // Parse the data JSON field which contains our structured data
     const data = dbNotification.data || {};
     
@@ -59,6 +61,9 @@ export const fetchNotificationsFromDB = async (userId: string | undefined) => {
     
     if (error) throw error;
     
+    // Log the results for debugging
+    console.log(`Found ${data?.length || 0} notifications in database`);
+    
     return { data, error: null };
   } catch (error) {
     console.error('Error fetching notifications:', error);
@@ -74,6 +79,8 @@ export const markNotificationAsReadInDB = async (notificationId: string | number
     // Convert the notificationId to string if it's a number
     const idAsString = notificationId.toString();
     
+    console.log('Marking notification as read:', idAsString);
+    
     // Update the database
     const { error } = await supabase
       .from('notifications')
@@ -82,6 +89,7 @@ export const markNotificationAsReadInDB = async (notificationId: string | number
     
     if (error) throw error;
     
+    console.log('Successfully marked notification as read:', idAsString);
     return { success: true, error: null };
   } catch (error) {
     console.error('Error marking notification as read:', error);
@@ -101,6 +109,8 @@ export const markAllNotificationsAsReadInDB = async (userId: string | undefined)
   if (!userId) return { success: false, error: new Error('No user ID provided') };
   
   try {
+    console.log('Marking all notifications as read for user:', userId);
+    
     // Update the database
     const { error } = await supabase
       .from('notifications')
@@ -110,6 +120,7 @@ export const markAllNotificationsAsReadInDB = async (userId: string | undefined)
     
     if (error) throw error;
     
+    console.log('Successfully marked all notifications as read for user:', userId);
     return { success: true, error: null };
   } catch (error) {
     console.error('Error marking all notifications as read:', error);
@@ -131,9 +142,13 @@ export const createNotificationInDB = async (
   recipientId: string,
   notificationTemplates: any
 ) => {
-  if (!notificationTemplates[type]) return null;
+  if (!notificationTemplates[type]) {
+    console.error('No template found for notification type:', type);
+    return null;
+  }
 
   try {
+    console.log(`Creating ${type} notification for user ${recipientId}`, data);
     const template = notificationTemplates[type];
     
     // Prepare the data for DB insertion
@@ -179,6 +194,8 @@ export const createNotificationInDB = async (
       .single();
     
     if (error) throw error;
+    
+    console.log('Successfully created notification:', newNotification);
     
     // Return the new notification
     return formatNotificationFromDB(newNotification);

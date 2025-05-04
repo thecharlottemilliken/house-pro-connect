@@ -27,10 +27,11 @@ const CoachDashboard = () => {
   useEffect(() => {
     if (!user) return;
     
-    console.log('Setting up coach dashboard notification subscription for user:', user.id);
+    const channelName = `coach_dashboard_notifications_${user.id}`;
+    console.log(`Setting up ${channelName} subscription for user:`, user.id);
     
     const channel = supabase
-      .channel('coach_dashboard_notifications')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -48,9 +49,12 @@ const CoachDashboard = () => {
           refreshNotifications();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log(`Coach dashboard subscription status: ${status}`);
+      });
     
     return () => {
+      console.log(`Removing ${channelName} subscription`);
       supabase.removeChannel(channel);
     };
   }, [user, fetchProjects, refreshNotifications]);

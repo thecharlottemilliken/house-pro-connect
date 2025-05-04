@@ -23,6 +23,8 @@ Deno.serve(async (req) => {
   }
 
   try {
+    console.log("Starting notify-coaches-for-new-projects function");
+    
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -39,8 +41,18 @@ Deno.serve(async (req) => {
         managementPreferences.wantProjectCoach !== 'yes' || 
         !managementPreferences.timeSlots || 
         !managementPreferences.timeSlots.length) {
+      console.log("No coach request or time slots provided");
       return new Response(
         JSON.stringify({ message: 'No coach request or time slots provided' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Check if the project already has a scheduled meetup time
+    if (managementPreferences.scheduledMeetupTime) {
+      console.log("Project already has a scheduled meetup time - skipping notifications");
+      return new Response(
+        JSON.stringify({ message: 'Project already has scheduled meetup time' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -113,25 +125,33 @@ Deno.serve(async (req) => {
         }
       };
       
-      const { data: notification, error: notificationError } = await supabaseClient
-        .from('notifications')
-        .insert(notificationData)
-        .select()
-        .single();
-      
-      if (notificationError) {
-        console.error(`Error creating notification for coach ${coach.id}:`, notificationError);
-        notificationResults.push({ coachId: coach.id, success: false, error: notificationError });
-      } else {
-        console.log(`Created notification for coach ${coach.id}: ${notification.id}`);
-        notificationResults.push({ coachId: coach.id, success: true, notificationId: notification.id });
+      try {
+        const { data: notification, error: notificationError } = await supabaseClient
+          .from('notifications')
+          .insert(notificationData)
+          .select()
+          .single();
+        
+        if (notificationError) {
+          console.error(`Error creating notification for coach ${coach.id}:`, notificationError);
+          notificationResults.push({ coachId: coach.id, success: false, error: notificationError });
+        } else {
+          console.log(`Created notification for coach ${coach.id}: ${notification.id}`);
+          notificationResults.push({ coachId: coach.id, success: true, notificationId: notification.id });
+        }
+      } catch (error) {
+        console.error(`Unexpected error for coach ${coach.id}:`, error);
+        notificationResults.push({ coachId: coach.id, success: false, error: "Unexpected error" });
       }
     }
+    
+    const successCount = notificationResults.filter(r => r.success).length;
+    const failedCount = notificationResults.filter(r => !r.success).length;
     
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Notified ${coaches.length} coaches`,
+        message: `Notified ${successCount} coaches (${failedCount} failed)`,
         results: notificationResults
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

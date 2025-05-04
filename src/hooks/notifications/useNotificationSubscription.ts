@@ -22,11 +22,14 @@ export const useNotificationSubscription = ({
   useEffect(() => {
     if (!userId) return;
     
-    console.log('Setting up notification subscription in useNotificationSubscription hook');
+    console.log('Setting up notification subscription in useNotificationSubscription hook for user:', userId);
+    
+    // Use a consistent channel name format for all notification subscriptions
+    const channelName = `notifications_subscription_${userId}`;
     
     // Subscribe to new notifications
     const channel = supabase
-      .channel('use_notifications_channel')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -37,24 +40,34 @@ export const useNotificationSubscription = ({
         },
         (payload) => {
           console.log('New notification received in subscription hook:', payload);
-          const newNotification = formatNotificationFromDB(payload.new);
-          
-          // Call the callback
-          onNewNotification(newNotification);
-          
-          // Show toast for new notification
-          toast({
-            title: newNotification.title,
-            description: newNotification.content || '',
-          });
+          try {
+            const newNotification = formatNotificationFromDB(payload.new);
+            
+            // Call the callback
+            onNewNotification(newNotification);
+            
+            // Show toast for new notification
+            toast({
+              title: newNotification.title,
+              description: newNotification.content || '',
+            });
+          } catch (error) {
+            console.error('Error processing new notification:', error);
+          }
         }
       )
-      .subscribe();
-    
-    // Update subscription state
-    setIsSubscribed(true);
+      .subscribe((status) => {
+        console.log(`Notification subscription status: ${status}`);
+        if (status === 'SUBSCRIBED') {
+          console.log(`Successfully subscribed to notifications for user ${userId}`);
+          setIsSubscribed(true);
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('Error subscribing to notification channel');
+        }
+      });
     
     return () => {
+      console.log(`Removing notification subscription for user ${userId}`);
       supabase.removeChannel(channel);
       setIsSubscribed(false);
     };

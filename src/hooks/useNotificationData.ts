@@ -55,6 +55,7 @@ export const useNotificationData = () => {
 
   // Add a new notification to the local state
   const addNotification = useCallback((newNotification: Notification) => {
+    console.log('Adding notification to state:', newNotification);
     setNotifications(prev => [newNotification, ...prev]);
     if (!newNotification.read) {
       setUnreadCount(prev => prev + 1);

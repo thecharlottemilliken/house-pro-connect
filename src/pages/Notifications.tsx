@@ -27,9 +27,12 @@ const Notifications = () => {
   useEffect(() => {
     if (!user) return;
     
+    const channelName = `notifications_page_${user.id}`;
+    console.log(`Setting up ${channelName} subscription`);
+    
     // Subscribe to new notifications
     const channel = supabase
-      .channel('notifications_page_channel')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -44,9 +47,12 @@ const Notifications = () => {
           refreshNotifications();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log(`Notification page subscription status: ${status}`);
+      });
     
     return () => {
+      console.log(`Removing ${channelName} subscription`);
       supabase.removeChannel(channel);
     };
   }, [user, refreshNotifications]);
