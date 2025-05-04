@@ -152,62 +152,46 @@ const ProjectDashboard = () => {
               </div>
             </div>
             
-            {/* Main dashboard content with 3-column grid layout */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Top Row */}
-              {/* Property Card - 1 column width */}
-              <div className="md:col-span-1">
+            {/* Updated layout with nested grid containers */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Left Column - 1 column width */}
+              <div className="lg:col-span-1 flex flex-col gap-6">
+                {/* Property Card */}
                 <PropertyCard 
                   propertyDetails={propertyCardData}
                   renovationAreas={renovationAreas}
                 />
-              </div>
-
-              {/* Project Progress Card - 2 column width */}
-              <div className="md:col-span-1 lg:col-span-2">
-                <ProjectProgressCard 
-                  projectId={projectId}
-                />
-              </div>
-
-              {/* Second Row */}
-              {/* Financial Overview Card - 1 column width */}
-              <div className="md:col-span-1">
+                
+                {/* Financial Overview Card */}
                 <FinancialComparisonCard 
                   projectId={projectId}
-                  className="h-full"
-                />
-              </div>
-
-              {/* Schedule Card - 1 column width */}
-              <div className="md:col-span-1">
-                <ScheduleCardWidget 
-                  projectId={projectId}
-                  className="h-full"
-                />
-              </div>
-
-              {/* Action Items Card - 1 column width */}
-              <div className="md:col-span-1">
-                <ActionItemsWidget 
-                  projectId={projectId}
-                  projectData={projectData}
-                  isOwner={isOwner}
-                  isCoach={isCoach}
-                  className="h-full"
-                />
-              </div>
-
-              {/* Third Row */}
-              {/* Project Milestones Widget - 2 column width */}
-              <div className="md:col-span-2">
-                <ProjectMilestonesWidget 
-                  projectId={projectId}
-                  className="h-full"
                 />
               </div>
               
-              {/* SOW creation block if needed */}
+              {/* Right Column - 2 column width */}
+              <div className="lg:col-span-2 flex flex-col gap-6">
+                {/* Project Progress Card - spans 2 columns */}
+                <ProjectProgressCard projectId={projectId} />
+                
+                {/* Nested grid for Schedule and Action Items */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Schedule Card */}
+                  <ScheduleCardWidget projectId={projectId} />
+                  
+                  {/* Action Items Card */}
+                  <ActionItemsWidget
+                    projectId={projectId}
+                    projectData={projectData}
+                    isOwner={isOwner}
+                    isCoach={isCoach}
+                  />
+                </div>
+                
+                {/* Project Milestones Widget - spans 2 columns */}
+                <ProjectMilestonesWidget projectId={projectId} />
+              </div>
+              
+              {/* SOW creation block if needed - spans all columns */}
               {!hasSOW && isCoach && (
                 <div className="lg:col-span-3">
                   <div className="border border-gray-200 rounded-lg p-8 text-center">
