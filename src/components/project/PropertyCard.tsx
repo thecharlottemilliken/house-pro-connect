@@ -1,4 +1,3 @@
-
 import React from "react";
 import { ArrowRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -30,7 +29,7 @@ const PropertyCard = ({
       </div>
       
       {/* Property Details */}
-      <div className="p-8">
+      <div className="p-8 px-[16px] py-[16px]">
         <h3 className="text-lg font-semibold">
           {propertyDetails.property_name}
         </h3>
