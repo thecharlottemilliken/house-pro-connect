@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log("Starting notify-coaches-for-new-projects function");
+    console.log("[notify-coaches-for-new-projects] Starting function");
     
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -34,14 +34,14 @@ Deno.serve(async (req) => {
     const requestData: ProjectUpdateEvent = await req.json();
     const { projectId, managementPreferences } = requestData;
     
-    console.log(`Project ID: ${projectId}, Management Preferences:`, managementPreferences);
+    console.log(`[notify-coaches-for-new-projects] Project ID: ${projectId}, Management Preferences:`, managementPreferences);
     
     // Only proceed if the project has management preferences with coach request and time slots
     if (!managementPreferences?.wantProjectCoach || 
         managementPreferences.wantProjectCoach !== 'yes' || 
         !managementPreferences.timeSlots || 
         !managementPreferences.timeSlots.length) {
-      console.log("No coach request or time slots provided");
+      console.log("[notify-coaches-for-new-projects] No coach request or time slots provided");
       return new Response(
         JSON.stringify({ message: 'No coach request or time slots provided' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -50,14 +50,14 @@ Deno.serve(async (req) => {
     
     // Check if the project already has a scheduled meetup time
     if (managementPreferences.scheduledMeetupTime) {
-      console.log("Project already has a scheduled meetup time - skipping notifications");
+      console.log("[notify-coaches-for-new-projects] Project already has a scheduled meetup time - skipping notifications");
       return new Response(
         JSON.stringify({ message: 'Project already has scheduled meetup time' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
-    console.log(`Checking project ${projectId} for coach notification`);
+    console.log(`[notify-coaches-for-new-projects] Checking project ${projectId} for coach notification`);
 
     // Get project details with the user information through a separate join
     const { data: projectData, error: projectError } = await supabaseClient
@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
       .single();
     
     if (projectError || !projectData) {
-      console.error('Error getting project data:', projectError);
+      console.error('[notify-coaches-for-new-projects] Error getting project data:', projectError);
       throw new Error('Could not fetch project data');
     }
 
@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
       .single();
     
     if (userError || !userData) {
-      console.error('Error getting user data:', userError);
+      console.error('[notify-coaches-for-new-projects] Error getting user data:', userError);
       throw new Error('Could not fetch user data');
     }
 
@@ -94,16 +94,16 @@ Deno.serve(async (req) => {
       .eq('role', 'coach');
     
     if (coachesError || !coaches) {
-      console.error('Error getting coaches:', coachesError);
+      console.error('[notify-coaches-for-new-projects] Error getting coaches:', coachesError);
       throw new Error('Could not fetch coaches');
     }
     
-    console.log(`Found ${coaches.length} coaches to notify`);
+    console.log(`[notify-coaches-for-new-projects] Found ${coaches.length} coaches to notify`);
     
     // Create a notification for each coach
     const notificationResults = [];
     for (const coach of coaches) {
-      console.log(`Creating notification for coach ${coach.id} (${coach.name})`);
+      console.log(`[notify-coaches-for-new-projects] Creating notification for coach ${coach.id} (${coach.name})`);
       
       const notificationData = {
         recipient_id: coach.id,
@@ -125,6 +125,8 @@ Deno.serve(async (req) => {
         }
       };
       
+      console.log("[notify-coaches-for-new-projects] Notification data:", notificationData);
+      
       try {
         const { data: notification, error: notificationError } = await supabaseClient
           .from('notifications')
@@ -133,14 +135,14 @@ Deno.serve(async (req) => {
           .single();
         
         if (notificationError) {
-          console.error(`Error creating notification for coach ${coach.id}:`, notificationError);
+          console.error(`[notify-coaches-for-new-projects] Error creating notification for coach ${coach.id}:`, notificationError);
           notificationResults.push({ coachId: coach.id, success: false, error: notificationError });
         } else {
-          console.log(`Created notification for coach ${coach.id}: ${notification.id}`);
+          console.log(`[notify-coaches-for-new-projects] Created notification for coach ${coach.id}: ${notification.id}`);
           notificationResults.push({ coachId: coach.id, success: true, notificationId: notification.id });
         }
       } catch (error) {
-        console.error(`Unexpected error for coach ${coach.id}:`, error);
+        console.error(`[notify-coaches-for-new-projects] Unexpected error for coach ${coach.id}:`, error);
         notificationResults.push({ coachId: coach.id, success: false, error: "Unexpected error" });
       }
     }
@@ -158,7 +160,7 @@ Deno.serve(async (req) => {
     );
     
   } catch (error) {
-    console.error('Error in notify-coaches function:', error);
+    console.error('[notify-coaches-for-new-projects] Error in function:', error);
     
     return new Response(
       JSON.stringify({ error: error.message }),

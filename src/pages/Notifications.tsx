@@ -28,7 +28,7 @@ const Notifications = () => {
     if (!user) return;
     
     const channelName = `notifications_page_${user.id}`;
-    console.log(`Setting up ${channelName} subscription`);
+    console.log(`[Notifications Page] Setting up ${channelName} subscription`);
     
     // Subscribe to new notifications
     const channel = supabase
@@ -42,17 +42,31 @@ const Notifications = () => {
           filter: `recipient_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('New notification received on notifications page:', payload);
+          console.log('[Notifications Page] New notification received:', payload);
+          // Refresh notifications to get the latest data
+          refreshNotifications();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `recipient_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('[Notifications Page] Notification updated:', payload);
           // Refresh notifications to get the latest data
           refreshNotifications();
         }
       )
       .subscribe((status) => {
-        console.log(`Notification page subscription status: ${status}`);
+        console.log(`[Notifications Page] Subscription status: ${status}`);
       });
     
     return () => {
-      console.log(`Removing ${channelName} subscription`);
+      console.log(`[Notifications Page] Removing ${channelName} subscription`);
       supabase.removeChannel(channel);
     };
   }, [user, refreshNotifications]);
@@ -109,6 +123,7 @@ const Notifications = () => {
           <button 
             className="text-blue-500"
             onClick={markAllAsRead}
+            disabled={unreadCount === 0}
           >
             Mark all as read
           </button>

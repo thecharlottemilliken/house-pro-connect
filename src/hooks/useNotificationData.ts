@@ -6,6 +6,12 @@ import { fetchNotificationsFromDB, formatNotificationFromDB } from './notificati
 import { getMockNotifications } from './notifications/mockNotifications';
 
 /**
+ * Flag to enable/disable mock notifications when no real ones exist
+ * Set to false in production
+ */
+const USE_MOCK_FALLBACK = false;
+
+/**
  * Hook to fetch and manage notification data
  */
 export const useNotificationData = () => {
@@ -21,28 +27,44 @@ export const useNotificationData = () => {
     try {
       setLoading(true);
       
+      console.log('[useNotificationData] Fetching notifications for user:', user.id);
       const { data, error } = await fetchNotificationsFromDB(user.id);
       
       if (error) throw error;
       
       if (data && data.length > 0) {
-        console.log(`Found ${data.length} notifications in database`);
+        console.log(`[useNotificationData] Found ${data.length} notifications in database`);
         const formattedNotifications = data.map(formatNotificationFromDB);
         setNotifications(formattedNotifications);
         setUnreadCount(formattedNotifications.filter(n => !n.read).length);
       } else {
-        console.log('No notifications found in DB, using mock data');
-        // If no notifications in DB, use mock data for demonstration
+        console.log('[useNotificationData] No notifications found in DB');
+        
+        if (USE_MOCK_FALLBACK) {
+          console.log('[useNotificationData] Using mock data for demonstration');
+          const mockNotifications = getMockNotifications();
+          setNotifications(mockNotifications);
+          setUnreadCount(mockNotifications.filter(n => !n.read).length);
+        } else {
+          // Just set empty array when there's no notifications
+          setNotifications([]);
+          setUnreadCount(0);
+        }
+      }
+    } catch (error) {
+      console.error('[useNotificationData] Error fetching notifications:', error);
+      
+      if (USE_MOCK_FALLBACK) {
+        console.log('[useNotificationData] Using mock data due to error');
+        // For demo purposes, still set mock data on error
         const mockNotifications = getMockNotifications();
         setNotifications(mockNotifications);
         setUnreadCount(mockNotifications.filter(n => !n.read).length);
+      } else {
+        // Just set empty array when there's an error
+        setNotifications([]);
+        setUnreadCount(0);
       }
-    } catch (error) {
-      console.error('Error in notification system:', error);
-      // For demo purposes, still set mock data on error
-      const mockNotifications = getMockNotifications();
-      setNotifications(mockNotifications);
-      setUnreadCount(mockNotifications.filter(n => !n.read).length);
     } finally {
       setLoading(false);
     }
@@ -55,7 +77,7 @@ export const useNotificationData = () => {
 
   // Add a new notification to the local state
   const addNotification = useCallback((newNotification: Notification) => {
-    console.log('Adding notification to state:', newNotification);
+    console.log('[useNotificationData] Adding notification to state:', newNotification);
     setNotifications(prev => [newNotification, ...prev]);
     if (!newNotification.read) {
       setUnreadCount(prev => prev + 1);

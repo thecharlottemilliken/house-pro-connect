@@ -8,7 +8,7 @@ interface NotificationItemProps {
   notification: Notification;
   onMarkAsRead: (id: string | number) => void;
   compact?: boolean;
-  onClick?: () => void;  // Add the onClick prop
+  onClick?: () => void;
 }
 
 const NotificationItem = ({ notification, onMarkAsRead, compact = false, onClick }: NotificationItemProps) => {
@@ -30,6 +30,8 @@ const NotificationItem = ({ notification, onMarkAsRead, compact = false, onClick
   
   // Navigation helper function based on notification type
   const navigateToTarget = (notification: Notification) => {
+    console.log('[NotificationItem] Navigating based on notification type:', notification.type);
+    
     switch (notification.type) {
       case 'message':
         if (notification.project?.id) {
@@ -57,11 +59,20 @@ const NotificationItem = ({ notification, onMarkAsRead, compact = false, onClick
         
       case 'new_meeting':
         if (notification.meeting?.id) {
+          console.log('[NotificationItem] Navigating to meeting:', notification.meeting.id);
           navigate(`/calendar?event=${notification.meeting.id}`);
         }
         break;
         
+      case 'project_coaching_request':
+        if (notification.project?.id) {
+          console.log('[NotificationItem] Navigating to project coaching request:', notification.project.id);
+          navigate(`/project-calendar/${notification.project.id}`);
+        }
+        break;
+        
       default:
+        console.log('[NotificationItem] No navigation defined for notification type:', notification.type);
         break;
     }
   };
@@ -131,6 +142,8 @@ const NotificationItem = ({ notification, onMarkAsRead, compact = false, onClick
       case 'message':
         return <MessageCircle className="h-4 w-4" />;
       case 'new_meeting':
+        return <Calendar className="h-4 w-4" />;
+      case 'project_coaching_request':
         return <Calendar className="h-4 w-4" />;
       default:
         return null;
@@ -235,13 +248,17 @@ const NotificationItem = ({ notification, onMarkAsRead, compact = false, onClick
   
   return (
     <div 
-      className={`border-b p-3 hover:bg-gray-50 cursor-pointer`}
+      className={`border-b p-3 hover:bg-gray-50 cursor-pointer ${!notification.read ? 'bg-blue-50/50' : ''}`}
       onClick={handleNotificationClick}
     >
       <div className="flex justify-between">
         <div className="flex gap-2">
           <div className="h-8 w-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-medium">
-            {notification.users[0]?.avatar || notification.users[0]?.name[0]}
+            {notification.users && notification.users[0]?.avatar 
+              ? notification.users[0].avatar 
+              : notification.users && notification.users[0]?.name 
+                ? notification.users[0].name.charAt(0).toUpperCase() 
+                : '?'}
           </div>
           <div className="flex-1">
             <div className="font-medium text-sm">
@@ -265,6 +282,18 @@ const NotificationItem = ({ notification, onMarkAsRead, compact = false, onClick
       {notification.type === "message" && renderIcon() && (
         <div className="flex items-center mt-1 text-gray-500 text-xs">
           {renderIcon()} <span className="ml-1">Message · {notification.project?.name}</span>
+        </div>
+      )}
+      
+      {notification.type === "new_meeting" && (
+        <div className="flex items-center mt-1 text-gray-500 text-xs">
+          <Calendar className="h-4 w-4" /> <span className="ml-1">Meeting · {notification.project?.name}</span>
+        </div>
+      )}
+      
+      {notification.type === "project_coaching_request" && (
+        <div className="flex items-center mt-1 text-gray-500 text-xs">
+          <Calendar className="h-4 w-4" /> <span className="ml-1">Coaching Request · {notification.project?.name}</span>
         </div>
       )}
     </div>

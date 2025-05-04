@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log("Starting notify-meeting-participants function");
+    console.log("[notify-meeting-participants] Starting function");
     
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -29,7 +29,7 @@ serve(async (req) => {
     // Get authentication details
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      console.error("No authorization header provided");
+      console.error("[notify-meeting-participants] No authorization header provided");
       return new Response(
         JSON.stringify({ error: "No authorization header" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -44,7 +44,7 @@ serve(async (req) => {
     } = await supabaseClient.auth.getUser(token);
 
     if (userError || !user) {
-      console.error("Unauthorized access attempt:", userError);
+      console.error("[notify-meeting-participants] Unauthorized access attempt:", userError);
       return new Response(
         JSON.stringify({ error: "Unauthorized", details: userError }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -53,10 +53,10 @@ serve(async (req) => {
 
     // Get request body with event details
     const { eventData, coachName } = await req.json();
-    console.log("Meeting event data received:", eventData);
+    console.log("[notify-meeting-participants] Meeting event data received:", eventData);
     
     if (!eventData || !eventData.project_id) {
-      console.error("Missing required event data");
+      console.error("[notify-meeting-participants] Missing required event data");
       return new Response(
         JSON.stringify({ error: "Missing required event data" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -71,17 +71,17 @@ serve(async (req) => {
       .neq("user_id", eventData.created_by);
     
     if (teamError) {
-      console.error("Failed to fetch team members:", teamError);
+      console.error("[notify-meeting-participants] Failed to fetch team members:", teamError);
       return new Response(
         JSON.stringify({ error: "Failed to fetch team members", details: teamError }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`Found ${teamMembers?.length || 0} team members to notify`);
+    console.log(`[notify-meeting-participants] Found ${teamMembers?.length || 0} team members to notify`);
     
     if (!teamMembers?.length) {
-      console.log("No team members to notify");
+      console.log("[notify-meeting-participants] No team members to notify");
       return new Response(
         JSON.stringify({ message: "No team members to notify" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -96,7 +96,7 @@ serve(async (req) => {
       .single();
     
     if (projectError) {
-      console.error("Failed to fetch project details:", projectError);
+      console.error("[notify-meeting-participants] Failed to fetch project details:", projectError);
       return new Response(
         JSON.stringify({ error: "Failed to fetch project details", details: projectError }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -127,12 +127,12 @@ serve(async (req) => {
           .single();
         
         if (creatorError) {
-          console.error(`Error getting creator name for ${user.id}:`, creatorError);
+          console.error(`[notify-meeting-participants] Error getting creator name for ${user.id}:`, creatorError);
         }
         
         const creatorName = creatorData?.name || coachName || "Your coach";
         
-        console.log(`Creating notification for team member ${member.user_id}`);
+        console.log(`[notify-meeting-participants] Creating notification for team member ${member.user_id}`);
         
         // Create notification data
         const notificationData = {
@@ -160,20 +160,22 @@ serve(async (req) => {
           }
         };
 
+        console.log("[notify-meeting-participants] Notification data:", notificationData);
+
         const { data: insertData, error: insertError } = await supabaseAdmin
           .from('notifications')
           .insert(notificationData)
           .select();
         
         if (insertError) {
-          console.error(`Error creating notification for ${member.user_id}:`, insertError);
+          console.error(`[notify-meeting-participants] Error creating notification for ${member.user_id}:`, insertError);
           return { success: false, error: insertError };
         }
         
-        console.log(`Successfully created notification for ${member.user_id}:`, insertData);
+        console.log(`[notify-meeting-participants] Successfully created notification for ${member.user_id}:`, insertData);
         return { success: true, data: insertData };
       } catch (error) {
-        console.error(`Error in notification creation for ${member.user_id}:`, error);
+        console.error(`[notify-meeting-participants] Error in notification creation for ${member.user_id}:`, error);
         return { success: false, error };
       }
     });
@@ -183,7 +185,7 @@ serve(async (req) => {
     const successful = results.filter(r => r.success).length;
     const failed = results.filter(r => !r.success).length;
     
-    console.log(`Sent ${successful} notifications to team members (${failed} failed)`);
+    console.log(`[notify-meeting-participants] Sent ${successful} notifications to team members (${failed} failed)`);
 
     return new Response(
       JSON.stringify({ 
@@ -197,7 +199,7 @@ serve(async (req) => {
     );
     
   } catch (error) {
-    console.error("Error in notify-meeting-participants function:", error);
+    console.error("[notify-meeting-participants] Error in function:", error);
     return new Response(
       JSON.stringify({ error: "Internal server error", details: error.message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

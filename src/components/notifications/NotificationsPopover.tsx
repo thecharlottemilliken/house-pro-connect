@@ -42,7 +42,7 @@ const NotificationsPopover = ({ hasNotifications, setHasNotifications }: Notific
     if (!user) return;
     
     const channelName = `notifications_popover_${user.id}`;
-    console.log(`Setting up ${channelName} subscription for user:`, user.id);
+    console.log(`[NotificationsPopover] Setting up ${channelName} subscription for user:`, user.id);
     
     // Subscribe to new notifications
     const channel = supabase
@@ -56,17 +56,30 @@ const NotificationsPopover = ({ hasNotifications, setHasNotifications }: Notific
           filter: `recipient_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('New notification received in popover:', payload);
+          console.log('[NotificationsPopover] New notification received:', payload);
           // Refresh notifications to get the latest data
           refreshNotifications();
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `recipient_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('[NotificationsPopover] Notification updated:', payload);
+          refreshNotifications();
+        }
+      )
       .subscribe((status) => {
-        console.log(`Notification popover subscription status: ${status}`);
+        console.log(`[NotificationsPopover] Subscription status: ${status}`);
       });
     
     return () => {
-      console.log(`Removing ${channelName} subscription`);
+      console.log(`[NotificationsPopover] Removing ${channelName} subscription`);
       supabase.removeChannel(channel);
     };
   }, [user, refreshNotifications]);
@@ -74,8 +87,8 @@ const NotificationsPopover = ({ hasNotifications, setHasNotifications }: Notific
   // Filter notifications based on active tab
   const filteredNotifications = React.useMemo(() => {
     return activeTab === 'all' 
-      ? notifications 
-      : notifications.filter(n => !n.read);
+      ? notifications.slice(0, 5) // Limit to 5 notifications for the popover
+      : notifications.filter(n => !n.read).slice(0, 5); // Limit to 5 unread notifications
   }, [notifications, activeTab]);
 
   const handleMarkAllRead = (e: React.MouseEvent) => {
@@ -143,8 +156,12 @@ const NotificationsPopover = ({ hasNotifications, setHasNotifications }: Notific
             </button>
           </div>
           <button 
-            className="text-blue-500 text-sm font-medium"
+            className={cn(
+              "text-blue-500 text-sm font-medium",
+              unreadCount === 0 ? "opacity-50 cursor-not-allowed" : ""  
+            )}
             onClick={handleMarkAllRead}
+            disabled={unreadCount === 0}
           >
             Mark all as read
           </button>
