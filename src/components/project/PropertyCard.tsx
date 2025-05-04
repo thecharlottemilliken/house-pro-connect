@@ -1,3 +1,4 @@
+
 import React from "react";
 import { ArrowRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -24,7 +25,7 @@ const PropertyCard = ({
   const imageUrl = propertyDetails.home_photos?.length ? propertyDetails.home_photos[0] : propertyDetails.image_url || '/placeholder.svg';
   return <Card className="overflow-hidden rounded-xl shadow-lg border-0">
       {/* Property Image */}
-      <div className="w-full h-[350px]">
+      <div className="w-full h-[180px]">
         <img src={imageUrl} alt={propertyDetails.property_name} className="w-full h-full object-cover" />
       </div>
       
