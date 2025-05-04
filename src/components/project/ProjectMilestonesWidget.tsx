@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { format, addDays, startOfDay, eachDayOfInterval, isSameDay, isWithinInterval } from "date-fns";
 import { cn } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ProjectMilestonesWidgetProps {
   projectId: string;
@@ -119,90 +120,94 @@ const ProjectMilestonesWidget = ({ projectId, className }: ProjectMilestonesWidg
         </div>
       </CardHeader>
       <CardContent className="p-0 bg-gray-50 overflow-hidden">
-        {/* Days Header */}
-        <div className="grid" style={{ gridTemplateColumns: `repeat(${daysToShow}, minmax(50px, 1fr))` }}>
-          {days.map((day, index) => {
-            const isToday = isSameDay(day, new Date());
-            return (
+        <ScrollArea className="w-full">
+          <div className="min-w-[800px]">
+            {/* Days Header */}
+            <div className="grid" style={{ gridTemplateColumns: `repeat(${daysToShow}, minmax(50px, 1fr))` }}>
+              {days.map((day, index) => {
+                const isToday = isSameDay(day, new Date());
+                return (
+                  <div 
+                    key={day.getTime()} 
+                    className={cn(
+                      "text-center py-2 border-b border-gray-200",
+                      isToday && "bg-blue-50"
+                    )}
+                  >
+                    <div className={cn(
+                      "text-sm font-medium",
+                      isToday && "text-blue-600"
+                    )}>
+                      {format(day, "d")}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {format(day, "EEE")}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            
+            {/* Gantt Chart Visualization */}
+            <div className="relative min-h-[180px]">
+              {/* Grid lines */}
               <div 
-                key={day.getTime()} 
-                className={cn(
-                  "text-center py-2 border-b border-gray-200",
-                  isToday && "bg-blue-50"
-                )}
+                className="absolute top-0 left-0 w-full h-full grid" 
+                style={{ gridTemplateColumns: `repeat(${daysToShow}, minmax(50px, 1fr))` }}
               >
-                <div className={cn(
-                  "text-sm font-medium",
-                  isToday && "text-blue-600"
-                )}>
-                  {format(day, "d")}
-                </div>
-                <div className="text-xs text-gray-500">
-                  {format(day, "EEE")}
-                </div>
+                {days.map((day) => (
+                  <div 
+                    key={day.getTime()} 
+                    className={cn(
+                      "border-r border-gray-200 h-full",
+                      isSameDay(day, new Date()) && "bg-blue-50"
+                    )}
+                  />
+                ))}
               </div>
-            );
-          })}
-        </div>
-        
-        {/* Gantt Chart Visualization */}
-        <div className="relative min-h-[180px]">
-          {/* Grid lines */}
-          <div 
-            className="absolute top-0 left-0 w-full h-full grid" 
-            style={{ gridTemplateColumns: `repeat(${daysToShow}, minmax(50px, 1fr))` }}
-          >
-            {days.map((day) => (
-              <div 
-                key={day.getTime()} 
-                className={cn(
-                  "border-r border-gray-200 h-full",
-                  isSameDay(day, new Date()) && "bg-blue-50"
-                )}
-              />
-            ))}
+              
+              {/* Today marker */}
+              {days.some(day => isSameDay(day, new Date())) && (
+                <div 
+                  className="absolute top-0 bottom-0 w-0.5 bg-blue-400 z-10" 
+                  style={{ 
+                    left: `${days.findIndex(day => isSameDay(day, new Date())) * (100 / days.length)}%`,
+                    transform: 'translateX(-50%)'
+                  }}
+                />
+              )}
+              
+              {/* Milestone bars */}
+              {milestones.map((milestone, index) => {
+                const { startIndex, span, isVisible } = getMilestonePosition(milestone);
+                
+                if (!isVisible) return null;
+                
+                return (
+                  <div 
+                    key={milestone.id}
+                    className="absolute h-10 flex items-center rounded-full z-20 px-3"
+                    style={{
+                      top: `${index * 48 + 24}px`,
+                      left: `${startIndex * (100 / days.length)}%`,
+                      width: `${span * (100 / days.length)}%`,
+                      backgroundColor: milestone.color,
+                    }}
+                  >
+                    <div className="flex items-center h-full w-full">
+                      <span className="bg-white bg-opacity-90 text-xs px-2 py-0.5 rounded-full mr-2">
+                        {milestone.status === "active" ? "Active" : milestone.status}
+                      </span>
+                      <span className="text-white font-medium text-sm truncate">
+                        {milestone.name}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-          
-          {/* Today marker */}
-          {days.some(day => isSameDay(day, new Date())) && (
-            <div 
-              className="absolute top-0 bottom-0 w-0.5 bg-blue-400 z-10" 
-              style={{ 
-                left: `${days.findIndex(day => isSameDay(day, new Date())) * (100 / days.length)}%`,
-                transform: 'translateX(-50%)'
-              }}
-            />
-          )}
-          
-          {/* Milestone bars */}
-          {milestones.map((milestone, index) => {
-            const { startIndex, span, isVisible } = getMilestonePosition(milestone);
-            
-            if (!isVisible) return null;
-            
-            return (
-              <div 
-                key={milestone.id}
-                className="absolute h-10 flex items-center rounded-full z-20 px-3"
-                style={{
-                  top: `${index * 48 + 24}px`,
-                  left: `${startIndex * (100 / days.length)}%`,
-                  width: `${span * (100 / days.length)}%`,
-                  backgroundColor: milestone.color,
-                }}
-              >
-                <div className="flex items-center h-full w-full">
-                  <span className="bg-white bg-opacity-90 text-xs px-2 py-0.5 rounded-full mr-2">
-                    {milestone.status === "active" ? "Active" : milestone.status}
-                  </span>
-                  <span className="text-white font-medium text-sm truncate">
-                    {milestone.name}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        </ScrollArea>
       </CardContent>
     </Card>
   );
