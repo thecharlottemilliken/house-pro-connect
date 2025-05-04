@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Plus } from "lucide-react";
@@ -23,6 +22,7 @@ import { Json } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { PropertyFileUpload } from "@/components/property/PropertyFileUpload";
 import { FileWithPreview } from "@/components/ui/file-upload";
+import DesignerInformationForm from "@/components/project/create/DesignerInformationForm";
 
 const DesignPreferences = () => {
   const navigate = useNavigate();
@@ -37,7 +37,7 @@ const DesignPreferences = () => {
   const [hasDesigns, setHasDesigns] = useState<boolean>(true);
   
   const [designers, setDesigners] = useState([
-    { businessName: "", contactName: "", email: "", phone: "", speciality: "Architecture", assignedArea: "" }
+    { businessName: "", contactName: "", email: "", phone: "", speciality: "Architecture", assignedArea: "all_rooms" }
   ]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -47,7 +47,7 @@ const DesignPreferences = () => {
     contactName: "",
     email: "",
     phone: "",
-    assignedArea: "",
+    assignedArea: "all_rooms",
   });
 
   // Consolidated file upload state
@@ -250,7 +250,7 @@ const DesignPreferences = () => {
   };
 
   const addAnotherDesigner = () => {
-    setDesigners([...designers, { businessName: "", contactName: "", email: "", phone: "", speciality: "Architecture", assignedArea: "" }]);
+    setDesigners([...designers, { businessName: "", contactName: "", email: "", phone: "", speciality: "Architecture", assignedArea: "all_rooms" }]);
   };
 
   const updateDesigner = (index: number, field: string, value: string) => {
@@ -344,77 +344,15 @@ const DesignPreferences = () => {
                 <div className="space-y-6 bg-gray-50 p-6 rounded-lg mb-6">
                   <h3 className="text-lg font-semibold">Designer Information</h3>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Business Name
-                      </label>
-                      <Input
-                        type="text"
-                        placeholder="Design Studio Name"
-                        value={designerContactInfo.businessName}
-                        onChange={(e) => updateDesignerContactInfo("businessName", e.target.value)}
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Contact Name
-                      </label>
-                      <Input
-                        type="text"
-                        placeholder="Designer's Name"
-                        value={designerContactInfo.contactName}
-                        onChange={(e) => updateDesignerContactInfo("contactName", e.target.value)}
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Email
-                      </label>
-                      <Input
-                        type="email"
-                        placeholder="email@example.com"
-                        value={designerContactInfo.email}
-                        onChange={(e) => updateDesignerContactInfo("email", e.target.value)}
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Phone
-                      </label>
-                      <Input
-                        type="tel"
-                        placeholder="000 000 0000"
-                        value={designerContactInfo.phone}
-                        onChange={(e) => updateDesignerContactInfo("phone", e.target.value)}
-                      />
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Assigned Room
-                      </label>
-                      <Select 
-                        value={designerContactInfo.assignedArea} 
-                        onValueChange={(value) => updateDesignerContactInfo("assignedArea", value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a room to assign" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            <SelectItem value="">All Rooms</SelectItem>
-                            {renovationAreas.map((area) => (
-                              <SelectItem key={area.area} value={area.area}>{area.area}</SelectItem>
-                            ))}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
+                  <DesignerInformationForm
+                    businessName={designerContactInfo.businessName}
+                    contactName={designerContactInfo.contactName}
+                    email={designerContactInfo.email}
+                    phone={designerContactInfo.phone}
+                    assignedArea={designerContactInfo.assignedArea}
+                    renovationAreas={renovationAreas}
+                    onUpdate={updateDesignerContactInfo}
+                  />
                 </div>
 
                 <h3 className="text-lg font-semibold">Upload your project's design information</h3>
@@ -545,7 +483,7 @@ const DesignPreferences = () => {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectGroup>
-                              <SelectItem value="">All Rooms</SelectItem>
+                              <SelectItem value="all_rooms">All Rooms</SelectItem>
                               {renovationAreas.map((area) => (
                                 <SelectItem key={area.area} value={area.area}>{area.area}</SelectItem>
                               ))}

@@ -91,7 +91,7 @@ const DesignerInformationForm = ({
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="">All Rooms</SelectItem>
+              <SelectItem value="all_rooms">All Rooms</SelectItem>
               {renovationAreas.map((area) => (
                 <SelectItem key={area.area} value={area.area}>{area.area}</SelectItem>
               ))}
