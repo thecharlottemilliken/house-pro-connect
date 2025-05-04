@@ -83,20 +83,17 @@ const ProjectSidebar = ({
               <ArrowLeft className="mr-2 h-4 w-4" /> Back to Projects
             </Button>
             
-            {/* Expand/Collapse Button - Always visible */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="flex"
-              onClick={toggleSidebar}
-              aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
-            >
-              {open ? (
+            {open && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="flex"
+                onClick={toggleSidebar}
+                aria-label="Collapse sidebar"
+              >
                 <PanelLeftClose className="h-4 w-4 text-gray-700" />
-              ) : (
-                <PanelLeftOpen className="h-4 w-4 text-gray-700" />
-              )}
-            </Button>
+              </Button>
+            )}
           </div>
         </SidebarHeader>
         
@@ -116,6 +113,21 @@ const ProjectSidebar = ({
           </nav>
         </SidebarContent>
       </Sidebar>
+      
+      {/* Expand button that appears when sidebar is collapsed */}
+      {!open && !isMobile && (
+        <div className="fixed left-0 top-24 z-50">
+          <Button
+            variant="secondary"
+            size="icon"
+            className="rounded-l-none shadow-md bg-white border border-l-0 border-gray-200"
+            onClick={toggleSidebar}
+            aria-label="Expand sidebar"
+          >
+            <PanelLeftOpen className="h-4 w-4 text-gray-700" />
+          </Button>
+        </div>
+      )}
       
       {/* Mobile Navigation Dropdown */}
       <div className="md:hidden fixed top-[64px] left-0 right-0 z-40 bg-[#f8fafc] border-b border-gray-200">
