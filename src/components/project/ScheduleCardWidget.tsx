@@ -137,7 +137,7 @@ const ScheduleCardWidget = ({
         {/* Event list for selected date */}
         {isLoading ? <div className="flex items-center justify-center py-8">
             <div className="animate-spin w-6 h-6 border-2 border-t-blue-500 border-blue-200 rounded-full"></div>
-          </div> : filteredEvents.length > 0 ? <div className="px-5 pb-5 space-y-3">
+          </div> : filteredEvents.length > 0 ? <div className="pb-5 space-y-3 px-0">
             {filteredEvents.map(event => {
           const isSoon = isEventSoon(event.start_time);
           const minutesUntil = isSoon ? getMinutesUntilEvent(event.start_time) : null;
