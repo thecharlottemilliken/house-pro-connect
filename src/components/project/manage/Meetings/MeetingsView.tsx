@@ -5,6 +5,7 @@ import { Calendar, PhoneCall, Paperclip, Edit, FileText, Image } from "lucide-re
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
 import { 
   Tabs, 
   TabsContent, 
@@ -29,7 +30,6 @@ interface Meeting {
   end_time: string;
   location: string;
   description: string;
-  // Remove project_title from interface since it doesn't exist in the database
 }
 
 interface MeetingNote {
@@ -177,29 +177,42 @@ const MeetingsView: React.FC<MeetingsViewProps> = ({ projectId }) => {
         </div>
         <div>
           {meetings.map(meeting => (
-            <div 
+            <Card 
               key={meeting.id}
-              className={`p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors ${selectedMeeting?.id === meeting.id ? 'bg-gray-50' : ''}`}
+              className={`m-3 border border-gray-200 rounded-xl cursor-pointer hover:border-[#9b87f5] transition-colors ${selectedMeeting?.id === meeting.id ? 'border-[#9b87f5] shadow-sm' : ''}`}
               onClick={() => handleMeetingClick(meeting)}
             >
-              <h3 className="font-medium text-gray-900">{meeting.title}</h3>
-              <p className="text-sm text-gray-500">
-                {format(parseISO(meeting.start_time), "EEEE, MMMM do")}
-              </p>
-              <p className="text-sm text-gray-500">
-                {format(parseISO(meeting.start_time), "h:mm a")} - {format(parseISO(meeting.end_time), "h:mm a")} EST
-              </p>
-              <div className="flex mt-2 -space-x-2">
-                <Avatar className="border-2 border-background h-8 w-8">
-                  <AvatarImage src="/placeholder.svg" />
-                  <AvatarFallback>JD</AvatarFallback>
-                </Avatar>
-                <Avatar className="border-2 border-background h-8 w-8">
-                  <AvatarImage src="/placeholder.svg" />
-                  <AvatarFallback>SS</AvatarFallback>
-                </Avatar>
-              </div>
-            </div>
+              <CardContent className="p-4">
+                <h3 className="font-bold text-lg text-gray-900">{meeting.title}</h3>
+                <p className="text-gray-700 mt-1">
+                  {format(parseISO(meeting.start_time), "EEEE, MMMM do")}
+                </p>
+                <p className="text-gray-700">
+                  {format(parseISO(meeting.start_time), "h:mm a")} - {format(parseISO(meeting.end_time), "h:mm a")} EST
+                </p>
+                <div className="flex mt-3 -space-x-2">
+                  {teamMembers.slice(0, 2).length > 0 ? (
+                    teamMembers.slice(0, 2).map((member, index) => (
+                      <Avatar key={index} className="border-2 border-white h-10 w-10">
+                        <AvatarImage src={member.avatarUrl} alt={member.name} />
+                        <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                    ))
+                  ) : (
+                    <>
+                      <Avatar className="border-2 border-white h-10 w-10">
+                        <AvatarImage src="/placeholder.svg" />
+                        <AvatarFallback>JD</AvatarFallback>
+                      </Avatar>
+                      <Avatar className="border-2 border-white h-10 w-10">
+                        <AvatarImage src="/placeholder.svg" />
+                        <AvatarFallback>SS</AvatarFallback>
+                      </Avatar>
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       </div>
