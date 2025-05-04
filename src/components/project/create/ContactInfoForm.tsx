@@ -10,16 +10,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UseFormReturn } from "react-hook-form";
 
 interface ContactInfoFormProps {
-  form: UseFormReturn<{
-    phoneNumber: string;
-    phoneType: string;
-  }>;
+  phoneNumber: string;
+  phoneType: string;
+  onPhoneNumberChange: (value: string) => void;
+  onPhoneTypeChange: (value: string) => void;
 }
 
-export const ContactInfoForm: React.FC<ContactInfoFormProps> = ({ form }) => {
+export const ContactInfoForm: React.FC<ContactInfoFormProps> = ({ 
+  phoneNumber, 
+  phoneType,
+  onPhoneNumberChange,
+  onPhoneTypeChange
+}) => {
   return (
     <div>
       <h3 className="text-lg font-medium mb-4">What number should the coach reach you by?</h3>
@@ -29,15 +33,15 @@ export const ContactInfoForm: React.FC<ContactInfoFormProps> = ({ form }) => {
           <Input 
             id="phone" 
             placeholder="000 000 0000" 
-            value={form.watch("phoneNumber")}
-            onChange={(e) => form.setValue("phoneNumber", e.target.value)}
+            value={phoneNumber}
+            onChange={(e) => onPhoneNumberChange(e.target.value)}
           />
         </div>
         <div>
           <Label htmlFor="phoneType" className="mb-2 block">Type</Label>
           <Select 
-            value={form.watch("phoneType")} 
-            onValueChange={(value) => form.setValue("phoneType", value)}
+            value={phoneType} 
+            onValueChange={onPhoneTypeChange}
           >
             <SelectTrigger id="phoneType">
               <SelectValue placeholder="Select type" />

@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -15,26 +15,25 @@ import { CustomDatePicker } from "@/components/ui/custom-date-picker";
 interface TimeSlotModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: () => void;
-  tempTimeSlot: {
-    date: Date | null;
-    time: string;
-    ampm: "AM" | "PM";
-  };
-  setTempTimeSlot: React.Dispatch<React.SetStateAction<{
-    date: Date | null;
-    time: string;
-    ampm: "AM" | "PM";
-  }>>;
+  onAddTimeSlot: (timeSlot: { date: Date | null; time: string; ampm: "AM" | "PM" }) => void;
 }
 
 export const TimeSlotModal: React.FC<TimeSlotModalProps> = ({
   isOpen,
   onClose,
-  onSave,
-  tempTimeSlot,
-  setTempTimeSlot,
+  onAddTimeSlot,
 }) => {
+  // Local state for the new time slot
+  const [tempTimeSlot, setTempTimeSlot] = useState<{
+    date: Date | null;
+    time: string;
+    ampm: "AM" | "PM";
+  }>({
+    date: null,
+    time: "",
+    ampm: "AM"
+  });
+
   // Time range options for the dialog
   const timeRanges = [
     { value: "8:00 - 9:00", label: "8:00 - 9:00" },
@@ -47,6 +46,17 @@ export const TimeSlotModal: React.FC<TimeSlotModalProps> = ({
     { value: "3:00 - 4:00", label: "3:00 - 4:00" },
     { value: "4:00 - 5:00", label: "4:00 - 5:00" },
   ];
+
+  // Handle save
+  const handleSave = () => {
+    onAddTimeSlot(tempTimeSlot);
+    // Reset the temp slot
+    setTempTimeSlot({
+      date: null,
+      time: "",
+      ampm: "AM"
+    });
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -121,7 +131,7 @@ export const TimeSlotModal: React.FC<TimeSlotModalProps> = ({
         <DialogFooter className="sm:justify-between">
           <Button variant="outline" onClick={onClose}>CANCEL</Button>
           <Button 
-            onClick={onSave}
+            onClick={handleSave}
             className="bg-[#F97316] hover:bg-[#F97316]/90 text-white"
             disabled={!tempTimeSlot.date || !tempTimeSlot.time}
           >

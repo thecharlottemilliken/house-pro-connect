@@ -11,10 +11,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Json } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
-import CoachPreferenceSelector from "@/components/project/create/CoachPreferenceSelector";
-import ContactInfoForm from "@/components/project/create/ContactInfoForm";
-import TimeSlotSelector from "@/components/project/create/TimeSlotSelector";
-import TimeSlotModal from "@/components/project/create/TimeSlotModal";
+import { CoachPreferenceSelector } from "@/components/project/create/CoachPreferenceSelector";
+import { ContactInfoForm } from "@/components/project/create/ContactInfoForm";
+import { TimeSlotSelector } from "@/components/project/create/TimeSlotSelector";
+import { TimeSlotModal } from "@/components/project/create/TimeSlotModal";
 
 const ManagementPreferences = () => {
   const navigate = useNavigate();
@@ -73,7 +73,13 @@ const ManagementPreferences = () => {
         console.log('Retrieved project data via edge function');
         
         if (edgeData.management_preferences) {
-          const prefs = edgeData.management_preferences;
+          const prefs = edgeData.management_preferences as { 
+            wantProjectCoach?: string;
+            phoneNumber?: string;
+            phoneType?: string;
+            timeSlots?: any[];
+          };
+          
           if (prefs.wantProjectCoach !== undefined) setWantProjectCoach(prefs.wantProjectCoach);
           if (prefs.phoneNumber) setPhoneNumber(prefs.phoneNumber);
           if (prefs.phoneType) setPhoneType(prefs.phoneType);
@@ -95,7 +101,13 @@ const ManagementPreferences = () => {
       if (error) throw error;
       
       if (data && data.management_preferences) {
-        const prefs = data.management_preferences;
+        const prefs = data.management_preferences as { 
+          wantProjectCoach?: string;
+          phoneNumber?: string;
+          phoneType?: string;
+          timeSlots?: any[];
+        };
+        
         if (prefs.wantProjectCoach !== undefined) setWantProjectCoach(prefs.wantProjectCoach);
         if (prefs.phoneNumber) setPhoneNumber(prefs.phoneNumber);
         if (prefs.phoneType) setPhoneType(prefs.phoneType);
@@ -302,7 +314,7 @@ const ManagementPreferences = () => {
           <div className="space-y-8 mb-10">
             <CoachPreferenceSelector
               wantProjectCoach={wantProjectCoach}
-              onValueChange={handleCoachPreferenceChange}
+              setWantProjectCoach={handleCoachPreferenceChange}
             />
             
             {wantProjectCoach === 'yes' && (

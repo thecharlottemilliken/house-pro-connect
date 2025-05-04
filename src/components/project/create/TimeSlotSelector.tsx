@@ -1,23 +1,23 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { X, Pencil } from "lucide-react";
+import { X, Pencil, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { TimeSlot, formatTimeSlot } from "@/utils/timeSlotFormatters";
 
 interface TimeSlotSelectorProps {
   timeSlots: TimeSlot[];
-  onEditTimeSlot: (index: number) => void;
-  onClearTimeSlot: (index: number) => void;
+  onAddTimeSlot: () => void;
+  onRemoveTimeSlot: (index: number) => void;
 }
 
 export const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
   timeSlots,
-  onEditTimeSlot,
-  onClearTimeSlot,
+  onAddTimeSlot,
+  onRemoveTimeSlot,
 }) => {
   return (
-    <>
+    <div className="space-y-4">
       {timeSlots.map((slot, index) => (
         <div key={index} className="mb-4">
           {slot.date && slot.time ? (
@@ -27,7 +27,7 @@ export const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
                   variant="ghost" 
                   size="icon" 
                   className="h-8 w-8"
-                  onClick={() => onEditTimeSlot(index)}
+                  onClick={() => onAddTimeSlot()}
                 >
                   <Pencil className="h-5 w-5 text-gray-600" />
                 </Button>
@@ -35,7 +35,7 @@ export const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
                   variant="ghost" 
                   size="icon" 
                   className="h-8 w-8"
-                  onClick={() => onClearTimeSlot(index)}
+                  onClick={() => onRemoveTimeSlot(index)}
                 >
                   <X className="h-5 w-5 text-gray-600" />
                 </Button>
@@ -67,7 +67,7 @@ export const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
               <Button 
                 variant="outline" 
                 className="border-gray-300 text-gray-700"
-                onClick={() => onEditTimeSlot(index)}
+                onClick={() => onAddTimeSlot()}
               >
                 MAKE SELECTION
               </Button>
@@ -75,6 +75,22 @@ export const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
           )}
         </div>
       ))}
-    </>
+      
+      {timeSlots.length === 0 && (
+        <div className="flex items-center justify-between border border-gray-300 rounded-md p-3">
+          <p className="text-sm text-gray-700">
+            Add a time slot for your coaching call
+          </p>
+          <Button 
+            variant="outline" 
+            className="border-gray-300 text-gray-700"
+            onClick={onAddTimeSlot}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            ADD TIME SLOT
+          </Button>
+        </div>
+      )}
+    </div>
   );
 };
