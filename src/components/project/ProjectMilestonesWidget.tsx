@@ -119,7 +119,7 @@ const ProjectMilestonesWidget = ({ projectId, className }: ProjectMilestonesWidg
           {format(currentDate, "MMMM yyyy")}
         </div>
       </CardHeader>
-      <CardContent className="p-0 bg-gray-50 overflow-hidden">
+      <CardContent className="p-[4px] bg-gray-50">
         <ScrollArea className="w-full">
           <div className="min-w-[800px]">
             {/* Days Header */}
