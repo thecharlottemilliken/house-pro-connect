@@ -7,8 +7,6 @@ import { useProjectData, RenovationArea } from "@/hooks/useProjectData";
 import ProjectSidebar from "@/components/project/ProjectSidebar";
 import PropertyCard from "@/components/project/PropertyCard";
 import TasksCard from "@/components/project/TasksCard";
-import MessagesCard from "@/components/project/MessagesCard";
-import EventsCard from "@/components/project/EventsCard";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { FileText, PenBox, ShieldAlert, AlertCircle } from "lucide-react";
@@ -25,6 +23,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
+// Import our new components
+import ProjectStagesCard from "@/components/project/ProjectStagesCard";
+import ScheduleCardWidget from "@/components/project/ScheduleCardWidget";
+import ActionItemsCard from "@/components/project/ActionItemsCard";
+import ProjectProgressCard from "@/components/project/ProjectProgressCard";
+import FinancialComparisonCard from "@/components/project/FinancialComparisonCard";
 
 const ProjectDashboard = () => {
   const location = useLocation();
@@ -149,54 +154,66 @@ const ProjectDashboard = () => {
               </div>
             </div>
             
-            <div className="mb-6">
-              <TasksCard projectId={projectId} isOwner={isOwner} />
-            </div>
+            {/* Main dashboard content with grid layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+              {/* Property Card - spans 2 columns on large screens */}
+              <div className="lg:col-span-2">
+                <PropertyCard 
+                  propertyDetails={propertyCardData}
+                  renovationAreas={renovationAreas}
+                />
+              </div>
 
-            <div className="grid grid-cols-1 gap-3 sm:gap-4 md:gap-6 lg:grid-cols-2 2xl:grid-cols-3">
-              <PropertyCard 
-                propertyDetails={propertyCardData}
-                renovationAreas={renovationAreas}
-              />
+              {/* Action Items Card */}
+              <div className="lg:col-span-1">
+                <ActionItemsCard 
+                  projectId={projectId}
+                  projectData={projectData}
+                  isOwner={isOwner}
+                  isCoach={isCoach}
+                />
+              </div>
               
-              {!hasSOW ? (
-                <div className="lg:col-span-2 2xl:col-span-3">
+              {/* Project Stages Card - spans full width */}
+              <div className="lg:col-span-3">
+                <ProjectStagesCard projectData={projectData} />
+              </div>
+              
+              {/* Schedule Card */}
+              <div className="lg:col-span-1">
+                <ScheduleCardWidget projectId={projectId} />
+              </div>
+              
+              {/* Project Progress Card - spans 2 columns */}
+              <div className="lg:col-span-2">
+                <ProjectProgressCard projectId={projectId} />
+              </div>
+              
+              {/* Financial Comparison Card - spans full width on larger screens for chart visibility */}
+              <div className="lg:col-span-3">
+                <FinancialComparisonCard projectId={projectId} />
+              </div>
+              
+              {/* SOW creation block if needed */}
+              {!hasSOW && isCoach && (
+                <div className="lg:col-span-3">
                   <div className="border border-gray-200 rounded-lg p-8 text-center">
-                    {isCoach ? (
-                      <>
-                        <PenBox className="mx-auto h-12 w-12 text-[#0f566c] mb-4" />
-                        
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">
-                          Begin Building the Statement of Work
-                        </h3>
-                        <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                          Create a comprehensive Statement of Work (SOW) that outlines the project's scope, specific deliverables, timeline, and key milestones.
-                        </p>
-                        <Button 
-                          onClick={handleStartSOW} 
-                          className="bg-[#0f566c] hover:bg-[#0d4a5d] px-6 py-3"
-                        >
-                          Start SOW
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                          SOW In Progress
-                        </h3>
-                        <p className="text-gray-600">
-                          Your coach is currently building a Statement of Work for you to review. You'll be notified when it's ready.
-                        </p>
-                      </>
-                    )}
+                    <PenBox className="mx-auto h-12 w-12 text-[#0f566c] mb-4" />
+                    
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">
+                      Begin Building the Statement of Work
+                    </h3>
+                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                      Create a comprehensive Statement of Work (SOW) that outlines the project's scope, specific deliverables, timeline, and key milestones.
+                    </p>
+                    <Button 
+                      onClick={handleStartSOW} 
+                      className="bg-[#0f566c] hover:bg-[#0d4a5d] px-6 py-3"
+                    >
+                      Start SOW
+                    </Button>
                   </div>
                 </div>
-              ) : (
-                <>
-                  <MessagesCard />
-                  <EventsCard />
-                </>
               )}
             </div>
           </div>
