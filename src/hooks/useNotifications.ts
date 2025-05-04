@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -123,14 +122,17 @@ export const useNotifications = () => {
     }
   };
 
-  // Mark notification as read
+  // Mark notification as read - Fix the type issue here
   const markAsRead = async (notificationId: string | number) => {
     try {
+      // Convert the notificationId to string if it's a number
+      const idAsString = notificationId.toString();
+      
       // Update the database
       const { error } = await supabase
         .from('notifications')
         .update({ read: true })
-        .eq('id', notificationId);
+        .eq('id', idAsString);
       
       if (error) throw error;
       
