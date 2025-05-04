@@ -24,36 +24,36 @@ interface NavItemProps {
   onClick?: () => void;
 }
 
-const NavItem = ({ icon, label, active, to, onClick }: NavItemProps) => {
-  const getIcon = (iconName: string) => {
-    switch (iconName) {
-      case 'home':
-        return <Home className="h-5 w-5" />;
-      case 'design':
-        return <Pencil className="h-5 w-5" />;
-      case 'team':
-        return <Users className="h-5 w-5" />;
-      case 'message':
-        return <MessageSquare className="h-5 w-5" />;
-      case 'document':
-        return <FileText className="h-5 w-5" />;
-      case 'file':
-        return <File className="h-5 w-5" />;
-      case 'material':
-        return <Scissors className="h-5 w-5" />;
-      case 'accounting':
-        return <CreditCard className="h-5 w-5" />;
-      case 'activity':
-        return <History className="h-5 w-5" />;
-      case 'overview':
-        return <LayoutDashboard className="h-5 w-5" />;
-      case 'manage':
-        return <Settings className="h-5 w-5" />;
-      default:
-        return <Home className="h-5 w-5" />;
-    }
-  };
+const getIcon = (iconName: string) => {
+  switch (iconName) {
+    case 'home':
+      return <Home className="h-5 w-5" />;
+    case 'design':
+      return <Pencil className="h-5 w-5" />;
+    case 'team':
+      return <Users className="h-5 w-5" />;
+    case 'message':
+      return <MessageSquare className="h-5 w-5" />;
+    case 'document':
+      return <FileText className="h-5 w-5" />;
+    case 'file':
+      return <File className="h-5 w-5" />;
+    case 'material':
+      return <Scissors className="h-5 w-5" />;
+    case 'accounting':
+      return <CreditCard className="h-5 w-5" />;
+    case 'activity':
+      return <History className="h-5 w-5" />;
+    case 'overview':
+      return <LayoutDashboard className="h-5 w-5" />;
+    case 'manage':
+      return <Settings className="h-5 w-5" />;
+    default:
+      return <Home className="h-5 w-5" />;
+  }
+};
 
+const NavItem = ({ icon, label, active, to, onClick }: NavItemProps) => {
   const content = (
     <>
       <span className="mr-3 flex-shrink-0">{getIcon(icon)}</span>
@@ -72,7 +72,7 @@ const NavItem = ({ icon, label, active, to, onClick }: NavItemProps) => {
   if (to) {
     return (
       <li>
-        <Link to={to} className={buttonClass}>
+        <Link to={to} className={buttonClass} onClick={onClick}>
           {content}
         </Link>
       </li>
@@ -90,5 +90,8 @@ const NavItem = ({ icon, label, active, to, onClick }: NavItemProps) => {
     </li>
   );
 };
+
+// Expose the getIcon function for use in other components
+NavItem.getIcon = getIcon;
 
 export default NavItem;
