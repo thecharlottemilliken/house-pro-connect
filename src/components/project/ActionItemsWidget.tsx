@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { ArrowRight, Check } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -9,7 +8,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { ProjectData } from "@/hooks/useProjectData";
-
 interface ActionItemsWidgetProps {
   projectId: string;
   projectData: ProjectData | null;
@@ -17,14 +15,12 @@ interface ActionItemsWidgetProps {
   isCoach: boolean;
   className?: string;
 }
-
 interface SOWData {
   id: string;
   status: string;
   feedback?: string | null;
   created_at?: string;
 }
-
 interface ActionItem {
   id: string;
   title: string;
@@ -35,16 +31,17 @@ interface ActionItem {
   completed?: boolean;
   date?: string;
 }
-
-const ActionItemsWidget = ({ 
-  projectId, 
-  projectData, 
-  isOwner, 
-  isCoach, 
-  className 
+const ActionItemsWidget = ({
+  projectId,
+  projectData,
+  isOwner,
+  isCoach,
+  className
 }: ActionItemsWidgetProps) => {
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const {
+    profile
+  } = useAuth();
   const [sowData, setSowData] = useState<SOWData | null>(null);
   const [actionItems, setActionItems] = useState<ActionItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -55,11 +52,10 @@ const ActionItemsWidget = ({
     const fetchSOW = async () => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
-          .from("statement_of_work")
-          .select("id, status, feedback, created_at")
-          .eq("project_id", projectId)
-          .maybeSingle();
+        const {
+          data,
+          error
+        } = await supabase.from("statement_of_work").select("id, status, feedback, created_at").eq("project_id", projectId).maybeSingle();
         if (error) throw error;
         if (data && typeof data === "object") {
           setSowData(data);
@@ -73,7 +69,6 @@ const ActionItemsWidget = ({
         setIsLoading(false);
       }
     };
-    
     if (projectId) {
       fetchSOW();
     }
@@ -86,12 +81,10 @@ const ActionItemsWidget = ({
     // Format date helper
     const formatRelativeDate = (dateString?: string) => {
       if (!dateString) return "";
-      
       const date = new Date(dateString);
       const now = new Date();
       const diffTime = Math.abs(now.getTime() - date.getTime());
       const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-      
       if (diffDays === 0) return "Today";
       if (diffDays === 1) return "1 day ago";
       return `${diffDays} days ago`;
@@ -135,10 +128,9 @@ const ActionItemsWidget = ({
         date: "New"
       });
     }
-
     if (projectData) {
       const designPrefs = projectData.design_preferences || {};
-      
+
       // Type casting to ensure we can access these properties
       const typedDesignPrefs = designPrefs as {
         beforePhotos?: Record<string, string[]>;
@@ -146,9 +138,7 @@ const ActionItemsWidget = ({
       };
 
       // If before photos are missing
-      const hasBeforePhotos = typedDesignPrefs.beforePhotos && 
-        Object.keys(typedDesignPrefs.beforePhotos || {}).length > 0;
-        
+      const hasBeforePhotos = typedDesignPrefs.beforePhotos && Object.keys(typedDesignPrefs.beforePhotos || {}).length > 0;
       if (isOwner && !hasBeforePhotos) {
         items.push({
           id: "upload-photos",
@@ -163,7 +153,7 @@ const ActionItemsWidget = ({
     }
 
     // Add a sample milestone approval task
-    if (items.length === 0 || (isOwner && items.length < 2)) {
+    if (items.length === 0 || isOwner && items.length < 2) {
       items.push({
         id: "approve-milestone",
         title: "Approve milestone",
@@ -174,10 +164,8 @@ const ActionItemsWidget = ({
         date: "Today"
       });
     }
-
     setActionItems(items);
   }, [projectData, projectId, sowData, isOwner, isCoach, navigate]);
-
   const toggleItemCompletion = (itemId: string) => {
     setCompletedItems(prev => {
       if (prev.includes(itemId)) {
@@ -187,45 +175,23 @@ const ActionItemsWidget = ({
       }
     });
   };
-
-  return (
-    <Card className={cn("overflow-hidden rounded-lg shadow-[0_2px_10px_rgba(0,0,0,0.08)] border-0", className)}>
+  return <Card className={cn("overflow-hidden rounded-lg shadow-[0_2px_10px_rgba(0,0,0,0.08)] border-0", className)}>
       <CardHeader className="flex flex-row items-center justify-between pb-3 pt-6 px-6">
-        <h2 className="text-2xl font-semibold">Action Items</h2>
+        <h2 className="text-lg font-semibold">Action Items</h2>
         <div className="text-orange-500 font-medium text-lg">
           {completedItems.length}/{actionItems.length}
         </div>
       </CardHeader>
       <CardContent className="px-0 pb-2">
-        {isLoading ? (
-          <div className="px-6 text-gray-400">Loading action items...</div>
-        ) : (
-          <div className="divide-y">
-            {actionItems.length > 0 ? (
-              actionItems.map((item) => {
-                const isCompleted = completedItems.includes(item.id);
-                
-                return (
-                  <div 
-                    key={item.id} 
-                    className={cn(
-                      "px-6 py-4 flex flex-col", 
-                      isCompleted && "bg-gray-50"
-                    )}
-                  >
+        {isLoading ? <div className="px-6 text-gray-400">Loading action items...</div> : <div className="divide-y">
+            {actionItems.length > 0 ? actionItems.map(item => {
+          const isCompleted = completedItems.includes(item.id);
+          return <div key={item.id} className={cn("px-6 py-4 flex flex-col", isCompleted && "bg-gray-50")}>
                     <div className="flex items-start gap-3 mb-2">
-                      <Checkbox 
-                        id={`checkbox-${item.id}`}
-                        checked={isCompleted}
-                        onCheckedChange={() => toggleItemCompletion(item.id)}
-                        className="mt-1"
-                      />
+                      <Checkbox id={`checkbox-${item.id}`} checked={isCompleted} onCheckedChange={() => toggleItemCompletion(item.id)} className="mt-1" />
                       <div className="flex-1">
                         <div className="flex justify-between items-center mb-1">
-                          <label 
-                            htmlFor={`checkbox-${item.id}`}
-                            className="font-semibold text-md cursor-pointer"
-                          >
+                          <label htmlFor={`checkbox-${item.id}`} className="font-semibold text-md cursor-pointer">
                             {item.title}
                           </label>
                           <div className="text-gray-500 text-sm">
@@ -237,33 +203,20 @@ const ActionItemsWidget = ({
                         </p>
                       </div>
                     </div>
-                    {item.action && (
-                      <div className="flex justify-end mt-1">
-                        <Button
-                          variant="ghost"
-                          className="font-semibold text-[#0f566c] hover:text-[#0f566c]/80 p-0 h-auto"
-                          onClick={item.action}
-                        >
+                    {item.action && <div className="flex justify-end mt-1">
+                        <Button variant="ghost" className="font-semibold text-[#0f566c] hover:text-[#0f566c]/80 p-0 h-auto" onClick={item.action}>
                           {item.buttonText} <ArrowRight className="ml-1 h-4 w-4" />
                         </Button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })
-            ) : (
-              <div className="px-6 py-8 text-center">
+                      </div>}
+                  </div>;
+        }) : <div className="px-6 py-8 text-center">
                 <div className="bg-green-100 h-12 w-12 rounded-full flex items-center justify-center mx-auto mb-3">
                   <Check className="h-6 w-6 text-green-600" />
                 </div>
                 <p className="text-gray-600">All caught up! No pending action items.</p>
-              </div>
-            )}
-          </div>
-        )}
+              </div>}
+          </div>}
       </CardContent>
-    </Card>
-  );
+    </Card>;
 };
-
 export default ActionItemsWidget;
