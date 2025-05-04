@@ -5,12 +5,10 @@ import { Calendar, Clock, MapPin, ChevronLeft, ChevronRight } from "lucide-react
 import { cn } from "@/lib/utils";
 import { EventsService, ProjectEvent } from "./calendar/EventsService";
 import { format, addDays, startOfWeek, endOfWeek, differenceInMinutes, isSameDay, parseISO, addMonths, isToday } from "date-fns";
-
 interface ScheduleCardWidgetProps {
   projectId: string;
   className?: string;
 }
-
 const ScheduleCardWidget = ({
   projectId,
   className
@@ -161,5 +159,4 @@ const ScheduleCardWidget = ({
       </CardContent>
     </Card>;
 };
-
 export default ScheduleCardWidget;
