@@ -32,16 +32,37 @@ const MessageDialog = ({ open, onOpenChange, project }: MessageDialogProps) => {
     
     setIsSending(true);
     try {
-      const { error } = await supabase
+      // Send the coach message
+      const { data, error } = await supabase
         .from('coach_messages')
         .insert({
           coach_id: user.id,
           resident_id: project.owner.id,
           project_id: project.id,
           message: message.trim()
-        });
+        })
+        .select()
+        .single();
       
       if (error) throw error;
+      
+      // Create a notification for the resident
+      // In a real implementation, you would have a notifications table
+      /*
+      await supabase
+        .from('notifications')
+        .insert({
+          recipient_id: project.owner.id,
+          type: 'message',
+          title: `${profile.name} messaged you`,
+          content: message.trim(),
+          related_id: data.id,
+          project_id: project.id,
+          sender_id: user.id,
+          read: false,
+          created_at: new Date().toISOString()
+        });
+      */
       
       toast({
         title: "Message sent",
