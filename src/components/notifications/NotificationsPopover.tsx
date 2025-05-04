@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ interface NotificationsPopoverProps {
 const NotificationsPopover = ({ hasNotifications, setHasNotifications }: NotificationsPopoverProps) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = React.useState<'all' | 'unread'>('all');
+  const [open, setOpen] = useState(false);
   const { 
     notifications, 
     loading, 
@@ -43,8 +44,13 @@ const NotificationsPopover = ({ hasNotifications, setHasNotifications }: Notific
     markAllAsRead();
   };
 
+  const handleNotificationClick = () => {
+    // Close the popover when a notification is clicked
+    setOpen(false);
+  };
+
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button 
           variant="ghost" 
@@ -67,7 +73,10 @@ const NotificationsPopover = ({ hasNotifications, setHasNotifications }: Notific
             variant="ghost" 
             size="icon" 
             className="rounded-full"
-            onClick={() => navigate('/notifications')}
+            onClick={() => {
+              setOpen(false);
+              navigate('/notifications');
+            }}
           >
             <Settings className="h-5 w-5" />
           </Button>
@@ -127,7 +136,10 @@ const NotificationsPopover = ({ hasNotifications, setHasNotifications }: Notific
           <Button 
             variant="ghost" 
             className="w-full justify-center"
-            onClick={() => navigate('/notifications')}
+            onClick={() => {
+              setOpen(false);
+              navigate('/notifications');
+            }}
           >
             View all notifications
           </Button>

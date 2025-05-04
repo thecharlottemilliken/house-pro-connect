@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Notification, NotificationAction } from '@/types/notifications';
 import { Button } from '@/components/ui/button';
@@ -16,9 +15,7 @@ const NotificationItem = ({ notification, onMarkAsRead, compact = false }: Notif
   
   // Handle click on the entire notification
   const handleNotificationClick = () => {
-    if (notification.read) return;
-    
-    // Mark as read first
+    // Always mark as read when clicking on the notification
     onMarkAsRead(notification.id);
     
     // Then navigate based on notification type
@@ -67,8 +64,10 @@ const NotificationItem = ({ notification, onMarkAsRead, compact = false }: Notif
     // Prevent the click from bubbling up to the parent
     e.stopPropagation();
     
+    // Always mark as read when an action is taken
+    onMarkAsRead(notification.id);
+    
     if (action === 'mark_as_read') {
-      onMarkAsRead(notification.id);
       return;
     }
     
@@ -119,9 +118,6 @@ const NotificationItem = ({ notification, onMarkAsRead, compact = false }: Notif
       default:
         break;
     }
-    
-    // Always mark as read when an action is taken
-    onMarkAsRead(notification.id);
   };
   
   const renderIcon = () => {
@@ -233,8 +229,8 @@ const NotificationItem = ({ notification, onMarkAsRead, compact = false }: Notif
   
   return (
     <div 
-      className={`border-b p-3 hover:bg-gray-50 ${!notification.read && !compact ? 'cursor-pointer' : ''}`}
-      onClick={compact ? undefined : handleNotificationClick}
+      className={`border-b p-3 hover:bg-gray-50 cursor-pointer`}
+      onClick={handleNotificationClick}
     >
       <div className="flex justify-between">
         <div className="flex gap-2">
