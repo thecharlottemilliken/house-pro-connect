@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { format, addDays, startOfWeek, endOfWeek, addMonths, parseISO, isSameDay, isAfter } from "date-fns";
 import CalendarHeader from "./CalendarHeader";
@@ -9,6 +10,7 @@ import { EventsService, ProjectEvent } from "@/components/project/calendar/Event
 import { toast } from "sonner";
 import EventDrawer from "@/components/project/calendar/EventDrawer";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CalendarDay {
   day: number;
@@ -44,46 +46,46 @@ const CalendarView = () => {
   const { user } = useAuth();
   
   // Fetch real events from database
-  useEffect(() => {
-    const fetchEvents = async () => {
-      if (!projectId) return;
-      
-      try {
-        setIsLoading(true);
-        const projectEvents = await EventsService.getProjectEvents(projectId);
-        
-        // Map database events to calendar events
-        const mappedEvents = projectEvents.map(event => {
-          // Color based on event type
-          let color = "#4bc8eb"; // Default blue
-          
-          if (event.event_type === "coaching_session") {
-            color = "#9b74e9"; // Purple for coaching sessions
-          } else if (event.event_type === "milestone") {
-            color = "#e84c88"; // Pink for milestones
-          }
-          
-          return {
-            id: event.id || "",
-            title: event.title,
-            date: parseISO(event.start_time),
-            color: color,
-            description: event.description,
-            location: event.location
-          };
-        });
-        
-        setEvents(mappedEvents);
-      } catch (error) {
-        console.error("Error fetching calendar events:", error);
-        toast.error("Failed to load calendar events");
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const fetchEvents = async () => {
+    if (!projectId) return;
     
+    try {
+      setIsLoading(true);
+      const projectEvents = await EventsService.getProjectEvents(projectId);
+      
+      // Map database events to calendar events
+      const mappedEvents = projectEvents.map(event => {
+        // Color based on event type
+        let color = "#4bc8eb"; // Default blue
+        
+        if (event.event_type === "coaching_session") {
+          color = "#9b74e9"; // Purple for coaching sessions
+        } else if (event.event_type === "milestone") {
+          color = "#e84c88"; // Pink for milestones
+        }
+        
+        return {
+          id: event.id || "",
+          title: event.title,
+          date: parseISO(event.start_time),
+          color: color,
+          description: event.description,
+          location: event.location
+        };
+      });
+      
+      setEvents(mappedEvents);
+    } catch (error) {
+      console.error("Error fetching calendar events:", error);
+      toast.error("Failed to load calendar events");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  useEffect(() => {
     fetchEvents();
-  }, [projectId]);
+  }, [projectId]); // eslint-disable-line react-hooks/exhaustive-deps
   
   // Update days when current date changes
   useEffect(() => {
@@ -227,7 +229,7 @@ const CalendarView = () => {
     try {
       // Add event to database
       const createdEvent = await EventsService.createProjectEvent({
-        project_id: projectId,
+        project_id: projectId || '',
         title: newEvent.title,
         description: newEvent.description,
         start_time: newEvent.startTime,
@@ -244,10 +246,10 @@ const CalendarView = () => {
         .eq('id', user.id)
         .single();
       
-        if (error) {
-          console.error("Error getting user data:", error);
-          toast.error("Failed to get user data");
-        }
+      if (error) {
+        console.error("Error getting user data:", error);
+        toast.error("Failed to get user data");
+      }
       
       // Notify participants
       if (createdEvent) {
