@@ -41,7 +41,7 @@ const FinancialComparisonCard = ({ projectId, className }: FinancialComparisonCa
       id: "wb2",
       name: "WO #2",
       estimated: 2000,
-      invoiced: 2800
+      invoiced: 800
     },
     {
       id: "wb3",
@@ -53,19 +53,21 @@ const FinancialComparisonCard = ({ projectId, className }: FinancialComparisonCa
       id: "wb4",
       name: "WO #4",
       estimated: 10000,
-      invoiced: 11000
+      invoiced: 2000
     },
     {
       id: "wb5",
       name: "WO #5",
       estimated: 3000,
-      invoiced: 10000
+      invoiced: 7000
     }
   ];
 
   // Calculate totals
   const totalInvoiced = mockFinancialData.reduce((sum, item) => sum + item.invoiced, 0);
+  const totalEstimated = mockFinancialData.reduce((sum, item) => sum + item.estimated, 0);
   const totalWorkOrders = mockFinancialData.length;
+  const totalAmount = totalInvoiced; // Using invoiced as the displayed total
 
   // Time filter options mapping
   const timeFilterLabels = {
@@ -77,41 +79,39 @@ const FinancialComparisonCard = ({ projectId, className }: FinancialComparisonCa
 
   return (
     <Card className={cn("overflow-hidden", className)}>
-      <CardHeader className="bg-white border-b p-4">
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-semibold">Estimated vs Invoiced</h3>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="bg-white text-sm">
-                {timeFilterLabels[timeFilter]} <ChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => setTimeFilter("week")}>This Week</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTimeFilter("month")}>This Month</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTimeFilter("quarter")}>This Quarter</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTimeFilter("year")}>This Year</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+      <CardHeader className="bg-white px-6 py-5 flex flex-row justify-between items-center border-b">
+        <h3 className="text-xl font-bold">Estimated vs Invoiced</h3>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="bg-white text-sm font-medium">
+              {timeFilterLabels[timeFilter]} <ChevronDown className="ml-2 h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => setTimeFilter("week")}>This Week</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setTimeFilter("month")}>This Month</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setTimeFilter("quarter")}>This Quarter</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setTimeFilter("year")}>This Year</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </CardHeader>
-      <CardContent className="p-4">
+      <CardContent className="p-6">
         {/* Cost Summary */}
         <div className="mb-6">
           <div className="text-3xl font-bold">
-            {formatCurrency(totalInvoiced)}
+            {formatCurrency(totalAmount)}
           </div>
           <div className="text-sm text-gray-600">
             {totalWorkOrders} Work Orders
           </div>
         </div>
         
-        {/* Chart - Updated to span full width */}
+        {/* Chart - Styled to match the provided design */}
         <div className="h-64 w-full">
           <ChartContainer
             className="w-full"
             config={{
-              estimated: { color: "#14B8A6" }, // Green color for estimated
+              estimated: { color: "#2E8B57" }, // Forest green color for estimated
               invoiced: { color: "#F97316" }   // Orange color for invoiced
             }}
           >
@@ -121,11 +121,11 @@ const FinancialComparisonCard = ({ projectId, className }: FinancialComparisonCa
                 margin={{
                   top: 10,
                   right: 10,
-                  left: 0,  // Removed left padding
-                  bottom: 0  // Removed bottom padding
+                  left: 10,
+                  bottom: 20
                 }}
                 barGap={0}
-                barCategoryGap={8}
+                barCategoryGap={10}
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
                 <XAxis 
@@ -133,12 +133,19 @@ const FinancialComparisonCard = ({ projectId, className }: FinancialComparisonCa
                   axisLine={false} 
                   tickLine={false}
                   tick={{ fontSize: 12 }}
+                  dy={10}
                 />
                 <YAxis 
                   axisLine={false} 
                   tickLine={false}
                   tick={{ fontSize: 12 }}
-                  tickFormatter={(value) => value >= 1000 ? `$${value / 1000}k` : `$${value}`}
+                  tickFormatter={(value) => {
+                    if (value >= 20000) return '$20k';
+                    if (value >= 10000) return '$10k';
+                    if (value >= 3000) return '$3k';
+                    if (value >= 1000) return '$1k';
+                    return `$${value}`;
+                  }}
                 />
                 <ChartTooltip
                   content={
@@ -155,8 +162,18 @@ const FinancialComparisonCard = ({ projectId, className }: FinancialComparisonCa
                     />
                   }
                 />
-                <Bar dataKey="estimated" fill="#14B8A6" stackId="stack" />
-                <Bar dataKey="invoiced" fill="#F97316" stackId="stack" />
+                <Bar 
+                  dataKey="estimated" 
+                  fill="#2E8B57" 
+                  radius={[0, 0, 0, 0]}
+                  stackId="a"
+                />
+                <Bar 
+                  dataKey="invoiced" 
+                  fill="#F97316" 
+                  radius={[0, 0, 0, 0]} 
+                  stackId="a"
+                />
               </BarChart>
             </ResponsiveContainer>
           </ChartContainer>
@@ -165,11 +182,11 @@ const FinancialComparisonCard = ({ projectId, className }: FinancialComparisonCa
         {/* Legend */}
         <div className="flex justify-end items-center mt-4 gap-4 text-sm">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-[#14B8A6] rounded"></div>
+            <div className="w-4 h-4 bg-[#2E8B57] rounded"></div>
             <span>Estimated</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-[#F97316] rounded"></div>
+            <div className="w-4 h-4 bg-[#F97316] rounded"></div>
             <span>Invoiced</span>
           </div>
         </div>
