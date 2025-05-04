@@ -14,6 +14,7 @@ import {
   LayoutDashboard,
   Settings
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface NavItemProps {
   icon: string;
@@ -55,16 +56,18 @@ const NavItem = ({ icon, label, active, to, onClick }: NavItemProps) => {
 
   const content = (
     <>
-      <span className="mr-3">{getIcon(icon)}</span>
-      {label}
+      <span className="mr-3 flex-shrink-0">{getIcon(icon)}</span>
+      <span className="truncate">{label}</span>
     </>
   );
 
-  const buttonClass = `w-full flex items-center p-4 text-[#0f3a4d] ${
+  const buttonClass = cn(
+    "w-full flex items-center p-4 rounded-md text-[#0f3a4d]", 
     active 
-      ? 'bg-[#cad9df]' 
-      : 'hover:bg-[#cad9df] transition-colors'
-  }`;
+      ? 'bg-[#cad9df] font-medium' 
+      : 'hover:bg-[#cad9df] transition-colors',
+    "text-sm md:text-base"
+  );
 
   if (to) {
     return (

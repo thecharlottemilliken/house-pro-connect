@@ -29,7 +29,8 @@ const ProjectSidebar = ({
   // Check if the current route is a project-related route
   const isProjectsActive = location.pathname.includes('/project-');
   
-  return <>
+  return (
+    <>
       <Sidebar variant="sidebar" className="border-r border-gray-200">
         <SidebarRail />
         <SidebarHeader>
@@ -72,11 +73,15 @@ const ProjectSidebar = ({
         </Button>
       </div>
       
-      {/* Mobile sidebar trigger - improved visibility and position */}
+      {/* Enhanced mobile sidebar trigger */}
       <div className="md:hidden fixed bottom-6 right-6 z-50">
-        <SidebarTrigger className="bg-[#0f566c] text-white h-14 w-14 rounded-full shadow-lg flex items-center justify-center" />
+        <SidebarTrigger 
+          className="bg-[#0f566c] text-white h-14 w-14 rounded-full shadow-lg flex items-center justify-center"
+          aria-label="Toggle sidebar menu" 
+        />
       </div>
-    </>;
+    </>
+  );
 };
 
 export default ProjectSidebar;
