@@ -5,7 +5,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useProjectData, RenovationArea } from "@/hooks/useProjectData";
 import ProjectSidebar from "@/components/project/ProjectSidebar";
 import PropertyCard from "@/components/project/PropertyCard";
-import TasksCard from "@/components/project/TasksCard";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { FileText, PenBox, ShieldAlert, AlertCircle } from "lucide-react";
@@ -23,13 +22,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-// Import our new components
+// Import our components
 import ProjectStagesCard from "@/components/project/ProjectStagesCard";
 import ScheduleCardWidget from "@/components/project/ScheduleCardWidget";
-import ActionItemsCard from "@/components/project/ActionItemsCard";
 import ProjectProgressCard from "@/components/project/ProjectProgressCard";
 import FinancialComparisonCard from "@/components/project/FinancialComparisonCard";
 import MessagesCard from "@/components/project/MessagesCard";
+import ActionItemsWidget from "@/components/project/ActionItemsWidget";
 
 const ProjectDashboard = () => {
   const location = useLocation();
@@ -164,22 +163,19 @@ const ProjectDashboard = () => {
                 />
               </div>
 
-              {/* Column 2 - Tasks Card */}
+              {/* Column 2 - Action Items Widget */}
               <div className="lg:col-span-1">
-                <TasksCard 
-                  projectId={projectId}
-                  isOwner={isOwner}
-                />
-              </div>
-
-              {/* Column 3 - Action Items Card */}
-              <div className="lg:col-span-1">
-                <ActionItemsCard 
+                <ActionItemsWidget 
                   projectId={projectId}
                   projectData={projectData}
                   isOwner={isOwner}
                   isCoach={isCoach}
                 />
+              </div>
+
+              {/* Column 3 - Progress Card */}
+              <div className="lg:col-span-1">
+                <ProjectProgressCard projectId={projectId} />
               </div>
               
               {/* Project Stages Card - spans full width */}
@@ -187,17 +183,12 @@ const ProjectDashboard = () => {
                 <ProjectStagesCard projectData={projectData} />
               </div>
               
-              {/* Schedule Card - back to 3 columns */}
+              {/* Schedule Card */}
               <div className="lg:col-span-1">
                 <ScheduleCardWidget projectId={projectId} />
               </div>
               
-              {/* Progress Card */}
-              <div className="lg:col-span-1">
-                <ProjectProgressCard projectId={projectId} />
-              </div>
-              
-              {/* Column 3 - Events or Messages */}
+              {/* Messages Card */}
               <div className="lg:col-span-1">
                 <MessagesCard projectId={projectId} />
               </div>
