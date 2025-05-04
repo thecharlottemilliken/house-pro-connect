@@ -121,8 +121,8 @@ const FinancialComparisonCard = ({ projectId, className }: FinancialComparisonCa
                 margin={{
                   top: 10,
                   right: 10,
-                  left: 20,
-                  bottom: 20
+                  left: 0,  // Removed left padding
+                  bottom: 0  // Removed bottom padding
                 }}
                 barGap={0}
                 barCategoryGap={8}
