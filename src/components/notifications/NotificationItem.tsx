@@ -14,7 +14,59 @@ interface NotificationItemProps {
 const NotificationItem = ({ notification, onMarkAsRead, compact = false }: NotificationItemProps) => {
   const navigate = useNavigate();
   
-  const handleAction = (action: NotificationAction) => {
+  // Handle click on the entire notification
+  const handleNotificationClick = () => {
+    if (notification.read) return;
+    
+    // Mark as read first
+    onMarkAsRead(notification.id);
+    
+    // Then navigate based on notification type
+    navigateToTarget(notification);
+  };
+  
+  // Navigation helper function based on notification type
+  const navigateToTarget = (notification: Notification) => {
+    switch (notification.type) {
+      case 'message':
+        if (notification.project?.id) {
+          navigate(`/project-messages/${notification.project.id}`);
+        }
+        break;
+        
+      case 'sow_review':
+        if (notification.project?.id) {
+          navigate(`/project-sow/${notification.project.id}?review=true`);
+        }
+        break;
+        
+      case 'sow_approved':
+        if (notification.project?.id) {
+          navigate(`/project-manage/${notification.project.id}`);
+        }
+        break;
+        
+      case 'project_ready':
+        if (notification.project?.id) {
+          navigate(`/project-calendar/${notification.project.id}`);
+        }
+        break;
+        
+      case 'new_meeting':
+        if (notification.meeting?.id) {
+          navigate(`/calendar?event=${notification.meeting.id}`);
+        }
+        break;
+        
+      default:
+        break;
+    }
+  };
+  
+  const handleAction = (action: NotificationAction, e: React.MouseEvent) => {
+    // Prevent the click from bubbling up to the parent
+    e.stopPropagation();
+    
     if (action === 'mark_as_read') {
       onMarkAsRead(notification.id);
       return;
@@ -93,7 +145,7 @@ const NotificationItem = ({ notification, onMarkAsRead, compact = false }: Notif
             variant="outline" 
             size="sm"
             className="text-xs h-7 px-2"
-            onClick={() => handleAction('view')}
+            onClick={(e) => handleAction('view', e)}
           >
             <Eye className="h-3 w-3 mr-1" /> View
           </Button>
@@ -104,7 +156,7 @@ const NotificationItem = ({ notification, onMarkAsRead, compact = false }: Notif
             variant="outline" 
             size="sm"
             className="text-xs h-7 px-2"
-            onClick={() => handleAction('reply')}
+            onClick={(e) => handleAction('reply', e)}
           >
             <Reply className="h-3 w-3 mr-1" /> Reply
           </Button>
@@ -115,7 +167,7 @@ const NotificationItem = ({ notification, onMarkAsRead, compact = false }: Notif
             variant="outline" 
             size="sm"
             className="text-xs h-7 px-2"
-            onClick={() => handleAction('view_sow')}
+            onClick={(e) => handleAction('view_sow', e)}
           >
             <Eye className="h-3 w-3 mr-1" /> View SOW
           </Button>
@@ -126,7 +178,7 @@ const NotificationItem = ({ notification, onMarkAsRead, compact = false }: Notif
             variant="outline" 
             size="sm"
             className="text-xs h-7 px-2"
-            onClick={() => handleAction('publish_project')}
+            onClick={(e) => handleAction('publish_project', e)}
           >
             <ArrowRight className="h-3 w-3 mr-1" /> Publish
           </Button>
@@ -137,7 +189,7 @@ const NotificationItem = ({ notification, onMarkAsRead, compact = false }: Notif
             variant="outline" 
             size="sm"
             className="text-xs h-7 px-2"
-            onClick={() => handleAction('schedule_consultation')}
+            onClick={(e) => handleAction('schedule_consultation', e)}
           >
             <Calendar className="h-3 w-3 mr-1" /> Schedule
           </Button>
@@ -148,7 +200,7 @@ const NotificationItem = ({ notification, onMarkAsRead, compact = false }: Notif
             variant="outline" 
             size="sm"
             className="text-xs h-7 px-2"
-            onClick={() => handleAction('view_meeting')}
+            onClick={(e) => handleAction('view_meeting', e)}
           >
             <Eye className="h-3 w-3 mr-1" /> View Meeting
           </Button>
@@ -159,7 +211,7 @@ const NotificationItem = ({ notification, onMarkAsRead, compact = false }: Notif
             variant="outline" 
             size="sm"
             className="text-xs h-7 px-2"
-            onClick={() => handleAction('reschedule')}
+            onClick={(e) => handleAction('reschedule', e)}
           >
             <Calendar className="h-3 w-3 mr-1" /> Reschedule
           </Button>
@@ -170,7 +222,7 @@ const NotificationItem = ({ notification, onMarkAsRead, compact = false }: Notif
             variant="ghost" 
             size="sm"
             className="text-xs h-7 px-2 ml-auto"
-            onClick={() => handleAction('mark_as_read')}
+            onClick={(e) => handleAction('mark_as_read', e)}
           >
             <Check className="h-3 w-3 mr-1" /> Mark read
           </Button>
@@ -181,8 +233,8 @@ const NotificationItem = ({ notification, onMarkAsRead, compact = false }: Notif
   
   return (
     <div 
-      className={`border-b p-3 hover:bg-gray-50 ${compact ? '' : 'cursor-pointer'}`}
-      onClick={compact ? undefined : () => !notification.read && handleAction('mark_as_read')}
+      className={`border-b p-3 hover:bg-gray-50 ${!notification.read && !compact ? 'cursor-pointer' : ''}`}
+      onClick={compact ? undefined : handleNotificationClick}
     >
       <div className="flex justify-between">
         <div className="flex gap-2">
