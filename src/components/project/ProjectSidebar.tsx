@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import NavItem from "./NavItem";
 import { Sidebar, SidebarContent, SidebarHeader, SidebarTrigger, SidebarRail, useSidebar } from "@/components/ui/sidebar";
@@ -74,13 +74,28 @@ const ProjectSidebar = ({
       <Sidebar variant="sidebar" className="border-r border-gray-200 hidden md:block">
         <SidebarRail />
         <SidebarHeader>
-          <div className="p-4 border-b border-gray-200">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200">
             <Button 
               variant="ghost" 
-              className={`flex items-center text-gray-700 w-full pl-0 hover:bg-transparent hover:text-[#174c65] ${isProjectsActive ? 'text-[#174c65] font-medium' : ''}`} 
+              className={`flex items-center text-gray-700 pl-0 hover:bg-transparent hover:text-[#174c65] ${isProjectsActive ? 'text-[#174c65] font-medium' : ''}`} 
               onClick={() => navigate("/projects")}
             >
               <ArrowLeft className="mr-2 h-4 w-4" /> Back to Projects
+            </Button>
+            
+            {/* Expand/Collapse Button - Only for desktop */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden md:flex"
+              onClick={toggleSidebar}
+              aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
+            >
+              {open ? (
+                <PanelLeftClose className="h-4 w-4 text-gray-700" />
+              ) : (
+                <PanelLeftOpen className="h-4 w-4 text-gray-700" />
+              )}
             </Button>
           </div>
         </SidebarHeader>
