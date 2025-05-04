@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useLocation, useParams, Navigate, useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
@@ -30,6 +29,7 @@ import ScheduleCardWidget from "@/components/project/ScheduleCardWidget";
 import ActionItemsCard from "@/components/project/ActionItemsCard";
 import ProjectProgressCard from "@/components/project/ProjectProgressCard";
 import FinancialComparisonCard from "@/components/project/FinancialComparisonCard";
+import MessagesCard from "@/components/project/MessagesCard";
 
 const ProjectDashboard = () => {
   const location = useLocation();
