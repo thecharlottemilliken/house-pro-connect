@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useLocation, useParams, Navigate, useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
@@ -126,7 +127,7 @@ const ProjectDashboard = () => {
     <div className="flex flex-col bg-white min-h-screen">
       <DashboardNavbar />
       <SidebarProvider defaultOpen={!isMobile}>
-        <div className="flex flex-1 h-[calc(100vh-64px)] w-full">
+        <div className="flex flex-1 h-[calc(100vh-64px)] w-full pt-[64px] -mt-[64px]">
           <ProjectSidebar 
             projectId={projectId} 
             projectTitle={projectTitle}

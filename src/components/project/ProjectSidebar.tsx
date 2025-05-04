@@ -71,7 +71,7 @@ const ProjectSidebar = ({
   return (
     <>
       {/* Desktop Sidebar */}
-      <Sidebar variant="sidebar" className="border-r border-gray-200 hidden md:block">
+      <Sidebar variant="sidebar" className="border-r border-gray-200 hidden md:block h-[calc(100vh-64px)] top-16">
         <SidebarRail />
         <SidebarHeader>
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
