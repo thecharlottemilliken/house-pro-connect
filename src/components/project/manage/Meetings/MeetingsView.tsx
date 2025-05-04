@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { format, parseISO } from "date-fns";
-import { Calendar, PhoneCall, Paperclip, Edit } from "lucide-react";
+import { Calendar, PhoneCall, Paperclip, Edit, FileText, Image } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,6 +14,13 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Meeting {
   id: string;
@@ -51,6 +58,7 @@ const MeetingsView: React.FC<MeetingsViewProps> = ({ projectId }) => {
   const [newNote, setNewNote] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [meetingNotes, setMeetingNotes] = useState<MeetingNote[]>([]);
+  const { teamMembers } = useTeamMembers(projectId);
 
   // Fetch meetings for this project
   useEffect(() => {
@@ -227,9 +235,10 @@ const MeetingsView: React.FC<MeetingsViewProps> = ({ projectId }) => {
             </div>
           </div>
           
+          {/* Location and Description */}
           <div className="mb-6">
-            <div className="flex">
-              <div className="flex-1">
+            <div className="flex flex-col md:flex-row gap-6">
+              <div className="md:w-1/2">
                 <h3 className="text-sm font-medium text-gray-700 mb-1">Location</h3>
                 <div className="flex items-center text-sm text-gray-900">
                   <PhoneCall className="h-4 w-4 mr-2 text-gray-500" />
@@ -237,70 +246,81 @@ const MeetingsView: React.FC<MeetingsViewProps> = ({ projectId }) => {
                 </div>
               </div>
               
-              <div className="flex-1">
+              <div className="md:w-1/2">
                 <h3 className="text-sm font-medium text-gray-700 mb-1">Details</h3>
                 <p className="text-sm text-gray-900">
                   {selectedMeeting.description}
                 </p>
               </div>
             </div>
-            
-            <div className="flex mt-8">
-              <div className="flex-1">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Participants</h3>
-                <div className="flex flex-wrap gap-2">
-                  <div className="flex items-center">
-                    <Avatar className="h-8 w-8 mr-2">
-                      <AvatarImage src="/placeholder.svg" />
-                      <AvatarFallback>SJ</AvatarFallback>
+          </div>
+          
+          {/* Participants and Attachments in flex layout */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            {/* Participants Card */}
+            <div className="bg-white rounded-lg border border-gray-200 p-4">
+              <h3 className="font-medium mb-3">Participants</h3>
+              <div className="space-y-3">
+                {teamMembers.slice(0, 3).map((member, index) => (
+                  <div key={index} className="flex items-center">
+                    <Avatar className="h-8 w-8 mr-3">
+                      <AvatarImage src={member.avatarUrl} alt={member.name} />
+                      <AvatarFallback>{member.name.charAt(0)}{member.name.split(' ')[1]?.charAt(0)}</AvatarFallback>
                     </Avatar>
-                    <span className="text-sm">Sarah Johnson</span>
+                    <span className="text-sm">{member.name}</span>
                   </div>
-                  <div className="flex items-center ml-4">
-                    <Avatar className="h-8 w-8 mr-2">
-                      <AvatarImage src="/placeholder.svg" />
-                      <AvatarFallback>BL</AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm">Brian Lee</span>
-                  </div>
-                  <div className="flex items-center ml-4">
-                    <Avatar className="h-8 w-8 mr-2">
-                      <AvatarImage src="/placeholder.svg" />
-                      <AvatarFallback>ED</AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm">Emily Davis</span>
-                  </div>
-                </div>
+                ))}
+                
+                {teamMembers.length === 0 && (
+                  <>
+                    <div className="flex items-center">
+                      <Avatar className="h-8 w-8 mr-3">
+                        <AvatarImage src="/placeholder.svg" />
+                        <AvatarFallback>SJ</AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm">Sarah Johnson</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Avatar className="h-8 w-8 mr-3">
+                        <AvatarImage src="/placeholder.svg" />
+                        <AvatarFallback>BL</AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm">Brian Lee</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Avatar className="h-8 w-8 mr-3">
+                        <AvatarImage src="/placeholder.svg" />
+                        <AvatarFallback>ED</AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm">Emily Davis</span>
+                    </div>
+                  </>
+                )}
               </div>
-              
-              <div className="flex-1">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Attachments</h3>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                    <div className="flex items-center">
-                      <div className="bg-gray-200 p-2 rounded mr-2">
-                        <Paperclip className="h-4 w-4 text-gray-600" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium">Project Plan.pdf</p>
-                      </div>
-                    </div>
+            </div>
+            
+            {/* Attachments Card */}
+            <div className="bg-white rounded-lg border border-gray-200 p-4">
+              <h3 className="font-medium mb-3">Attachments</h3>
+              <div className="space-y-2">
+                <div className="flex items-center p-2 bg-gray-50 rounded">
+                  <div className="bg-gray-200 p-2 rounded mr-3 flex-shrink-0">
+                    <FileText className="h-4 w-4 text-gray-600" />
                   </div>
-                  <div className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                    <div className="flex items-center">
-                      <div className="bg-gray-200 p-2 rounded mr-2">
-                        <Paperclip className="h-4 w-4 text-gray-600" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium">Budget Overview.png</p>
-                      </div>
-                    </div>
+                  <span className="text-xs font-medium">Project Plan.pdf</span>
+                </div>
+                
+                <div className="flex items-center p-2 bg-gray-50 rounded">
+                  <div className="bg-gray-200 p-2 rounded mr-3 flex-shrink-0">
+                    <Image className="h-4 w-4 text-gray-600" />
                   </div>
+                  <span className="text-xs font-medium">Budget Overview.png</span>
                 </div>
               </div>
             </div>
           </div>
           
+          {/* Meeting Notes Section */}
           <div className="mt-12">
             <h2 className="text-lg font-semibold mb-4">Meeting Notes</h2>
             <div className="border rounded-md">
@@ -409,4 +429,3 @@ const MeetingsView: React.FC<MeetingsViewProps> = ({ projectId }) => {
 };
 
 export default MeetingsView;
-
