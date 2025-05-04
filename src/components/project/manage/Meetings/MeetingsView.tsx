@@ -22,7 +22,7 @@ interface Meeting {
   end_time: string;
   location: string;
   description: string;
-  project_title?: string;
+  // Remove project_title from interface since it doesn't exist in the database
 }
 
 interface MeetingNote {
@@ -75,8 +75,8 @@ const MeetingsView: React.FC<MeetingsViewProps> = ({ projectId }) => {
           start_time: event.start_time,
           end_time: event.end_time,
           location: event.location || "000 000 0000",
-          description: event.description || "We'll discuss your vision for a stunning kitchen renovation! We'll review your designs, timeline, and budget to bring your dream kitchen to life. Please come prepared with all of the necessary documentation.",
-          project_title: event.project_title
+          description: event.description || "We'll discuss your vision for a stunning kitchen renovation! We'll review your designs, timeline, and budget to bring your dream kitchen to life. Please come prepared with all of the necessary documentation."
+          // Remove project_title from mapping since it doesn't exist
         }));
         
         setMeetings(fetchedMeetings);
@@ -409,3 +409,4 @@ const MeetingsView: React.FC<MeetingsViewProps> = ({ projectId }) => {
 };
 
 export default MeetingsView;
+
