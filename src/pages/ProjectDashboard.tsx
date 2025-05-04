@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useLocation, useParams, Navigate, useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
@@ -19,6 +20,7 @@ import ScheduleCardWidget from "@/components/project/ScheduleCardWidget";
 import ProjectMilestonesWidget from "@/components/project/ProjectMilestonesWidget";
 import FinancialComparisonCard from "@/components/project/FinancialComparisonCard";
 import ActionItemsWidget from "@/components/project/ActionItemsWidget";
+
 const ProjectDashboard = () => {
   const location = useLocation();
   const params = useParams();
@@ -42,14 +44,36 @@ const ProjectDashboard = () => {
     error
   } = useProjectData(projectId, location.state);
   const isLoading = isAccessLoading || isProjectLoading;
+  
+  // New state to track whether to show mobile nav view
+  const [isMobileView, setIsMobileView] = React.useState(false);
+  
+  // Check window width and update state accordingly
+  React.useEffect(() => {
+    const checkWidth = () => {
+      setIsMobileView(window.innerWidth <= 1023);
+    };
+    
+    // Initial check
+    checkWidth();
+    
+    // Add event listener
+    window.addEventListener('resize', checkWidth);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', checkWidth);
+  }, []);
+
   React.useEffect(() => {
     if (error) {
       toast.error(`Error loading project: ${error.message}`);
     }
   }, [error]);
+  
   if (!isAccessLoading && !hasAccess) {
     return <Navigate to="/projects" replace />;
   }
+  
   if (isLoading) {
     return <div className="min-h-screen flex flex-col bg-white">
         <DashboardNavbar />
@@ -61,6 +85,7 @@ const ProjectDashboard = () => {
         </div>
       </div>;
   }
+  
   if (error || !propertyDetails || !projectData) {
     return <div className="min-h-screen flex flex-col bg-white">
         <DashboardNavbar />
@@ -78,11 +103,13 @@ const ProjectDashboard = () => {
         </div>
       </div>;
   }
+  
   const projectTitle = projectData?.title || "Project Overview";
   const renovationAreas = projectData?.renovation_areas as unknown as RenovationArea[] || [];
   const hasSOW = false;
   const hasDesignPlan = false;
   const isCoach = profile?.role === 'coach';
+  
   const handleStartSOW = () => {
     if (!hasDesignPlan) {
       setShowNoDesignDialog(true);
@@ -90,9 +117,11 @@ const ProjectDashboard = () => {
       startSOWCreation();
     }
   };
+  
   const startSOWCreation = () => {
     navigate(`/project-sow/${projectId}`);
   };
+  
   const propertyCardData = {
     id: propertyDetails.id,
     property_name: propertyDetails.property_name,
@@ -103,12 +132,29 @@ const ProjectDashboard = () => {
     state: propertyDetails.state,
     zip_code: propertyDetails.zip_code
   };
+  
   const userRole = isOwner ? "Owner" : role || "Team Member";
+  
   return <div className="flex flex-col bg-white min-h-screen">
       <DashboardNavbar />
       <SidebarProvider defaultOpen={!isMobile}>
         <div className="flex flex-1 h-[calc(100vh-64px)] w-full pt-[64px] -mt-[64px]">
-          <ProjectSidebar projectId={projectId} projectTitle={projectTitle} activePage="overview" />
+          {/* Show ProjectSidebar only on larger screens when not in mobile view */}
+          {!isMobileView && (
+            <ProjectSidebar projectId={projectId} projectTitle={projectTitle} activePage="overview" />
+          )}
+          
+          {/* Always show mobile navigation on small screens and now also on medium screens <= 1023px */}
+          {isMobileView && (
+            <div className="w-full">
+              <div className="md:hidden fixed top-[64px] left-0 right-0 z-40 bg-[#f8fafc] border-b border-gray-200">
+                {/* The mobile navigation is rendered inside ProjectSidebar component */}
+                <ProjectSidebar projectId={projectId} projectTitle={projectTitle} activePage="overview" />
+              </div>
+              <div className="pt-[50px]"></div> {/* Space for fixed mobile nav */}
+            </div>
+          )}
+          
           <div className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 bg-white overflow-y-auto">
             <div className="mb-3 sm:mb-4 md:mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center">
               <div>
