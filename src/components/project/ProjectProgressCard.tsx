@@ -1,177 +1,154 @@
 
 import React from "react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { addDays, format } from "date-fns";
+import { Check, Pen, Wrench, Circle, CircleCheck } from "lucide-react";
+import { useProjectData, RenovationArea, DesignPreferences } from "@/hooks/useProjectData";
 
 interface ProjectProgressCardProps {
   projectId: string;
   className?: string;
 }
 
-interface WorkBlock {
-  id: string;
-  title: string;
-  startDate: Date;
-  endDate: Date;
-  status: "completed" | "inProgress" | "upcoming" | "delayed";
-  percentComplete?: number;
+type ProjectStage = "exploring" | "designing" | "planning" | "building" | "finalization";
+
+interface StageDetails {
+  name: string;
+  icon: React.ReactNode;
+  nextUpText: string;
 }
 
 const ProjectProgressCard = ({ projectId, className }: ProjectProgressCardProps) => {
-  // Mock data - in real app, fetch from API
-  const today = new Date();
-  const mockWorkBlocks: WorkBlock[] = [
-    {
-      id: "wb1",
-      title: "Demolition",
-      startDate: addDays(today, -2),
-      endDate: addDays(today, 2),
-      status: "inProgress",
-      percentComplete: 50
-    },
-    {
-      id: "wb2",
-      title: "Electrical Work",
-      startDate: addDays(today, 3),
-      endDate: addDays(today, 6),
-      status: "upcoming"
-    },
-    {
-      id: "wb3",
-      title: "Plumbing",
-      startDate: addDays(today, 4),
-      endDate: addDays(today, 8),
-      status: "upcoming"
-    },
-    {
-      id: "wb4",
-      title: "Tiling",
-      startDate: addDays(today, 9),
-      endDate: addDays(today, 12),
-      status: "upcoming"
-    }
-  ];
-
-  const daysToShow = 14;
-  const dayRange = Array.from({ length: daysToShow }, (_, i) => addDays(today, i - 2));
+  const { projectData, isLoading } = useProjectData(projectId);
   
-  const getStatusColor = (status: string) => {
-    switch(status) {
-      case "completed": return "bg-green-500";
-      case "inProgress": return "bg-blue-500";
-      case "upcoming": return "bg-gray-300";
-      case "delayed": return "bg-red-500";
-      default: return "bg-gray-300";
+  const determineStage = (): { stage: ProjectStage; progress: number } => {
+    if (!projectData) return { stage: "exploring", progress: 10 };
+    
+    const designPrefs = projectData.design_preferences || { hasDesigns: false };
+    const projectPrefs = projectData.project_preferences || {};
+    const managementPrefs = projectData.management_preferences || {};
+    
+    // Check if project is in finalization stage (mock logic - would need integration with work blocks data)
+    const allWorkBlocksComplete = false; // This would come from actual work block data
+    if (allWorkBlocksComplete) return { stage: "finalization", progress: 100 };
+    
+    // Check if project is in building stage (mock logic - would need integration with work blocks data)
+    const hasScheduledWorkBlocks = false; // This would come from actual work block data
+    if (hasScheduledWorkBlocks) return { stage: "building", progress: 80 };
+    
+    // Check if project is in planning stage
+    const hasDesigner = designPrefs.hasDesigns && designPrefs.designers && designPrefs.designers.length > 0;
+    const hasUploadedDesigns = designPrefs.designAssets && designPrefs.designAssets.length > 0;
+    const isReadyToStart = projectPrefs.isReadyToStart === true;
+    const wantsManagement = managementPrefs.needsManagement === true;
+    const hasSelectedTimeSlots = projectPrefs.selectedTimeSlots && projectPrefs.selectedTimeSlots.length > 0;
+    
+    if (hasDesigner && hasUploadedDesigns && isReadyToStart && wantsManagement) {
+      return { stage: "planning", progress: 60 };
+    }
+    
+    // Check if project is in designing stage
+    if (hasDesigner) {
+      return { stage: "designing", progress: 30 };
+    }
+    
+    // Default to exploring
+    return { stage: "exploring", progress: 10 };
+  };
+  
+  const { stage, progress } = determineStage();
+  
+  const stages: Record<ProjectStage, StageDetails> = {
+    exploring: {
+      name: "Exploring",
+      icon: <CircleCheck className="w-4 h-4" />,
+      nextUpText: "A project coach will reach out for an initial consultation."
+    },
+    designing: {
+      name: "Designing",
+      icon: <CircleCheck className="w-4 h-4" />,
+      nextUpText: "Work with your designer to finalize your renovation plans."
+    },
+    planning: {
+      name: "Planning",
+      icon: <Pen className="w-4 h-4" />,
+      nextUpText: "Review and approve the Statement of Work (SOW)."
+    },
+    building: {
+      name: "Building",
+      icon: <Wrench className="w-4 h-4" />,
+      nextUpText: "Monitor progress as contractors complete assigned work blocks."
+    },
+    finalization: {
+      name: "Finalization",
+      icon: <Check className="w-4 h-4" />,
+      nextUpText: "Complete final walkthrough and sign off on completed work."
     }
   };
-
-  const isWeekend = (date: Date) => {
-    const day = date.getDay();
-    return day === 0 || day === 6; // 0 is Sunday, 6 is Saturday
-  };
-
-  const isToday = (date: Date) => {
-    return date.toDateString() === today.toDateString();
-  };
-
+  
+  if (isLoading) {
+    return (
+      <Card className={cn("overflow-hidden", className)}>
+        <CardHeader className="bg-[#f8f9fa] border-b p-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-semibold">Project Progress</h3>
+            <div className="text-orange-500 font-medium animate-pulse">
+              Loading...
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-4">
+          <div className="h-16 bg-gray-100 animate-pulse rounded"></div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
   return (
     <Card className={cn("overflow-hidden", className)}>
-      <CardHeader className="bg-[#f8f9fa] border-b p-4">
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-semibold">Project Progress</h3>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            className="text-blue-600 hover:text-blue-800 p-0"
-          >
-            View Full Schedule
-          </Button>
+      <CardHeader className="flex flex-row items-center justify-between py-4 px-4 bg-white border-b">
+        <h3 className="text-lg font-semibold">Project Progress</h3>
+        <div className="text-orange-500 font-medium">
+          {progress}% Complete
         </div>
       </CardHeader>
-      <CardContent className="p-4 overflow-x-auto">
-        <div className="min-w-[700px]">
-          {/* Date headers */}
-          <div className="grid grid-cols-[150px_repeat(14,1fr)] mb-2">
-            <div className="px-2 py-1 font-medium">Work Block</div>
-            {dayRange.map((date, i) => (
-              <div 
-                key={i}
-                className={cn(
-                  "px-2 py-1 text-center font-medium text-xs",
-                  isWeekend(date) && "bg-gray-50",
-                  isToday(date) && "bg-blue-50"
-                )}
-              >
-                <div>{format(date, "EEE")}</div>
+      <CardContent className="p-4">
+        {/* Progress Stages */}
+        <div className="flex items-center justify-between mb-4 flex-wrap">
+          {Object.entries(stages).map(([key, value], index, array) => {
+            const stageKey = key as ProjectStage;
+            const isActive = stageKey === stage;
+            const isPast = index < Object.keys(stages).indexOf(stage);
+            
+            return (
+              <React.Fragment key={stageKey}>
                 <div className={cn(
-                  "font-bold",
-                  isToday(date) && "text-blue-600"
+                  "flex items-center justify-center px-3 py-2 rounded-full transition-all",
+                  isActive ? "bg-[#0e475d] text-white" : 
+                  isPast ? "bg-[#0e475d] text-white" : 
+                  "bg-white border border-gray-300 text-gray-600"
                 )}>
-                  {format(date, "d")}
+                  <span className="mr-1">{value.icon}</span>
+                  <span className="text-sm font-medium">{value.name}</span>
                 </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Work blocks timeline */}
-          <div className="space-y-2">
-            {mockWorkBlocks.map(block => {
-              // Calculate position on the timeline
-              const startIdx = dayRange.findIndex(day => 
-                day.toDateString() === block.startDate.toDateString()
-              );
-              const endIdx = dayRange.findIndex(day => 
-                day.toDateString() === block.endDate.toDateString()
-              );
-              
-              // If completely outside our range, don't show
-              if (endIdx < 0 || startIdx >= dayRange.length) return null;
-              
-              // Adjust to visible range if partially visible
-              const visibleStartIdx = Math.max(0, startIdx);
-              const visibleEndIdx = Math.min(dayRange.length - 1, endIdx);
-              
-              // Calculate span (number of days)
-              const span = visibleEndIdx - visibleStartIdx + 1;
-
-              return (
-                <div key={block.id} className="grid grid-cols-[150px_repeat(14,1fr)] h-9">
-                  <div className="px-2 flex items-center font-medium text-sm truncate">
-                    {block.title}
-                  </div>
-                  {/* Empty cells before start */}
-                  {Array.from({ length: visibleStartIdx }, (_, i) => (
-                    <div key={`pre-${i}`} className="border-r border-gray-100"></div>
-                  ))}
-                  {/* The block itself */}
-                  <div 
-                    className={cn(
-                      "rounded-md mx-1 px-2 text-white text-xs flex items-center justify-center",
-                      getStatusColor(block.status)
-                    )}
-                    style={{ 
-                      gridColumn: `span ${span}` 
-                    }}
-                  >
-                    {block.percentComplete !== undefined && (
-                      <div className="font-medium">{block.percentComplete}%</div>
-                    )}
-                  </div>
-                  {/* Empty cells after end */}
-                  {Array.from({ length: dayRange.length - visibleEndIdx - 1 }, (_, i) => (
-                    <div key={`post-${i}`} className="border-r border-gray-100"></div>
-                  ))}
-                </div>
-              );
-            })}
-
-            {mockWorkBlocks.length === 0 && (
-              <div className="text-center p-8 text-gray-500">
-                No work blocks scheduled yet.
-              </div>
-            )}
+                
+                {/* Connector line */}
+                {index < array.length - 1 && (
+                  <div className={cn(
+                    "h-[2px] w-3 md:w-6 hidden sm:block",
+                    isPast || isActive ? "bg-[#0e475d]" : "bg-gray-300"
+                  )} />
+                )}
+              </React.Fragment>
+            );
+          })}
+        </div>
+        
+        {/* Next Up Section */}
+        <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
+          <div className="text-xs uppercase font-semibold text-gray-500 mb-1">NEXT UP:</div>
+          <div className="text-sm text-gray-800">
+            {stages[stage].nextUpText}
           </div>
         </div>
       </CardContent>
