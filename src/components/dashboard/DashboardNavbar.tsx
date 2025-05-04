@@ -26,7 +26,7 @@ const DashboardNavbar = () => {
       <div className="flex justify-between items-center">
         {/* Logo */}
         <div className="flex items-center">
-          <span onClick={() => navigate('/dashboard')} className="self-center md:text-xl font-bold text-white bg-orange-500 px-3 py-2 md:px-5 md:py-3 cursor-pointer text-sm">
+          <span onClick={() => navigate('/dashboard')} className="self-center md:text-xl font-bold text-white bg-orange-500 px-3 py-2 md:px-5 md:py-3 cursor-pointer text-xl">
             Rehab Squared
           </span>
         </div>
