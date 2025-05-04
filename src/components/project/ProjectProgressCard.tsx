@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -119,9 +118,9 @@ const ProjectProgressCard = ({ projectId, className }: ProjectProgressCardProps)
         </div>
       </CardHeader>
       <CardContent className="p-4">
-        {/* Progress Stages - Now with horizontal scroll */}
-        <ScrollArea className="w-full mb-4">
-          <div className="flex items-center justify-between min-w-[600px]">
+        {/* Progress Stages - Improved horizontal scrolling */}
+        <ScrollArea className="w-full overflow-x-auto mb-4">
+          <div className="flex items-center justify-between min-w-[660px] pb-2">
             {Object.entries(stages).map(([key, value], index, array) => {
               const stageKey = key as ProjectStage;
               const isActive = stageKey === stage;
