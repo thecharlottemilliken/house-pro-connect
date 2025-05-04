@@ -106,9 +106,10 @@ const FinancialComparisonCard = ({ projectId, className }: FinancialComparisonCa
           </div>
         </div>
         
-        {/* Chart */}
-        <div className="h-64">
+        {/* Chart - Updated to span full width */}
+        <div className="h-64 w-full">
           <ChartContainer
+            className="w-full"
             config={{
               estimated: { color: "#14B8A6" }, // Green color for estimated
               invoiced: { color: "#F97316" }   // Orange color for invoiced
