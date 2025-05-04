@@ -27,7 +27,6 @@ import ProjectStagesCard from "@/components/project/ProjectStagesCard";
 import ScheduleCardWidget from "@/components/project/ScheduleCardWidget";
 import ProjectMilestonesWidget from "@/components/project/ProjectMilestonesWidget";
 import FinancialComparisonCard from "@/components/project/FinancialComparisonCard";
-import MessagesCard from "@/components/project/MessagesCard";
 import ActionItemsWidget from "@/components/project/ActionItemsWidget";
 
 const ProjectDashboard = () => {
@@ -178,7 +177,7 @@ const ProjectDashboard = () => {
                 <ScheduleCardWidget projectId={projectId} />
               </div>
               
-              {/* Column 3 - Project Milestones Widget (renamed from Progress Card) */}
+              {/* Column 3 - Project Milestones Widget */}
               <div className="lg:col-span-1">
                 <ProjectMilestonesWidget projectId={projectId} />
               </div>
@@ -186,11 +185,6 @@ const ProjectDashboard = () => {
               {/* Project Stages Card - spans full width */}
               <div className="lg:col-span-3">
                 <ProjectStagesCard projectData={projectData} />
-              </div>
-              
-              {/* Messages Card */}
-              <div className="lg:col-span-1">
-                <MessagesCard projectId={projectId} />
               </div>
               
               {/* Financial Comparison Card - spans all 3 columns for chart visibility */}
