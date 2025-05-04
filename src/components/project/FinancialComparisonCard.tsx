@@ -65,7 +65,7 @@ const FinancialComparisonCard = ({
     year: "This Year"
   };
   return <Card className={cn("overflow-hidden", className)}>
-      <CardHeader className="bg-white px-4 py-4 flex flex-row justify-between items-center border-b">
+      <CardHeader className="bg-white flex flex-row justify-between items-center border-b px-[8px] py-[8px]">
         <h3 className="text-lg font-semibold">Estimated vs Invoiced</h3>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

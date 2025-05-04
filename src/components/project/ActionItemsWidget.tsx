@@ -176,7 +176,7 @@ const ActionItemsWidget = ({
     });
   };
   return <Card className={cn("overflow-hidden rounded-lg shadow-[0_2px_10px_rgba(0,0,0,0.08)] border-0", className)}>
-      <CardHeader className="flex flex-row items-center justify-between pb-3 pt-6 px-6">
+      <CardHeader className="flex flex-row items-center justify-between pb-3 pt-6 px-[8px] py-[8px]">
         <h2 className="text-lg font-semibold">Action Items</h2>
         <div className="text-orange-500 font-medium text-lg">
           {completedItems.length}/{actionItems.length}
