@@ -12,6 +12,40 @@ export const useNotifications = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const { user } = useAuth();
 
+  // Set up real-time subscription to notifications
+  useEffect(() => {
+    if (!user) return;
+    
+    // Subscribe to new notifications
+    const channel = supabase
+      .channel('notifications_channel')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `recipient_id=eq.${user.id}`
+        },
+        (payload) => {
+          const newNotification = formatNotificationFromDB(payload.new);
+          setNotifications(prev => [newNotification, ...prev]);
+          setUnreadCount(prev => prev + 1);
+          
+          // Show toast for new notification
+          toast({
+            title: newNotification.title,
+            description: newNotification.content || '',
+          });
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   // Fetch notifications
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -20,11 +54,24 @@ export const useNotifications = () => {
       try {
         setLoading(true);
         
-        // For now, we'll use mock data since the notifications table doesn't exist yet
-        // In the future, we'll create a notifications table and fetch from there
-        const mockNotifications = getMockNotifications();
-        setNotifications(mockNotifications);
-        setUnreadCount(mockNotifications.filter(n => !n.read).length);
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('*')
+          .eq('recipient_id', user.id)
+          .order('date', { ascending: false });
+        
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          const formattedNotifications = data.map(formatNotificationFromDB);
+          setNotifications(formattedNotifications);
+          setUnreadCount(formattedNotifications.filter(n => !n.read).length);
+        } else {
+          // If no notifications in DB, use mock data for demonstration
+          const mockNotifications = getMockNotifications();
+          setNotifications(mockNotifications);
+          setUnreadCount(mockNotifications.filter(n => !n.read).length);
+        }
       } catch (error) {
         console.error('Error in notification system:', error);
         // For demo purposes, still set mock data on error
@@ -39,11 +86,55 @@ export const useNotifications = () => {
     fetchNotifications();
   }, [user]);
 
+  // Helper to format data from DB to our Notification type
+  const formatNotificationFromDB = (dbNotification: any): Notification => {
+    try {
+      // Parse the data JSON field which contains our structured data
+      const data = dbNotification.data || {};
+      
+      return {
+        id: dbNotification.id,
+        type: dbNotification.type as NotificationType,
+        title: dbNotification.title,
+        content: dbNotification.content || undefined,
+        date: new Date(dbNotification.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        read: dbNotification.read,
+        users: data.users || [],
+        priority: dbNotification.priority as 'high' | 'medium' | 'low',
+        availableActions: data.availableActions || [],
+        ...(data.project && { project: data.project }),
+        ...(data.message && { message: data.message }),
+        ...(data.meeting && { meeting: data.meeting }),
+        ...(data.sow && { sow: data.sow }),
+      };
+    } catch (error) {
+      console.error('Error formatting notification:', error, dbNotification);
+      // Return a minimal valid notification if there's an error
+      return {
+        id: dbNotification.id || 'error-id',
+        type: 'message',
+        title: 'Error processing notification',
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        read: false,
+        users: [],
+        priority: 'medium',
+        availableActions: ['mark_as_read'],
+      };
+    }
+  };
+
   // Mark notification as read
   const markAsRead = async (notificationId: string | number) => {
     try {
-      // In a real app, update the database
-      // For now, just update the local state
+      // Update the database
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('id', notificationId);
+      
+      if (error) throw error;
+      
+      // Update local state
       setNotifications(prev => 
         prev.map(notification => 
           notification.id === notificationId 
@@ -54,13 +145,6 @@ export const useNotifications = () => {
       
       // Update unread count
       setUnreadCount(prev => Math.max(0, prev - 1));
-      
-      // TODO: In a real app, call the API to mark as read
-      // await supabase
-      //  .from('notifications')
-      //  .update({ read: true })
-      //  .eq('id', notificationId);
-      
     } catch (error) {
       console.error('Error marking notification as read:', error);
       toast({
@@ -73,22 +157,25 @@ export const useNotifications = () => {
 
   // Mark all as read
   const markAllAsRead = async () => {
+    if (!user || notifications.filter(n => !n.read).length === 0) return;
+    
     try {
-      // In a real app, update the database
-      // For now, just update the local state
+      // Update the database
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('recipient_id', user.id)
+        .eq('read', false);
+      
+      if (error) throw error;
+      
+      // Update local state
       setNotifications(prev => 
         prev.map(notification => ({ ...notification, read: true }))
       );
       
       // Reset unread count
       setUnreadCount(0);
-      
-      // TODO: In a real app, call the API to mark all as read
-      // await supabase
-      //  .from('notifications')
-      //  .update({ read: true })
-      //  .eq('recipient_id', user.id);
-      
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
       toast({
@@ -110,43 +197,52 @@ export const useNotifications = () => {
     try {
       const template = notificationTemplates[type];
       
-      const notification: Omit<Notification, 'id'> = {
-        type,
-        title: template.generateTitle(data),
-        content: template.generateContent(data),
-        date: new Date().toISOString(),
-        read: false,
-        users: data.users || [],
-        priority: template.priority,
-        availableActions: template.defaultActions,
-      };
-
-      if (data.project) notification.project = data.project;
-      if (data.meeting) notification.meeting = data.meeting;
-      if (data.message) notification.message = data.message;
-      if (data.sow) notification.sow = data.sow;
-
-      // In a real app, this would be saved to the database
-      // For now, we'll just return the notification object
-      // which could be used to update local state
+      // Prepare the data for DB insertion
+      const title = template.generateTitle(data);
+      const content = template.generateContent(data);
+      const priority = template.priority;
       
-      // TODO: In a real app, save to database
-      // const { data: savedNotification, error } = await supabase
-      //   .from('notifications')
-      //   .insert({
-      //     ...notification,
-      //     recipient_id: recipientId
-      //   })
-      //   .select()
-      //   .single();
+      // Create JSON data object with all the structured data
+      const jsonData: any = {};
       
-      // if (error) throw error;
-      // return savedNotification;
+      // Add users array
+      if (data.users) {
+        jsonData.users = data.users;
+      } else if (data.user) {
+        jsonData.users = [{
+          id: data.user.id || 'unknown',
+          name: data.user,
+          avatar: data.user.substring(0, 1)
+        }];
+      }
       
-      return {
-        ...notification,
-        id: Date.now().toString() // Mock ID for now
-      };
+      // Add other data elements
+      if (data.project) jsonData.project = data.project;
+      if (data.meeting) jsonData.meeting = data.meeting;
+      if (data.message) jsonData.message = data.message;
+      if (data.sow) jsonData.sow = data.sow;
+      
+      // Add available actions
+      jsonData.availableActions = template.defaultActions;
+      
+      // Insert into the database
+      const { data: newNotification, error } = await supabase
+        .from('notifications')
+        .insert({
+          recipient_id: recipientId,
+          type,
+          title,
+          content,
+          priority,
+          data: jsonData
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Return the new notification
+      return formatNotificationFromDB(newNotification);
     } catch (error) {
       console.error('Error creating notification:', error);
       return null;

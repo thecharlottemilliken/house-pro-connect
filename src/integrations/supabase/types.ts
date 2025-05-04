@@ -61,6 +61,45 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          content: string | null
+          created_at: string
+          data: Json | null
+          date: string
+          id: string
+          priority: string
+          read: boolean
+          recipient_id: string
+          title: string
+          type: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          data?: Json | null
+          date?: string
+          id?: string
+          priority?: string
+          read?: boolean
+          recipient_id: string
+          title: string
+          type: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          data?: Json | null
+          date?: string
+          id?: string
+          priority?: string
+          read?: boolean
+          recipient_id?: string
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -502,6 +541,17 @@ export type Database = {
       check_user_is_coach: {
         Args: { p_user_id: string }
         Returns: boolean
+      }
+      create_notification: {
+        Args: {
+          p_recipient_id: string
+          p_type: string
+          p_title: string
+          p_content?: string
+          p_priority?: string
+          p_data?: Json
+        }
+        Returns: string
       }
       get_property_details: {
         Args: { p_property_id: string }

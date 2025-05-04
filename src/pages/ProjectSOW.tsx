@@ -8,8 +8,7 @@ import { ProjectReviewForm } from "@/components/project/sow/ProjectReviewForm";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-// Remove import of SOWReviewDialog
-// import SOWReviewDialog from "@/components/project/sow/SOWReviewDialog";
+import SOWReviewDialog from "@/components/project/sow/SOWReviewDialog";
 
 const ProjectSOW = () => {
   const location = useLocation();
@@ -26,7 +25,7 @@ const ProjectSOW = () => {
 
   const [sowData, setSOWData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  // Remove showReviewDialog and related state
+  const [showReviewDialog, setShowReviewDialog] = useState(false);
 
   const { profile } = useAuth();
 
@@ -44,6 +43,11 @@ const ProjectSOW = () => {
 
         if (error) throw error;
         setSOWData(data);
+        
+        // If in review mode and status is "ready for review", show review dialog
+        if (isReviewMode && data?.status === "ready for review") {
+          setShowReviewDialog(true);
+        }
       } catch (error) {
         console.error("Error fetching SOW data:", error);
       } finally {
@@ -52,9 +56,31 @@ const ProjectSOW = () => {
     };
 
     fetchSOWData();
-  }, [params.projectId, profile]);
+  }, [params.projectId, profile, isReviewMode]);
 
   const projectTitle = projectData?.title || "Unknown Project";
+  
+  const handleReviewComplete = () => {
+    // Refresh SOW data after review
+    const fetchUpdatedSOW = async () => {
+      if (!params.projectId) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('statement_of_work')
+          .select('*')
+          .eq('project_id', params.projectId)
+          .maybeSingle();
+
+        if (error) throw error;
+        setSOWData(data);
+      } catch (error) {
+        console.error("Error fetching updated SOW data:", error);
+      }
+    };
+    
+    fetchUpdatedSOW();
+  };
 
   // Function to render the SOW in view-only mode
   const renderSOWView = () => {
@@ -109,6 +135,16 @@ const ProjectSOW = () => {
       <main className="px-0 py-0">
         {isViewMode || isReviewMode ? renderSOWView() : <SOWWizard />}
       </main>
+      
+      {sowData && (
+        <SOWReviewDialog 
+          open={showReviewDialog}
+          onOpenChange={setShowReviewDialog}
+          projectId={params.projectId || ""}
+          sowId={sowData.id}
+          onActionComplete={handleReviewComplete}
+        />
+      )}
     </div>
   );
 };
