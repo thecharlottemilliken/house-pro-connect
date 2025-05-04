@@ -48,11 +48,26 @@ export const useNotificationSubscription = ({
             // Call the callback
             onNewNotification(newNotification);
             
-            // Show toast for new notification
-            toast({
-              title: newNotification.title,
-              description: newNotification.content || '',
-            });
+            // Show toast for new notification based on type
+            let toastMessage = newNotification.title;
+            
+            // Custom toast based on notification type
+            if (newNotification.type === 'new_meeting') {
+              toast({
+                title: "📅 " + newNotification.title,
+                description: newNotification.content || '',
+              });
+            } else if (newNotification.type === 'project_coaching_request') {
+              toast({
+                title: "🔔 " + newNotification.title,
+                description: newNotification.content || '',
+              });
+            } else {
+              toast({
+                title: newNotification.title,
+                description: newNotification.content || '',
+              });
+            }
           } catch (error) {
             console.error('[Notification Subscription] Error processing notification:', error);
             setError(error instanceof Error ? error : new Error(String(error)));

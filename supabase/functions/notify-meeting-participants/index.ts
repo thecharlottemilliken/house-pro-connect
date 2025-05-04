@@ -91,7 +91,7 @@ serve(async (req) => {
     // Get project details for the notification
     const { data: projectData, error: projectError } = await supabaseClient
       .from("projects")
-      .select("title")
+      .select("title, user_id")
       .eq("id", eventData.project_id)
       .single();
     
@@ -116,22 +116,46 @@ serve(async (req) => {
       minute: '2-digit'
     });
 
+    // Get creator name
+    const { data: creatorData, error: creatorError } = await supabaseClient
+      .from("profiles")
+      .select("name")
+      .eq("id", user.id)
+      .single();
+    
+    if (creatorError) {
+      console.error(`[notify-meeting-participants] Error getting creator name for ${user.id}:`, creatorError);
+    }
+    
+    const creatorName = creatorData?.name || coachName || "Your coach";
+    console.log(`[notify-meeting-participants] Creator name: ${creatorName}`);
+
+    // Make sure to notify project owner if they're not the creator
+    const projectOwnerId = projectData.user_id;
+    if (projectOwnerId !== eventData.created_by) {
+      // Add project owner to notification list if not already there
+      const isOwnerAlreadyInList = teamMembers.some(member => member.user_id === projectOwnerId);
+      if (!isOwnerAlreadyInList) {
+        console.log(`[notify-meeting-participants] Adding project owner ${projectOwnerId} to notification list`);
+        const { data: ownerData } = await supabaseClient
+          .from("profiles")
+          .select("name")
+          .eq("id", projectOwnerId)
+          .single();
+        
+        if (ownerData) {
+          teamMembers.push({
+            user_id: projectOwnerId,
+            name: ownerData.name,
+            role: "owner"
+          });
+        }
+      }
+    }
+
     // Create notifications for each team member
     const notificationPromises = teamMembers.map(async (member) => {
       try {
-        // Get creator name
-        const { data: creatorData, error: creatorError } = await supabaseClient
-          .from("profiles")
-          .select("name")
-          .eq("id", user.id)
-          .single();
-        
-        if (creatorError) {
-          console.error(`[notify-meeting-participants] Error getting creator name for ${user.id}:`, creatorError);
-        }
-        
-        const creatorName = creatorData?.name || coachName || "Your coach";
-        
         console.log(`[notify-meeting-participants] Creating notification for team member ${member.user_id}`);
         
         // Create notification data

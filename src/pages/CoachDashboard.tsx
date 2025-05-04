@@ -38,11 +38,17 @@ const CoachDashboard = () => {
           event: 'INSERT',
           schema: 'public',
           table: 'notifications',
-          filter: `recipient_id=eq.${user.id} AND type=eq.project_coaching_request`
+          filter: `recipient_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('Coach received new project request notification:', payload);
-          toast.success('New coaching request received');
+          console.log('Coach received new notification:', payload);
+          
+          // Check if it's a project coaching request
+          if (payload.new?.type === 'project_coaching_request') {
+            toast.success('New coaching request received');
+          } else if (payload.new?.type === 'new_meeting') {
+            toast.success('New meeting scheduled');
+          }
           
           // Refresh data
           fetchProjects();

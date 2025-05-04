@@ -85,14 +85,16 @@ const CalendarView = () => {
   
   useEffect(() => {
     fetchEvents();
-  }, [projectId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [projectId]); 
   
   // Set up real-time subscription to new events
   useEffect(() => {
     if (!projectId || !user) return;
     
+    console.log(`Setting up calendar events subscription for project ${projectId}`);
+    
     const channel = supabase
-      .channel('calendar_events_channel')
+      .channel(`calendar_events_${projectId}`)
       .on(
         'postgres_changes',
         {
@@ -101,17 +103,20 @@ const CalendarView = () => {
           table: 'project_events',
           filter: `project_id=eq.${projectId}`
         },
-        () => {
-          console.log('New calendar event detected, refreshing events');
+        (payload) => {
+          console.log('New calendar event detected:', payload);
           fetchEvents();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log(`Calendar events subscription status: ${status}`);
+      });
     
     return () => {
+      console.log(`Removing calendar events subscription for project ${projectId}`);
       supabase.removeChannel(channel);
     };
-  }, [projectId, user]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [projectId, user]);
   
   // Update days when current date changes
   useEffect(() => {
@@ -251,11 +256,18 @@ const CalendarView = () => {
     }
   };
 
-  const handleCreateEvent = async (newEvent) => {
+  const handleCreateEvent = async (newEvent: any) => {
     try {
+      if (!user?.id || !projectId) {
+        toast.error("User or project information missing");
+        return;
+      }
+      
+      console.log("Creating new event:", newEvent);
+      
       // Add event to database
       const createdEvent = await EventsService.createProjectEvent({
-        project_id: projectId || '',
+        project_id: projectId,
         title: newEvent.title,
         description: newEvent.description,
         start_time: newEvent.startTime,
@@ -264,6 +276,13 @@ const CalendarView = () => {
         event_type: newEvent.type,
         created_by: user.id
       });
+      
+      if (!createdEvent) {
+        toast.error("Failed to create event");
+        return;
+      }
+      
+      console.log("Event created successfully:", createdEvent);
       
       // Get user name for the notification
       const { data: userData, error } = await supabase
@@ -277,23 +296,25 @@ const CalendarView = () => {
         toast.error("Failed to get user data");
       }
       
+      const userName = userData?.name || "Team Member";
+      console.log(`Sending notifications as ${userName}`);
+      
       // Notify participants
-      if (createdEvent) {
-        const notificationSent = await EventsService.notifyEventParticipants(
-          createdEvent,
-          userData?.name || "Team Member"
-        );
-        
-        if (notificationSent) {
-          console.log("Meeting notifications sent successfully");
-        } else {
-          console.warn("Meeting notifications may not have been sent to all participants");
-        }
+      const notificationSent = await EventsService.notifyEventParticipants(
+        createdEvent,
+        userName
+      );
+      
+      if (notificationSent) {
+        console.log("Meeting notifications sent successfully");
+        toast.success("Meeting scheduled and notifications sent");
+      } else {
+        console.warn("Meeting notifications may not have been sent to all participants");
+        toast.success("Meeting scheduled but notifications may not have been sent to all participants");
       }
       
       // Refresh events
       fetchEvents();
-      toast.success("Event created successfully");
     } catch (error) {
       console.error("Error creating event:", error);
       toast.error("Failed to create event");
@@ -357,6 +378,8 @@ const CalendarView = () => {
           timeSlots={timeSlots}
           events={events}
           viewMode={viewMode}
+          onEventClick={handleEventClick}
+          onCreateEvent={handleCreateEvent}
         />
       </div>
       

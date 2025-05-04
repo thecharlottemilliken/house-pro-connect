@@ -17,6 +17,8 @@ export interface ProjectEvent {
 
 export const EventsService = {
   async createProjectEvent(event: ProjectEvent) {
+    console.log("Creating project event:", event);
+    
     // Use a direct query without type checking for now
     const { data, error } = await (supabase as any)
       .from('project_events')
@@ -28,10 +30,13 @@ export const EventsService = {
       throw error;
     }
     
+    console.log("Successfully created project event:", data?.[0]);
     return data?.[0];
   },
   
   async getProjectEvents(projectId: string) {
+    console.log("Fetching project events for:", projectId);
+    
     // Use a direct query without type checking for now
     const { data, error } = await (supabase as any)
       .from('project_events')
@@ -44,6 +49,7 @@ export const EventsService = {
       throw error;
     }
     
+    console.log(`Found ${data?.length || 0} project events`);
     return data as ProjectEvent[];
   },
 
