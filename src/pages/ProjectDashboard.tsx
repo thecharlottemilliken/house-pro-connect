@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useLocation, useParams, Navigate, useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
@@ -168,7 +167,6 @@ const ProjectDashboard = () => {
               <div className="md:col-span-1 lg:col-span-2">
                 <ProjectProgressCard 
                   projectId={projectId}
-                  className="h-full"
                 />
               </div>
 
