@@ -213,11 +213,13 @@ const CoachCalendarView = () => {
       .sort((a, b) => a.date.getTime() - b.date.getTime())
       .map(event => ({
         id: event.id,
-        title: `${event.title}${event.project_title ? ` - ${event.project_title}` : ''}`,
+        title: event.title,
         day: event.date.getDate(),
         time: format(event.date, 'hh:mm a'),
         color: event.color,
-        fullTime: format(event.date, 'h:mm a')
+        fullTime: format(event.date, 'h:mm a'),
+        project_title: event.project_title,
+        date: event.date
       }));
   };
   
@@ -227,11 +229,13 @@ const CoachCalendarView = () => {
       .sort((a, b) => a.date.getTime() - b.date.getTime())
       .map(event => ({
         id: event.id,
-        title: `${event.title}${event.project_title ? ` - ${event.project_title}` : ''}`,
+        title: event.title,
         day: event.date.getDate(),
         time: format(event.date, 'hh:mm a'),
         color: event.color,
-        fullTime: format(event.date, 'h:mm a')
+        fullTime: format(event.date, 'h:mm a'),
+        project_title: event.project_title,
+        date: event.date
       }));
   };
   
@@ -302,28 +306,14 @@ const CoachCalendarView = () => {
           {/* Today's Events */}
           <EventsList 
             title="Today"
-            events={getTodayEvents().map(event => ({
-              id: event.id,
-              title: `${event.title}${event.project_title ? ` - ${event.project_title}` : ''}`,
-              day: event.date.getDate(),
-              time: format(event.date, 'hh:mm a'),
-              color: event.color,
-              fullTime: format(event.date, 'h:mm a')
-            }))}
+            events={getTodayEvents()}
             onEventClick={handleEventItemClick}
           />
           
           {/* Tomorrow's Events */}
           <EventsList 
             title="Tomorrow"
-            events={getTomorrowEvents().map(event => ({
-              id: event.id,
-              title: `${event.title}${event.project_title ? ` - ${event.project_title}` : ''}`,
-              day: event.date.getDate(),
-              time: format(event.date, 'hh:mm a'),
-              color: event.color,
-              fullTime: format(event.date, 'h:mm a')
-            }))}
+            events={getTomorrowEvents()}
             onEventClick={handleEventItemClick}
           />
         </div>

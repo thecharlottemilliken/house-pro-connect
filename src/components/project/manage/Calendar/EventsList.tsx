@@ -8,6 +8,8 @@ interface EventItem {
   time: string;
   color: string;
   fullTime?: string;
+  project_title?: string;
+  date?: Date;
 }
 
 interface EventsListProps {
@@ -49,6 +51,9 @@ const EventsList: React.FC<EventsListProps> = ({ title, events, onEventClick }) 
             <div>
               <p className="text-sm font-medium">{event.title}</p>
               <p className="text-xs text-gray-500">{event.fullTime || event.time}</p>
+              {event.project_title && (
+                <p className="text-xs text-gray-500">Project: {event.project_title}</p>
+              )}
             </div>
           </div>
         ))}
