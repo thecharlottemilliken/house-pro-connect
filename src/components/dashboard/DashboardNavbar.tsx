@@ -1,3 +1,4 @@
+
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -5,6 +6,7 @@ import { Menu, Settings, User, X, BellDot } from "lucide-react";
 import { useState } from 'react';
 import { useIsMobile } from "@/hooks/use-mobile";
 import NotificationsPopover from '../notifications/NotificationsPopover';
+
 const DashboardNavbar = () => {
   const navigate = useNavigate();
   const {
@@ -15,20 +17,27 @@ const DashboardNavbar = () => {
   const isMobile = useIsMobile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [hasNotifications, setHasNotifications] = useState(true);
+  
   const toggleMobileMenu = () => {
     setMobileMenuOpen(prev => !prev);
   };
+  
   const currentPath = window.location.pathname;
   const isProjectsActive = currentPath === '/projects' || currentPath.includes('/project-');
   const isCoach = profile?.role === 'coach';
   const isCoachDashboardActive = currentPath === '/coach-dashboard';
+  
   return <nav className="bg-[#174c65] text-white py-3 px-4 md:py-4 md:px-12 sticky top-0 z-50">
       <div className="flex justify-between items-center">
         {/* Logo */}
         <div className="flex items-center">
-          <span onClick={() => navigate('/dashboard')} className="self-center md:text-xl font-bold text-white bg-orange-500 px-3 py-2 md:px-5 md:py-3 cursor-pointer text-xl">
-            Rehab Squared
-          </span>
+          <div onClick={() => navigate('/dashboard')} className="cursor-pointer">
+            <img 
+              src="/lovable-uploads/3f45ae9d-e0dc-49bb-b243-88661481986b.png" 
+              alt="Rehab² Logo" 
+              className="max-h-10" 
+            />
+          </div>
         </div>
         
         {/* Navigation Links - Desktop */}
@@ -103,11 +112,13 @@ const DashboardNavbar = () => {
         </div>}
     </nav>;
 };
+
 interface NavItemProps {
   label: string;
   path: string;
   isActive: boolean;
 }
+
 const NavItem = ({
   label,
   path,
@@ -118,9 +129,11 @@ const NavItem = ({
       {label}
     </button>;
 };
+
 interface MobileNavItemProps extends NavItemProps {
   onClick: () => void;
 }
+
 const MobileNavItem = ({
   label,
   path,
@@ -136,4 +149,5 @@ const MobileNavItem = ({
       {label}
     </button>;
 };
+
 export default DashboardNavbar;
