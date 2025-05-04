@@ -25,7 +25,7 @@ import {
 // Import our components
 import ProjectStagesCard from "@/components/project/ProjectStagesCard";
 import ScheduleCardWidget from "@/components/project/ScheduleCardWidget";
-import ProjectProgressCard from "@/components/project/ProjectProgressCard";
+import ProjectMilestonesWidget from "@/components/project/ProjectMilestonesWidget";
 import FinancialComparisonCard from "@/components/project/FinancialComparisonCard";
 import MessagesCard from "@/components/project/MessagesCard";
 import ActionItemsWidget from "@/components/project/ActionItemsWidget";
@@ -178,9 +178,9 @@ const ProjectDashboard = () => {
                 <ScheduleCardWidget projectId={projectId} />
               </div>
               
-              {/* Column 3 - Progress Card */}
+              {/* Column 3 - Project Milestones Widget (renamed from Progress Card) */}
               <div className="lg:col-span-1">
-                <ProjectProgressCard projectId={projectId} />
+                <ProjectMilestonesWidget projectId={projectId} />
               </div>
               
               {/* Project Stages Card - spans full width */}
