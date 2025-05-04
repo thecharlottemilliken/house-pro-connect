@@ -38,9 +38,9 @@ const PropertyCard = ({ propertyDetails, renovationAreas = [] }: PropertyCardPro
       
       {/* Property Details */}
       <div className="p-8">
-        <h2 className="text-4xl font-bold mb-2">
+        <h3 className="text-4xl font-bold mb-2">
           {propertyDetails.property_name}
-        </h2>
+        </h3>
         <p className="text-lg text-gray-700 mb-6">
           {propertyDetails.address_line1}, {propertyDetails.city}, {propertyDetails.state} {propertyDetails.zip_code}
         </p>
