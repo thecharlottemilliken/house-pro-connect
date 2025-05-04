@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -7,17 +7,48 @@ import { cn } from '@/lib/utils';
 import { useNotifications } from '@/hooks/useNotifications';
 import NotificationItem from '@/components/notifications/NotificationItem';
 import DashboardNavbar from '@/components/dashboard/DashboardNavbar';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Notifications = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = React.useState<'all' | 'unread'>('all');
+  const { user } = useAuth();
   const { 
     notifications, 
     loading, 
     unreadCount, 
     markAsRead, 
-    markAllAsRead 
+    markAllAsRead,
+    refreshNotifications
   } = useNotifications();
+
+  // Set up real-time subscription to notifications for this page
+  useEffect(() => {
+    if (!user) return;
+    
+    // Subscribe to new notifications
+    const channel = supabase
+      .channel('notifications_page_channel')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `recipient_id=eq.${user.id}`
+        },
+        () => {
+          // Refresh notifications to get the latest data
+          refreshNotifications();
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, refreshNotifications]);
 
   // Filter notifications based on active tab
   const filteredNotifications = React.useMemo(() => {

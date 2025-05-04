@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,8 @@ import { BellDot, ChevronDown, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNotifications } from "@/hooks/useNotifications";
 import NotificationItem from "./NotificationItem";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface NotificationsPopoverProps {
   hasNotifications?: boolean;
@@ -22,8 +24,11 @@ const NotificationsPopover = ({ hasNotifications, setHasNotifications }: Notific
     loading, 
     unreadCount, 
     markAsRead, 
-    markAllAsRead 
+    markAllAsRead,
+    refreshNotifications
   } = useNotifications();
+  
+  const { user } = useAuth();
   
   // Sync the unreadCount with the parent component's state if provided
   React.useEffect(() => {
@@ -31,6 +36,34 @@ const NotificationsPopover = ({ hasNotifications, setHasNotifications }: Notific
       setHasNotifications(unreadCount > 0);
     }
   }, [unreadCount, setHasNotifications]);
+
+  // Set up real-time subscription to notifications
+  useEffect(() => {
+    if (!user) return;
+    
+    // Subscribe to new notifications
+    const channel = supabase
+      .channel('notifications_channel')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `recipient_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('New notification received:', payload);
+          // Refresh notifications to get the latest data
+          refreshNotifications();
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, refreshNotifications]);
 
   // Filter notifications based on active tab
   const filteredNotifications = React.useMemo(() => {

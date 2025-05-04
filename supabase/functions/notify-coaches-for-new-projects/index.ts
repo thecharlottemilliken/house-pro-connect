@@ -45,17 +45,13 @@ Deno.serve(async (req) => {
     
     console.log(`Checking project ${projectId} for coach notification`);
 
-    // Get project details
+    // Get project details with the user information through a separate join
     const { data: projectData, error: projectError } = await supabaseClient
       .from('projects')
       .select(`
         id,
         title,
-        user_id,
-        profiles(
-          name,
-          email
-        )
+        user_id
       `)
       .eq('id', projectId)
       .single();
@@ -64,7 +60,19 @@ Deno.serve(async (req) => {
       console.error('Error getting project data:', projectError);
       throw new Error('Could not fetch project data');
     }
+
+    // Get user information separately
+    const { data: userData, error: userError } = await supabaseClient
+      .from('profiles')
+      .select('name, email')
+      .eq('id', projectData.user_id)
+      .single();
     
+    if (userError || !userData) {
+      console.error('Error getting user data:', userError);
+      throw new Error('Could not fetch user data');
+    }
+
     // Get all coaches
     const { data: coaches, error: coachesError } = await supabaseClient
       .from('profiles')
@@ -79,12 +87,13 @@ Deno.serve(async (req) => {
     console.log(`Found ${coaches.length} coaches to notify`);
     
     // Create a notification for each coach
+    const notificationResults = [];
     for (const coach of coaches) {
       const notificationData = {
         recipient_id: coach.id,
         type: 'project_coaching_request',
         title: `New project "${projectData.title}" needs coaching`,
-        content: `${projectData.profiles.name} has requested coaching help and provided time slots. Please schedule a consultation.`,
+        content: `${userData.name} has requested coaching help and provided time slots. Please schedule a consultation.`,
         priority: 'high',
         data: {
           project: {
@@ -93,8 +102,8 @@ Deno.serve(async (req) => {
           },
           users: [{
             id: projectData.user_id,
-            name: projectData.profiles.name,
-            avatar: projectData.profiles.name.substring(0, 1)
+            name: userData.name,
+            avatar: userData.name.substring(0, 1)
           }],
           availableActions: ['schedule_consultation', 'mark_as_read']
         }
@@ -108,13 +117,19 @@ Deno.serve(async (req) => {
       
       if (notificationError) {
         console.error(`Error creating notification for coach ${coach.id}:`, notificationError);
+        notificationResults.push({ coachId: coach.id, success: false, error: notificationError });
       } else {
         console.log(`Created notification for coach ${coach.id}: ${notification.id}`);
+        notificationResults.push({ coachId: coach.id, success: true, notificationId: notification.id });
       }
     }
     
     return new Response(
-      JSON.stringify({ success: true, message: `Notified ${coaches.length} coaches` }),
+      JSON.stringify({ 
+        success: true, 
+        message: `Notified ${coaches.length} coaches`,
+        results: notificationResults
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
     

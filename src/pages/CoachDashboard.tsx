@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,14 +13,49 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { MeetupScheduleWidget } from "@/components/coach/MeetupScheduleWidget";
 import CoachCalendarView from "@/components/coach/CoachCalendarView";
+import { useNotifications } from "@/hooks/useNotifications";
+import { useAuth } from "@/contexts/AuthContext";
 
 const CoachDashboard = () => {
   const [activeTab, setActiveTab] = useState("projects");
   const { fetchProjects } = useCoachProjects();
   const [isAddingCoaches, setIsAddingCoaches] = useState(false);
+  const { user } = useAuth();
+  const { refreshNotifications } = useNotifications();
+
+  // Set up real-time notifications for new coaching requests
+  useEffect(() => {
+    if (!user) return;
+    
+    const channel = supabase
+      .channel('coach_dashboard_notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `recipient_id=eq.${user.id} AND type=eq.project_coaching_request`
+        },
+        (payload) => {
+          console.log('Coach received new project request notification:', payload);
+          toast.success('New coaching request received');
+          
+          // Refresh data
+          fetchProjects();
+          refreshNotifications();
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, fetchProjects, refreshNotifications]);
 
   const handleRefresh = () => {
     fetchProjects();
+    refreshNotifications();
   };
 
   const handleAddCoachesToProjects = async () => {

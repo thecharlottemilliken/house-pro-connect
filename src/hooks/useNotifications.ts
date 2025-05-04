@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Notification, NotificationType } from '@/types/notifications';
@@ -10,6 +11,42 @@ export const useNotifications = () => {
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
   const { user } = useAuth();
+
+  // Function to fetch notifications
+  const fetchNotifications = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('recipient_id', user.id)
+        .order('date', { ascending: false });
+      
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        const formattedNotifications = data.map(formatNotificationFromDB);
+        setNotifications(formattedNotifications);
+        setUnreadCount(formattedNotifications.filter(n => !n.read).length);
+      } else {
+        // If no notifications in DB, use mock data for demonstration
+        const mockNotifications = getMockNotifications();
+        setNotifications(mockNotifications);
+        setUnreadCount(mockNotifications.filter(n => !n.read).length);
+      }
+    } catch (error) {
+      console.error('Error in notification system:', error);
+      // For demo purposes, still set mock data on error
+      const mockNotifications = getMockNotifications();
+      setNotifications(mockNotifications);
+      setUnreadCount(mockNotifications.filter(n => !n.read).length);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
 
   // Set up real-time subscription to notifications
   useEffect(() => {
@@ -45,45 +82,10 @@ export const useNotifications = () => {
     };
   }, [user]);
 
-  // Fetch notifications
+  // Initial fetch notifications
   useEffect(() => {
-    const fetchNotifications = async () => {
-      if (!user) return;
-
-      try {
-        setLoading(true);
-        
-        const { data, error } = await supabase
-          .from('notifications')
-          .select('*')
-          .eq('recipient_id', user.id)
-          .order('date', { ascending: false });
-        
-        if (error) throw error;
-        
-        if (data && data.length > 0) {
-          const formattedNotifications = data.map(formatNotificationFromDB);
-          setNotifications(formattedNotifications);
-          setUnreadCount(formattedNotifications.filter(n => !n.read).length);
-        } else {
-          // If no notifications in DB, use mock data for demonstration
-          const mockNotifications = getMockNotifications();
-          setNotifications(mockNotifications);
-          setUnreadCount(mockNotifications.filter(n => !n.read).length);
-        }
-      } catch (error) {
-        console.error('Error in notification system:', error);
-        // For demo purposes, still set mock data on error
-        const mockNotifications = getMockNotifications();
-        setNotifications(mockNotifications);
-        setUnreadCount(mockNotifications.filter(n => !n.read).length);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchNotifications();
-  }, [user]);
+  }, [fetchNotifications]);
 
   // Helper to format data from DB to our Notification type
   const formatNotificationFromDB = (dbNotification: any): Notification => {
@@ -122,7 +124,12 @@ export const useNotifications = () => {
     }
   };
 
-  // Mark notification as read - Fix the type issue here
+  // Function to manually refresh notifications
+  const refreshNotifications = useCallback(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
+
+  // Mark notification as read
   const markAsRead = async (notificationId: string | number) => {
     try {
       // Convert the notificationId to string if it's a number
@@ -293,7 +300,7 @@ export const useNotifications = () => {
       },
       {
         id: 4,
-        type: 'project_ready',
+        type: 'project_coaching_request',
         title: 'Kitchen Renovation is ready for a consultation',
         content: 'Please select from the time slots to schedule.',
         date: 'Mar 20',
@@ -324,6 +331,7 @@ export const useNotifications = () => {
     unreadCount,
     markAsRead,
     markAllAsRead,
-    createNotification
+    createNotification,
+    refreshNotifications
   };
 };
