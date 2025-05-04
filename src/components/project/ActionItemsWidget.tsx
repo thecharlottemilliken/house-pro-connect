@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { ArrowRight, Check } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -166,6 +167,7 @@ const ActionItemsWidget = ({
     }
     setActionItems(items);
   }, [projectData, projectId, sowData, isOwner, isCoach, navigate]);
+  
   const toggleItemCompletion = (itemId: string) => {
     setCompletedItems(prev => {
       if (prev.includes(itemId)) {
@@ -175,6 +177,7 @@ const ActionItemsWidget = ({
       }
     });
   };
+  
   return <Card className={cn("overflow-hidden rounded-lg shadow-[0_2px_10px_rgba(0,0,0,0.08)] border-0", className)}>
       <CardHeader className="flex flex-row items-center justify-between pb-3 pt-6 px-6">
         <h2 className="text-lg font-semibold">Action Items</h2>
@@ -186,8 +189,8 @@ const ActionItemsWidget = ({
         {isLoading ? <div className="px-6 text-gray-400">Loading action items...</div> : <div className="divide-y">
             {actionItems.length > 0 ? actionItems.map(item => {
           const isCompleted = completedItems.includes(item.id);
-          return <div key={item.id} className={cn("px-6 py-4 flex flex-col", isCompleted && "bg-gray-50")}>
-                    <div className="flex items-start gap-3 mb-2">
+          return <div key={item.id} className={cn("py-4 flex flex-col", isCompleted && "bg-gray-50")}>
+                    <div className="flex items-start gap-3 mb-2 px-6">
                       <Checkbox id={`checkbox-${item.id}`} checked={isCompleted} onCheckedChange={() => toggleItemCompletion(item.id)} className="mt-1" />
                       <div className="flex-1">
                         <div className="flex justify-between items-center mb-1">
@@ -203,7 +206,7 @@ const ActionItemsWidget = ({
                         </p>
                       </div>
                     </div>
-                    {item.action && <div className="flex justify-end mt-1">
+                    {item.action && <div className="flex justify-end mt-1 px-6">
                         <Button variant="ghost" className="font-semibold text-[#0f566c] hover:text-[#0f566c]/80 p-0 h-auto" onClick={item.action}>
                           {item.buttonText} <ArrowRight className="ml-1 h-4 w-4" />
                         </Button>
