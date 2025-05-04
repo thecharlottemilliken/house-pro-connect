@@ -5,10 +5,12 @@ import { Calendar, Clock, MapPin, ChevronLeft, ChevronRight } from "lucide-react
 import { cn } from "@/lib/utils";
 import { EventsService, ProjectEvent } from "./calendar/EventsService";
 import { format, addDays, startOfWeek, endOfWeek, differenceInMinutes, isSameDay, parseISO, addMonths, isToday } from "date-fns";
+
 interface ScheduleCardWidgetProps {
   projectId: string;
   className?: string;
 }
+
 const ScheduleCardWidget = ({
   projectId,
   className
@@ -118,7 +120,7 @@ const ScheduleCardWidget = ({
             {weekDates.map((date, index) => {
             const isSelected = isSameDay(date, selectedDate);
             const isCurrentDay = isToday(date);
-            return <Button key={index} variant="ghost" className={cn("flex-col items-center gap-1 rounded-lg border px-0 py-3 w-14", isSelected ? "bg-orange-500 text-white hover:bg-orange-600 border-orange-500" : "bg-white text-gray-800 hover:bg-gray-100 border-gray-200")} onClick={() => setSelectedDate(date)}>
+            return <Button key={index} variant="ghost" className={cn("flex-col items-center gap-1 rounded-lg border py-[8px] w-14", isSelected ? "bg-orange-500 text-white hover:bg-orange-600 border-orange-500" : "bg-white text-gray-800 hover:bg-gray-100 border-gray-200")} onClick={() => setSelectedDate(date)}>
                   <span className="text-xs uppercase">
                     {format(date, "EEE").substring(0, 3)}
                   </span>
@@ -159,4 +161,5 @@ const ScheduleCardWidget = ({
       </CardContent>
     </Card>;
 };
+
 export default ScheduleCardWidget;
