@@ -5,6 +5,7 @@ import { Calendar, Clock, MapPin, ChevronLeft, ChevronRight } from "lucide-react
 import { cn } from "@/lib/utils";
 import { EventsService, ProjectEvent } from "./calendar/EventsService";
 import { format, addDays, startOfWeek, endOfWeek, differenceInMinutes, isSameDay, parseISO, addMonths, isToday } from "date-fns";
+
 interface ScheduleCardWidgetProps {
   projectId: string;
   className?: string;
@@ -114,7 +115,7 @@ const ScheduleCardWidget = ({
             <ChevronLeft className="h-5 w-5" />
           </Button>
           
-          <div className="flex gap-1 overflow-x-auto flex-grow justify-center">
+          <div className="flex gap-1 h-auto flex-grow justify-center">
             {weekDates.map((date, index) => {
             const isSelected = isSameDay(date, selectedDate);
             const isCurrentDay = isToday(date);
