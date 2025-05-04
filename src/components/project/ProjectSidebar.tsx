@@ -41,14 +41,6 @@ const ProjectSidebar = ({
             >
               <ArrowLeft className="mr-2 h-4 w-4" /> Back to Properties
             </Button>
-            
-            <Button 
-              variant="ghost" 
-              className={`flex items-center text-gray-700 w-full pl-0 mt-2 hover:bg-transparent hover:text-[#174c65] ${isProjectsActive ? 'text-[#174c65] font-medium' : ''}`} 
-              onClick={() => navigate("/projects")}
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" /> &lt;- All Projects
-            </Button>
           </div>
         </SidebarHeader>
         
