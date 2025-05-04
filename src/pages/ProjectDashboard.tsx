@@ -144,18 +144,16 @@ const ProjectDashboard = () => {
             <ProjectSidebar projectId={projectId} projectTitle={projectTitle} activePage="overview" />
           )}
           
-          {/* Always show mobile navigation on small screens and now also on medium screens <= 1023px */}
+          {/* Mobile navigation for smaller screens <= 1023px */}
           {isMobileView && (
-            <div className="w-full">
-              <div className="md:hidden fixed top-[64px] left-0 right-0 z-40 bg-[#f8fafc] border-b border-gray-200">
-                {/* The mobile navigation is rendered inside ProjectSidebar component */}
-                <ProjectSidebar projectId={projectId} projectTitle={projectTitle} activePage="overview" />
-              </div>
-              <div className="pt-[50px]"></div> {/* Space for fixed mobile nav */}
+            <div className="fixed top-[64px] left-0 right-0 z-40 bg-[#f8fafc] border-b border-gray-200">
+              {/* Mobile navigation header */}
+              <ProjectSidebar projectId={projectId} projectTitle={projectTitle} activePage="overview" />
             </div>
           )}
           
-          <div className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 bg-white overflow-y-auto">
+          {/* Main content area - adjusted for mobile view */}
+          <div className={`flex-1 p-3 sm:p-4 md:p-6 lg:p-8 bg-white overflow-y-auto ${isMobileView ? 'w-full mt-[50px]' : ''}`}>
             <div className="mb-3 sm:mb-4 md:mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center">
               <div>
                 <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2 sm:mb-0">
