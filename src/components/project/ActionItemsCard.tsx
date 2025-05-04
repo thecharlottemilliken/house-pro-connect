@@ -44,6 +44,14 @@ const ActionItemsCard = ({
     if (projectData) {
       const designPrefs = projectData.design_preferences || {};
       
+      // Type casting to ensure we can access these properties
+      const typedDesignPrefs = designPrefs as {
+        designers?: Array<{ id: string; businessName: string; }>;
+        designAssets?: Array<{ name: string; url: string; }>;
+        beforePhotos?: Record<string, string[]>;
+        roomMeasurements?: Record<string, any>;
+      };
+      
       // SOW related actions
       if (isCoach) {
         items.push({
@@ -74,8 +82,8 @@ const ActionItemsCard = ({
         }
         
         // If before photos are missing
-        const hasBeforePhotos = designPrefs.beforePhotos && 
-          Object.keys(designPrefs.beforePhotos || {}).length > 0;
+        const hasBeforePhotos = typedDesignPrefs.beforePhotos && 
+          Object.keys(typedDesignPrefs.beforePhotos || {}).length > 0;
           
         if (!hasBeforePhotos) {
           items.push({
@@ -90,8 +98,8 @@ const ActionItemsCard = ({
         }
         
         // If room measurements are missing
-        const hasRoomMeasurements = designPrefs.roomMeasurements && 
-          Object.keys(designPrefs.roomMeasurements || {}).length > 0;
+        const hasRoomMeasurements = typedDesignPrefs.roomMeasurements && 
+          Object.keys(typedDesignPrefs.roomMeasurements || {}).length > 0;
           
         if (!hasRoomMeasurements) {
           items.push({
