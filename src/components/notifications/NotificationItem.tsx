@@ -8,9 +8,10 @@ interface NotificationItemProps {
   notification: Notification;
   onMarkAsRead: (id: string | number) => void;
   compact?: boolean;
+  onClick?: () => void;  // Add the onClick prop
 }
 
-const NotificationItem = ({ notification, onMarkAsRead, compact = false }: NotificationItemProps) => {
+const NotificationItem = ({ notification, onMarkAsRead, compact = false, onClick }: NotificationItemProps) => {
   const navigate = useNavigate();
   
   // Handle click on the entire notification
@@ -18,8 +19,13 @@ const NotificationItem = ({ notification, onMarkAsRead, compact = false }: Notif
     // Always mark as read when clicking on the notification
     onMarkAsRead(notification.id);
     
-    // Then navigate based on notification type
-    navigateToTarget(notification);
+    // Call the onClick handler if provided
+    if (onClick) {
+      onClick();
+    } else {
+      // If no onClick provided, use default navigation behavior
+      navigateToTarget(notification);
+    }
   };
   
   // Navigation helper function based on notification type
