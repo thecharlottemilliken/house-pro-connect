@@ -4,6 +4,7 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Check, Pen, Wrench, Circle, CircleCheck } from "lucide-react";
 import { useProjectData, RenovationArea, DesignPreferences } from "@/hooks/useProjectData";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ProjectProgressCardProps {
   projectId: string;
@@ -118,36 +119,38 @@ const ProjectProgressCard = ({ projectId, className }: ProjectProgressCardProps)
         </div>
       </CardHeader>
       <CardContent className="p-4">
-        {/* Progress Stages */}
-        <div className="flex items-center justify-between mb-4 flex-wrap">
-          {Object.entries(stages).map(([key, value], index, array) => {
-            const stageKey = key as ProjectStage;
-            const isActive = stageKey === stage;
-            const isPast = index < Object.keys(stages).indexOf(stage);
-            
-            return (
-              <React.Fragment key={stageKey}>
-                <div className={cn(
-                  "flex items-center justify-center px-3 py-2 rounded-full transition-all",
-                  isActive ? "bg-[#0e475d] text-white" : 
-                  isPast ? "bg-[#0e475d] text-white" : 
-                  "bg-white border border-gray-300 text-gray-600"
-                )}>
-                  <span className="mr-1">{value.icon}</span>
-                  <span className="text-sm font-medium">{value.name}</span>
-                </div>
-                
-                {/* Connector line */}
-                {index < array.length - 1 && (
+        {/* Progress Stages - Now with horizontal scroll */}
+        <ScrollArea className="w-full mb-4" orientation="horizontal">
+          <div className="flex items-center justify-between min-w-[600px]">
+            {Object.entries(stages).map(([key, value], index, array) => {
+              const stageKey = key as ProjectStage;
+              const isActive = stageKey === stage;
+              const isPast = index < Object.keys(stages).indexOf(stage);
+              
+              return (
+                <React.Fragment key={stageKey}>
                   <div className={cn(
-                    "h-[2px] w-3 md:w-6 hidden sm:block",
-                    isPast || isActive ? "bg-[#0e475d]" : "bg-gray-300"
-                  )} />
-                )}
-              </React.Fragment>
-            );
-          })}
-        </div>
+                    "flex items-center justify-center px-3 py-2 rounded-full transition-all whitespace-nowrap",
+                    isActive ? "bg-[#0e475d] text-white" : 
+                    isPast ? "bg-[#0e475d] text-white" : 
+                    "bg-white border border-gray-300 text-gray-600"
+                  )}>
+                    <span className="mr-1">{value.icon}</span>
+                    <span className="text-sm font-medium">{value.name}</span>
+                  </div>
+                  
+                  {/* Connector line */}
+                  {index < array.length - 1 && (
+                    <div className={cn(
+                      "h-[2px] w-6",
+                      isPast || isActive ? "bg-[#0e475d]" : "bg-gray-300"
+                    )} />
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
+        </ScrollArea>
         
         {/* Next Up Section */}
         <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
