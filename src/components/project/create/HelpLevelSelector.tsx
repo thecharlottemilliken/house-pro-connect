@@ -1,51 +1,65 @@
 
+import React from "react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+
 interface HelpLevelSelectorProps {
   helpLevel: string;
-  onHelpLevelChange: (level: string) => void;
+  onHelpLevelChange: (value: string) => void;
 }
 
-const HelpLevelSelector = ({ helpLevel, onHelpLevelChange }: HelpLevelSelectorProps) => {
+const HelpLevelSelector: React.FC<HelpLevelSelectorProps> = ({
+  helpLevel,
+  onHelpLevelChange,
+}) => {
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold">How much help are you looking for?</h3>
+      <h3 className="text-lg font-medium mb-2">How much help do you need?</h3>
       <p className="text-sm text-gray-600 mb-6">
-        This range will help us understand what you are prepared to invest in this renovation. 
-        The final quote will be dependent on the final project specs.
+        Let us know your preferred level of involvement in managing your renovation project.
       </p>
-      
-      <div className="relative py-6">
-        <div className="h-1 bg-gray-200 rounded-full">
-          <div className="absolute h-1 bg-[#E77C2B] rounded-full" style={{ 
-            width: helpLevel === "low" ? "33%" : helpLevel === "medium" ? "66%" : "100%" 
-          }}></div>
+
+      <RadioGroup 
+        value={helpLevel} 
+        onValueChange={onHelpLevelChange}
+        className="grid grid-cols-1 md:grid-cols-3 gap-4"
+      >
+        <div className="flex flex-col">
+          <div className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors">
+            <div className="flex items-center justify-between mb-2">
+              <div className="font-medium">Do it for me</div>
+              <RadioGroupItem value="high" id="high" />
+            </div>
+            <Label htmlFor="high" className="text-sm text-gray-600 cursor-pointer">
+              I want a fully managed experience with minimal involvement from my side.
+            </Label>
+          </div>
         </div>
         
-        <div className="flex justify-between mt-2">
-          <div className="w-1/3 text-center">
-            <button 
-              className={`w-4 h-4 rounded-full -mt-4 mb-2 mx-auto block ${helpLevel === "low" ? "bg-[#E77C2B] ring-4 ring-[#E77C2B]/20" : "bg-gray-300"}`}
-              onClick={() => onHelpLevelChange("low")}
-            ></button>
-            <p className="text-xs font-medium">Do it for me</p>
-          </div>
-          
-          <div className="w-1/3 text-center">
-            <button 
-              className={`w-4 h-4 rounded-full -mt-4 mb-2 mx-auto block ${helpLevel === "medium" ? "bg-[#E77C2B] ring-4 ring-[#E77C2B]/20" : "bg-gray-300"}`}
-              onClick={() => onHelpLevelChange("medium")}
-            ></button>
-            <p className="text-xs font-medium">I can do some things</p>
-          </div>
-          
-          <div className="w-1/3 text-center">
-            <button 
-              className={`w-4 h-4 rounded-full -mt-4 mb-2 mx-auto block ${helpLevel === "high" ? "bg-[#E77C2B] ring-4 ring-[#E77C2B]/20" : "bg-gray-300"}`}
-              onClick={() => onHelpLevelChange("high")}
-            ></button>
-            <p className="text-xs font-medium">I can do most of it</p>
+        <div className="flex flex-col">
+          <div className="border border-[#174c65] bg-[#f8fcfd] rounded-lg p-4 cursor-pointer hover:bg-[#f0f9fc] transition-colors">
+            <div className="flex items-center justify-between mb-2">
+              <div className="font-medium text-[#174c65]">Help me through it</div>
+              <RadioGroupItem value="medium" id="medium" />
+            </div>
+            <Label htmlFor="medium" className="text-sm text-[#205a73] cursor-pointer">
+              I want guidance and support while still having input on key decisions.
+            </Label>
           </div>
         </div>
-      </div>
+        
+        <div className="flex flex-col">
+          <div className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors">
+            <div className="flex items-center justify-between mb-2">
+              <div className="font-medium">I'll handle it</div>
+              <RadioGroupItem value="low" id="low" />
+            </div>
+            <Label htmlFor="low" className="text-sm text-gray-600 cursor-pointer">
+              I'm experienced and just need tools to manage my project independently.
+            </Label>
+          </div>
+        </div>
+      </RadioGroup>
     </div>
   );
 };
