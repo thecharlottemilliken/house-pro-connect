@@ -1,10 +1,12 @@
 
 import { useState } from "react";
-import { CalendarIcon, ListTodo, FileText } from "lucide-react";
+import { CalendarIcon, ListTodo, FileText, MessageSquare } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import CalendarView from "./Calendar/CalendarView";
 import RoadmapView from "./Roadmap/RoadmapView";
 import PhasesView from "./Phases/PhasesView";
+import MeetingsView from "./Meetings/MeetingsView";
+import { useParams } from "react-router-dom";
 
 interface ProjectManageTabsProps {
   defaultTab?: string;
@@ -12,6 +14,7 @@ interface ProjectManageTabsProps {
 
 const ProjectManageTabs = ({ defaultTab = "calendar" }: ProjectManageTabsProps) => {
   const [activeTab, setActiveTab] = useState(defaultTab);
+  const { projectId } = useParams<{ projectId: string }>();
 
   return (
     <Tabs defaultValue={defaultTab} onValueChange={setActiveTab} value={activeTab} className="w-full h-full flex flex-col">
@@ -37,6 +40,13 @@ const ProjectManageTabs = ({ defaultTab = "calendar" }: ProjectManageTabsProps) 
           <FileText className="mr-2 h-5 w-5" /> 
           Phases
         </TabsTrigger>
+        <TabsTrigger 
+          value="meetings" 
+          className={`flex items-center pb-3 px-0 ${activeTab === "meetings" ? "border-b-2 border-[#0f566c] text-[#0f566c] font-medium" : "text-gray-500"} bg-transparent rounded-none data-[state=active]:bg-transparent data-[state=active]:shadow-none`}
+        >
+          <MessageSquare className="mr-2 h-5 w-5" /> 
+          Meetings
+        </TabsTrigger>
       </TabsList>
       
       <TabsContent value="calendar" className="m-0 p-0 flex-1">
@@ -52,6 +62,10 @@ const ProjectManageTabs = ({ defaultTab = "calendar" }: ProjectManageTabsProps) 
       
       <TabsContent value="phases" className="m-0 p-0 flex-1">
         <PhasesView />
+      </TabsContent>
+      
+      <TabsContent value="meetings" className="m-0 p-0 flex-1">
+        <MeetingsView projectId={projectId || ""} />
       </TabsContent>
     </Tabs>
   );
