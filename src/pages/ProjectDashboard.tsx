@@ -173,6 +173,11 @@ const ProjectDashboard = () => {
                 />
               </div>
 
+              {/* Column 3 - Schedule Card Widget with new design */}
+              <div className="lg:col-span-1">
+                <ScheduleCardWidget projectId={projectId} />
+              </div>
+              
               {/* Column 3 - Progress Card */}
               <div className="lg:col-span-1">
                 <ProjectProgressCard projectId={projectId} />
@@ -181,11 +186,6 @@ const ProjectDashboard = () => {
               {/* Project Stages Card - spans full width */}
               <div className="lg:col-span-3">
                 <ProjectStagesCard projectData={projectData} />
-              </div>
-              
-              {/* Schedule Card */}
-              <div className="lg:col-span-1">
-                <ScheduleCardWidget projectId={projectId} />
               </div>
               
               {/* Messages Card */}
