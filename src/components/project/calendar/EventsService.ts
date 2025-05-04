@@ -45,5 +45,30 @@ export const EventsService = {
     }
     
     return data as ProjectEvent[];
+  },
+
+  async notifyEventParticipants(event: ProjectEvent, creatorName: string) {
+    try {
+      // Call the edge function to notify participants
+      const { data, error } = await supabase.functions.invoke(
+        'notify-meeting-participants',
+        {
+          body: { 
+            eventData: event,
+            coachName: creatorName
+          }
+        }
+      );
+
+      if (error) {
+        console.error("Error sending meeting notifications:", error);
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error("Error in notifyEventParticipants:", error);
+      return false;
+    }
   }
 };

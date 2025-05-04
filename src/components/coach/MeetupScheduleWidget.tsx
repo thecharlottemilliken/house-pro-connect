@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -170,7 +171,7 @@ export const MeetupScheduleWidget = () => {
         }
         
         // Create the calendar event with coach's name in the title
-        await EventsService.createProjectEvent({
+        const eventData = {
           project_id: selectedProject.id,
           title: `Meeting with ${coachName}`,
           description: `Initial coaching session for project: ${selectedProject.title}`,
@@ -179,7 +180,28 @@ export const MeetupScheduleWidget = () => {
           location: "Video Call",
           event_type: "coaching_session",
           created_by: (await supabase.auth.getUser()).data.user?.id || ''
-        });
+        };
+        
+        const newEvent = await EventsService.createProjectEvent(eventData);
+        
+        // Send notifications to all project team members
+        const { data: notificationData, error: notificationError } = await supabase.functions.invoke(
+          'notify-meeting-participants',
+          {
+            body: { 
+              eventData: {
+                ...eventData,
+                id: newEvent.id
+              },
+              coachName: coachName
+            }
+          }
+        );
+        
+        if (notificationError) {
+          console.error("Error sending meeting notifications:", notificationError);
+          toast.warning("Meeting scheduled, but notifications failed to send.");
+        }
         
         toast.success("Meeting scheduled and added to project calendar!");
       } catch (calendarError) {
@@ -475,3 +497,4 @@ export const MeetupScheduleWidget = () => {
     </Card>
   );
 };
+
