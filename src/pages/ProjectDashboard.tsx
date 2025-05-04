@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useLocation, useParams, Navigate, useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
@@ -12,16 +11,7 @@ import { FileText, PenBox, ShieldAlert, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProjectAccess } from "@/hooks/useProjectAccess";
 import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 // Import our components
 import ProjectProgressCard from "@/components/project/ProjectProgressCard";
@@ -29,38 +19,39 @@ import ScheduleCardWidget from "@/components/project/ScheduleCardWidget";
 import ProjectMilestonesWidget from "@/components/project/ProjectMilestonesWidget";
 import FinancialComparisonCard from "@/components/project/FinancialComparisonCard";
 import ActionItemsWidget from "@/components/project/ActionItemsWidget";
-
 const ProjectDashboard = () => {
   const location = useLocation();
   const params = useParams();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { profile } = useAuth();
+  const {
+    profile
+  } = useAuth();
   const [showNoDesignDialog, setShowNoDesignDialog] = React.useState(false);
-  
   const projectId = params.projectId || "";
-  const { hasAccess, isOwner, role, isLoading: isAccessLoading } = useProjectAccess(projectId);
-  
-  const { projectData, propertyDetails, isLoading: isProjectLoading, error } = useProjectData(
-    projectId,
-    location.state
-  );
-
+  const {
+    hasAccess,
+    isOwner,
+    role,
+    isLoading: isAccessLoading
+  } = useProjectAccess(projectId);
+  const {
+    projectData,
+    propertyDetails,
+    isLoading: isProjectLoading,
+    error
+  } = useProjectData(projectId, location.state);
   const isLoading = isAccessLoading || isProjectLoading;
-
   React.useEffect(() => {
     if (error) {
       toast.error(`Error loading project: ${error.message}`);
     }
   }, [error]);
-
   if (!isAccessLoading && !hasAccess) {
     return <Navigate to="/projects" replace />;
   }
-
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex flex-col bg-white">
+    return <div className="min-h-screen flex flex-col bg-white">
         <DashboardNavbar />
         <div className="flex-1 p-4 md:p-10 flex items-center justify-center">
           <div className="text-center py-10">
@@ -68,13 +59,10 @@ const ProjectDashboard = () => {
             <div className="text-lg text-gray-600">Loading project details...</div>
           </div>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   if (error || !propertyDetails || !projectData) {
-    return (
-      <div className="min-h-screen flex flex-col bg-white">
+    return <div className="min-h-screen flex flex-col bg-white">
         <DashboardNavbar />
         <div className="flex-1 p-4 md:p-10 flex items-center justify-center">
           <div className="text-center py-10 max-w-md mx-auto">
@@ -88,16 +76,13 @@ const ProjectDashboard = () => {
             </Button>
           </div>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   const projectTitle = projectData?.title || "Project Overview";
-  const renovationAreas = (projectData?.renovation_areas as unknown as RenovationArea[]) || [];
+  const renovationAreas = projectData?.renovation_areas as unknown as RenovationArea[] || [];
   const hasSOW = false;
   const hasDesignPlan = false;
   const isCoach = profile?.role === 'coach';
-
   const handleStartSOW = () => {
     if (!hasDesignPlan) {
       setShowNoDesignDialog(true);
@@ -105,11 +90,9 @@ const ProjectDashboard = () => {
       startSOWCreation();
     }
   };
-
   const startSOWCreation = () => {
     navigate(`/project-sow/${projectId}`);
   };
-
   const propertyCardData = {
     id: propertyDetails.id,
     property_name: propertyDetails.property_name,
@@ -120,19 +103,12 @@ const ProjectDashboard = () => {
     state: propertyDetails.state,
     zip_code: propertyDetails.zip_code
   };
-
   const userRole = isOwner ? "Owner" : role || "Team Member";
-
-  return (
-    <div className="flex flex-col bg-white min-h-screen">
+  return <div className="flex flex-col bg-white min-h-screen">
       <DashboardNavbar />
       <SidebarProvider defaultOpen={!isMobile}>
         <div className="flex flex-1 h-[calc(100vh-64px)] w-full pt-[64px] -mt-[64px]">
-          <ProjectSidebar 
-            projectId={projectId} 
-            projectTitle={projectTitle}
-            activePage="overview"
-          />
+          <ProjectSidebar projectId={projectId} projectTitle={projectTitle} activePage="overview" />
           <div className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 bg-white overflow-y-auto">
             <div className="mb-3 sm:mb-4 md:mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center">
               <div>
@@ -140,17 +116,13 @@ const ProjectDashboard = () => {
                   Project Overview
                 </h1>
                 <div className="flex items-center">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-2">
-                    {userRole}
-                  </span>
+                  
                 </div>
               </div>
             </div>
             
             <div className="mb-3 sm:mb-4 md:mb-8">
-              <div className="text-gray-600 text-sm sm:text-base md:text-lg">
-                {propertyDetails.property_name} #{projectId.slice(-6)}
-              </div>
+              
             </div>
             
             {/* Updated layout with nested grid containers */}
@@ -158,15 +130,10 @@ const ProjectDashboard = () => {
               {/* Left Column - 1 column width */}
               <div className="lg:col-span-1 flex flex-col gap-6">
                 {/* Property Card */}
-                <PropertyCard 
-                  propertyDetails={propertyCardData}
-                  renovationAreas={renovationAreas}
-                />
+                <PropertyCard propertyDetails={propertyCardData} renovationAreas={renovationAreas} />
                 
                 {/* Financial Overview Card */}
-                <FinancialComparisonCard 
-                  projectId={projectId}
-                />
+                <FinancialComparisonCard projectId={projectId} />
               </div>
               
               {/* Right Column - 2 column width */}
@@ -180,12 +147,7 @@ const ProjectDashboard = () => {
                   <ScheduleCardWidget projectId={projectId} />
                   
                   {/* Action Items Card */}
-                  <ActionItemsWidget
-                    projectId={projectId}
-                    projectData={projectData}
-                    isOwner={isOwner}
-                    isCoach={isCoach}
-                  />
+                  <ActionItemsWidget projectId={projectId} projectData={projectData} isOwner={isOwner} isCoach={isCoach} />
                 </div>
                 
                 {/* Project Milestones Widget - spans 2 columns */}
@@ -193,8 +155,7 @@ const ProjectDashboard = () => {
               </div>
               
               {/* SOW creation block if needed - spans all columns */}
-              {!hasSOW && isCoach && (
-                <div className="lg:col-span-3">
+              {!hasSOW && isCoach && <div className="lg:col-span-3">
                   <div className="border border-gray-200 rounded-lg p-8 text-center">
                     <PenBox className="mx-auto h-12 w-12 text-[#0f566c] mb-4" />
                     
@@ -204,15 +165,11 @@ const ProjectDashboard = () => {
                     <p className="text-gray-600 mb-6 max-w-md mx-auto">
                       Create a comprehensive Statement of Work (SOW) that outlines the project's scope, specific deliverables, timeline, and key milestones.
                     </p>
-                    <Button 
-                      onClick={handleStartSOW} 
-                      className="bg-[#0f566c] hover:bg-[#0d4a5d] px-6 py-3"
-                    >
+                    <Button onClick={handleStartSOW} className="bg-[#0f566c] hover:bg-[#0d4a5d] px-6 py-3">
                       Start SOW
                     </Button>
                   </div>
-                </div>
-              )}
+                </div>}
             </div>
           </div>
         </div>
@@ -234,8 +191,6 @@ const ProjectDashboard = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
-  );
+    </div>;
 };
-
 export default ProjectDashboard;
