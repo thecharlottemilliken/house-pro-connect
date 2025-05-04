@@ -8,6 +8,7 @@ import { useParams } from "react-router-dom";
 import { EventsService, ProjectEvent } from "@/components/project/calendar/EventsService";
 import { toast } from "sonner";
 import EventDrawer from "@/components/project/calendar/EventDrawer";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface CalendarDay {
   day: number;
@@ -39,6 +40,8 @@ const CalendarView = () => {
   
   // Set up days for the week view
   const [days, setDays] = useState<Array<CalendarDay>>([]);
+  
+  const { user } = useAuth();
   
   // Fetch real events from database
   useEffect(() => {
@@ -217,6 +220,49 @@ const CalendarView = () => {
     const event = events.find(e => e.id === eventId);
     if (event) {
       handleEventClick(event);
+    }
+  };
+
+  const handleCreateEvent = async (newEvent) => {
+    try {
+      // Add event to database
+      const createdEvent = await EventsService.createProjectEvent({
+        project_id: projectId,
+        title: newEvent.title,
+        description: newEvent.description,
+        start_time: newEvent.startTime,
+        end_time: newEvent.endTime,
+        location: newEvent.location,
+        event_type: newEvent.type,
+        created_by: user.id
+      });
+      
+      // Get user name for the notification
+      const { data: userData, error } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', user.id)
+        .single();
+      
+        if (error) {
+          console.error("Error getting user data:", error);
+          toast.error("Failed to get user data");
+        }
+      
+      // Notify participants
+      if (createdEvent) {
+        await EventsService.notifyEventParticipants(
+          createdEvent,
+          userData?.name || "Team Member"
+        );
+      }
+      
+      // Refresh events
+      fetchEvents();
+      toast.success("Event created successfully");
+    } catch (error) {
+      console.error("Error creating event:", error);
+      toast.error("Failed to create event");
     }
   };
 
