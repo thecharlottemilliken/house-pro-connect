@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import NavItem from "./NavItem";
 import { Sidebar, SidebarContent, SidebarHeader, SidebarTrigger, SidebarRail, useSidebar } from "@/components/ui/sidebar";
@@ -111,7 +111,7 @@ const ProjectSidebar = ({
               className="flex items-center justify-between w-full p-4 text-sm font-medium text-[#0f3a4d] hover:bg-[#cad9df] transition-colors rounded-none"
             >
               <div className="flex items-center">
-                <NavItem.getIcon(activePage || "overview") />
+                {NavItem.getIcon(activePage || "overview")}
                 <span className="ml-3">{getActiveMenuLabel()}</span>
               </div>
               {mobileMenuOpen ? 
@@ -158,16 +158,6 @@ const ProjectSidebar = ({
             </nav>
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
-      
-      {/* Desktop sidebar toggle button with adjusted position */}
-      <div className="hidden md:block fixed z-40 transition-all duration-300" style={{
-        left: open ? 'calc(16.5rem - 12px)' : 'calc(3.5rem - 12px)',
-        top: '20vh'
-      }}>
-        <Button variant="outline" size="icon" onClick={toggleSidebar} className="rounded-full shadow-md bg-white h-10 w-10">
-          {open ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
-        </Button>
       </div>
     </>
   );
