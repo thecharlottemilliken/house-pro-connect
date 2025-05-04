@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useLocation, useParams, Navigate, useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
@@ -23,7 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 // Import our components
-import ProjectStagesCard from "@/components/project/ProjectStagesCard";
+import ProjectProgressCard from "@/components/project/ProjectProgressCard";
 import ScheduleCardWidget from "@/components/project/ScheduleCardWidget";
 import ProjectMilestonesWidget from "@/components/project/ProjectMilestonesWidget";
 import FinancialComparisonCard from "@/components/project/FinancialComparisonCard";
@@ -153,43 +154,59 @@ const ProjectDashboard = () => {
             </div>
             
             {/* Main dashboard content with 3-column grid layout */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-              {/* Column 1 - Property Card */}
-              <div className="lg:col-span-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Top Row */}
+              {/* Property Card - 1 column width */}
+              <div className="md:col-span-1">
                 <PropertyCard 
                   propertyDetails={propertyCardData}
                   renovationAreas={renovationAreas}
                 />
               </div>
 
-              {/* Column 2 - Action Items Widget */}
-              <div className="lg:col-span-1">
+              {/* Project Progress Card - 2 column width */}
+              <div className="md:col-span-1 lg:col-span-2">
+                <ProjectProgressCard 
+                  projectId={projectId}
+                  className="h-full"
+                />
+              </div>
+
+              {/* Second Row */}
+              {/* Financial Overview Card - 1 column width */}
+              <div className="md:col-span-1">
+                <FinancialComparisonCard 
+                  projectId={projectId}
+                  className="h-full"
+                />
+              </div>
+
+              {/* Schedule Card - 1 column width */}
+              <div className="md:col-span-1">
+                <ScheduleCardWidget 
+                  projectId={projectId}
+                  className="h-full"
+                />
+              </div>
+
+              {/* Action Items Card - 1 column width */}
+              <div className="md:col-span-1">
                 <ActionItemsWidget 
                   projectId={projectId}
                   projectData={projectData}
                   isOwner={isOwner}
                   isCoach={isCoach}
+                  className="h-full"
                 />
               </div>
 
-              {/* Column 3 - Schedule Card Widget with new design */}
-              <div className="lg:col-span-1">
-                <ScheduleCardWidget projectId={projectId} />
-              </div>
-              
-              {/* Column 3 - Project Milestones Widget */}
-              <div className="lg:col-span-1">
-                <ProjectMilestonesWidget projectId={projectId} />
-              </div>
-              
-              {/* Project Stages Card - spans full width */}
-              <div className="lg:col-span-3">
-                <ProjectStagesCard projectData={projectData} />
-              </div>
-              
-              {/* Financial Comparison Card - spans all 3 columns for chart visibility */}
-              <div className="lg:col-span-3">
-                <FinancialComparisonCard projectId={projectId} />
+              {/* Third Row */}
+              {/* Project Milestones Widget - 2 column width */}
+              <div className="md:col-span-2">
+                <ProjectMilestonesWidget 
+                  projectId={projectId}
+                  className="h-full"
+                />
               </div>
               
               {/* SOW creation block if needed */}
