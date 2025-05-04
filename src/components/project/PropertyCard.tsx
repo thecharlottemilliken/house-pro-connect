@@ -1,10 +1,8 @@
-
 import React from "react";
 import { ArrowRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RenovationArea } from "@/hooks/useProjectData";
-
 interface PropertyCardProps {
   propertyDetails: {
     id: string;
@@ -18,27 +16,21 @@ interface PropertyCardProps {
   };
   renovationAreas: RenovationArea[];
 }
-
-const PropertyCard = ({ propertyDetails, renovationAreas = [] }: PropertyCardProps) => {
+const PropertyCard = ({
+  propertyDetails,
+  renovationAreas = []
+}: PropertyCardProps) => {
   // Get the first available image
-  const imageUrl = propertyDetails.home_photos?.length 
-    ? propertyDetails.home_photos[0] 
-    : propertyDetails.image_url || '/placeholder.svg';
-
-  return (
-    <Card className="overflow-hidden rounded-xl shadow-lg border-0">
+  const imageUrl = propertyDetails.home_photos?.length ? propertyDetails.home_photos[0] : propertyDetails.image_url || '/placeholder.svg';
+  return <Card className="overflow-hidden rounded-xl shadow-lg border-0">
       {/* Property Image */}
       <div className="w-full h-[350px]">
-        <img 
-          src={imageUrl} 
-          alt={propertyDetails.property_name} 
-          className="w-full h-full object-cover" 
-        />
+        <img src={imageUrl} alt={propertyDetails.property_name} className="w-full h-full object-cover" />
       </div>
       
       {/* Property Details */}
       <div className="p-8">
-        <h3 className="text-4xl font-bold mb-2">
+        <h3 className="text-lg font-semibold">
           {propertyDetails.property_name}
         </h3>
         <p className="text-lg text-gray-700 mb-6">
@@ -47,27 +39,16 @@ const PropertyCard = ({ propertyDetails, renovationAreas = [] }: PropertyCardPro
         
         <h3 className="font-bold text-2xl mb-4 uppercase">RENOVATION AREAS</h3>
         <div className="space-y-3 mb-8">
-          {Array.isArray(renovationAreas) && renovationAreas.length > 0 ? (
-            renovationAreas.map((area, index) => (
-              <div key={index} className="flex items-center text-lg">
+          {Array.isArray(renovationAreas) && renovationAreas.length > 0 ? renovationAreas.map((area, index) => <div key={index} className="flex items-center text-lg">
                 <span className="text-orange-500 mr-3 text-2xl">★</span> {area.area}
                 {area.location && <span className="text-gray-500 ml-2">({area.location})</span>}
-              </div>
-            ))
-          ) : (
-            <div className="text-gray-500">No renovation areas specified</div>
-          )}
+              </div>) : <div className="text-gray-500">No renovation areas specified</div>}
         </div>
         
-        <Button 
-          variant="outline" 
-          className="mt-4 justify-between text-[#15425F] border-[#15425F] hover:bg-[#15425F]/5 font-semibold tracking-wide text-lg group w-auto"
-        >
+        <Button variant="outline" className="mt-4 justify-between text-[#15425F] border-[#15425F] hover:bg-[#15425F]/5 font-semibold tracking-wide text-lg group w-auto">
           PROPERTY DETAILS <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
         </Button>
       </div>
-    </Card>
-  );
+    </Card>;
 };
-
 export default PropertyCard;
