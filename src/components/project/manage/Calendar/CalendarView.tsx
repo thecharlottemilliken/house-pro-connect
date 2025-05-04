@@ -7,6 +7,7 @@ import CalendarGrid from "./CalendarGrid";
 import { useParams } from "react-router-dom";
 import { EventsService, ProjectEvent } from "@/components/project/calendar/EventsService";
 import { toast } from "sonner";
+import EventDrawer from "@/components/project/calendar/EventDrawer";
 
 interface CalendarDay {
   day: number;
@@ -31,6 +32,10 @@ const CalendarView = () => {
   const [viewMode, setViewMode] = useState<"Day" | "Week" | "Month">("Week");
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Event drawer state
+  const [selectedEvent, setSelectedEvent] = useState<ProjectEvent | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   
   // Set up days for the week view
   const [days, setDays] = useState<Array<CalendarDay>>([]);
@@ -183,6 +188,38 @@ const CalendarView = () => {
     setCurrentDate(date);
   };
 
+  // Handle event click for drawer
+  const handleEventClick = (event: Event) => {
+    // Convert the event format to ProjectEvent format
+    const projectEvent: ProjectEvent = {
+      id: typeof event.id === 'string' ? event.id : event.id.toString(),
+      project_id: projectId || '',
+      title: event.title,
+      description: event.description || '',
+      start_time: event.date.toISOString(),
+      end_time: new Date(event.date.getTime() + 60 * 60 * 1000).toISOString(), // Add 1 hour by default
+      location: event.location || '',
+      event_type: '',
+      created_by: '',
+    };
+    
+    setSelectedEvent(projectEvent);
+    setIsDrawerOpen(true);
+  };
+
+  const closeDrawer = () => {
+    setIsDrawerOpen(false);
+    setTimeout(() => setSelectedEvent(null), 300);
+  };
+  
+  // Add event click handler to EventsList component
+  const handleEventItemClick = (eventId: string | number) => {
+    const event = events.find(e => e.id === eventId);
+    if (event) {
+      handleEventClick(event);
+    }
+  };
+
   return (
     <>
       {/* Calendar Navigation */}
@@ -216,6 +253,7 @@ const CalendarView = () => {
               color: event.color,
               fullTime: format(event.date, 'h:mm a')
             }))}
+            onEventClick={handleEventItemClick}
           />
           
           {/* Tomorrow's Events */}
@@ -229,6 +267,7 @@ const CalendarView = () => {
               color: event.color,
               fullTime: format(event.date, 'h:mm a')
             }))}
+            onEventClick={handleEventItemClick}
           />
         </div>
         
@@ -240,6 +279,13 @@ const CalendarView = () => {
           viewMode={viewMode}
         />
       </div>
+      
+      {/* Event Drawer */}
+      <EventDrawer
+        isOpen={isDrawerOpen}
+        onClose={closeDrawer}
+        event={selectedEvent}
+      />
     </>
   );
 };

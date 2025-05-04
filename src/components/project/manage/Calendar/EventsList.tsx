@@ -1,46 +1,58 @@
 
-import { CalendarIcon } from "lucide-react";
+import React from "react";
 
-interface Event {
-  id: number | string;
+interface EventItem {
+  id: string | number;
   title: string;
   day: number;
   time: string;
   color: string;
-  fullTime: string;
+  fullTime?: string;
 }
 
 interface EventsListProps {
   title: string;
-  events: Event[];
+  events: EventItem[];
+  onEventClick?: (eventId: string | number) => void;
 }
 
-const EventsList = ({ title, events }: EventsListProps) => {
-  return (
-    <div className="bg-white rounded-md border border-gray-200 p-4 mb-4">
-      <div className="flex items-center mb-4">
-        <CalendarIcon className="h-5 w-5 mr-2 text-gray-500" />
-        <h3 className="font-medium">{title}</h3>
+const EventsList: React.FC<EventsListProps> = ({ title, events, onEventClick }) => {
+  if (events.length === 0) {
+    return (
+      <div className="mt-4 bg-white p-4 rounded-md shadow-sm">
+        <h3 className="text-base font-medium mb-3">{title}</h3>
+        <p className="text-sm text-gray-500">No events</p>
       </div>
-      
-      {events.length > 0 ? (
-        <div className="space-y-3">
-          {events.map(event => (
-            <div key={event.id} className="flex items-center">
-              <div 
-                className="w-3 h-3 rounded-full mr-3" 
-                style={{ backgroundColor: event.color }}
-              ></div>
-              <div>
-                <div className="font-medium">{event.title}</div>
-                <div className="text-sm text-gray-500">{event.fullTime}</div>
-              </div>
+    );
+  }
+
+  const handleEventClick = (eventId: string | number) => {
+    if (onEventClick) {
+      onEventClick(eventId);
+    }
+  };
+
+  return (
+    <div className="mt-4 bg-white p-4 rounded-md shadow-sm">
+      <h3 className="text-base font-medium mb-3">{title}</h3>
+      <div className="space-y-2">
+        {events.map((event) => (
+          <div 
+            key={event.id} 
+            className="flex items-center cursor-pointer hover:bg-gray-50 rounded p-1 transition-colors"
+            onClick={() => handleEventClick(event.id)}
+          >
+            <div 
+              className="w-4 h-4 rounded-full flex-shrink-0 mr-3" 
+              style={{ backgroundColor: event.color }}
+            ></div>
+            <div>
+              <p className="text-sm font-medium">{event.title}</p>
+              <p className="text-xs text-gray-500">{event.fullTime || event.time}</p>
             </div>
-          ))}
-        </div>
-      ) : (
-        <p className="text-gray-500 text-sm">No events for {title.toLowerCase()}</p>
-      )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

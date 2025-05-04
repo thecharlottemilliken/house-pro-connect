@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { format, addDays, startOfWeek, endOfWeek, addMonths, parseISO, isSameDay } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +7,8 @@ import CalendarHeader from "../project/manage/Calendar/CalendarHeader";
 import MiniCalendar from "../project/manage/Calendar/MiniCalendar";
 import EventsList from "../project/manage/Calendar/EventsList";
 import CalendarGrid from "../project/manage/Calendar/CalendarGrid";
+import EventDrawer from "../project/calendar/EventDrawer";
+import { ProjectEvent } from "../project/calendar/EventsService";
 
 interface CalendarDay {
   day: number;
@@ -34,6 +35,10 @@ const CoachCalendarView = () => {
   const [viewMode, setViewMode] = useState<"Day" | "Week" | "Month">("Week");
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // For event drawer
+  const [selectedEvent, setSelectedEvent] = useState<ProjectEvent | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   
   // Set up days for the week view
   const [days, setDays] = useState<Array<CalendarDay>>([]);
@@ -236,6 +241,38 @@ const CoachCalendarView = () => {
     setCurrentDate(date);
   };
   
+  // Handle event click for drawer
+  const handleEventClick = (event: Event) => {
+    // Convert the event format to ProjectEvent format
+    const projectEvent: ProjectEvent = {
+      id: typeof event.id === 'string' ? event.id : event.id.toString(),
+      project_id: event.project_id || '',
+      title: event.title,
+      description: event.description || '',
+      start_time: event.date.toISOString(),
+      end_time: new Date(event.date.getTime() + 60 * 60 * 1000).toISOString(), // Add 1 hour by default
+      location: event.location || '',
+      event_type: '',
+      created_by: '',
+    };
+    
+    setSelectedEvent(projectEvent);
+    setIsDrawerOpen(true);
+  };
+
+  const closeDrawer = () => {
+    setIsDrawerOpen(false);
+    setTimeout(() => setSelectedEvent(null), 300);
+  };
+  
+  // Add event click handler to EventsList component
+  const handleEventItemClick = (eventId: string | number) => {
+    const event = events.find(e => e.id === eventId);
+    if (event) {
+      handleEventClick(event);
+    }
+  };
+  
   if (isLoading) {
     return <div className="flex justify-center p-8">Loading calendar events...</div>;
   }
@@ -265,13 +302,29 @@ const CoachCalendarView = () => {
           {/* Today's Events */}
           <EventsList 
             title="Today"
-            events={getTodayEvents()}
+            events={getTodayEvents().map(event => ({
+              id: event.id,
+              title: `${event.title}${event.project_title ? ` - ${event.project_title}` : ''}`,
+              day: event.date.getDate(),
+              time: format(event.date, 'hh:mm a'),
+              color: event.color,
+              fullTime: format(event.date, 'h:mm a')
+            }))}
+            onEventClick={handleEventItemClick}
           />
           
           {/* Tomorrow's Events */}
           <EventsList 
             title="Tomorrow"
-            events={getTomorrowEvents()}
+            events={getTomorrowEvents().map(event => ({
+              id: event.id,
+              title: `${event.title}${event.project_title ? ` - ${event.project_title}` : ''}`,
+              day: event.date.getDate(),
+              time: format(event.date, 'hh:mm a'),
+              color: event.color,
+              fullTime: format(event.date, 'h:mm a')
+            }))}
+            onEventClick={handleEventItemClick}
           />
         </div>
         
@@ -283,6 +336,13 @@ const CoachCalendarView = () => {
           viewMode={viewMode}
         />
       </div>
+      
+      {/* Event Drawer */}
+      <EventDrawer
+        isOpen={isDrawerOpen}
+        onClose={closeDrawer}
+        event={selectedEvent}
+      />
     </>
   );
 };
