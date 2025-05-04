@@ -6,8 +6,8 @@ import { format } from "date-fns";
 import { TimeSlot, formatTimeSlot } from "@/utils/timeSlotFormatters";
 
 interface TimeSlotSelectorProps {
-  timeSlots: TimeSlot[];
-  onAddTimeSlot: () => void;
+  timeSlots: (TimeSlot & { empty?: boolean })[];
+  onAddTimeSlot: (index?: number) => void;
   onRemoveTimeSlot: (index: number) => void;
 }
 
@@ -20,14 +20,14 @@ export const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
     <div className="space-y-4">
       {timeSlots.map((slot, index) => (
         <div key={index} className="mb-4">
-          {slot.date && slot.time ? (
+          {!slot.empty ? (
             <div className="bg-gray-50 rounded-md p-5 relative">
               <div className="absolute top-4 right-4 flex space-x-2">
                 <Button 
                   variant="ghost" 
                   size="icon" 
                   className="h-8 w-8"
-                  onClick={() => onAddTimeSlot()}
+                  onClick={() => onAddTimeSlot(index)}
                 >
                   <Pencil className="h-5 w-5 text-gray-600" />
                 </Button>
@@ -62,12 +62,12 @@ export const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
           ) : (
             <div className="flex items-center justify-between border border-gray-300 rounded-md p-3">
               <p className="text-sm text-gray-700">
-                Select a time and date for your call
+                Time Slot {index + 1}: Select a time and date for your call
               </p>
               <Button 
                 variant="outline" 
                 className="border-gray-300 text-gray-700"
-                onClick={() => onAddTimeSlot()}
+                onClick={() => onAddTimeSlot(index)}
               >
                 MAKE SELECTION
               </Button>
@@ -84,7 +84,7 @@ export const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
           <Button 
             variant="outline" 
             className="border-gray-300 text-gray-700"
-            onClick={onAddTimeSlot}
+            onClick={() => onAddTimeSlot()}
           >
             <Plus className="h-4 w-4 mr-2" />
             ADD TIME SLOT

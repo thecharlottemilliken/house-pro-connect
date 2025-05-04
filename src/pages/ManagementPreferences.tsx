@@ -15,6 +15,7 @@ import { CoachPreferenceSelector } from "@/components/project/create/CoachPrefer
 import { ContactInfoForm } from "@/components/project/create/ContactInfoForm";
 import { TimeSlotSelector } from "@/components/project/create/TimeSlotSelector";
 import { TimeSlotModal } from "@/components/project/create/TimeSlotModal";
+import CreateProjectSteps from "@/components/project/create/CreateProjectSteps";
 
 const ManagementPreferences = () => {
   const navigate = useNavigate();
@@ -31,9 +32,20 @@ const ManagementPreferences = () => {
   const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [phoneType, setPhoneType] = useState<string>("Cell");
   const [timeSlots, setTimeSlots] = useState<any[]>([]);
+  const [editingSlotIndex, setEditingSlotIndex] = useState<number | null>(null);
   const [isTimeSlotModalOpen, setIsTimeSlotModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showTimeSlots, setShowTimeSlots] = useState(false);
+  
+  useEffect(() => {
+    if (timeSlots.length === 0) {
+      setTimeSlots([
+        { id: 1, empty: true },
+        { id: 2, empty: true },
+        { id: 3, empty: true }
+      ]);
+    }
+  }, []);
   
   useEffect(() => {
     if (location.state) {
@@ -84,7 +96,18 @@ const ManagementPreferences = () => {
           if (prefs.phoneNumber) setPhoneNumber(prefs.phoneNumber);
           if (prefs.phoneType) setPhoneType(prefs.phoneType);
           if (prefs.timeSlots && prefs.timeSlots.length > 0) {
-            setTimeSlots(prefs.timeSlots);
+            // Ensure we have exactly 3 time slots
+            let slotsToUse = [...prefs.timeSlots];
+            
+            // Fill with empty slots if needed
+            while (slotsToUse.length < 3) {
+              slotsToUse.push({ id: slotsToUse.length + 1, empty: true });
+            }
+            
+            // Limit to 3 slots if more than 3
+            slotsToUse = slotsToUse.slice(0, 3);
+            
+            setTimeSlots(slotsToUse);
             setShowTimeSlots(prefs.wantProjectCoach === 'yes');
           }
         }
@@ -112,7 +135,18 @@ const ManagementPreferences = () => {
         if (prefs.phoneNumber) setPhoneNumber(prefs.phoneNumber);
         if (prefs.phoneType) setPhoneType(prefs.phoneType);
         if (prefs.timeSlots && prefs.timeSlots.length > 0) {
-          setTimeSlots(prefs.timeSlots);
+          // Ensure we have exactly 3 time slots
+          let slotsToUse = [...prefs.timeSlots];
+          
+          // Fill with empty slots if needed
+          while (slotsToUse.length < 3) {
+            slotsToUse.push({ id: slotsToUse.length + 1, empty: true });
+          }
+          
+          // Limit to 3 slots if more than 3
+          slotsToUse = slotsToUse.slice(0, 3);
+          
+          setTimeSlots(slotsToUse);
           setShowTimeSlots(prefs.wantProjectCoach === 'yes');
         }
       }
@@ -127,16 +161,33 @@ const ManagementPreferences = () => {
   };
   
   const addTimeSlot = (slot: any) => {
-    // Generate a unique ID for the time slot
-    slot.id = timeSlots.length + 1;
-    setTimeSlots([...timeSlots, slot]);
+    // If we're editing an existing slot, replace it
+    if (editingSlotIndex !== null) {
+      const newTimeSlots = [...timeSlots];
+      newTimeSlots[editingSlotIndex] = { ...slot, id: timeSlots[editingSlotIndex].id };
+      setTimeSlots(newTimeSlots);
+      setEditingSlotIndex(null);
+    } else {
+      // Find the first empty slot and replace it
+      const emptySlotIndex = timeSlots.findIndex(slot => slot.empty);
+      if (emptySlotIndex !== -1) {
+        const newTimeSlots = [...timeSlots];
+        newTimeSlots[emptySlotIndex] = { ...slot, id: timeSlots[emptySlotIndex].id };
+        setTimeSlots(newTimeSlots);
+      }
+    }
     setIsTimeSlotModalOpen(false);
   };
   
   const removeTimeSlot = (index: number) => {
     const newTimeSlots = [...timeSlots];
-    newTimeSlots.splice(index, 1);
+    newTimeSlots[index] = { id: timeSlots[index].id, empty: true };
     setTimeSlots(newTimeSlots);
+  };
+  
+  const openTimeSlotModal = (index: number | null = null) => {
+    setEditingSlotIndex(index);
+    setIsTimeSlotModalOpen(true);
   };
   
   const savePreferences = async () => {
@@ -151,11 +202,14 @@ const ManagementPreferences = () => {
 
     setIsLoading(true);
     
+    // Filter out empty slots
+    const filledTimeSlots = timeSlots.filter(slot => !slot.empty);
+    
     const managementPreferences = {
       wantProjectCoach,
       phoneNumber,
       phoneType,
-      timeSlots: wantProjectCoach === 'yes' ? timeSlots : []
+      timeSlots: wantProjectCoach === 'yes' ? filledTimeSlots : []
     };
     
     if (projectId) {
@@ -188,7 +242,7 @@ const ManagementPreferences = () => {
         }
         
         // If user wants a coach and provided time slots, send notification to coaches
-        if (wantProjectCoach === 'yes' && timeSlots.length > 0) {
+        if (wantProjectCoach === 'yes' && filledTimeSlots.length > 0) {
           try {
             const { data, error } = await supabase.functions.invoke(
               'notify-coaches-for-new-projects',
@@ -274,36 +328,40 @@ const ManagementPreferences = () => {
       <DashboardNavbar />
       
       <div className="flex flex-col md:flex-row flex-1">
-        <div className={`${isMobile ? 'w-full' : 'w-80'} bg-[#EFF3F7] p-4 md:p-8`}>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">Create a Project</h1>
-          <p className="text-sm md:text-base text-gray-600 mb-6 md:mb-8">
-            Lorem ipsum dolor sit amet consectetur.
-          </p>
-          
-          <div className="space-y-4 md:space-y-6">
-            {steps.map((step) => (
-              <div key={step.number} className="flex items-start">
-                <div className={`w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center mr-2 md:mr-3 ${
-                  step.current ? "bg-[#174c65] text-white" : "bg-gray-200 text-gray-500"
-                }`}>
-                  {step.number}
-                </div>
-                <div>
-                  <h3 className={`text-sm md:text-base font-medium ${
-                    step.current ? "text-[#174c65]" : "text-gray-500"
+        {isMobile ? (
+          <div className="w-full bg-[#EFF3F7] p-4 md:p-8">
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">Create a Project</h1>
+            <p className="text-sm md:text-base text-gray-600 mb-6 md:mb-8">
+              Lorem ipsum dolor sit amet consectetur.
+            </p>
+            
+            <div className="space-y-4 md:space-y-6">
+              {steps.map((step) => (
+                <div key={step.number} className="flex items-start">
+                  <div className={`w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center mr-2 md:mr-3 ${
+                    step.current ? "bg-[#174c65] text-white" : "bg-gray-200 text-gray-500"
                   }`}>
-                    Step {step.number}
-                  </h3>
-                  <p className={`text-xs md:text-sm ${
-                    step.current ? "text-black" : "text-gray-500"
-                  }`}>
-                    {step.title}
-                  </p>
+                    {step.number}
+                  </div>
+                  <div>
+                    <h3 className={`text-sm md:text-base font-medium ${
+                      step.current ? "text-[#174c65]" : "text-gray-500"
+                    }`}>
+                      Step {step.number}
+                    </h3>
+                    <p className={`text-xs md:text-sm ${
+                      step.current ? "text-black" : "text-gray-500"
+                    }`}>
+                      {step.title}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        ) : (
+          <CreateProjectSteps steps={steps} />
+        )}
         
         <div className="flex-1 p-4 md:p-10 overflow-auto">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-4">Management Preferences</h2>
@@ -331,17 +389,22 @@ const ManagementPreferences = () => {
                 
                 <div className="space-y-6 bg-gray-50 p-6 rounded-lg">
                   <h3 className="text-lg font-semibold">Schedule a Meeting</h3>
+                  <p className="text-sm text-gray-600 mb-4">Please select up to three time slots when you're available to meet with a project coach.</p>
                   <TimeSlotSelector
                     timeSlots={timeSlots}
-                    onAddTimeSlot={() => setIsTimeSlotModalOpen(true)}
+                    onAddTimeSlot={(index) => openTimeSlotModal(index)}
                     onRemoveTimeSlot={removeTimeSlot}
                   />
                 </div>
                 
                 <TimeSlotModal
                   isOpen={isTimeSlotModalOpen}
-                  onClose={() => setIsTimeSlotModalOpen(false)}
+                  onClose={() => {
+                    setIsTimeSlotModalOpen(false);
+                    setEditingSlotIndex(null);
+                  }}
                   onAddTimeSlot={addTimeSlot}
+                  initialTimeSlot={editingSlotIndex !== null ? timeSlots[editingSlotIndex] : undefined}
                 />
               </>
             )}

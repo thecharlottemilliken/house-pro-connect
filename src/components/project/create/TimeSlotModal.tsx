@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -16,12 +16,14 @@ interface TimeSlotModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddTimeSlot: (timeSlot: { date: Date | null; time: string; ampm: "AM" | "PM" }) => void;
+  initialTimeSlot?: { date?: Date | null; time?: string; ampm?: "AM" | "PM" };
 }
 
 export const TimeSlotModal: React.FC<TimeSlotModalProps> = ({
   isOpen,
   onClose,
   onAddTimeSlot,
+  initialTimeSlot,
 }) => {
   // Local state for the new time slot
   const [tempTimeSlot, setTempTimeSlot] = useState<{
@@ -33,6 +35,24 @@ export const TimeSlotModal: React.FC<TimeSlotModalProps> = ({
     time: "",
     ampm: "AM"
   });
+
+  // Initialize with existing slot data if provided
+  useEffect(() => {
+    if (initialTimeSlot && initialTimeSlot.date && initialTimeSlot.time) {
+      setTempTimeSlot({
+        date: initialTimeSlot.date instanceof Date ? initialTimeSlot.date : new Date(initialTimeSlot.date),
+        time: initialTimeSlot.time,
+        ampm: initialTimeSlot.ampm || "AM"
+      });
+    } else {
+      // Reset to default when modal is opened with no initial value
+      setTempTimeSlot({
+        date: null,
+        time: "",
+        ampm: "AM"
+      });
+    }
+  }, [initialTimeSlot, isOpen]);
 
   // Time range options for the dialog
   const timeRanges = [
@@ -50,12 +70,6 @@ export const TimeSlotModal: React.FC<TimeSlotModalProps> = ({
   // Handle save
   const handleSave = () => {
     onAddTimeSlot(tempTimeSlot);
-    // Reset the temp slot
-    setTempTimeSlot({
-      date: null,
-      time: "",
-      ampm: "AM"
-    });
   };
 
   return (
