@@ -5,12 +5,10 @@ import { Calendar, Clock, MapPin, ChevronLeft, ChevronRight } from "lucide-react
 import { cn } from "@/lib/utils";
 import { EventsService, ProjectEvent } from "./calendar/EventsService";
 import { format, addDays, startOfWeek, endOfWeek, differenceInMinutes, isSameDay, parseISO, addMonths, isToday } from "date-fns";
-
 interface ScheduleCardWidgetProps {
   projectId: string;
   className?: string;
 }
-
 const ScheduleCardWidget = ({
   projectId,
   className
@@ -96,7 +94,6 @@ const ScheduleCardWidget = ({
     const now = new Date();
     return differenceInMinutes(eventDate, now);
   };
-
   return <Card className={cn("overflow-hidden shadow-md border border-gray-200 rounded-xl", className)}>
       <CardHeader className="flex flex-row items-center justify-between py-4 px-5 bg-white border-b">
         <h3 className="text-lg font-semibold">Schedule</h3>
@@ -105,7 +102,7 @@ const ScheduleCardWidget = ({
         </div>
       </CardHeader>
 
-      <CardContent className="p-4 bg-white">
+      <CardContent className="p-4 bg-white px-[16px] py-0">
         {/* Month and year display */}
         <div className="text-gray-500 pt-4 pb-3 text-sm font-medium px-0 py-0">
           {currentMonth}
@@ -162,5 +159,4 @@ const ScheduleCardWidget = ({
       </CardContent>
     </Card>;
 };
-
 export default ScheduleCardWidget;
