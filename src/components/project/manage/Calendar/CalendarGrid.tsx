@@ -1,4 +1,3 @@
-
 import { format, isSameDay, isWithinInterval, startOfDay } from "date-fns";
 import { useEffect, useState } from "react";
 import EventDrawer from "@/components/project/calendar/EventDrawer";
@@ -25,14 +24,22 @@ interface CalendarGridProps {
   timeSlots: { label: string; time: number }[];
   events: Event[];
   viewMode: "Day" | "Week" | "Month";
+  onEventClick?: (event: Event) => void;
+  onCreateEvent?: (newEvent: any) => Promise<void>;
 }
 
-const CalendarGrid = ({ days, timeSlots, events, viewMode }: CalendarGridProps) => {
+const CalendarGrid = ({ days, timeSlots, events, viewMode, onEventClick, onCreateEvent }: CalendarGridProps) => {
   const [selectedEvent, setSelectedEvent] = useState<ProjectEvent | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const handleEventClick = (event: Event) => {
-    // Convert the event format to ProjectEvent format
+    // If external click handler is provided, use it
+    if (onEventClick) {
+      onEventClick(event);
+      return;
+    }
+    
+    // Otherwise use internal drawer logic
     const projectEvent: ProjectEvent = {
       id: typeof event.id === 'string' ? event.id : event.id.toString(),
       project_id: '',
@@ -100,11 +107,14 @@ const CalendarGrid = ({ days, timeSlots, events, viewMode }: CalendarGridProps) 
           </div>
         </div>
 
-        <EventDrawer 
-          isOpen={isDrawerOpen}
-          onClose={closeDrawer}
-          event={selectedEvent}
-        />
+        {/* Only show internal drawer if not using external event handler */}
+        {!onEventClick && (
+          <EventDrawer 
+            isOpen={isDrawerOpen}
+            onClose={closeDrawer}
+            event={selectedEvent}
+          />
+        )}
       </div>
     );
   }
@@ -162,11 +172,14 @@ const CalendarGrid = ({ days, timeSlots, events, viewMode }: CalendarGridProps) 
           </div>
         </div>
 
-        <EventDrawer 
-          isOpen={isDrawerOpen}
-          onClose={closeDrawer}
-          event={selectedEvent}
-        />
+        {/* Only show internal drawer if not using external event handler */}
+        {!onEventClick && (
+          <EventDrawer 
+            isOpen={isDrawerOpen}
+            onClose={closeDrawer}
+            event={selectedEvent}
+          />
+        )}
       </div>
     );
   }
@@ -207,11 +220,14 @@ const CalendarGrid = ({ days, timeSlots, events, viewMode }: CalendarGridProps) 
         })}
       </div>
 
-      <EventDrawer 
-        isOpen={isDrawerOpen}
-        onClose={closeDrawer}
-        event={selectedEvent}
-      />
+      {/* Only show internal drawer if not using external event handler */}
+      {!onEventClick && (
+        <EventDrawer 
+          isOpen={isDrawerOpen}
+          onClose={closeDrawer}
+          event={selectedEvent}
+        />
+      )}
     </div>
   );
 };
