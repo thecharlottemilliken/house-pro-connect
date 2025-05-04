@@ -120,7 +120,7 @@ const ProjectProgressCard = ({ projectId, className }: ProjectProgressCardProps)
       </CardHeader>
       <CardContent className="p-4">
         {/* Progress Stages - Now with horizontal scroll */}
-        <ScrollArea className="w-full mb-4" orientation="horizontal">
+        <ScrollArea className="w-full mb-4">
           <div className="flex items-center justify-between min-w-[600px]">
             {Object.entries(stages).map(([key, value], index, array) => {
               const stageKey = key as ProjectStage;
