@@ -52,10 +52,6 @@ const ProjectMilestonesWidget = ({ projectId, className }: ProjectMilestonesWidg
     }
   ]);
 
-  const totalProjectCost = 1000.00;
-  const totalPaid = 250.00;
-  const completionPercentage = 30;
-
   // Handle window resize
   useEffect(() => {
     const handleResize = () => {
@@ -206,15 +202,6 @@ const ProjectMilestonesWidget = ({ projectId, className }: ProjectMilestonesWidg
               </div>
             );
           })}
-        </div>
-        
-        {/* Financial summary footer */}
-        <div className="bg-[#0e475d] text-white p-4">
-          <h2 className="text-sm font-medium mb-2">Total Project Cost</h2>
-          <div className="flex justify-between items-center">
-            <span className="text-xl font-bold">${totalProjectCost.toFixed(2)}</span>
-            <span className="text-sm">${totalPaid.toFixed(2)} Paid</span>
-          </div>
         </div>
       </CardContent>
     </Card>
