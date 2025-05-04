@@ -102,7 +102,7 @@ const ScheduleCardWidget = ({
         </div>
       </CardHeader>
 
-      <CardContent className="p-4 bg-white px-[16px] py-0">
+      <CardContent className="p-4 bg-white px-[8px] py-[8px]">
         {/* Month and year display */}
         <div className="text-gray-500 pt-4 pb-3 text-sm font-medium px-0 py-0">
           {currentMonth}
