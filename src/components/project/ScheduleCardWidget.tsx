@@ -5,13 +5,10 @@ import { Calendar, Clock, MapPin, ChevronLeft, ChevronRight } from "lucide-react
 import { cn } from "@/lib/utils";
 import { EventsService, ProjectEvent } from "./calendar/EventsService";
 import { format, addDays, startOfWeek, endOfWeek, differenceInMinutes, isSameDay, parseISO, addMonths, isToday } from "date-fns";
-import { ScrollArea } from "@/components/ui/scroll-area";
-
 interface ScheduleCardWidgetProps {
   projectId: string;
   className?: string;
 }
-
 const ScheduleCardWidget = ({
   projectId,
   className
@@ -105,66 +102,61 @@ const ScheduleCardWidget = ({
         </div>
       </CardHeader>
 
-      <CardContent className="p-4 bg-white px-4 py-4">
-        <div className="max-h-[320px]"> {/* Set max height for content area (380px - header) */}
-          <ScrollArea className="h-full">
-            {/* Month and year display */}
-            <div className="text-gray-500 pt-4 pb-3 text-sm font-medium">
-              {currentMonth}
-            </div>
-            
-            {/* Week date selector */}
-            <div className="flex items-center mb-4 py-[8px]">
-              <Button variant="ghost" size="sm" onClick={navigatePrevWeek} className="p-1 h-auto text-gray-600 px-0">
-                <ChevronLeft className="h-5 w-5" />
-              </Button>
-              
-              <div className="flex gap-1 overflow-x-auto flex-grow justify-center">
-                {weekDates.map((date, index) => {
-                const isSelected = isSameDay(date, selectedDate);
-                const isCurrentDay = isToday(date);
-                return <Button key={index} variant="ghost" className={cn("flex-col items-center gap-1 rounded-lg border px-0 py-3 w-14", isSelected ? "bg-orange-500 text-white hover:bg-orange-600 border-orange-500" : "bg-white text-gray-800 hover:bg-gray-100 border-gray-200")} onClick={() => setSelectedDate(date)}>
-                      <span className="text-xs uppercase py-[4px]">
-                        {format(date, "EEE").substring(0, 3)}
-                      </span>
-                      <span className="text-lg font-bold py-[4px]">
-                        {format(date, "dd")}
-                      </span>
-                    </Button>;
-              })}
-              </div>
-              
-              <Button variant="ghost" size="sm" onClick={navigateNextWeek} className="p-1 h-auto text-gray-600 px-0">
-                <ChevronRight className="h-5 w-5" />
-              </Button>
-            </div>
-
-            {/* Event list for selected date */}
-            {isLoading ? <div className="flex items-center justify-center py-8">
-                <div className="animate-spin w-6 h-6 border-2 border-t-blue-500 border-blue-200 rounded-full"></div>
-              </div> : filteredEvents.length > 0 ? <div className="pb-5 space-y-3">
-                {filteredEvents.map(event => {
-              const isSoon = isEventSoon(event.start_time);
-              const minutesUntil = isSoon ? getMinutesUntilEvent(event.start_time) : null;
-              return <div key={event.id} className={cn("rounded-lg p-4", isSoon ? "bg-[#0f566c] text-white" : "bg-white border border-gray-200")}>
-                      {isSoon && <div className="text-white/90 text-xs font-medium mb-1">
-                          in {minutesUntil}mins
-                        </div>}
-                      <h4 className={cn("font-medium mb-1 text-base", isSoon ? "text-white" : "text-gray-900")}>
-                        {event.title}
-                      </h4>
-                      <div className={cn("text-sm", isSoon ? "text-white/80" : "text-gray-600")}>
-                        {formatEventTimeRange(event.start_time, event.end_time)}
-                      </div>
-                    </div>;
-            })}
-              </div> : <div className="py-8 px-5 text-center text-gray-500">
-                <p className="mb-0">No events scheduled for today.</p>
-              </div>}
-          </ScrollArea>
+      <CardContent className="p-4 bg-white px-[8px] py-[8px]">
+        {/* Month and year display */}
+        <div className="text-gray-500 pt-4 pb-3 text-sm font-medium px-0 py-0">
+          {currentMonth}
         </div>
+        
+        {/* Week date selector */}
+        <div className="flex items-center mb-4 px-0 py-[8px]">
+          <Button variant="ghost" size="sm" onClick={navigatePrevWeek} className="p-1 h-auto text-gray-600 px-0">
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+          
+          <div className="flex gap-1 overflow-x-auto flex-grow justify-center">
+            {weekDates.map((date, index) => {
+            const isSelected = isSameDay(date, selectedDate);
+            const isCurrentDay = isToday(date);
+            return <Button key={index} variant="ghost" className={cn("flex-col items-center gap-1 rounded-lg border px-0 py-3 w-14", isSelected ? "bg-orange-500 text-white hover:bg-orange-600 border-orange-500" : "bg-white text-gray-800 hover:bg-gray-100 border-gray-200")} onClick={() => setSelectedDate(date)}>
+                  <span className="text-xs uppercase">
+                    {format(date, "EEE").substring(0, 3)}
+                  </span>
+                  <span className="text-lg font-bold">
+                    {format(date, "dd")}
+                  </span>
+                </Button>;
+          })}
+          </div>
+          
+          <Button variant="ghost" size="sm" onClick={navigateNextWeek} className="p-1 h-auto text-gray-600 px-0">
+            <ChevronRight className="h-5 w-5" />
+          </Button>
+        </div>
+
+        {/* Event list for selected date */}
+        {isLoading ? <div className="flex items-center justify-center py-8">
+            <div className="animate-spin w-6 h-6 border-2 border-t-blue-500 border-blue-200 rounded-full"></div>
+          </div> : filteredEvents.length > 0 ? <div className="pb-5 space-y-3 px-0">
+            {filteredEvents.map(event => {
+          const isSoon = isEventSoon(event.start_time);
+          const minutesUntil = isSoon ? getMinutesUntilEvent(event.start_time) : null;
+          return <div key={event.id} className={cn("rounded-lg p-4", isSoon ? "bg-[#0f566c] text-white" : "bg-white border border-gray-200")}>
+                  {isSoon && <div className="text-white/90 text-xs font-medium mb-1">
+                      in {minutesUntil}mins
+                    </div>}
+                  <h4 className={cn("font-medium mb-1 text-base", isSoon ? "text-white" : "text-gray-900")}>
+                    {event.title}
+                  </h4>
+                  <div className={cn("text-sm", isSoon ? "text-white/80" : "text-gray-600")}>
+                    {formatEventTimeRange(event.start_time, event.end_time)}
+                  </div>
+                </div>;
+        })}
+          </div> : <div className="py-8 px-5 text-center text-gray-500">
+            <p className="mb-0">No events scheduled for today.</p>
+          </div>}
       </CardContent>
     </Card>;
 };
-
 export default ScheduleCardWidget;
