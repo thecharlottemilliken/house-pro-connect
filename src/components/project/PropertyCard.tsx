@@ -37,7 +37,7 @@ const PropertyCard = ({
           {propertyDetails.address_line1}, {propertyDetails.city}, {propertyDetails.state} {propertyDetails.zip_code}
         </p>
         
-        <h3 className="font-bold text-2xl mb-4 uppercase">RENOVATION AREAS</h3>
+        <h3 className="text-sm font-semibold ">RENOVATION AREAS</h3>
         <div className="space-y-3 mb-8">
           {Array.isArray(renovationAreas) && renovationAreas.length > 0 ? renovationAreas.map((area, index) => <div key={index} className="flex items-center text-lg">
                 <span className="text-orange-500 mr-3 text-2xl">★</span> {area.area}
