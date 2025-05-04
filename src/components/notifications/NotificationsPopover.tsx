@@ -41,6 +41,8 @@ const NotificationsPopover = ({ hasNotifications, setHasNotifications }: Notific
   useEffect(() => {
     if (!user) return;
     
+    console.log('Setting up notification subscription for user:', user.id);
+    
     // Subscribe to new notifications
     const channel = supabase
       .channel('notifications_channel')
@@ -53,7 +55,7 @@ const NotificationsPopover = ({ hasNotifications, setHasNotifications }: Notific
           filter: `recipient_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('New notification received:', payload);
+          console.log('New notification received in popover:', payload);
           // Refresh notifications to get the latest data
           refreshNotifications();
         }

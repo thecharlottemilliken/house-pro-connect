@@ -49,6 +49,7 @@ serve(async (req) => {
 
     // Get request body with event details
     const { eventData, coachName } = await req.json();
+    console.log("Meeting event data received:", eventData);
     
     if (!eventData || !eventData.project_id) {
       return new Response(
@@ -68,6 +69,15 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "Failed to fetch team members", details: teamError }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log(`Found ${teamMembers?.length || 0} team members to notify`);
+    
+    if (!teamMembers?.length) {
+      return new Response(
+        JSON.stringify({ message: "No team members to notify" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -109,38 +119,43 @@ serve(async (req) => {
       
       const creatorName = creatorData?.name || coachName || "Your coach";
       
+      console.log(`Creating notification for team member ${member.user_id}`);
+      
       // Create notification data
       const notificationData = {
-        users: [{
-          id: user.id,
-          name: creatorName,
-          avatar: creatorName.substring(0, 1)
-        }],
-        meeting: {
-          id: eventData.id,
-          name: eventData.title,
-          date: `${formattedDate}, ${formattedTime}`
-        },
-        project: {
-          id: eventData.project_id,
-          name: projectData.title
-        },
-        availableActions: ['view_meeting', 'reschedule', 'mark_as_read']
+        recipient_id: member.user_id,
+        type: 'new_meeting',
+        title: `${creatorName} has scheduled "${eventData.title}" on ${formattedDate}`,
+        content: eventData.description || `Meeting for project: ${projectData.title}`,
+        priority: 'high',
+        data: {
+          users: [{
+            id: user.id,
+            name: creatorName,
+            avatar: creatorName.substring(0, 1)
+          }],
+          meeting: {
+            id: eventData.id,
+            name: eventData.title,
+            date: `${formattedDate}, ${formattedTime}`
+          },
+          project: {
+            id: eventData.project_id,
+            name: projectData.title
+          },
+          availableActions: ['view_meeting', 'reschedule', 'mark_as_read']
+        }
       };
 
-      // Insert notification using the database function
-      return supabaseAdmin.rpc('create_notification', {
-        p_recipient_id: member.user_id,
-        p_type: 'new_meeting',
-        p_title: `${creatorName} has scheduled "${eventData.title}" on ${formattedDate}`,
-        p_content: eventData.description || `Meeting for project: ${projectData.title}`,
-        p_priority: 'high',
-        p_data: notificationData
-      });
+      return supabaseAdmin
+        .from('notifications')
+        .insert(notificationData)
+        .select();
     });
 
     // Wait for all notifications to be created
-    await Promise.all(notificationPromises);
+    const results = await Promise.all(notificationPromises);
+    console.log(`Sent ${results.length} notifications to team members`);
 
     return new Response(
       JSON.stringify({ 

@@ -38,7 +38,8 @@ const Notifications = () => {
           table: 'notifications',
           filter: `recipient_id=eq.${user.id}`
         },
-        () => {
+        (payload) => {
+          console.log('New notification received on notifications page:', payload);
           // Refresh notifications to get the latest data
           refreshNotifications();
         }

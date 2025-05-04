@@ -18,6 +18,7 @@ export const useNotifications = () => {
 
     try {
       setLoading(true);
+      console.log('Fetching notifications for user:', user.id);
       
       const { data, error } = await supabase
         .from('notifications')
@@ -28,10 +29,12 @@ export const useNotifications = () => {
       if (error) throw error;
       
       if (data && data.length > 0) {
+        console.log(`Found ${data.length} notifications in database`);
         const formattedNotifications = data.map(formatNotificationFromDB);
         setNotifications(formattedNotifications);
         setUnreadCount(formattedNotifications.filter(n => !n.read).length);
       } else {
+        console.log('No notifications found in DB, using mock data');
         // If no notifications in DB, use mock data for demonstration
         const mockNotifications = getMockNotifications();
         setNotifications(mockNotifications);
@@ -52,9 +55,11 @@ export const useNotifications = () => {
   useEffect(() => {
     if (!user) return;
     
+    console.log('Setting up notification subscription in useNotifications hook');
+    
     // Subscribe to new notifications
     const channel = supabase
-      .channel('notifications_channel')
+      .channel('use_notifications_channel')
       .on(
         'postgres_changes',
         {
@@ -64,6 +69,7 @@ export const useNotifications = () => {
           filter: `recipient_id=eq.${user.id}`
         },
         (payload) => {
+          console.log('New notification received in hook:', payload);
           const newNotification = formatNotificationFromDB(payload.new);
           setNotifications(prev => [newNotification, ...prev]);
           setUnreadCount(prev => prev + 1);

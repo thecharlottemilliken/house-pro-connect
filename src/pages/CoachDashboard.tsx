@@ -27,6 +27,8 @@ const CoachDashboard = () => {
   useEffect(() => {
     if (!user) return;
     
+    console.log('Setting up coach dashboard notification subscription for user:', user.id);
+    
     const channel = supabase
       .channel('coach_dashboard_notifications')
       .on(

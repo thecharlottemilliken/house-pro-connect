@@ -49,6 +49,11 @@ export const EventsService = {
 
   async notifyEventParticipants(event: ProjectEvent, creatorName: string) {
     try {
+      console.log("Calling notify-meeting-participants edge function", {
+        eventData: event,
+        creatorName
+      });
+      
       // Call the edge function to notify participants
       const { data, error } = await supabase.functions.invoke(
         'notify-meeting-participants',
@@ -65,6 +70,7 @@ export const EventsService = {
         return false;
       }
       
+      console.log("Meeting notification response:", data);
       return true;
     } catch (error) {
       console.error("Error in notifyEventParticipants:", error);

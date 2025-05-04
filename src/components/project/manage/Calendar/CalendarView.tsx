@@ -87,6 +87,32 @@ const CalendarView = () => {
     fetchEvents();
   }, [projectId]); // eslint-disable-line react-hooks/exhaustive-deps
   
+  // Set up real-time subscription to new events
+  useEffect(() => {
+    if (!projectId || !user) return;
+    
+    const channel = supabase
+      .channel('calendar_events_channel')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'project_events',
+          filter: `project_id=eq.${projectId}`
+        },
+        () => {
+          console.log('New calendar event detected, refreshing events');
+          fetchEvents();
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [projectId, user]); // eslint-disable-line react-hooks/exhaustive-deps
+  
   // Update days when current date changes
   useEffect(() => {
     const start = startOfWeek(currentDate, { weekStartsOn: 0 });
@@ -253,10 +279,16 @@ const CalendarView = () => {
       
       // Notify participants
       if (createdEvent) {
-        await EventsService.notifyEventParticipants(
+        const notificationSent = await EventsService.notifyEventParticipants(
           createdEvent,
           userData?.name || "Team Member"
         );
+        
+        if (notificationSent) {
+          console.log("Meeting notifications sent successfully");
+        } else {
+          console.warn("Meeting notifications may not have been sent to all participants");
+        }
       }
       
       // Refresh events

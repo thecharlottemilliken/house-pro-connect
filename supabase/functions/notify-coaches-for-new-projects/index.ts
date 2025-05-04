@@ -32,6 +32,8 @@ Deno.serve(async (req) => {
     const requestData: ProjectUpdateEvent = await req.json();
     const { projectId, managementPreferences } = requestData;
     
+    console.log(`Project ID: ${projectId}, Management Preferences:`, managementPreferences);
+    
     // Only proceed if the project has management preferences with coach request and time slots
     if (!managementPreferences?.wantProjectCoach || 
         managementPreferences.wantProjectCoach !== 'yes' || 
@@ -89,6 +91,8 @@ Deno.serve(async (req) => {
     // Create a notification for each coach
     const notificationResults = [];
     for (const coach of coaches) {
+      console.log(`Creating notification for coach ${coach.id} (${coach.name})`);
+      
       const notificationData = {
         recipient_id: coach.id,
         type: 'project_coaching_request',
