@@ -120,8 +120,8 @@ const ProjectMilestonesWidget = ({ projectId, className }: ProjectMilestonesWidg
         </div>
       </CardHeader>
       <CardContent className="p-[4px] bg-gray-50">
-        <ScrollArea className="w-full">
-          <div className="min-w-[800px]">
+        <ScrollArea className="w-full overflow-x-auto">
+          <div className="min-w-[800px] w-full">
             {/* Days Header */}
             <div className="grid" style={{ gridTemplateColumns: `repeat(${daysToShow}, minmax(50px, 1fr))` }}>
               {days.map((day, index) => {
