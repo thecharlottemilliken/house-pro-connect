@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useLocation, useParams, Navigate, useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
@@ -19,6 +20,7 @@ import ScheduleCardWidget from "@/components/project/ScheduleCardWidget";
 import ProjectMilestonesWidget from "@/components/project/ProjectMilestonesWidget";
 import FinancialComparisonCard from "@/components/project/FinancialComparisonCard";
 import ActionItemsWidget from "@/components/project/ActionItemsWidget";
+
 const ProjectDashboard = () => {
   const location = useLocation();
   const params = useParams();
@@ -28,6 +30,26 @@ const ProjectDashboard = () => {
     profile
   } = useAuth();
   const [showNoDesignDialog, setShowNoDesignDialog] = React.useState(false);
+  const [isTabletView, setIsTabletView] = React.useState(false);
+  
+  // Effect to handle responsive breakpoint at 1199px
+  React.useEffect(() => {
+    const checkScreenSize = () => {
+      setIsTabletView(window.innerWidth <= 1199);
+    };
+    
+    // Initial check
+    checkScreenSize();
+    
+    // Add event listener
+    window.addEventListener('resize', checkScreenSize);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('resize', checkScreenSize);
+    };
+  }, []);
+  
   const projectId = params.projectId || "";
   const {
     hasAccess,
@@ -42,14 +64,17 @@ const ProjectDashboard = () => {
     error
   } = useProjectData(projectId, location.state);
   const isLoading = isAccessLoading || isProjectLoading;
+  
   React.useEffect(() => {
     if (error) {
       toast.error(`Error loading project: ${error.message}`);
     }
   }, [error]);
+  
   if (!isAccessLoading && !hasAccess) {
     return <Navigate to="/projects" replace />;
   }
+  
   if (isLoading) {
     return <div className="min-h-screen flex flex-col bg-white">
         <DashboardNavbar />
@@ -61,6 +86,7 @@ const ProjectDashboard = () => {
         </div>
       </div>;
   }
+  
   if (error || !propertyDetails || !projectData) {
     return <div className="min-h-screen flex flex-col bg-white">
         <DashboardNavbar />
@@ -78,11 +104,13 @@ const ProjectDashboard = () => {
         </div>
       </div>;
   }
+  
   const projectTitle = projectData?.title || "Project Overview";
   const renovationAreas = projectData?.renovation_areas as unknown as RenovationArea[] || [];
   const hasSOW = false;
   const hasDesignPlan = false;
   const isCoach = profile?.role === 'coach';
+  
   const handleStartSOW = () => {
     if (!hasDesignPlan) {
       setShowNoDesignDialog(true);
@@ -90,9 +118,11 @@ const ProjectDashboard = () => {
       startSOWCreation();
     }
   };
+  
   const startSOWCreation = () => {
     navigate(`/project-sow/${projectId}`);
   };
+  
   const propertyCardData = {
     id: propertyDetails.id,
     property_name: propertyDetails.property_name,
@@ -103,77 +133,136 @@ const ProjectDashboard = () => {
     state: propertyDetails.state,
     zip_code: propertyDetails.zip_code
   };
+  
   const userRole = isOwner ? "Owner" : role || "Team Member";
-  return <div className="flex flex-col bg-white min-h-screen">
+
+  return (
+    <div className="flex flex-col bg-white min-h-screen">
       <DashboardNavbar />
-      <SidebarProvider defaultOpen={!isMobile}>
-        <div className="flex flex-1 h-[calc(100vh-64px)] w-full pt-[64px] -mt-[64px]">
+      {isTabletView ? (
+        // Mobile/Tablet Layout (<=1199px)
+        <div className="flex flex-col w-full">
+          {/* Mobile navigation is handled by ProjectSidebar component which shows dropdown on mobile */}
           <ProjectSidebar projectId={projectId} projectTitle={projectTitle} activePage="overview" />
-          <div className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 bg-white overflow-y-auto">
-            <div className="mb-3 sm:mb-4 md:mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center">
-              <div>
-                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2 sm:mb-0">
-                  Project Overview
-                </h1>
-                <div className="flex items-center">
-                  
-                </div>
-              </div>
+          
+          {/* Main Content Area with added top margin to account for mobile nav */}
+          <div className="w-full p-3 sm:p-4 md:p-6 mt-12 bg-white">
+            <div className="mb-3 sm:mb-4">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
+                Project Overview
+              </h1>
             </div>
             
-            <div className="mb-3 sm:mb-4 md:mb-8">
+            {/* Mobile layout: stacking all components vertically */}
+            <div className="flex flex-col gap-6">
+              {/* Property Card */}
+              <PropertyCard propertyDetails={propertyCardData} renovationAreas={renovationAreas} />
               
-            </div>
-            
-            {/* Updated layout with nested grid containers */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Left Column - 1 column width */}
-              <div className="lg:col-span-1 flex flex-col gap-6">
-                {/* Property Card */}
-                <PropertyCard propertyDetails={propertyCardData} renovationAreas={renovationAreas} />
-                
-                {/* Financial Overview Card */}
-                <FinancialComparisonCard projectId={projectId} />
-              </div>
+              {/* Project Progress Card */}
+              <ProjectProgressCard projectId={projectId} />
               
-              {/* Right Column - 2 column width */}
-              <div className="lg:col-span-2 flex flex-col gap-6">
-                {/* Project Progress Card - spans 2 columns */}
-                <ProjectProgressCard projectId={projectId} />
-                
-                {/* Nested grid for Schedule and Action Items */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Schedule Card */}
-                  <ScheduleCardWidget projectId={projectId} />
+              {/* Financial Overview Card */}
+              <FinancialComparisonCard projectId={projectId} />
+              
+              {/* Schedule Card */}
+              <ScheduleCardWidget projectId={projectId} />
+              
+              {/* Action Items Card */}
+              <ActionItemsWidget projectId={projectId} projectData={projectData} isOwner={isOwner} isCoach={isCoach} />
+              
+              {/* Project Milestones Widget */}
+              <ProjectMilestonesWidget projectId={projectId} />
+              
+              {/* SOW creation block if needed */}
+              {!hasSOW && isCoach && (
+                <div className="border border-gray-200 rounded-lg p-8 text-center">
+                  <PenBox className="mx-auto h-12 w-12 text-[#0f566c] mb-4" />
                   
-                  {/* Action Items Card */}
-                  <ActionItemsWidget projectId={projectId} projectData={projectData} isOwner={isOwner} isCoach={isCoach} />
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    Begin Building the Statement of Work
+                  </h3>
+                  <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                    Create a comprehensive Statement of Work (SOW) that outlines the project's scope, specific deliverables, timeline, and key milestones.
+                  </p>
+                  <Button onClick={handleStartSOW} className="bg-[#0f566c] hover:bg-[#0d4a5d] px-6 py-3">
+                    Start SOW
+                  </Button>
                 </div>
-                
-                {/* Project Milestones Widget - spans 2 columns */}
-                <ProjectMilestonesWidget projectId={projectId} />
-              </div>
-              
-              {/* SOW creation block if needed - spans all columns */}
-              {!hasSOW && isCoach && <div className="lg:col-span-3">
-                  <div className="border border-gray-200 rounded-lg p-8 text-center">
-                    <PenBox className="mx-auto h-12 w-12 text-[#0f566c] mb-4" />
-                    
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
-                      Begin Building the Statement of Work
-                    </h3>
-                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                      Create a comprehensive Statement of Work (SOW) that outlines the project's scope, specific deliverables, timeline, and key milestones.
-                    </p>
-                    <Button onClick={handleStartSOW} className="bg-[#0f566c] hover:bg-[#0d4a5d] px-6 py-3">
-                      Start SOW
-                    </Button>
-                  </div>
-                </div>}
+              )}
             </div>
           </div>
         </div>
-      </SidebarProvider>
+      ) : (
+        // Desktop Layout (>1199px)
+        <SidebarProvider defaultOpen={!isMobile}>
+          <div className="flex flex-1 h-[calc(100vh-64px)] w-full pt-[64px] -mt-[64px]">
+            <ProjectSidebar projectId={projectId} projectTitle={projectTitle} activePage="overview" />
+            <div className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 bg-white overflow-y-auto">
+              <div className="mb-3 sm:mb-4 md:mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center">
+                <div>
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2 sm:mb-0">
+                    Project Overview
+                  </h1>
+                  <div className="flex items-center">
+                    
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mb-3 sm:mb-4 md:mb-8">
+                
+              </div>
+              
+              {/* Desktop layout with grid system */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Left Column - 1 column width */}
+                <div className="lg:col-span-1 flex flex-col gap-6">
+                  {/* Property Card */}
+                  <PropertyCard propertyDetails={propertyCardData} renovationAreas={renovationAreas} />
+                  
+                  {/* Financial Overview Card */}
+                  <FinancialComparisonCard projectId={projectId} />
+                </div>
+                
+                {/* Right Column - 2 column width */}
+                <div className="lg:col-span-2 flex flex-col gap-6">
+                  {/* Project Progress Card - spans 2 columns */}
+                  <ProjectProgressCard projectId={projectId} />
+                  
+                  {/* Nested grid for Schedule and Action Items */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Schedule Card */}
+                    <ScheduleCardWidget projectId={projectId} />
+                    
+                    {/* Action Items Card */}
+                    <ActionItemsWidget projectId={projectId} projectData={projectData} isOwner={isOwner} isCoach={isCoach} />
+                  </div>
+                  
+                  {/* Project Milestones Widget - spans 2 columns */}
+                  <ProjectMilestonesWidget projectId={projectId} />
+                </div>
+                
+                {/* SOW creation block if needed - spans all columns */}
+                {!hasSOW && isCoach && <div className="lg:col-span-3">
+                    <div className="border border-gray-200 rounded-lg p-8 text-center">
+                      <PenBox className="mx-auto h-12 w-12 text-[#0f566c] mb-4" />
+                      
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">
+                        Begin Building the Statement of Work
+                      </h3>
+                      <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                        Create a comprehensive Statement of Work (SOW) that outlines the project's scope, specific deliverables, timeline, and key milestones.
+                      </p>
+                      <Button onClick={handleStartSOW} className="bg-[#0f566c] hover:bg-[#0d4a5d] px-6 py-3">
+                        Start SOW
+                      </Button>
+                    </div>
+                  </div>}
+              </div>
+            </div>
+          </div>
+        </SidebarProvider>
+      )}
 
       <AlertDialog open={showNoDesignDialog} onOpenChange={setShowNoDesignDialog}>
         <AlertDialogContent>
@@ -191,6 +280,8 @@ const ProjectDashboard = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>;
+    </div>
+  );
 };
+
 export default ProjectDashboard;
