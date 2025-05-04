@@ -1,10 +1,18 @@
 
 import React, { useState } from "react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { formatCurrency } from "@/utils/formatters";
 import { cn } from "@/lib/utils";
 import { ChartContainer, ChartTooltipContent, ChartTooltip } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, CartesianGrid } from "recharts";
+import { ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
 interface FinancialComparisonCardProps {
   projectId: string;
@@ -19,122 +27,106 @@ interface WorkBlockFinance {
 }
 
 const FinancialComparisonCard = ({ projectId, className }: FinancialComparisonCardProps) => {
-  const [timeFilter, setTimeFilter] = useState<"month" | "all">("month");
+  const [timeFilter, setTimeFilter] = useState<"week" | "month" | "quarter" | "year">("month");
   
   // Mock financial data - in real app, fetch from API
   const mockFinancialData: WorkBlockFinance[] = [
     {
       id: "wb1",
-      name: "Demolition",
-      estimated: 1800,
-      invoiced: 1950
+      name: "WO #1",
+      estimated: 1700,
+      invoiced: 2300
     },
     {
       id: "wb2",
-      name: "Electrical",
-      estimated: 2500,
-      invoiced: 2350
-    },
-    {
-      id: "wb3",
-      name: "Plumbing",
-      estimated: 3200,
+      name: "WO #2",
+      estimated: 2000,
       invoiced: 2800
     },
     {
+      id: "wb3",
+      name: "WO #3",
+      estimated: 4500,
+      invoiced: 5500
+    },
+    {
       id: "wb4",
-      name: "Tiling",
-      estimated: 2100,
-      invoiced: 0
+      name: "WO #4",
+      estimated: 10000,
+      invoiced: 11000
+    },
+    {
+      id: "wb5",
+      name: "WO #5",
+      estimated: 3000,
+      invoiced: 10000
     }
   ];
 
   // Calculate totals
-  const totalEstimated = mockFinancialData.reduce((sum, item) => sum + item.estimated, 0);
   const totalInvoiced = mockFinancialData.reduce((sum, item) => sum + item.invoiced, 0);
-  const completedWorkOrders = mockFinancialData.filter(item => item.invoiced > 0).length;
   const totalWorkOrders = mockFinancialData.length;
 
-  // Format currency
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(value);
+  // Time filter options mapping
+  const timeFilterLabels = {
+    week: "This Week",
+    month: "This Month",
+    quarter: "This Quarter",
+    year: "This Year"
   };
 
   return (
     <Card className={cn("overflow-hidden", className)}>
-      <CardHeader className="bg-[#f8f9fa] border-b p-4">
+      <CardHeader className="bg-white border-b p-4">
         <div className="flex justify-between items-center">
-          <h3 className="text-lg font-semibold">Financial Overview</h3>
-          <div className="flex">
-            <Button 
-              variant={timeFilter === "month" ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => setTimeFilter("month")}
-              className="text-sm"
-            >
-              This Month
-            </Button>
-            <Button 
-              variant={timeFilter === "all" ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => setTimeFilter("all")}
-              className="text-sm"
-            >
-              All Time
-            </Button>
-          </div>
+          <h3 className="text-lg font-semibold">Estimated vs Invoiced</h3>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="bg-white text-sm">
+                {timeFilterLabels[timeFilter]} <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => setTimeFilter("week")}>This Week</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTimeFilter("month")}>This Month</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTimeFilter("quarter")}>This Quarter</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTimeFilter("year")}>This Year</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </CardHeader>
       <CardContent className="p-4">
-        {/* Summary stats */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="bg-[#f8f9fa] rounded-lg p-4">
-            <div className="text-sm text-gray-500 mb-1">Total Estimated</div>
-            <div className="text-xl font-bold">{formatCurrency(totalEstimated)}</div>
+        {/* Cost Summary */}
+        <div className="mb-6">
+          <div className="text-3xl font-bold">
+            {formatCurrency(totalInvoiced)}
           </div>
-          <div className="bg-[#f8f9fa] rounded-lg p-4">
-            <div className="text-sm text-gray-500 mb-1">Total Invoiced</div>
-            <div className="text-xl font-bold">{formatCurrency(totalInvoiced)}</div>
-          </div>
-          <div className="bg-[#f8f9fa] rounded-lg p-4">
-            <div className="text-sm text-gray-500 mb-1">Work Orders Complete</div>
-            <div className="text-xl font-bold">{completedWorkOrders}/{totalWorkOrders}</div>
-          </div>
-          <div className="bg-[#f8f9fa] rounded-lg p-4">
-            <div className="text-sm text-gray-500 mb-1">Variance</div>
-            <div className={cn(
-              "text-xl font-bold",
-              totalInvoiced > totalEstimated ? "text-red-600" : 
-              totalInvoiced < totalEstimated ? "text-green-600" : ""
-            )}>
-              {formatCurrency(totalEstimated - totalInvoiced)}
-            </div>
+          <div className="text-sm text-gray-600">
+            {totalWorkOrders} Work Orders
           </div>
         </div>
         
         {/* Chart */}
-        <div className="h-64 mt-6">
+        <div className="h-64">
           <ChartContainer
             config={{
-              estimated: { color: "#60a5fa" },
-              invoiced: { color: "#1e40af" }
+              estimated: { color: "#14B8A6" }, // Green color for estimated
+              invoiced: { color: "#F97316" }   // Orange color for invoiced
             }}
           >
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={mockFinancialData}
                 margin={{
-                  top: 5,
-                  right: 30,
+                  top: 10,
+                  right: 10,
                   left: 20,
-                  bottom: 5
+                  bottom: 20
                 }}
+                barGap={0}
+                barCategoryGap={8}
               >
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
                 <XAxis 
                   dataKey="name" 
                   axisLine={false} 
@@ -145,16 +137,14 @@ const FinancialComparisonCard = ({ projectId, className }: FinancialComparisonCa
                   axisLine={false} 
                   tickLine={false}
                   tick={{ fontSize: 12 }}
-                  tickFormatter={(value) => `$${value}`}
+                  tickFormatter={(value) => value >= 1000 ? `$${value / 1000}k` : `$${value}`}
                 />
                 <ChartTooltip
                   content={
                     <ChartTooltipContent
-                      labelFormatter={(label) => `Work Block: ${label}`}
+                      labelFormatter={(label) => `Work Order: ${label}`}
                       formatter={(value, name) => {
-                        // The formatter function takes a value and a name, both could be of any type
-                        // Let's explicitly handle them as strings or numbers
-                        const formattedValue = `$${value}`;
+                        const formattedValue = formatCurrency(Number(value));
                         const formattedName = typeof name === 'string' 
                           ? name.charAt(0).toUpperCase() + name.slice(1)
                           : String(name);
@@ -164,20 +154,21 @@ const FinancialComparisonCard = ({ projectId, className }: FinancialComparisonCa
                     />
                   }
                 />
-                <Bar dataKey="estimated" fill="var(--color-estimated)" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="invoiced" fill="var(--color-invoiced)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="estimated" fill="#14B8A6" stackId="stack" />
+                <Bar dataKey="invoiced" fill="#F97316" stackId="stack" />
               </BarChart>
             </ResponsiveContainer>
           </ChartContainer>
         </div>
         
-        <div className="flex justify-center items-center mt-4 gap-6 text-sm">
+        {/* Legend */}
+        <div className="flex justify-end items-center mt-4 gap-4 text-sm">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-blue-400 rounded"></div>
+            <div className="w-3 h-3 bg-[#14B8A6] rounded"></div>
             <span>Estimated</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-blue-800 rounded"></div>
+            <div className="w-3 h-3 bg-[#F97316] rounded"></div>
             <span>Invoiced</span>
           </div>
         </div>
