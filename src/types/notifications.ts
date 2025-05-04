@@ -4,7 +4,8 @@ export type NotificationType =
   | 'sow_review' 
   | 'sow_approved' 
   | 'project_ready' 
-  | 'new_meeting';
+  | 'new_meeting'
+  | 'project_coaching_request';
 
 export type NotificationAction = 
   | 'view' 

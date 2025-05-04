@@ -1,59 +1,40 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, PhoneIcon } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
-import { useForm } from "react-hook-form";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { Json } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
-import CreateProjectSteps from "@/components/project/create/CreateProjectSteps";
-import { CoachPreferenceSelector } from "@/components/project/create/CoachPreferenceSelector";
-import { ContactInfoForm } from "@/components/project/create/ContactInfoForm";
-import { TimeSlotSelector } from "@/components/project/create/TimeSlotSelector";
-import { TimeSlotModal } from "@/components/project/create/TimeSlotModal";
-import { ProjectManagementInfo } from "@/components/project/create/ProjectManagementInfo";
-import { 
-  TimeSlot, 
-  formatTimeSlotsForStorage, 
-  parseTimeSlotsFromStorage 
-} from "@/utils/timeSlotFormatters";
+import CoachPreferenceSelector from "@/components/project/create/CoachPreferenceSelector";
+import ContactInfoForm from "@/components/project/create/ContactInfoForm";
+import TimeSlotSelector from "@/components/project/create/TimeSlotSelector";
+import TimeSlotModal from "@/components/project/create/TimeSlotModal";
 
 const ManagementPreferences = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const isMobile = useIsMobile();
   const { user } = useAuth();
   
   const [propertyId, setPropertyId] = useState<string | null>(null);
   const [projectId, setProjectId] = useState<string | null>(null);
+  const [renovationAreas, setRenovationAreas] = useState<any[]>([]);
   const [projectPrefs, setProjectPrefs] = useState<any>(null);
+  
   const [wantProjectCoach, setWantProjectCoach] = useState<string>("yes");
-  const [isLoading, setIsLoading] = useState(false);
-  
-  // Time slot state variables
-  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([
-    { id: 1, date: null, time: "", ampm: "AM" },
-    { id: 2, date: null, time: "", ampm: "AM" },
-    { id: 3, date: null, time: "", ampm: "AM" },
-  ]);
-  
-  // Time slot modal state
+  const [phoneNumber, setPhoneNumber] = useState<string>("");
+  const [phoneType, setPhoneType] = useState<string>("Cell");
+  const [timeSlots, setTimeSlots] = useState<any[]>([]);
   const [isTimeSlotModalOpen, setIsTimeSlotModalOpen] = useState(false);
-  const [selectedSlotIndex, setSelectedSlotIndex] = useState<number | null>(null);
-  const [tempTimeSlot, setTempTimeSlot] = useState<{
-    date: Date | null;
-    time: string;
-    ampm: "AM" | "PM";
-  }>({ date: null, time: "", ampm: "AM" });
+  const [isLoading, setIsLoading] = useState(false);
+  const [showTimeSlots, setShowTimeSlots] = useState(false);
   
-  const form = useForm({
-    defaultValues: {
-      phoneNumber: "",
-      phoneType: "Cell",
-    }
-  });
-
   useEffect(() => {
     if (location.state) {
       if (location.state.propertyId) {
@@ -61,6 +42,9 @@ const ManagementPreferences = () => {
       }
       if (location.state.projectId) {
         setProjectId(location.state.projectId);
+      }
+      if (location.state.renovationAreas) {
+        setRenovationAreas(location.state.renovationAreas);
       }
       setProjectPrefs(location.state);
       
@@ -73,7 +57,6 @@ const ManagementPreferences = () => {
     }
   }, [location.state, navigate]);
   
-  // Function to load existing management preferences
   const loadExistingPreferences = async (id: string) => {
     try {
       // First attempt to use the edge function for bypassing RLS issues
@@ -90,22 +73,19 @@ const ManagementPreferences = () => {
         console.log('Retrieved project data via edge function');
         
         if (edgeData.management_preferences) {
-          const prefs = edgeData.management_preferences as any;
-          
-          if (prefs.wantProjectCoach) setWantProjectCoach(prefs.wantProjectCoach);
-          if (prefs.phoneNumber) form.setValue("phoneNumber", prefs.phoneNumber);
-          if (prefs.phoneType) form.setValue("phoneType", prefs.phoneType);
-          if (prefs.timeSlots) {
-            // Parse the stored time slots from storage format back to TimeSlot format
-            const parsedTimeSlots = parseTimeSlotsFromStorage(prefs.timeSlots);
-            setTimeSlots(parsedTimeSlots);
+          const prefs = edgeData.management_preferences;
+          if (prefs.wantProjectCoach !== undefined) setWantProjectCoach(prefs.wantProjectCoach);
+          if (prefs.phoneNumber) setPhoneNumber(prefs.phoneNumber);
+          if (prefs.phoneType) setPhoneType(prefs.phoneType);
+          if (prefs.timeSlots && prefs.timeSlots.length > 0) {
+            setTimeSlots(prefs.timeSlots);
+            setShowTimeSlots(prefs.wantProjectCoach === 'yes');
           }
         }
         return;
       }
       
       // Fallback to direct query - this will only work if RLS permissions allow
-      console.log('Falling back to direct query for project data');
       const { data, error } = await supabase
         .from('projects')
         .select('management_preferences')
@@ -115,15 +95,13 @@ const ManagementPreferences = () => {
       if (error) throw error;
       
       if (data && data.management_preferences) {
-        const prefs = data.management_preferences as any;
-        
-        if (prefs.wantProjectCoach) setWantProjectCoach(prefs.wantProjectCoach);
-        if (prefs.phoneNumber) form.setValue("phoneNumber", prefs.phoneNumber);
-        if (prefs.phoneType) form.setValue("phoneType", prefs.phoneType);
-        if (prefs.timeSlots) {
-          // Parse the stored time slots
-          const parsedTimeSlots = parseTimeSlotsFromStorage(prefs.timeSlots);
-          setTimeSlots(parsedTimeSlots);
+        const prefs = data.management_preferences;
+        if (prefs.wantProjectCoach !== undefined) setWantProjectCoach(prefs.wantProjectCoach);
+        if (prefs.phoneNumber) setPhoneNumber(prefs.phoneNumber);
+        if (prefs.phoneType) setPhoneType(prefs.phoneType);
+        if (prefs.timeSlots && prefs.timeSlots.length > 0) {
+          setTimeSlots(prefs.timeSlots);
+          setShowTimeSlots(prefs.wantProjectCoach === 'yes');
         }
       }
     } catch (error) {
@@ -135,38 +113,20 @@ const ManagementPreferences = () => {
       });
     }
   };
-
-  const openTimeSlotModal = (index: number) => {
-    const slot = timeSlots[index];
-    setTempTimeSlot({
-      date: slot.date,
-      time: slot.time,
-      ampm: slot.ampm,
-    });
-    setSelectedSlotIndex(index);
-    setIsTimeSlotModalOpen(true);
-  };
-
-  const closeTimeSlotModal = () => {
+  
+  const addTimeSlot = (slot: any) => {
+    // Generate a unique ID for the time slot
+    slot.id = timeSlots.length + 1;
+    setTimeSlots([...timeSlots, slot]);
     setIsTimeSlotModalOpen(false);
-    setSelectedSlotIndex(null);
   };
-
-  const saveTimeSlot = () => {
-    if (selectedSlotIndex === null) return;
-    
+  
+  const removeTimeSlot = (index: number) => {
     const newTimeSlots = [...timeSlots];
-    newTimeSlots[selectedSlotIndex] = {
-      ...newTimeSlots[selectedSlotIndex],
-      date: tempTimeSlot.date,
-      time: tempTimeSlot.time,
-      ampm: tempTimeSlot.ampm,
-    };
-    
+    newTimeSlots.splice(index, 1);
     setTimeSlots(newTimeSlots);
-    closeTimeSlotModal();
   };
-
+  
   const savePreferences = async () => {
     if (!user?.id) {
       toast({
@@ -176,35 +136,30 @@ const ManagementPreferences = () => {
       });
       return;
     }
-    
+
     setIsLoading(true);
     
-    // Format time slots for storage (convert Date objects to strings)
-    const formattedTimeSlots = formatTimeSlotsForStorage(timeSlots);
-    
-    // Create management preferences object with all the data
-    // Make sure all properties are JSON serializable
     const managementPreferences = {
       wantProjectCoach,
-      phoneNumber: form.getValues("phoneNumber"),
-      phoneType: form.getValues("phoneType"),
-      timeSlots: formattedTimeSlots
+      phoneNumber,
+      phoneType,
+      timeSlots: wantProjectCoach === 'yes' ? timeSlots : []
     };
     
-    console.log("Saving management preferences:", managementPreferences);
-    
-    // If we already have a project ID, update it
     if (projectId) {
       try {
         // First try using the edge function (bypasses RLS issues)
-        const { data: updateData, error: updateError } = await supabase.functions.invoke('handle-project-update', {
-          method: 'POST',
-          body: { 
-            projectId,
-            userId: user.id,
-            managementPreferences
+        const { data: updateData, error: updateError } = await supabase.functions.invoke(
+          'handle-project-update',
+          {
+            method: 'POST',
+            body: { 
+              projectId,
+              userId: user.id,
+              managementPreferences: managementPreferences as Json
+            }
           }
-        });
+        );
 
         if (updateError) {
           console.error('Error updating via edge function:', updateError);
@@ -213,11 +168,35 @@ const ManagementPreferences = () => {
           const { error } = await supabase
             .from('projects')
             .update({
-              management_preferences: managementPreferences
+              management_preferences: managementPreferences as Json
             })
             .eq('id', projectId);
 
           if (error) throw error;
+        }
+        
+        // If user wants a coach and provided time slots, send notification to coaches
+        if (wantProjectCoach === 'yes' && timeSlots.length > 0) {
+          try {
+            const { data, error } = await supabase.functions.invoke(
+              'notify-coaches-for-new-projects',
+              {
+                method: 'POST',
+                body: { 
+                  projectId,
+                  managementPreferences
+                }
+              }
+            );
+            
+            if (error) {
+              console.error('Error notifying coaches:', error);
+            } else {
+              console.log('Coach notification response:', data);
+            }
+          } catch (notifyError) {
+            console.error('Error calling coach notification function:', notifyError);
+          }
         }
         
         toast({
@@ -235,11 +214,9 @@ const ManagementPreferences = () => {
         return;
       }
     } else {
-      // Just log and continue if no project ID (project should have been created in Project Preferences)
       console.log("No project ID available, storing preferences in state only");
     }
     
-    // Update the project preferences state
     const updatedProjectPrefs = {
       ...projectPrefs,
       projectId,
@@ -250,16 +227,13 @@ const ManagementPreferences = () => {
     setProjectPrefs(updatedProjectPrefs);
     setIsLoading(false);
     
-    return updatedProjectPrefs;
+    navigate("/prior-experience", {
+      state: updatedProjectPrefs
+    });
   };
 
   const goToNextStep = async () => {
-    const updatedPrefs = await savePreferences();
-    if (updatedPrefs) {
-      navigate("/prior-experience", {
-        state: updatedPrefs
-      });
-    }
+    await savePreferences();
   };
 
   const goBack = () => {
@@ -268,6 +242,11 @@ const ManagementPreferences = () => {
     });
   };
 
+  const handleCoachPreferenceChange = (value: string) => {
+    setWantProjectCoach(value);
+    setShowTimeSlots(value === 'yes');
+  };
+  
   const steps = [
     { number: 1, title: "Select a Property", current: false },
     { number: 2, title: "Select Renovation Areas", current: false },
@@ -283,45 +262,77 @@ const ManagementPreferences = () => {
       <DashboardNavbar />
       
       <div className="flex flex-col md:flex-row flex-1">
-        <div className="w-full md:w-80 flex-shrink-0">
-          <CreateProjectSteps steps={steps} />
+        <div className={`${isMobile ? 'w-full' : 'w-80'} bg-[#EFF3F7] p-4 md:p-8`}>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">Create a Project</h1>
+          <p className="text-sm md:text-base text-gray-600 mb-6 md:mb-8">
+            Lorem ipsum dolor sit amet consectetur.
+          </p>
+          
+          <div className="space-y-4 md:space-y-6">
+            {steps.map((step) => (
+              <div key={step.number} className="flex items-start">
+                <div className={`w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center mr-2 md:mr-3 ${
+                  step.current ? "bg-[#174c65] text-white" : "bg-gray-200 text-gray-500"
+                }`}>
+                  {step.number}
+                </div>
+                <div>
+                  <h3 className={`text-sm md:text-base font-medium ${
+                    step.current ? "text-[#174c65]" : "text-gray-500"
+                  }`}>
+                    Step {step.number}
+                  </h3>
+                  <p className={`text-xs md:text-sm ${
+                    step.current ? "text-black" : "text-gray-500"
+                  }`}>
+                    {step.title}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
         
         <div className="flex-1 p-4 md:p-10 overflow-auto">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-4">Management Preferences</h2>
           <p className="text-sm md:text-base text-gray-700 mb-6 md:mb-8 max-w-3xl">
-            To get started, fill out a high-level summary of the project so specialists can get an idea of the type of project underway. Next, select when you want your bids due by.
+            Let us know if you would like a project coach to guide you through the renovation process.
           </p>
           
-          <div className="flex flex-col md:flex-row gap-8 mb-10">
-            <div className="flex-1 space-y-8">
-              <CoachPreferenceSelector 
-                wantProjectCoach={wantProjectCoach}
-                setWantProjectCoach={setWantProjectCoach}
-              />
-              
-              {wantProjectCoach === "yes" && (
-                <ContactInfoForm form={form} />
-              )}
-              
-              {wantProjectCoach === "yes" && (
-                <div>
-                  <h3 className="text-lg font-medium mb-4">Please select a few times you're available to be contacted.</h3>
-                  
-                  <TimeSlotSelector 
-                    timeSlots={timeSlots}
-                    onEditTimeSlot={openTimeSlotModal}
-                    onClearTimeSlot={(index) => {
-                      const newTimeSlots = [...timeSlots];
-                      newTimeSlots[index] = { ...newTimeSlots[index], date: null, time: "", ampm: "AM" };
-                      setTimeSlots(newTimeSlots);
-                    }}
+          <div className="space-y-8 mb-10">
+            <CoachPreferenceSelector
+              wantProjectCoach={wantProjectCoach}
+              onValueChange={handleCoachPreferenceChange}
+            />
+            
+            {wantProjectCoach === 'yes' && (
+              <>
+                <div className="space-y-6 bg-gray-50 p-6 rounded-lg">
+                  <h3 className="text-lg font-semibold">Contact Information</h3>
+                  <ContactInfoForm
+                    phoneNumber={phoneNumber}
+                    phoneType={phoneType}
+                    onPhoneNumberChange={setPhoneNumber}
+                    onPhoneTypeChange={setPhoneType}
                   />
                 </div>
-              )}
-            </div>
-            
-            <ProjectManagementInfo />
+                
+                <div className="space-y-6 bg-gray-50 p-6 rounded-lg">
+                  <h3 className="text-lg font-semibold">Schedule a Meeting</h3>
+                  <TimeSlotSelector
+                    timeSlots={timeSlots}
+                    onAddTimeSlot={() => setIsTimeSlotModalOpen(true)}
+                    onRemoveTimeSlot={removeTimeSlot}
+                  />
+                </div>
+                
+                <TimeSlotModal
+                  isOpen={isTimeSlotModalOpen}
+                  onClose={() => setIsTimeSlotModalOpen(false)}
+                  onAddTimeSlot={addTimeSlot}
+                />
+              </>
+            )}
           </div>
           
           <div className="flex flex-col sm:flex-row justify-between pt-4 border-t border-gray-200 gap-3 sm:gap-0">
@@ -338,9 +349,7 @@ const ManagementPreferences = () => {
               <Button
                 variant="outline"
                 className="text-[#174c65] border-[#174c65] w-full sm:w-auto"
-                onClick={() => {
-                  savePreferences().then(() => navigate("/dashboard"));
-                }}
+                onClick={() => navigate("/dashboard")}
                 disabled={isLoading}
               >
                 SAVE & EXIT
@@ -356,15 +365,6 @@ const ManagementPreferences = () => {
           </div>
         </div>
       </div>
-
-      {/* Time Slot Selection Modal */}
-      <TimeSlotModal 
-        isOpen={isTimeSlotModalOpen}
-        onClose={closeTimeSlotModal}
-        onSave={saveTimeSlot}
-        tempTimeSlot={tempTimeSlot}
-        setTempTimeSlot={setTempTimeSlot}
-      />
     </div>
   );
 };

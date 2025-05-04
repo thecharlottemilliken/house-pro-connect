@@ -183,14 +183,17 @@ const DesignPreferences = () => {
     if (projectId) {
       try {
         // First try using the edge function (bypasses RLS issues)
-        const { data: updateData, error: updateError } = await supabase.functions.invoke('handle-project-update', {
-          method: 'POST',
-          body: { 
-            projectId,
-            userId: user.id,
-            designPreferences: designPreferences as Json
+        const { data: updateData, error: updateError } = await supabase.functions.invoke(
+          'handle-project-update',
+          {
+            method: 'POST',
+            body: { 
+              projectId,
+              userId: user.id,
+              designPreferences: designPreferences as Json
+            }
           }
-        });
+        );
 
         if (updateError) {
           console.error('Error updating via edge function:', updateError);

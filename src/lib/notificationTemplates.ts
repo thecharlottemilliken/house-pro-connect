@@ -1,4 +1,3 @@
-
 import { NotificationTemplate, NotificationType } from "@/types/notifications";
 import { formatDistanceToNow } from "date-fns";
 
@@ -74,6 +73,19 @@ export const notificationTemplates: Record<NotificationType, NotificationTemplat
       return data.description.length > maxLength 
         ? `${data.description.substring(0, maxLength)}...` 
         : data.description;
+    }
+  },
+  project_coaching_request: {
+    type: 'project_coaching_request',
+    titleFormat: "New project [Project Name] needs coaching",
+    contentFormat: "The resident has requested coaching help and provided time slots.",
+    priority: 'high',
+    defaultActions: ['schedule_consultation', 'mark_as_read'],
+    generateTitle: (data: { project: string }) => {
+      return `New project "${data.project}" needs coaching`;
+    },
+    generateContent: (data: { ownerName: string }) => {
+      return `${data.ownerName} has requested coaching help and provided time slots. Please schedule a consultation.`;
     }
   }
 };
