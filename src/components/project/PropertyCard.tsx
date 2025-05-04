@@ -39,9 +39,9 @@ const PropertyCard = ({
         
         <h3 className="text-sm font-semibold ">RENOVATION AREAS</h3>
         <div className="space-y-3 mb-8">
-          {Array.isArray(renovationAreas) && renovationAreas.length > 0 ? renovationAreas.map((area, index) => <div key={index} className="flex items-center text-lg">
-                <span className="text-orange-500 mr-3 text-2xl">★</span> {area.area}
-                {area.location && <span className="text-gray-500 ml-2">({area.location})</span>}
+          {Array.isArray(renovationAreas) && renovationAreas.length > 0 ? renovationAreas.map((area, index) => <div key={index} className="flex items-center text-sm">
+                 {area.area}
+                {area.location && <span className="text-gray-500 ml-2 text-xs">({area.location})</span>}
               </div>) : <div className="text-gray-500">No renovation areas specified</div>}
         </div>
         
