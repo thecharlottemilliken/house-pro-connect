@@ -154,17 +154,25 @@ const ProjectDashboard = () => {
               </div>
             </div>
             
-            {/* Main dashboard content with grid layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-              {/* Property Card - spans 2 columns on large screens */}
-              <div className="lg:col-span-2">
+            {/* Main dashboard content with 3-column grid layout */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+              {/* Column 1 - Property Card */}
+              <div className="lg:col-span-1">
                 <PropertyCard 
                   propertyDetails={propertyCardData}
                   renovationAreas={renovationAreas}
                 />
               </div>
 
-              {/* Action Items Card */}
+              {/* Column 2 - Tasks Card */}
+              <div className="lg:col-span-1">
+                <TasksCard 
+                  projectId={projectId}
+                  isOwner={isOwner}
+                />
+              </div>
+
+              {/* Column 3 - Action Items Card */}
               <div className="lg:col-span-1">
                 <ActionItemsCard 
                   projectId={projectId}
@@ -179,17 +187,22 @@ const ProjectDashboard = () => {
                 <ProjectStagesCard projectData={projectData} />
               </div>
               
-              {/* Schedule Card */}
+              {/* Schedule Card - back to 3 columns */}
               <div className="lg:col-span-1">
                 <ScheduleCardWidget projectId={projectId} />
               </div>
               
-              {/* Project Progress Card - spans 2 columns */}
-              <div className="lg:col-span-2">
+              {/* Progress Card */}
+              <div className="lg:col-span-1">
                 <ProjectProgressCard projectId={projectId} />
               </div>
               
-              {/* Financial Comparison Card - spans full width on larger screens for chart visibility */}
+              {/* Column 3 - Events or Messages */}
+              <div className="lg:col-span-1">
+                <MessagesCard projectId={projectId} />
+              </div>
+              
+              {/* Financial Comparison Card - spans all 3 columns for chart visibility */}
               <div className="lg:col-span-3">
                 <FinancialComparisonCard projectId={projectId} />
               </div>
