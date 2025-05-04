@@ -2,7 +2,7 @@
 import React from "react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Check, FileText, Camera, RulerSquare, ListTodo } from "lucide-react";
+import { ArrowRight, Check, FileText, Camera, Ruler, ListTodo } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ProjectData } from "@/hooks/useProjectData";
 import { useNavigate } from "react-router-dom";
@@ -23,6 +23,7 @@ type ActionItem = {
   icon: React.ReactNode;
   action?: () => void;
   buttonText?: string;
+  completed?: boolean;
 };
 
 const ActionItemsCard = ({ 
@@ -98,7 +99,7 @@ const ActionItemsCard = ({
             title: "Add Room Measurements",
             description: "Provide accurate measurements for design planning",
             priority: "medium",
-            icon: <RulerSquare className="h-5 w-5" />,
+            icon: <Ruler className="h-5 w-5" />,
             action: () => navigate(`/project-design/${projectId}`),
             buttonText: "Add Measurements"
           });

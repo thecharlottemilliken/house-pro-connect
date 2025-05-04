@@ -66,8 +66,16 @@ export const ProjectStagesCard = ({ projectData, className }: ProjectStagesCardP
 
     // Logic based on project data
     const designPrefs = projectData.design_preferences || {};
-    const hasDesigner = designPrefs.designers && designPrefs.designers.length > 0;
-    const hasDesigns = designPrefs.designAssets && designPrefs.designAssets.length > 0;
+    // Type casting to ensure we can access these properties
+    const typedDesignPrefs = designPrefs as {
+      designers?: Array<{ id: string; businessName: string; }>;
+      designAssets?: Array<{ name: string; url: string; }>;
+      beforePhotos?: Record<string, string[]>;
+      roomMeasurements?: Record<string, any>;
+    };
+    
+    const hasDesigner = typedDesignPrefs.designers && typedDesignPrefs.designers.length > 0;
+    const hasDesigns = typedDesignPrefs.designAssets && typedDesignPrefs.designAssets.length > 0;
     const projectPrefs = projectData.project_preferences as any || {};
     const isExploring = projectPrefs.project_status === "still_exploring";
     const isPlanning = projectPrefs.project_status === "is_planning" || projectPrefs.project_status === "ready_to_start";

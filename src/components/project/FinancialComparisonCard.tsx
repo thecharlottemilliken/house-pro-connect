@@ -151,10 +151,16 @@ const FinancialComparisonCard = ({ projectId, className }: FinancialComparisonCa
                   content={
                     <ChartTooltipContent
                       labelFormatter={(label) => `Work Block: ${label}`}
-                      formatter={(value, name) => [
-                        `$${value}`, 
-                        name.charAt(0).toUpperCase() + name.slice(1)
-                      ]}
+                      formatter={(value, name) => {
+                        // The formatter function takes a value and a name, both could be of any type
+                        // Let's explicitly handle them as strings or numbers
+                        const formattedValue = `$${value}`;
+                        const formattedName = typeof name === 'string' 
+                          ? name.charAt(0).toUpperCase() + name.slice(1)
+                          : String(name);
+                        
+                        return [formattedValue, formattedName];
+                      }}
                     />
                   }
                 />
