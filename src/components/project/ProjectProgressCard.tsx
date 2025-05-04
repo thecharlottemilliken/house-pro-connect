@@ -39,9 +39,14 @@ const ProjectProgressCard = ({ projectId, className }: ProjectProgressCardProps)
     // Check if project is in planning stage
     const hasDesigner = designPrefs.hasDesigns && designPrefs.designers && designPrefs.designers.length > 0;
     const hasUploadedDesigns = designPrefs.designAssets && designPrefs.designAssets.length > 0;
-    const isReadyToStart = projectPrefs.isReadyToStart === true;
-    const wantsManagement = managementPrefs.needsManagement === true;
-    const hasSelectedTimeSlots = projectPrefs.selectedTimeSlots && projectPrefs.selectedTimeSlots.length > 0;
+    
+    // Type cast the JSON objects to access their properties safely
+    const projectPrefsObj = projectPrefs as Record<string, any>;
+    const managementPrefsObj = managementPrefs as Record<string, any>;
+    
+    const isReadyToStart = projectPrefsObj.isReadyToStart === true;
+    const wantsManagement = managementPrefsObj.needsManagement === true;
+    const hasSelectedTimeSlots = projectPrefsObj.selectedTimeSlots && projectPrefsObj.selectedTimeSlots.length > 0;
     
     if (hasDesigner && hasUploadedDesigns && isReadyToStart && wantsManagement) {
       return { stage: "planning", progress: 60 };
