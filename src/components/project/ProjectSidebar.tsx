@@ -83,11 +83,11 @@ const ProjectSidebar = ({
               <ArrowLeft className="mr-2 h-4 w-4" /> Back to Projects
             </Button>
             
-            {/* Expand/Collapse Button - Visible even when sidebar is collapsed */}
+            {/* Expand/Collapse Button - Always visible */}
             <Button
               variant="ghost"
               size="icon"
-              className="flex md:flex"
+              className="flex"
               onClick={toggleSidebar}
               aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
             >
