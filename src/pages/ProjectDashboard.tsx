@@ -139,62 +139,62 @@ const ProjectDashboard = () => {
   return (
     <div className="flex flex-col bg-white min-h-screen">
       <DashboardNavbar />
-      <SidebarProvider defaultOpen={!isMobile}>
-        {isTabletView ? (
-          // Mobile/Tablet Layout (<=1199px)
-          <div className="flex flex-col w-full">
-            {/* Mobile navigation is handled by ProjectSidebar component which shows dropdown on mobile */}
-            <ProjectSidebar projectId={projectId} projectTitle={projectTitle} activePage="overview" />
+      {isTabletView ? (
+        // Mobile/Tablet Layout (<=1199px)
+        <div className="flex flex-col w-full">
+          {/* Mobile navigation is handled by ProjectSidebar component which shows dropdown on mobile */}
+          <ProjectSidebar projectId={projectId} projectTitle={projectTitle} activePage="overview" />
+          
+          {/* Main Content Area with added top margin to account for mobile nav */}
+          <div className="w-full p-3 sm:p-4 md:p-6 mt-12 bg-white">
+            <div className="mb-3 sm:mb-4">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
+                Project Overview
+              </h1>
+            </div>
             
-            {/* Main Content Area with added top margin to account for mobile nav */}
-            <div className="w-full p-3 sm:p-4 md:p-6 mt-12 bg-white">
-              <div className="mb-3 sm:mb-4">
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
-                  Project Overview
-                </h1>
-              </div>
+            {/* Mobile layout: stacking all components vertically */}
+            <div className="flex flex-col gap-6">
+              {/* Property Card */}
+              <PropertyCard propertyDetails={propertyCardData} renovationAreas={renovationAreas} />
               
-              {/* Mobile layout: stacking all components vertically */}
-              <div className="flex flex-col gap-6">
-                {/* Property Card */}
-                <PropertyCard propertyDetails={propertyCardData} renovationAreas={renovationAreas} />
-                
-                {/* Project Progress Card */}
-                <ProjectProgressCard projectId={projectId} />
-                
-                {/* Financial Overview Card */}
-                <FinancialComparisonCard projectId={projectId} />
-                
-                {/* Schedule Card */}
-                <ScheduleCardWidget projectId={projectId} />
-                
-                {/* Action Items Card */}
-                <ActionItemsWidget projectId={projectId} projectData={projectData} isOwner={isOwner} isCoach={isCoach} />
-                
-                {/* Project Milestones Widget */}
-                <ProjectMilestonesWidget projectId={projectId} />
-                
-                {/* SOW creation block if needed */}
-                {!hasSOW && isCoach && (
-                  <div className="border border-gray-200 rounded-lg p-8 text-center">
-                    <PenBox className="mx-auto h-12 w-12 text-[#0f566c] mb-4" />
-                    
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
-                      Begin Building the Statement of Work
-                    </h3>
-                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                      Create a comprehensive Statement of Work (SOW) that outlines the project's scope, specific deliverables, timeline, and key milestones.
-                    </p>
-                    <Button onClick={handleStartSOW} className="bg-[#0f566c] hover:bg-[#0d4a5d] px-6 py-3">
-                      Start SOW
-                    </Button>
-                  </div>
-                )}
-              </div>
+              {/* Project Progress Card */}
+              <ProjectProgressCard projectId={projectId} />
+              
+              {/* Financial Overview Card */}
+              <FinancialComparisonCard projectId={projectId} />
+              
+              {/* Schedule Card */}
+              <ScheduleCardWidget projectId={projectId} />
+              
+              {/* Action Items Card */}
+              <ActionItemsWidget projectId={projectId} projectData={projectData} isOwner={isOwner} isCoach={isCoach} />
+              
+              {/* Project Milestones Widget */}
+              <ProjectMilestonesWidget projectId={projectId} />
+              
+              {/* SOW creation block if needed */}
+              {!hasSOW && isCoach && (
+                <div className="border border-gray-200 rounded-lg p-8 text-center">
+                  <PenBox className="mx-auto h-12 w-12 text-[#0f566c] mb-4" />
+                  
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    Begin Building the Statement of Work
+                  </h3>
+                  <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                    Create a comprehensive Statement of Work (SOW) that outlines the project's scope, specific deliverables, timeline, and key milestones.
+                  </p>
+                  <Button onClick={handleStartSOW} className="bg-[#0f566c] hover:bg-[#0d4a5d] px-6 py-3">
+                    Start SOW
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
-        ) : (
-          // Desktop Layout (>1199px)
+        </div>
+      ) : (
+        // Desktop Layout (>1199px)
+        <SidebarProvider defaultOpen={!isMobile}>
           <div className="flex flex-1 h-[calc(100vh-64px)] w-full pt-[64px] -mt-[64px]">
             <ProjectSidebar projectId={projectId} projectTitle={projectTitle} activePage="overview" />
             <div className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 bg-white overflow-y-auto">
@@ -261,8 +261,8 @@ const ProjectDashboard = () => {
               </div>
             </div>
           </div>
-        )}
-      </SidebarProvider>
+        </SidebarProvider>
+      )}
 
       <AlertDialog open={showNoDesignDialog} onOpenChange={setShowNoDesignDialog}>
         <AlertDialogContent>
