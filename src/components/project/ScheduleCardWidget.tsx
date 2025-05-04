@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,10 +6,12 @@ import { Calendar, Clock, MapPin, ChevronLeft, ChevronRight } from "lucide-react
 import { cn } from "@/lib/utils";
 import { EventsService, ProjectEvent } from "./calendar/EventsService";
 import { format, addDays, startOfWeek, endOfWeek, differenceInMinutes, isSameDay, parseISO, addMonths, isToday } from "date-fns";
+
 interface ScheduleCardWidgetProps {
   projectId: string;
   className?: string;
 }
+
 const ScheduleCardWidget = ({
   projectId,
   className
@@ -72,12 +75,12 @@ const ScheduleCardWidget = ({
 
   // Format time from ISO string
   const formatEventTime = (isoString: string) => {
-    return format(new Date(isoString), "h:mma");
+    return format(new Date(isoString), "h:mma").toLowerCase();
   };
 
   // Format event time range
   const formatEventTimeRange = (startTime: string, endTime: string) => {
-    return `${formatEventTime(startTime).toLowerCase()}-${formatEventTime(endTime).toLowerCase()}`;
+    return `${formatEventTime(startTime)}-${formatEventTime(endTime)}`;
   };
 
   // Check if event is happening within the next hour
@@ -94,72 +97,110 @@ const ScheduleCardWidget = ({
     const now = new Date();
     return differenceInMinutes(eventDate, now);
   };
-  return <Card className={cn("overflow-hidden shadow-md border-0", className)}>
-      <CardHeader className="flex flex-row items-center justify-between py-4 px-4 bg-white border-b">
+
+  return (
+    <Card className={cn("overflow-hidden shadow-md border border-gray-200 rounded-xl", className)}>
+      <CardHeader className="flex flex-row items-center justify-between py-4 px-5 bg-white border-b">
         <h3 className="text-lg font-semibold">Schedule</h3>
         <div className="text-orange-500 font-medium">
           {completionPercentage}% Complete
         </div>
       </CardHeader>
-      <CardContent className="p-4 bg-gray-50 px-[16px]">
+
+      <CardContent className="p-0 bg-white">
         {/* Month and year display */}
-        <div className="text-gray-600 mb-3">
+        <div className="text-gray-500 px-5 pt-4 pb-3 text-sm font-medium">
           {currentMonth}
         </div>
         
         {/* Week date selector */}
-        <div className="flex items-center mb-4">
-          <Button variant="ghost" size="sm" className="p-1 h-auto text-gray-600" onClick={navigatePrevWeek}>
+        <div className="flex items-center px-5 mb-4">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="p-1 h-auto text-gray-600" 
+            onClick={navigatePrevWeek}
+          >
             <ChevronLeft className="h-5 w-5" />
           </Button>
           
           <div className="flex gap-1 overflow-x-auto flex-grow justify-center">
             {weekDates.map((date, index) => {
-            const isSelected = isSameDay(date, selectedDate);
-            const isCurrentDay = isToday(date);
-            return <Button key={index} variant="ghost" className={cn("flex-col items-center gap-0.5 rounded-md px-0 py-2 w-14", isSelected && !isCurrentDay ? "bg-orange-500 text-white hover:bg-orange-600" : "", isCurrentDay && !isSelected ? "border border-gray-300" : "", isCurrentDay && isSelected ? "bg-orange-500 text-white hover:bg-orange-600" : "", !isSelected && !isCurrentDay ? "bg-white text-gray-800 hover:bg-gray-100" : "")} onClick={() => setSelectedDate(date)}>
-                  <span className="text-lg font-bold">
-                    {format(date, "dd")}
-                  </span>
+              const isSelected = isSameDay(date, selectedDate);
+              const isCurrentDay = isToday(date);
+              return (
+                <Button 
+                  key={index} 
+                  variant="ghost" 
+                  className={cn(
+                    "flex-col items-center gap-1 rounded-lg border px-0 py-3 w-14",
+                    isSelected ? "bg-orange-500 text-white hover:bg-orange-600 border-orange-500" : 
+                    "bg-white text-gray-800 hover:bg-gray-100 border-gray-200"
+                  )} 
+                  onClick={() => setSelectedDate(date)}
+                >
                   <span className="text-xs uppercase">
                     {format(date, "EEE").substring(0, 3)}
                   </span>
-                </Button>;
-          })}
+                  <span className="text-lg font-bold">
+                    {format(date, "dd")}
+                  </span>
+                </Button>
+              );
+            })}
           </div>
           
-          <Button variant="ghost" size="sm" className="p-1 h-auto text-gray-600" onClick={navigateNextWeek}>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="p-1 h-auto text-gray-600" 
+            onClick={navigateNextWeek}
+          >
             <ChevronRight className="h-5 w-5" />
           </Button>
         </div>
 
         {/* Event list for selected date */}
-        {isLoading ? <div className="flex items-center justify-center p-8">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
             <div className="animate-spin w-6 h-6 border-2 border-t-blue-500 border-blue-200 rounded-full"></div>
-          </div> : filteredEvents.length > 0 ? <div className="space-y-2">
+          </div>
+        ) : filteredEvents.length > 0 ? (
+          <div className="px-5 pb-5 space-y-3">
             {filteredEvents.map(event => {
-          const isSoon = isEventSoon(event.start_time);
-          const minutesUntil = isSoon ? getMinutesUntilEvent(event.start_time) : null;
-          return <div key={event.id} className={cn("rounded-lg p-3", isSoon ? "bg-[#15425F] text-white" : "bg-white border border-gray-200")}>
-                  {isSoon && <div className="text-white/80 text-sm mb-1">
-                      {`in ${minutesUntil}mins`}
-                    </div>}
-                  <h4 className={cn("font-medium mb-1", isSoon ? "text-white" : "text-gray-900")}>
+              const isSoon = isEventSoon(event.start_time);
+              const minutesUntil = isSoon ? getMinutesUntilEvent(event.start_time) : null;
+              return (
+                <div 
+                  key={event.id} 
+                  className={cn(
+                    "rounded-lg p-4", 
+                    isSoon ? "bg-[#0f566c] text-white" : "bg-white border border-gray-200"
+                  )}
+                >
+                  {isSoon && (
+                    <div className="text-white/90 text-xs font-medium mb-1">
+                      in {minutesUntil}mins
+                    </div>
+                  )}
+                  <h4 className={cn("font-medium mb-1 text-base", isSoon ? "text-white" : "text-gray-900")}>
                     {event.title}
                   </h4>
-                  <div className={cn("text-sm", isSoon ? "text-white/90" : "text-gray-600")}>
+                  <div className={cn("text-sm", isSoon ? "text-white/80" : "text-gray-600")}>
                     {formatEventTimeRange(event.start_time, event.end_time)}
                   </div>
-                </div>;
-        })}
-          </div> : <div className="text-center py-8 text-gray-500 bg-white rounded-lg border border-gray-200">
-            <Calendar className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-            <p>No events scheduled for {format(selectedDate, "MMMM d")}</p>
-            <Button variant="outline" size="sm" className="mt-2" onClick={() => {}}>
-              Schedule Event
-            </Button>
-          </div>}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="py-8 px-5 text-center text-gray-500">
+            <p className="mb-0">No events scheduled for today.</p>
+          </div>
+        )}
       </CardContent>
-    </Card>;
+    </Card>
+  );
 };
+
 export default ScheduleCardWidget;
