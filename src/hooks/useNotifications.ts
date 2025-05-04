@@ -20,31 +20,8 @@ export const useNotifications = () => {
       try {
         setLoading(true);
         
-        // Try to fetch from a notifications table if it exists
-        try {
-          // This code will be used when we actually create the notifications table
-          // Currently, this will throw an error since the table doesn't exist
-          const { data, error } = await supabase
-            .from('notifications')
-            .select('*')
-            .eq('recipient_id', user.id)
-            .order('created_at', { ascending: false });
-          
-          if (error) throw error;
-          
-          if (data && data.length > 0) {
-            setNotifications(data as unknown as Notification[]);
-            setUnreadCount(data.filter((n: any) => !n.read).length);
-            return; // Exit if we successfully got notifications from the database
-          }
-        } catch (error) {
-          console.error('Error fetching notifications:', error);
-          // If there's an error (likely because the table doesn't exist),
-          // we'll fall through to use mock data below
-        }
-        
-        // If we reach here, either the table doesn't exist or is empty
-        // We'll use mock data for demonstration purposes
+        // For now, we'll use mock data since the notifications table doesn't exist yet
+        // In the future, we'll create a notifications table and fetch from there
         const mockNotifications = getMockNotifications();
         setNotifications(mockNotifications);
         setUnreadCount(mockNotifications.filter(n => !n.read).length);
