@@ -79,7 +79,7 @@ const FinancialComparisonCard = ({ projectId, className }: FinancialComparisonCa
 
   return (
     <Card className={cn("overflow-hidden", className)}>
-      <CardHeader className="bg-white px-6 py-5 flex flex-row justify-between items-center border-b">
+      <CardHeader className="bg-white px-4 py-4 flex flex-row justify-between items-center border-b">
         <h3 className="text-xl font-bold">Estimated vs Invoiced</h3>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -95,9 +95,9 @@ const FinancialComparisonCard = ({ projectId, className }: FinancialComparisonCa
           </DropdownMenuContent>
         </DropdownMenu>
       </CardHeader>
-      <CardContent className="p-6">
+      <CardContent className="p-4">
         {/* Cost Summary */}
-        <div className="mb-6">
+        <div className="mb-4">
           <div className="text-3xl font-bold">
             {formatCurrency(totalAmount)}
           </div>
@@ -106,22 +106,22 @@ const FinancialComparisonCard = ({ projectId, className }: FinancialComparisonCa
           </div>
         </div>
         
-        {/* Chart - Styled to match the provided design */}
+        {/* Chart - Modified to take up full space */}
         <div className="h-64 w-full">
           <ChartContainer
-            className="w-full"
+            className="w-full h-full"
             config={{
-              estimated: { color: "#2E8B57" }, // Forest green color for estimated
-              invoiced: { color: "#F97316" }   // Orange color for invoiced
+              estimated: { color: "#2E8B57" }, 
+              invoiced: { color: "#F97316" }   
             }}
           >
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={mockFinancialData}
                 margin={{
-                  top: 10,
-                  right: 10,
-                  left: 10,
+                  top: 0,
+                  right: 0,
+                  left: 0,
                   bottom: 20
                 }}
                 barGap={0}
@@ -146,6 +146,7 @@ const FinancialComparisonCard = ({ projectId, className }: FinancialComparisonCa
                     if (value >= 1000) return '$1k';
                     return `$${value}`;
                   }}
+                  width={40}
                 />
                 <ChartTooltip
                   content={
@@ -180,7 +181,7 @@ const FinancialComparisonCard = ({ projectId, className }: FinancialComparisonCa
         </div>
         
         {/* Legend */}
-        <div className="flex justify-end items-center mt-4 gap-4 text-sm">
+        <div className="flex justify-end items-center mt-2 gap-4 text-sm">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-[#2E8B57] rounded"></div>
             <span>Estimated</span>
