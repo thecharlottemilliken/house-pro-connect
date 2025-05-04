@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
         id,
         title,
         user_id,
-        profiles:user_id (
+        profiles(
           name,
           email
         )

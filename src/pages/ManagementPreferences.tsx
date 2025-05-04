@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Plus, PhoneIcon } from "lucide-react";
@@ -244,6 +245,7 @@ const ManagementPreferences = () => {
         // If user wants a coach and provided time slots, send notification to coaches
         if (wantProjectCoach === 'yes' && filledTimeSlots.length > 0) {
           try {
+            console.log('Sending notification to coaches');
             const { data, error } = await supabase.functions.invoke(
               'notify-coaches-for-new-projects',
               {
@@ -259,6 +261,10 @@ const ManagementPreferences = () => {
               console.error('Error notifying coaches:', error);
             } else {
               console.log('Coach notification response:', data);
+              toast({
+                title: "Success",
+                description: "Coaches have been notified of your request",
+              });
             }
           } catch (notifyError) {
             console.error('Error calling coach notification function:', notifyError);
