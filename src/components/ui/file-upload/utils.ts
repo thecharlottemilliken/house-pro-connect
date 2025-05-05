@@ -30,39 +30,61 @@ export function createPreviewUrl(file: File): Promise<string | undefined> {
 }
 
 /**
- * Update a file's status in the files array
+ * Update a file's status - function overloads
  */
+// Overload 1: Update a single file
+export function updateFileStatus(
+  file: FileWithPreview,
+  status: FileWithPreview["status"],
+  progress?: number,
+  url?: string
+): FileWithPreview;
+
+// Overload 2: Update a file in an array
 export function updateFileStatus(
   files: FileWithPreview[],
   fileId: string,
   status: FileWithPreview["status"],
-  progress: number = 0,
+  progress?: number,
   url?: string
-): FileWithPreview[] {
-  return files.map((file) => {
-    if (file.id === fileId) {
-      return {
-        ...file,
-        status,
-        progress,
-        url: url || file.url,
-      };
-    }
-    return file;
-  });
-}
+): FileWithPreview[];
 
-// Individual file status update helper
+// Implementation that handles both overloads
 export function updateFileStatus(
-  file: FileWithPreview,
-  status: FileWithPreview["status"],
-  progress: number = 0,
+  fileOrFiles: FileWithPreview | FileWithPreview[],
+  fileIdOrStatus: string | FileWithPreview["status"],
+  statusOrProgress: FileWithPreview["status"] | number = 0,
+  progressOrUrl: number | string = 0,
   url?: string
-): FileWithPreview {
-  return {
-    ...file,
-    status,
-    progress,
-    url: url || file.url,
-  };
+): FileWithPreview | FileWithPreview[] {
+  // Case 1: Single file update
+  if (!Array.isArray(fileOrFiles) && typeof fileIdOrStatus === "string") {
+    return {
+      ...fileOrFiles,
+      status: fileIdOrStatus as FileWithPreview["status"],
+      progress: typeof statusOrProgress === "number" ? statusOrProgress : 0,
+      url: (typeof progressOrUrl === "string" ? progressOrUrl : url) || fileOrFiles.url,
+    };
+  }
+  
+  // Case 2: Array update
+  if (Array.isArray(fileOrFiles) && typeof fileIdOrStatus === "string") {
+    return fileOrFiles.map((file) => {
+      if (file.id === fileIdOrStatus) {
+        return {
+          ...file,
+          status: statusOrProgress as FileWithPreview["status"],
+          progress: typeof progressOrUrl === "number" ? progressOrUrl : 0,
+          url: url || file.url,
+        };
+      }
+      return file;
+    });
+  }
+  
+  // Fallback (should not happen with correct types)
+  if (!Array.isArray(fileOrFiles)) {
+    return fileOrFiles;
+  }
+  return fileOrFiles;
 }
