@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -98,16 +97,19 @@ export const MeetupScheduleWidget = () => {
       // Update the management preferences to include the scheduled meetup
       const managementPrefs = projectToUpdate.management_preferences || {};
       
-      // Update the project with the selected meetup time
+      // CRITICAL FIX: Create a deep copy of the management preferences instead of directly modifying it
+      const updatedManagementPrefs = {
+        ...managementPrefs,
+        scheduledMeetupTime: selectedTimeSlot,
+      };
+      
+      // Keep all existing fields and only update the management_preferences field
       const { error: updateError } = await supabase.functions.invoke(
         'handle-project-update',
         {
           body: { 
             projectId: selectedProject.id,
-            managementPreferences: {
-              ...managementPrefs,
-              scheduledMeetupTime: selectedTimeSlot,
-            }
+            managementPreferences: updatedManagementPrefs
           }
         }
       );
