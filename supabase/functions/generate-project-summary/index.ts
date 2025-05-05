@@ -23,8 +23,7 @@ serve(async (req) => {
       constructionPreferences,
       designPreferences,
       managementPreferences,
-      priorExperience,
-      designFiles
+      priorExperience
     } = await req.json();
 
     // Format project data for AI input
