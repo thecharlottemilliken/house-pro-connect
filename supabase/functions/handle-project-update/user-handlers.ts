@@ -1,14 +1,18 @@
-
-export async function handleUserProjects(supabase: any, body: any, corsHeaders: any) {
-  const userId = body.userId;
-  
+export async function handleUserProjects(supabase, body, corsHeaders) {
   try {
-    // Get projects owned by user
+    const userId = body.userId;
+    
+    if (!userId) {
+      throw new Error("User ID is required");
+    }
+    
+    // Get projects where the user is the owner
     const { data: ownedProjects, error: ownedError } = await supabase
       .from('projects')
       .select(`
         id,
         title,
+        description,
         property_id,
         created_at,
         property:properties(
@@ -27,28 +31,24 @@ export async function handleUserProjects(supabase: any, body: any, corsHeaders: 
       throw ownedError;
     }
     
-    // Mark owned projects
+    // Add is_owner flag to owned projects
     const ownedProjectsWithRole = (ownedProjects || []).map(project => ({
       ...project,
       is_owner: true
     }));
     
-    // Get team memberships
+    // Get projects where the user is a team member
     const { data: teamMemberships, error: teamError } = await supabase
       .from('project_team_members')
-      .select(`
-        role,
-        project_id
-      `)
+      .select('role, project_id')
       .eq('user_id', userId);
     
     if (teamError) {
       throw teamError;
     }
-
+    
     let teamProjects = [];
     
-    // If user is a team member on any projects, fetch those projects
     if (teamMemberships && teamMemberships.length > 0) {
       const projectIds = teamMemberships.map(member => member.project_id);
       
@@ -57,6 +57,7 @@ export async function handleUserProjects(supabase: any, body: any, corsHeaders: 
         .select(`
           id,
           title,
+          description,
           property_id,
           created_at,
           property:properties(
@@ -74,7 +75,7 @@ export async function handleUserProjects(supabase: any, body: any, corsHeaders: 
         throw projectsError;
       }
       
-      // Match projects with their roles from teamMemberships
+      // Match projects with roles
       teamProjects = (teamProjectsData || []).map(project => {
         const membership = teamMemberships.find(m => m.project_id === project.id);
         return {
@@ -85,33 +86,39 @@ export async function handleUserProjects(supabase: any, body: any, corsHeaders: 
       });
     }
     
-    // Combine and deduplicate the results
+    // Combine and deduplicate projects
     const projectMap = new Map();
     
-    // Add owned projects to the map first (they take precedence)
+    // Add owned projects first (they take precedence)
     ownedProjectsWithRole.forEach(project => {
       projectMap.set(project.id, project);
     });
     
-    // Add team projects only if not already in the map
+    // Add team projects if not already in map
     teamProjects.forEach(project => {
       if (!projectMap.has(project.id)) {
         projectMap.set(project.id, project);
       }
     });
     
-    // Convert map back to array
+    // Convert map to array
     const allProjects = Array.from(projectMap.values());
     
-    return new Response(JSON.stringify({ projects: allProjects }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
+    return new Response(
+      JSON.stringify({ projects: allProjects }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      }
+    );
   } catch (error) {
-    console.error("Error fetching user projects:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    console.error('Error in handleUserProjects:', error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      }
+    );
   }
 }

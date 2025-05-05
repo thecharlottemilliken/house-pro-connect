@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
@@ -103,131 +102,24 @@ const PriorExperience = () => {
     console.log("Saving prior experience:", prior_experience);
     
     try {
-      // Ensure all preference objects exist and are initialized
-      const constructionPreferences = projectPrefs?.constructionPreferences || {};
-      const designPreferences = projectPrefs?.designPreferences || {};
-      const managementPreferences = projectPrefs?.managementPreferences || {};
-      const renovationAreas = projectPrefs?.renovationAreas || [];
-      const projectPreferences = projectPrefs?.projectPreferences || {};
-      
-      console.log("Project prefs before payload construction:", {
-        projectId: projectId,
+      // Add the prior experience data to project state and pass it to the next step
+      const updatedProjectPrefs = {
+        ...projectPrefs,
         propertyId: propertyId,
-        title: projectPrefs?.title,
-        constructionPrefs: JSON.stringify(constructionPreferences),
-        designPrefs: JSON.stringify(designPreferences),
-        managementPrefs: JSON.stringify(managementPreferences),
-        projectPreferences: JSON.stringify(projectPreferences),
-        renovationAreas: renovationAreas.length
+        projectId: projectId,
+        prior_experience: prior_experience
+      };
+      
+      setProjectPrefs(updatedProjectPrefs);
+      
+      // Navigate to the project summary page (new Step 8)
+      navigate("/project-summary", {
+        state: updatedProjectPrefs
       });
       
-      // If we already have a project ID, update it
-      if (projectId) {
-        // Construct the final payload with all preference data
-        const finalPayload = {
-          projectId,
-          userId: user.id,
-          propertyId: propertyId,
-          title: projectPrefs?.title || "New Project",
-          renovationAreas,
-          projectPreferences,
-          constructionPreferences,
-          designPreferences,
-          managementPreferences,
-          prior_experience
-        };
-        
-        console.log("Updating existing project with ID:", projectId);
-        console.log("Final payload being sent to edge function:", JSON.stringify(finalPayload, null, 2));
-
-        try {
-          // Use the edge function to update the project
-          const { data, error } = await supabase.functions.invoke('handle-project-update', {
-            body: finalPayload
-          });
-
-          if (error) {
-            console.error("Error response from edge function:", error);
-            throw error;
-          }
-          
-          console.log("Success response from edge function:", data);
-          
-          toast({
-            title: "Success",
-            description: "Project updated successfully!",
-          });
-          
-          // Navigate to project dashboard
-          navigate(`/project-dashboard/${projectId}`);
-        } catch (error) {
-          console.error('Error saving prior experience:', error);
-          toast({
-            title: "Error",
-            description: "Failed to save prior experience",
-            variant: "destructive"
-          });
-          setIsLoading(false);
-          return;
-        }
-      } else {
-        // Gather all the preferences data for creating a new project
-        const projectData = {
-          propertyId: propertyId,
-          userId: user.id,
-          title: projectPrefs?.title || "New Project",
-          renovationAreas,
-          projectPreferences,
-          constructionPreferences,
-          designPreferences,
-          managementPreferences,
-          prior_experience
-        };
-
-        console.log("Creating new project with data:", JSON.stringify(projectData, null, 2));
-        
-        // Create a new project with all the collected preferences
-        try {
-          const { data, error } = await supabase.functions.invoke('handle-project-update', {
-            body: projectData
-          });
-
-          if (error) {
-            console.error("Error response from edge function for creation:", error);
-            throw error;
-          }
-          
-          console.log("Success response from edge function for creation:", data);
-          
-          toast({
-            title: "Success",
-            description: "Project created successfully!",
-          });
-          
-          // Navigate to project dashboard using the new project ID
-          if (data && data.id) {
-            navigate(`/project-dashboard/${data.id}`);
-          } else {
-            console.error("No project ID returned from creation");
-            toast({
-              title: "Error",
-              description: "Project created but ID not returned",
-              variant: "destructive"
-            });
-          }
-        } catch (error) {
-          console.error('Error creating project:', error);
-          toast({
-            title: "Error",
-            description: "Failed to create project",
-            variant: "destructive"
-          });
-          setIsLoading(false);
-          return;
-        }
-      }
+      setIsLoading(false);
     } catch (error) {
-      console.error('Error in project creation process:', error);
+      console.error('Error in processing form:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred",
@@ -237,7 +129,7 @@ const PriorExperience = () => {
     }
   };
 
-  const finishProcess = async () => {
+  const moveToNextStep = async () => {
     await savePreferences();
   };
   
@@ -255,6 +147,7 @@ const PriorExperience = () => {
     { number: 5, title: "Design Preferences", current: false },
     { number: 6, title: "Management Preferences", current: false },
     { number: 7, title: "Prior Experience", current: true },
+    { number: 8, title: "Project Summary", current: false },
   ];
 
   return (
@@ -385,10 +278,10 @@ const PriorExperience = () => {
               </Button>
               <Button
                 className="flex items-center bg-[#174c65] hover:bg-[#174c65]/90 text-white w-full sm:w-auto justify-center"
-                onClick={finishProcess}
+                onClick={moveToNextStep}
                 disabled={isLoading}
               >
-                {isLoading ? "Loading..." : "FINISH"} {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
+                {isLoading ? "Loading..." : "NEXT"} {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
               </Button>
             </div>
           </div>
