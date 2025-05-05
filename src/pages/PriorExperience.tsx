@@ -7,6 +7,9 @@ import { toast } from "@/hooks/use-toast";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import CreateProjectSteps from "@/components/project/create/CreateProjectSteps";
 import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { FormItem } from "@/components/ui/form";
 
 const PriorExperience = () => {
   const { user } = useAuth();
@@ -23,7 +26,9 @@ const PriorExperience = () => {
   } = location.state || {};
   
   const [priorExperience, setPriorExperience] = useState({
-    priorRenovationExperience: "",
+    hasPriorExperience: "",
+    likes: "",
+    dislikes: "",
     designVision: "",
     additionalNotes: ""
   });
@@ -69,7 +74,7 @@ const PriorExperience = () => {
       return;
     }
     
-    // Navigate to the summary step instead of directly creating the project
+    // Navigate to the summary step
     navigate("/project-summary", { 
       state: { 
         propertyId,
@@ -97,16 +102,48 @@ const PriorExperience = () => {
           </p>
           
           <div className="max-w-2xl space-y-8">
-            <div className="space-y-2">
-              <h3 className="font-medium text-gray-900">Prior Renovation Experience</h3>
-              <p className="text-sm text-gray-500">Have you renovated before? Tell us about your experience.</p>
-              <Textarea 
-                value={priorExperience.priorRenovationExperience}
-                onChange={(e) => handleUpdateField("priorRenovationExperience", e.target.value)}
-                placeholder="Describe your previous renovation experiences..."
-                className="min-h-[120px]"
-              />
+            <div className="space-y-4">
+              <h3 className="font-medium text-gray-900">Have you renovated before?</h3>
+              
+              <RadioGroup
+                value={priorExperience.hasPriorExperience}
+                onValueChange={(value) => handleUpdateField("hasPriorExperience", value)}
+                className="flex flex-col space-y-1"
+              >
+                <FormItem className="flex items-center space-x-3 space-y-0">
+                  <RadioGroupItem value="yes" id="r1" />
+                  <Label htmlFor="r1">Yes</Label>
+                </FormItem>
+                <FormItem className="flex items-center space-x-3 space-y-0">
+                  <RadioGroupItem value="no" id="r2" />
+                  <Label htmlFor="r2">No</Label>
+                </FormItem>
+              </RadioGroup>
             </div>
+            
+            {priorExperience.hasPriorExperience === "yes" && (
+              <>
+                <div className="space-y-2">
+                  <h3 className="font-medium text-gray-900">What did you like about your past renovation experience?</h3>
+                  <Textarea 
+                    value={priorExperience.likes}
+                    onChange={(e) => handleUpdateField("likes", e.target.value)}
+                    placeholder="Share what went well in your previous renovation..."
+                    className="min-h-[120px]"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <h3 className="font-medium text-gray-900">What did you dislike about your past renovation experience?</h3>
+                  <Textarea 
+                    value={priorExperience.dislikes}
+                    onChange={(e) => handleUpdateField("dislikes", e.target.value)}
+                    placeholder="Share what could have gone better..."
+                    className="min-h-[120px]"
+                  />
+                </div>
+              </>
+            )}
             
             <div className="space-y-2">
               <h3 className="font-medium text-gray-900">Design Vision</h3>
