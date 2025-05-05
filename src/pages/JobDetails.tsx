@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ChevronLeft, Eye, FileText, Plus, Trash } from "lucide-react";
@@ -10,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { format } from "date-fns";
 import DashboardNavbar from '@/components/dashboard/DashboardNavbar';
 
@@ -93,10 +92,8 @@ const JobDetails = () => {
 
         if (sowError) throw sowError;
         if (!sow) {
-          toast({
-            title: "Job not found",
-            description: "The requested job details could not be found.",
-            variant: "destructive"
+          toast("Job not found", {
+            description: "The requested job details could not be found."
           });
           setIsLoading(false);
           return;
@@ -168,10 +165,8 @@ const JobDetails = () => {
         }
       } catch (error) {
         console.error("Error fetching job details:", error);
-        toast({
-          title: "Error loading job details",
-          description: "There was a problem loading the job details. Please try again.",
-          variant: "destructive"
+        toast("Error loading job details", {
+          description: "There was a problem loading the job details. Please try again."
         });
       } finally {
         setIsLoading(false);
@@ -186,10 +181,8 @@ const JobDetails = () => {
 
   const addItemToBid = () => {
     if (!newItem.description || newItem.unitRate <= 0) {
-      toast({
-        title: "Invalid item",
-        description: "Please provide a description and a valid unit rate.",
-        variant: "destructive"
+      toast("Invalid item", {
+        description: "Please provide a description and a valid unit rate."
       });
       return;
     }
@@ -212,25 +205,19 @@ const JobDetails = () => {
 
   const handleSubmitBid = () => {
     if (!workDescription) {
-      toast({
-        title: "Missing information",
-        description: "Please provide a description of the work to be completed.",
-        variant: "destructive"
+      toast("Missing information", {
+        description: "Please provide a description of the work to be completed."
       });
       return;
     }
     if (bidItems.length === 0) {
-      toast({
-        title: "Empty bid",
-        description: "Please add at least one item to your bid.",
-        variant: "destructive"
+      toast("Empty bid", {
+        description: "Please add at least one item to your bid."
       });
       return;
     }
-    toast({
-      title: "Bid submitted",
-      description: "Your bid has been submitted successfully!",
-      variant: "default"
+    toast("Bid submitted", {
+      description: "Your bid has been submitted successfully!"
     });
   };
 

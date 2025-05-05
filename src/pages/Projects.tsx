@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import ProjectHeader from "@/components/projects/ProjectHeader";
 import ProjectGrid from "@/components/projects/ProjectGrid";
 import EmptyProjectState from "@/components/projects/EmptyProjectState";
@@ -146,10 +145,8 @@ const Projects = () => {
       setProjects(allProjects);
     } catch (error: any) {
       console.error('Error fetching projects:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load your projects. Please try again.",
-        variant: "destructive"
+      toast("Error", {
+        description: "Failed to load your projects. Please try again."
       });
       setProjects([]);
     } finally {

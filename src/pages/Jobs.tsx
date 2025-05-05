@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
@@ -23,7 +22,7 @@ import {
 import MapPinsOverlay from "@/components/jobs/MapPinsOverlay";
 import MapboxMap from "@/components/jobs/MapboxMap";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import JobsFilterBar from "@/components/jobs/JobsFilterBar";
 import { differenceInSeconds, addDays, formatDuration, intervalToDuration } from "date-fns";
 
@@ -70,27 +69,21 @@ const Jobs: React.FC = () => {
         
         if (error) {
           console.error("Failed to load the Mapbox token:", error);
-          toast({
-            title: "Error loading map",
-            description: "Could not load the map configuration. Please try again later.",
-            variant: "destructive",
+          toast("Error loading map", {
+            description: "Could not load the map configuration. Please try again later."
           });
         } else if (data?.token) {
           setMapboxToken(data.token);
         } else {
           console.warn("No token received from get-mapbox-token");
-          toast({
-            title: "Map configuration error",
-            description: "Map token is missing. Please contact support.",
-            variant: "destructive",
+          toast("Map configuration error", {
+            description: "Map token is missing. Please contact support."
           });
         }
       } catch (err) {
         console.error("Error invoking get-mapbox-token function:", err);
-        toast({
-          title: "Connection error",
-          description: "Could not connect to the map service. Please check your internet connection.",
-          variant: "destructive",
+        toast("Connection error", {
+          description: "Could not connect to the map service. Please check your internet connection."
         });
       } finally {
         setIsLoading(false);
@@ -112,19 +105,15 @@ const Jobs: React.FC = () => {
         if (error) {
           console.error("Error from get-approved-jobs function:", error);
           setFetchError("Could not fetch approved jobs");
-          toast({
-            title: "Error loading jobs",
-            description: "Could not fetch approved jobs: " + error.message,
-            variant: "destructive",
+          toast("Error loading jobs", {
+            description: "Could not fetch approved jobs: " + error.message
           });
           setJobs([]);
         } else if (!data || !data.jobs) {
           console.error("Invalid response format from get-approved-jobs:", data);
           setFetchError("Invalid response from server");
-          toast({
-            title: "Error loading jobs",
-            description: "Received invalid data format from the server",
-            variant: "destructive",
+          toast("Error loading jobs", {
+            description: "Received invalid data format from the server"
           });
           setJobs([]);
         } else {
@@ -134,10 +123,8 @@ const Jobs: React.FC = () => {
       } catch (e) {
         console.error("Exception when fetching jobs:", e);
         setFetchError("Network error");
-        toast({
-          title: "Network Error",
-          description: "Failed to fetch jobs: " + (e.message || "Unknown error"),
-          variant: "destructive"
+        toast("Network Error", {
+          description: "Failed to fetch jobs: " + (e.message || "Unknown error")
         });
         setJobs([]);
       } finally {

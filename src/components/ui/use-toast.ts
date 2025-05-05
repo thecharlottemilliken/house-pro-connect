@@ -1,5 +1,7 @@
 
-import { useToast } from "@/hooks/use-toast";
-import { toast } from "sonner";
+import { toast as sonnerToast } from "sonner";
+import { useToast as useHookToast } from "@/hooks/use-toast";
 
-export { useToast, toast };
+// Re-export the toast function with a compatible API
+export const toast = sonnerToast;
+export const useToast = useHookToast;

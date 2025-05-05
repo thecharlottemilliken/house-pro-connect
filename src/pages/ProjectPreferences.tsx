@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Check, Info } from "lucide-react";
@@ -144,16 +143,13 @@ const ProjectPreferences = () => {
           newProjectId = data;
           setProjectId(newProjectId);
           
-          toast({
-            title: "Success",
-            description: "Project created successfully",
+          toast("Success", {
+            description: "Project created successfully"
           });
         } catch (error: any) {
           console.error('Error creating project:', error);
-          toast({
-            title: "Error",
-            description: `Failed to create project: ${error.message || 'Unknown error'}`,
-            variant: "destructive"
+          toast("Error", {
+            description: `Failed to create project: ${error.message || 'Unknown error'}`
           });
           setIsSubmitting(false);
           return;
@@ -180,26 +176,21 @@ const ProjectPreferences = () => {
             throw error;
           }
           
-          toast({
-            title: "Success",
-            description: "Project preferences saved successfully",
+          toast("Success", {
+            description: "Project preferences saved successfully"
           });
         } catch (error: any) {
           console.error('Error saving project preferences:', error);
-          toast({
-            title: "Error",
-            description: `Failed to save project preferences: ${error.message || 'Unknown error'}`,
-            variant: "destructive"
+          toast("Error", {
+            description: `Failed to save project preferences: ${error.message || 'Unknown error'}`
           });
           setIsSubmitting(false);
           return;
         }
       } else {
         console.error('Missing required information:', { user, propertyId });
-        toast({
-          title: "Error",
-          description: "Missing required information to save preferences",
-          variant: "destructive"
+        toast("Error", {
+            description: "Missing required information to save preferences"
         });
         setIsSubmitting(false);
         return;
@@ -221,10 +212,8 @@ const ProjectPreferences = () => {
       });
     } catch (error: any) {
       console.error('Unexpected error in savePreferences:', error);
-      toast({
-        title: "Error",
-        description: `An unexpected error occurred: ${error.message || 'Unknown error'}`,
-        variant: "destructive"
+      toast("Error", {
+        description: `An unexpected error occurred: ${error.message || 'Unknown error'}`
       });
     } finally {
       setIsSubmitting(false);
