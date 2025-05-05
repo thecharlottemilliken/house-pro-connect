@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Plus } from "lucide-react";
@@ -23,6 +24,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { PropertyFileUpload } from "@/components/property/PropertyFileUpload";
 import { FileWithPreview } from "@/components/ui/file-upload";
 import DesignerInformationForm from "@/components/project/create/DesignerInformationForm";
+import CreateProjectSteps from "@/components/project/create/CreateProjectSteps";
 
 const DesignPreferences = () => {
   const navigate = useNavigate();
@@ -41,14 +43,14 @@ const DesignPreferences = () => {
   ]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Designer contact information state
-  const [designerContactInfo, setDesignerContactInfo] = useState({
+  // Designer contact information state - now an array for multiple designers
+  const [designerContactInfo, setDesignerContactInfo] = useState([{
     businessName: "",
     contactName: "",
     email: "",
     phone: "",
     assignedArea: "all_rooms",
-  });
+  }]);
 
   // Consolidated file upload state
   const [designFiles, setDesignFiles] = useState<FileWithPreview[]>([]);
@@ -98,7 +100,12 @@ const DesignPreferences = () => {
           }
           // Load designer contact information if it exists
           if (prefs.designerContactInfo) {
-            setDesignerContactInfo(prefs.designerContactInfo);
+            // Handle both array and single object formats for backward compatibility
+            if (Array.isArray(prefs.designerContactInfo)) {
+              setDesignerContactInfo(prefs.designerContactInfo);
+            } else if (prefs.designerContactInfo) {
+              setDesignerContactInfo([prefs.designerContactInfo]);
+            }
           }
           // Load design files if they exist
           if (prefs.designFiles && Array.isArray(prefs.designFiles)) {
@@ -127,7 +134,12 @@ const DesignPreferences = () => {
         }
         // Load designer contact information if it exists
         if (prefs.designerContactInfo) {
-          setDesignerContactInfo(prefs.designerContactInfo);
+          // Handle both array and single object formats for backward compatibility
+          if (Array.isArray(prefs.designerContactInfo)) {
+            setDesignerContactInfo(prefs.designerContactInfo);
+          } else if (prefs.designerContactInfo) {
+            setDesignerContactInfo([prefs.designerContactInfo]);
+          }
         }
         // Load design files if they exist
         if (prefs.designFiles && Array.isArray(prefs.designFiles)) {
@@ -172,6 +184,7 @@ const DesignPreferences = () => {
     const designPreferences: Record<string, unknown> = {
       hasDesigns,
       designers: !hasDesigns ? designers : [],
+      // Store the array of designers
       designerContactInfo: hasDesigns ? designerContactInfo : null,
       beforePhotos: {},
       designFiles: hasDesigns ? designFiles : [],
@@ -253,7 +266,17 @@ const DesignPreferences = () => {
   };
 
   const addAnotherDesigner = () => {
-    setDesigners([...designers, { businessName: "", contactName: "", email: "", phone: "", speciality: "Architecture", assignedArea: "all_rooms" }]);
+    if (hasDesigns) {
+      setDesignerContactInfo([
+        ...designerContactInfo,
+        { businessName: "", contactName: "", email: "", phone: "", assignedArea: "all_rooms" }
+      ]);
+    } else {
+      setDesigners([
+        ...designers,
+        { businessName: "", contactName: "", email: "", phone: "", speciality: "Architecture", assignedArea: "all_rooms" }
+      ]);
+    }
   };
 
   const updateDesigner = (index: number, field: string, value: string) => {
@@ -262,11 +285,26 @@ const DesignPreferences = () => {
     setDesigners(updatedDesigners);
   };
 
-  const updateDesignerContactInfo = (field: string, value: string) => {
-    setDesignerContactInfo({
-      ...designerContactInfo,
-      [field]: value
-    });
+  const updateDesignerContactInfo = (index: number, field: string, value: string) => {
+    const updatedDesigners = [...designerContactInfo];
+    updatedDesigners[index] = { ...updatedDesigners[index], [field]: value };
+    setDesignerContactInfo(updatedDesigners);
+  };
+
+  const removeDesigner = (index: number) => {
+    if (hasDesigns) {
+      if (designerContactInfo.length > 1) {
+        const updatedDesigners = [...designerContactInfo];
+        updatedDesigners.splice(index, 1);
+        setDesignerContactInfo(updatedDesigners);
+      }
+    } else {
+      if (designers.length > 1) {
+        const updatedDesigners = [...designers];
+        updatedDesigners.splice(index, 1);
+        setDesigners(updatedDesigners);
+      }
+    }
   };
 
   const steps = [
@@ -284,36 +322,7 @@ const DesignPreferences = () => {
       <DashboardNavbar />
       
       <div className="flex flex-col md:flex-row flex-1">
-        <div className={`${isMobile ? 'w-full' : 'w-80'} bg-[#EFF3F7] p-4 md:p-8`}>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">Create a Project</h1>
-          <p className="text-sm md:text-base text-gray-600 mb-6 md:mb-8">
-            Lorem ipsum dolor sit amet consectetur.
-          </p>
-          
-          <div className="space-y-4 md:space-y-6">
-            {steps.map((step) => (
-              <div key={step.number} className="flex items-start">
-                <div className={`w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center mr-2 md:mr-3 ${
-                  step.current ? "bg-[#174c65] text-white" : "bg-gray-200 text-gray-500"
-                }`}>
-                  {step.number}
-                </div>
-                <div>
-                  <h3 className={`text-sm md:text-base font-medium ${
-                    step.current ? "text-[#174c65]" : "text-gray-500"
-                  }`}>
-                    Step {step.number}
-                  </h3>
-                  <p className={`text-xs md:text-sm ${
-                    step.current ? "text-black" : "text-gray-500"
-                  }`}>
-                    {step.title}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <CreateProjectSteps steps={steps} />
         
         <div className="flex-1 p-4 md:p-10 overflow-auto">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-4">Design Preferences</h2>
@@ -344,19 +353,41 @@ const DesignPreferences = () => {
             {hasDesigns ? (
               <div className="space-y-4">
                 {/* Designer contact information */}
-                <div className="space-y-6 bg-gray-50 p-6 rounded-lg mb-6">
-                  <h3 className="text-lg font-semibold">Designer Information</h3>
-                  
-                  <DesignerInformationForm
-                    businessName={designerContactInfo.businessName}
-                    contactName={designerContactInfo.contactName}
-                    email={designerContactInfo.email}
-                    phone={designerContactInfo.phone}
-                    assignedArea={designerContactInfo.assignedArea}
-                    renovationAreas={renovationAreas}
-                    onUpdate={updateDesignerContactInfo}
-                  />
-                </div>
+                {designerContactInfo.map((designer, index) => (
+                  <div key={index} className="space-y-6 bg-gray-50 p-6 rounded-lg mb-6">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg font-semibold">Designer Information {index + 1}</h3>
+                      {designerContactInfo.length > 1 && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-red-500"
+                          onClick={() => removeDesigner(index)}
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </div>
+                    
+                    <DesignerInformationForm
+                      businessName={designer.businessName}
+                      contactName={designer.contactName}
+                      email={designer.email}
+                      phone={designer.phone}
+                      assignedArea={designer.assignedArea}
+                      renovationAreas={renovationAreas}
+                      onUpdate={(field, value) => updateDesignerContactInfo(index, field, value)}
+                    />
+                  </div>
+                ))}
+                
+                <Button 
+                  variant="outline" 
+                  className="flex items-center text-[#174c65] border-[#174c65] mt-2"
+                  onClick={addAnotherDesigner}
+                >
+                  <Plus className="w-4 h-4 mr-2" /> ADD ANOTHER DESIGNER
+                </Button>
 
                 <h3 className="text-lg font-semibold">Upload your project's design information</h3>
                 
@@ -396,12 +427,24 @@ const DesignPreferences = () => {
                   </div>
                 </div>
                 
-                {/* Keep the designer information form as a fallback */}
-                <div className="space-y-6 bg-gray-50 p-6 rounded-lg">
-                  <h3 className="text-lg font-semibold">Designer Information</h3>
-                  
-                  {designers.map((designer, index) => (
-                    <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Designer information forms */}
+                {designers.map((designer, index) => (
+                  <div key={index} className="space-y-6 bg-gray-50 p-6 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg font-semibold">Designer Information {index + 1}</h3>
+                      {designers.length > 1 && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-red-500"
+                          onClick={() => removeDesigner(index)}
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Business Name
@@ -495,16 +538,16 @@ const DesignPreferences = () => {
                         </Select>
                       </div>
                     </div>
-                  ))}
-                  
-                  <Button 
-                    variant="outline" 
-                    className="flex items-center text-[#174c65] border-[#174c65]"
-                    onClick={addAnotherDesigner}
-                  >
-                    <Plus className="w-4 h-4 mr-2" /> ADD ANOTHER DESIGNER
-                  </Button>
-                </div>
+                  </div>
+                ))}
+                
+                <Button 
+                  variant="outline" 
+                  className="flex items-center text-[#174c65] border-[#174c65]"
+                  onClick={addAnotherDesigner}
+                >
+                  <Plus className="w-4 h-4 mr-2" /> ADD ANOTHER DESIGNER
+                </Button>
               </div>
             )}
           </div>
