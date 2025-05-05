@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -39,6 +40,7 @@ import JobDetails from "./pages/JobDetails";
 import Properties from "./pages/Properties";
 import PropertyDetails from "./pages/PropertyDetails";
 import Notifications from "./pages/Notifications";
+import ProjectCalendar from "./pages/ProjectCalendar";
 
 function App() {
   return (
@@ -191,6 +193,13 @@ function App() {
           <ProtectedRoute>
             <TooltipProvider>
               <ProjectActivityHistory />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/project-calendar/:projectId" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <ProjectCalendar />
             </TooltipProvider>
           </ProtectedRoute>
         } />

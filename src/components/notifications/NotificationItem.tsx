@@ -53,7 +53,7 @@ const NotificationItem = ({ notification, onMarkAsRead, compact = false, onClick
         
       case 'project_ready':
         if (notification.project?.id) {
-          navigate(`/project-calendar/${notification.project.id}`);
+          navigate(`/project-manage/${notification.project.id}`);
         }
         break;
         
@@ -66,7 +66,7 @@ const NotificationItem = ({ notification, onMarkAsRead, compact = false, onClick
         
       case 'project_coaching_request':
         if (notification.project?.id) {
-          console.log('[NotificationItem] Navigating to project coaching request:', notification.project.id);
+          console.log('[NotificationItem] Navigating to project calendar for coaching request:', notification.project.id);
           navigate(`/project-calendar/${notification.project.id}`);
         }
         break;
@@ -122,7 +122,6 @@ const NotificationItem = ({ notification, onMarkAsRead, compact = false, onClick
         
       case 'view_meeting':
         if (notification.project?.id) {
-          // Update: Navigate to project calendar instead of calendar with event param
           console.log('[NotificationItem] Navigating to project calendar for meeting:', notification.meeting?.id);
           navigate(`/project-calendar/${notification.project.id}`);
         }
@@ -130,7 +129,6 @@ const NotificationItem = ({ notification, onMarkAsRead, compact = false, onClick
         
       case 'reschedule':
         if (notification.meeting?.id && notification.project?.id) {
-          // Update: Navigate to project calendar with reschedule param
           navigate(`/project-calendar/${notification.project.id}?reschedule=true`);
         }
         break;
