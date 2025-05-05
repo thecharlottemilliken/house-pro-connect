@@ -46,11 +46,16 @@ export const MeetupScheduleWidget = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<MeetupTime | null>(null);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const [processedProjects, setProcessedProjects] = useState<Set<string>>(new Set());
   
   // Filter projects that have meetup times and haven't been scheduled yet
   const projectsWithMeetups = projects
     .filter(project => {
       const managementPrefs = project.management_preferences as any;
+      // Skip this project if it's already been processed
+      if (processedProjects.has(project.id)) {
+        return false;
+      }
       return managementPrefs?.wantProjectCoach === "yes" && 
              managementPrefs?.timeSlots && 
              managementPrefs.timeSlots.length > 0 && 
@@ -224,7 +229,13 @@ export const MeetupScheduleWidget = () => {
         toast.warning("Meeting scheduled, but calendar event creation failed.");
       }
       
-      fetchProjects(); // 2. Refresh to remove the project from pending list
+      // Mark this project as processed to remove it from the list without forcing a full refresh
+      setProcessedProjects(prev => new Set([...prev, selectedProject.id]));
+      
+      // Refresh projects data in background
+      fetchProjects(); 
+      
+      // Close dialogs and reset selection
       setIsDialogOpen(false);
       setIsConfirmDialogOpen(false);
       setSelectedTimeSlot(null);
