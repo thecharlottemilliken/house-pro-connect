@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { ProjectData } from "@/hooks/useProjectData";
+
 interface ActionItemsWidgetProps {
   projectId: string;
   projectData: ProjectData | null;

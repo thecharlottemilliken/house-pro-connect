@@ -1,3 +1,4 @@
+
 import { Json } from "@/integrations/supabase/types";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,8 +32,20 @@ export interface RenovationArea {
   location?: string;
 }
 
+// Export ProjectData interface that was missing
+export interface ProjectData {
+  id: string;
+  title?: string;
+  property_id?: string;
+  renovation_areas?: RenovationArea[];
+  design_preferences?: DesignPreferences;
+  project_preferences?: Record<string, any>;
+  management_preferences?: Record<string, any>;
+  [key: string]: any; // Allow for other properties
+}
+
 export const useProjectData = (projectId?: string, initialData?: any) => {
-  const [projectData, setProjectData] = useState<any>(initialData || null);
+  const [projectData, setProjectData] = useState<ProjectData | null>(initialData || null);
   const [propertyDetails, setPropertyDetails] = useState<any>(null);
   const [isLoading, setIsLoading] = useState<boolean>(!initialData && !!projectId);
   const [error, setError] = useState<string | null>(null);
