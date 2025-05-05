@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -57,8 +58,7 @@ export const MeetupScheduleWidget = () => {
       }
       return managementPrefs?.wantProjectCoach === "yes" && 
              managementPrefs?.timeSlots && 
-             managementPrefs.timeSlots.length > 0 && 
-             !managementPrefs.scheduledMeetupTime;
+             managementPrefs.timeSlots.length > 0;
     })
     .map(project => {
       const managementPrefs = project.management_preferences as any;
@@ -77,47 +77,6 @@ export const MeetupScheduleWidget = () => {
     setSchedulingProject(selectedProject.id);
     
     try {
-      // Get the current project data
-      const { data: projectData, error: projectError } = await supabase.functions.invoke(
-        'get-coach-projects',
-        { method: 'GET' }
-      );
-      
-      if (projectError) {
-        throw projectError;
-      }
-      
-      // Find the project to update
-      const projectToUpdate = projectData.projects.find((p: any) => p.id === selectedProject.id);
-      
-      if (!projectToUpdate) {
-        throw new Error("Project not found");
-      }
-      
-      // Update the management preferences to include the scheduled meetup
-      const managementPrefs = projectToUpdate.management_preferences || {};
-      
-      // CRITICAL FIX: Create a deep copy of the management preferences instead of directly modifying it
-      const updatedManagementPrefs = {
-        ...managementPrefs,
-        scheduledMeetupTime: selectedTimeSlot,
-      };
-      
-      // Keep all existing fields and only update the management_preferences field
-      const { error: updateError } = await supabase.functions.invoke(
-        'handle-project-update',
-        {
-          body: { 
-            projectId: selectedProject.id,
-            managementPreferences: updatedManagementPrefs
-          }
-        }
-      );
-      
-      if (updateError) {
-        throw updateError;
-      }
-      
       // Format date and time for display
       const dateToFormat = selectedTimeSlot.dateStr || selectedTimeSlot.date;
       const formattedDate = formatDateSafely(dateToFormat);
@@ -142,7 +101,7 @@ export const MeetupScheduleWidget = () => {
       
       // Send a notification message to the project owner
       await supabase.from('coach_messages').insert({
-        resident_id: projectToUpdate.owner.id,
+        resident_id: selectedProject.owner.id,
         coach_id: (await supabase.auth.getUser()).data.user?.id,
         project_id: selectedProject.id,
         message: `I've scheduled a coaching session with you for ${formattedDate} at ${formattedTime}. Looking forward to discussing your project!`
