@@ -72,10 +72,17 @@ export const useProjectData = (projectId?: string, initialData?: any) => {
         });
 
         if (!edgeError && edgeData) {
-          setProjectData(edgeData);
+          // Process the data to ensure it matches our ProjectData interface
+          const processedData: ProjectData = {
+            ...edgeData,
+            // Convert renovation_areas from Json to RenovationArea[]
+            renovation_areas: Array.isArray(edgeData.renovation_areas) ? edgeData.renovation_areas as RenovationArea[] : []
+          };
           
-          if (edgeData.property_id) {
-            fetchPropertyDetails(edgeData.property_id);
+          setProjectData(processedData);
+          
+          if (processedData.property_id) {
+            fetchPropertyDetails(processedData.property_id);
           }
           
           return;
@@ -93,10 +100,17 @@ export const useProjectData = (projectId?: string, initialData?: any) => {
 
       if (error) throw error;
       
-      setProjectData(data);
+      // Process the data to ensure it matches our ProjectData interface
+      const processedData: ProjectData = {
+        ...data,
+        // Convert renovation_areas from Json to RenovationArea[]
+        renovation_areas: Array.isArray(data.renovation_areas) ? data.renovation_areas as RenovationArea[] : []
+      };
       
-      if (data.property_id) {
-        fetchPropertyDetails(data.property_id);
+      setProjectData(processedData);
+      
+      if (processedData.property_id) {
+        fetchPropertyDetails(processedData.property_id);
       }
     } catch (err: any) {
       console.error("Error fetching project data:", err);
