@@ -6,10 +6,13 @@ import ProjectSidebar from '@/components/project/ProjectSidebar';
 import { Card } from '@/components/ui/card';
 import CalendarView from '@/components/project/manage/Calendar/CalendarView';
 import { useProjectData } from '@/hooks/useProjectData';
+import { SidebarProvider } from '@/components/ui/sidebar';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const ProjectCalendar = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const { projectData, isLoading } = useProjectData(projectId);
+  const isMobile = useIsMobile();
   
   if (isLoading) {
     return (
@@ -25,22 +28,23 @@ const ProjectCalendar = () => {
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <DashboardNavbar />
-      <div className="flex flex-1">
-        <ProjectSidebar projectId={projectId || ''} activePage="calendar" />
-        <main className="flex-1 p-4">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold">Project Calendar</h1>
-            <p className="text-gray-500">
-              Schedule and manage project events and meetings
-            </p>
-          </div>
-          
-          <Card className="p-6">
-            {/* We need to pass the correct props that CalendarView accepts */}
-            <CalendarView project_id={projectId || ''} />
-          </Card>
-        </main>
-      </div>
+      <SidebarProvider defaultOpen={!isMobile}>
+        <div className="flex flex-1">
+          <ProjectSidebar projectId={projectId || ''} activePage="calendar" />
+          <main className="flex-1 p-4">
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold">Project Calendar</h1>
+              <p className="text-gray-500">
+                Schedule and manage project events and meetings
+              </p>
+            </div>
+            
+            <Card className="p-6">
+              <CalendarView project_id={projectId || ''} />
+            </Card>
+          </main>
+        </div>
+      </SidebarProvider>
     </div>
   );
 };
