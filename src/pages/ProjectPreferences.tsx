@@ -10,7 +10,7 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Json } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
 import CreateProjectSteps from "@/components/project/create/CreateProjectSteps";
