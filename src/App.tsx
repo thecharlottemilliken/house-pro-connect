@@ -14,6 +14,7 @@ import ConstructionPreferences from "./pages/ConstructionPreferences";
 import DesignPreferences from "./pages/DesignPreferences";
 import ManagementPreferences from "./pages/ManagementPreferences";
 import PriorExperience from "./pages/PriorExperience";
+import ProjectSummary from "./pages/ProjectSummary";
 import ProjectDashboard from "./pages/ProjectDashboard";
 import ProjectManage from "./pages/ProjectManage";
 import ProjectDesign from "./pages/ProjectDesign";
@@ -116,6 +117,13 @@ function App() {
           <ProtectedRoute>
             <TooltipProvider>
               <PriorExperience />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/project-summary" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <ProjectSummary />
             </TooltipProvider>
           </ProtectedRoute>
         } />

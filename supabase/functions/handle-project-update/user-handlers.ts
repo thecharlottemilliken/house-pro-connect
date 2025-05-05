@@ -9,6 +9,7 @@ export async function handleUserProjects(supabase: any, body: any, corsHeaders: 
       .select(`
         id,
         title,
+        description,
         property_id,
         created_at,
         property:properties(
@@ -57,6 +58,7 @@ export async function handleUserProjects(supabase: any, body: any, corsHeaders: 
         .select(`
           id,
           title,
+          description,
           property_id,
           created_at,
           property:properties(
