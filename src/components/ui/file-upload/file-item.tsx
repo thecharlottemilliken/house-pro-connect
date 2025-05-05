@@ -33,6 +33,9 @@ export function FileItem({
     }
   };
 
+  // Convert file.size to number if it's a string
+  const fileProgress = typeof file.progress === 'number' ? file.progress : 0;
+
   return (
     <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg relative">
       <FileThumbnail file={file} className="w-10 h-10" />
@@ -41,14 +44,14 @@ export function FileItem({
         <div className="flex items-start justify-between gap-2">
           <div>
             <p className="font-medium text-sm text-gray-700 truncate">{file.name}</p>
-            <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+            <p className="text-xs text-gray-500">{formatFileSize(typeof file.size === 'string' ? 0 : file.size)}</p>
           </div>
           
           {file.status === 'uploading' && (
             <div className="w-24 h-1 bg-gray-200 rounded-full overflow-hidden">
               <div
                 className="h-full bg-blue-500 transition-all duration-300 ease-in-out"
-                style={{ width: `${file.progress}%` }}
+                style={{ width: `${fileProgress}%` }}
               />
             </div>
           )}

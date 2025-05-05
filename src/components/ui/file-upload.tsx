@@ -11,12 +11,13 @@ export {
   FileItem,
   FileTags,
   FileThumbnail,
-  processFiles,
-  uploadFile,
   formatFileSize,
   createPreviewUrl,
   updateFileStatus
 } from './file-upload/index';
+
+// Export processFiles and uploadFile from upload-service
+export { processFiles, uploadFile } from './file-upload/upload-service';
 
 // Re-export the original FileUpload component
 import { FileUpload } from './file-upload/FileUpload';

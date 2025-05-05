@@ -51,3 +51,18 @@ export function updateFileStatus(
     return file;
   });
 }
+
+// Individual file status update helper
+export function updateFileStatus(
+  file: FileWithPreview,
+  status: FileWithPreview["status"],
+  progress: number = 0,
+  url?: string
+): FileWithPreview {
+  return {
+    ...file,
+    status,
+    progress,
+    url: url || file.url,
+  };
+}
