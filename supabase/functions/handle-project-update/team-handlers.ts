@@ -1,3 +1,4 @@
+
 export async function handleProjectTeamAccess(supabase, body, corsHeaders) {
   try {
     const projectId = body.projectId;

@@ -1,3 +1,4 @@
+
 export async function handleUserProjects(supabase, body, corsHeaders) {
   try {
     const userId = body.userId;
