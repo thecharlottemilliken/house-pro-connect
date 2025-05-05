@@ -10,6 +10,7 @@ import CreateProjectSteps from "@/components/project/create/CreateProjectSteps";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Loader2 } from "lucide-react";
 
 const ProjectSummary = () => {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ const ProjectSummary = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   
   // Get location state data from the previous steps
   const { 
@@ -41,6 +43,56 @@ const ProjectSummary = () => {
     { number: 7, title: "Prior Experience", current: false },
     { number: 8, title: "Summary", current: true },
   ];
+  
+  // Generate title and description with AI
+  const generateProjectSummary = async () => {
+    if (isGenerating) return;
+    
+    setIsGenerating(true);
+    
+    try {
+      // Call our edge function
+      const { data, error } = await supabase.functions.invoke(
+        'generate-project-summary',
+        {
+          body: {
+            renovationAreas,
+            projectPreferences,
+            constructionPreferences,
+            designPreferences,
+            managementPreferences,
+            priorExperience
+          }
+        }
+      );
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data.title) {
+        setTitle(data.title);
+      }
+      
+      if (data.description) {
+        setDescription(data.description);
+      }
+      
+      toast({
+        title: "AI Summary Generated",
+        description: "We've created a project title and description for you. Feel free to edit them."
+      });
+    } catch (error) {
+      console.error("Error generating project summary:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate project summary. Please enter the details manually.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
   
   // Handle submission of the form
   const handleSubmit = async (e: React.FormEvent) => {
@@ -124,7 +176,7 @@ const ProjectSummary = () => {
     });
   };
   
-  // Check if we have all required data from previous steps
+  // Automatically generate the title and description when the component mounts
   useEffect(() => {
     if (!propertyId) {
       toast({
@@ -133,6 +185,12 @@ const ProjectSummary = () => {
         variant: "destructive"
       });
       navigate("/create-project");
+      return;
+    }
+    
+    // Auto-generate title and description if they are empty
+    if (!title && !description) {
+      generateProjectSummary();
     }
   }, [propertyId, navigate]);
   
@@ -146,12 +204,29 @@ const ProjectSummary = () => {
         <div className="flex-1 p-4 md:p-10">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-4">Project Summary</h1>
           <p className="text-sm md:text-base text-gray-700 mb-6 md:mb-8">
-            Give your project a name and provide a detailed description.
+            Review and edit your project name and description.
           </p>
           
           <form onSubmit={handleSubmit} className="max-w-2xl space-y-8">
             <div className="space-y-2">
-              <Label htmlFor="title">Project Name</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="title">Project Name</Label>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm"
+                  onClick={generateProjectSummary}
+                  disabled={isGenerating}
+                  className="text-xs"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      Generating...
+                    </>
+                  ) : "Regenerate with AI"}
+                </Button>
+              </div>
               <Input 
                 id="title"
                 value={title}
@@ -190,7 +265,7 @@ const ProjectSummary = () => {
               >
                 {isSubmitting ? (
                   <>
-                    <span className="animate-spin mr-2">⟳</span>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Creating...
                   </>
                 ) : "Create Project"}
