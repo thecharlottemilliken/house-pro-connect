@@ -3,9 +3,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import CategorySection from "./CategorySection";
-import { EnhancedFileUpload, FileWithPreview } from "@/components/ui/file-upload";
-import { RoomTagOption } from "@/components/ui/file-upload/types";
-
 interface DesignAssetsCardProps {
   hasRenderings: boolean;
   renderingImages?: string[];
@@ -17,7 +14,6 @@ interface DesignAssetsCardProps {
   currentRoom: string; // Room name for tracking
   propertyPhotos?: string[]; // Add property photos prop
 }
-
 const DesignAssetsCard = ({
   hasRenderings,
   renderingImages = [],
@@ -55,7 +51,6 @@ const DesignAssetsCard = ({
   }[]>([]);
   const [roomId, setRoomId] = useState<string | null>(null);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState<FileWithPreview[]>([]);
 
   // Effect to load data when component mounts or room changes
   useEffect(() => {
@@ -101,11 +96,7 @@ const DesignAssetsCard = ({
     try {
       const currentRoomId = roomId || (await fetchRoomId());
       if (currentRoomId) {
-        await Promise.all([
-          fetchExistingDrawings(currentRoomId), 
-          fetchExistingRenderings(currentRoomId),
-          fetchExistingDesignAssets(currentRoomId)
-        ]);
+        await Promise.all([fetchExistingDrawings(currentRoomId), fetchExistingRenderings(currentRoomId)]);
       }
       setIsDataLoaded(true);
     } catch (error) {
@@ -183,49 +174,6 @@ const DesignAssetsCard = ({
       console.error('Error in fetchExistingDrawings:', error);
     }
   };
-
-  // Function to fetch existing design assets from the database
-  const fetchExistingDesignAssets = async (currentRoomId: string) => {
-    try {
-      console.log("Fetching existing design assets for room ID:", currentRoomId);
-      const {
-        data: preferences,
-        error
-      } = await supabase.from('room_design_preferences').select('design_assets').eq('room_id', currentRoomId).maybeSingle();
-      
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching design assets:', error);
-        return;
-      }
-      
-      if (preferences?.design_assets) {
-        console.log('Found existing design assets:', preferences.design_assets);
-        // Convert design assets to FileWithPreview format
-        const assets = preferences.design_assets as any[];
-        const files: FileWithPreview[] = assets.map((asset: any, index: number) => {
-          return {
-            id: `existing-asset-${index}`,
-            name: asset.name || `File ${index + 1}`,
-            size: asset.size || 0,
-            type: asset.type || "application/octet-stream",
-            file: null,
-            preview: asset.url,
-            url: asset.url,
-            status: 'complete',
-            progress: 100,
-            tags: asset.tags || []
-          };
-        });
-        
-        setUploadedFiles(files);
-      } else {
-        setUploadedFiles([]);
-      }
-    } catch (error) {
-      console.error('Error in fetchExistingDesignAssets:', error);
-    }
-  };
-
   const handleUploadBlueprint = async (urls: string[]) => {
     if (!urls.length || !propertyId) return;
     try {
@@ -598,350 +546,8 @@ const DesignAssetsCard = ({
       });
     }
   };
-
-  // New function to handle upload of general design assets
-  const handleUploadComplete = async (files: FileWithPreview[]) => {
-    console.log("Files uploaded:", files);
-    if (files.length === 0) return;
-    
-    // Make sure we have a room ID
-    let currentRoomId = roomId;
-    if (!currentRoomId) {
-      currentRoomId = await fetchRoomId();
-      if (!currentRoomId) {
-        toast({
-          title: "Error",
-          description: "Could not identify a room for this property.",
-          variant: "destructive"
-        });
-        return;
-      }
-    }
-    
-    try {
-      // Get existing room design preferences
-      const {
-        data: existingPrefs,
-        error: fetchError
-      } = await supabase.from('room_design_preferences').select('design_assets').eq('room_id', currentRoomId).maybeSingle();
+  return <Card>
       
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        console.error('Error fetching room design preferences:', fetchError);
-        throw fetchError;
-      }
-      
-      // Format files for storage
-      const completedFiles = files.filter(f => f.status === 'complete');
-      const designAssets = completedFiles.map(file => ({
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        url: file.url,
-        tags: file.tags,
-        dateAdded: new Date().toISOString()
-      }));
-      
-      // Combine with existing assets if any
-      const existingAssets = existingPrefs?.design_assets || [];
-      const updatedAssets = [...existingAssets, ...designAssets];
-      
-      // Check if record exists
-      const {
-        data: existingRecord,
-        error: checkError
-      } = await supabase.from('room_design_preferences').select('id').eq('room_id', currentRoomId).maybeSingle();
-      
-      if (checkError && checkError.code !== 'PGRST116') {
-        console.error('Error checking room design preferences:', checkError);
-        throw checkError;
-      }
-      
-      let updateError;
-      if (existingRecord) {
-        console.log("Updating existing design assets record");
-        // Update existing record
-        const {
-          error
-        } = await supabase.from('room_design_preferences').update({
-          design_assets: updatedAssets,
-          updated_at: new Date().toISOString()
-        }).eq('room_id', currentRoomId);
-        updateError = error;
-      } else {
-        console.log("Creating new design assets record");
-        // Create new record
-        const {
-          error
-        } = await supabase.from('room_design_preferences').insert({
-          room_id: currentRoomId,
-          design_assets: updatedAssets,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-        updateError = error;
-      }
-      
-      if (updateError) {
-        console.error('Error saving design assets:', updateError);
-        throw updateError;
-      }
-      
-      // Update local state with all files
-      setUploadedFiles(prev => {
-        const existingIds = new Set(prev.map(f => f.id));
-        const newFiles = files.filter(f => !existingIds.has(f.id));
-        return [...prev, ...newFiles];
-      });
-      
-      toast({
-        title: "Success",
-        description: `Design assets have been saved for ${currentRoom}`
-      });
-    } catch (error) {
-      console.error('Error saving design assets:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save design assets. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-  
-  // Function to remove a design asset
-  const handleRemoveDesignAsset = async (fileId: string) => {
-    if (!propertyId || !roomId) return;
-    
-    try {
-      // Get current design assets
-      const {
-        data: preferences,
-        error: fetchError
-      } = await supabase.from('room_design_preferences').select('design_assets').eq('room_id', roomId).maybeSingle();
-      
-      if (fetchError) throw fetchError;
-      
-      // Find the file to remove
-      const currentAssets = preferences?.design_assets || [];
-      const fileToRemove = uploadedFiles.find(f => f.id === fileId);
-      
-      if (!fileToRemove) return;
-      
-      // Remove the file from local state
-      setUploadedFiles(prev => prev.filter(f => f.id !== fileId));
-      
-      // Find and remove the asset from the database array
-      const updatedAssets = currentAssets.filter((asset: any) => 
-        asset.url !== fileToRemove.url
-      );
-      
-      // Update the database
-      const {
-        error: updateError
-      } = await supabase.from('room_design_preferences').update({
-        design_assets: updatedAssets,
-        updated_at: new Date().toISOString()
-      }).eq('room_id', roomId);
-      
-      if (updateError) throw updateError;
-      
-      toast({
-        title: "Success",
-        description: "Design asset removed successfully"
-      });
-    } catch (error) {
-      console.error('Error removing design asset:', error);
-      toast({
-        title: "Error",
-        description: "Failed to remove design asset",
-        variant: "destructive"
-      });
-    }
-  };
-  
-  // Handle adding a tag to a file
-  const handleAddTag = async (fileId: string, tag: string) => {
-    if (!roomId) return;
-    
-    try {
-      // Update local state first
-      setUploadedFiles(prev => 
-        prev.map(file => 
-          file.id === fileId
-            ? { ...file, tags: [...new Set([...file.tags, tag])] }
-            : file
-        )
-      );
-      
-      // Get current assets from database
-      const {
-        data: preferences,
-        error: fetchError
-      } = await supabase.from('room_design_preferences').select('design_assets').eq('room_id', roomId).maybeSingle();
-      
-      if (fetchError) throw fetchError;
-      
-      const currentAssets = preferences?.design_assets || [];
-      const fileToUpdate = uploadedFiles.find(f => f.id === fileId);
-      
-      if (!fileToUpdate) return;
-      
-      // Update the tags in the database
-      const updatedAssets = currentAssets.map((asset: any) => {
-        if (asset.url === fileToUpdate.url) {
-          const currentTags = asset.tags || [];
-          return {
-            ...asset,
-            tags: [...new Set([...currentTags, tag])]
-          };
-        }
-        return asset;
-      });
-      
-      // Save to database
-      const {
-        error: updateError
-      } = await supabase.from('room_design_preferences').update({
-        design_assets: updatedAssets,
-        updated_at: new Date().toISOString()
-      }).eq('room_id', roomId);
-      
-      if (updateError) throw updateError;
-    } catch (error) {
-      console.error('Error adding tag:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add tag",
-        variant: "destructive"
-      });
-    }
-  };
-  
-  // Handle removing a tag from a file
-  const handleRemoveTag = async (fileId: string, tag: string) => {
-    if (!roomId) return;
-    
-    try {
-      // Update local state first
-      setUploadedFiles(prev => 
-        prev.map(file => 
-          file.id === fileId
-            ? { ...file, tags: file.tags.filter(t => t !== tag) }
-            : file
-        )
-      );
-      
-      // Get current assets from database
-      const {
-        data: preferences,
-        error: fetchError
-      } = await supabase.from('room_design_preferences').select('design_assets').eq('room_id', roomId).maybeSingle();
-      
-      if (fetchError) throw fetchError;
-      
-      const currentAssets = preferences?.design_assets || [];
-      const fileToUpdate = uploadedFiles.find(f => f.id === fileId);
-      
-      if (!fileToUpdate) return;
-      
-      // Update the tags in the database
-      const updatedAssets = currentAssets.map((asset: any) => {
-        if (asset.url === fileToUpdate.url) {
-          return {
-            ...asset,
-            tags: (asset.tags || []).filter((t: string) => t !== tag)
-          };
-        }
-        return asset;
-      });
-      
-      // Save to database
-      const {
-        error: updateError
-      } = await supabase.from('room_design_preferences').update({
-        design_assets: updatedAssets,
-        updated_at: new Date().toISOString()
-      }).eq('room_id', roomId);
-      
-      if (updateError) throw updateError;
-    } catch (error) {
-      console.error('Error removing tag:', error);
-      toast({
-        title: "Error",
-        description: "Failed to remove tag",
-        variant: "destructive"
-      });
-    }
-  };
-
-  // Room-specific tag options
-  const roomTagOptions: RoomTagOption[] = [
-    { value: "drawing", label: "Drawing" },
-    { value: "rendering", label: "Rendering" },
-    { value: "architectural", label: "Architectural" },
-    { value: "blueprint", label: "Blueprint" },
-    { value: "electrical", label: "Electrical" },
-    { value: "plumbing", label: "Plumbing" },
-    { value: "structural", label: "Structural" },
-    { value: "interior", label: "Interior" },
-    { value: "exterior", label: "Exterior" }
-  ];
-
-  return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold mb-2">Design Assets</h2>
-          <p className="text-gray-500 text-sm">
-            Upload and manage design assets for this room
-          </p>
-        </div>
-        
-        {/* Design Assets Upload */}
-        <div className="space-y-6">
-          <EnhancedFileUpload
-            label="Upload Design Assets"
-            description="Upload your plans, renderings, blueprints, and other design assets"
-            accept="image/*, .pdf, .dwg, .doc, .docx, .xls"
-            multiple={true}
-            uploadedFiles={uploadedFiles}
-            setUploadedFiles={setUploadedFiles}
-            onUploadComplete={handleUploadComplete}
-            roomOptions={roomTagOptions}
-            onRemoveFile={handleRemoveDesignAsset}
-            onAddTag={handleAddTag}
-            onRemoveTag={handleRemoveTag}
-          />
-        </div>
-        
-        {/* Category sections for specific design asset types */}
-        <div className="space-y-6 mt-8">
-          <CategorySection
-            title="Blueprints"
-            fileType="blueprint"
-            onAddClick={onAddBlueprints}
-            onRemoveClick={handleRemoveBlueprint}
-            file={blueprintFile}
-          />
-          
-          <CategorySection 
-            title="Renderings"
-            fileType="rendering"
-            onAddClick={onAddRenderings}
-            onRemoveClick={handleRemoveRenderings}
-            files={renderingFiles}
-          />
-          
-          <CategorySection
-            title="Drawings"
-            fileType="drawing"
-            onAddClick={onAddDrawings}
-            onRemoveClick={handleRemoveDrawings}
-            files={drawingFiles}
-          />
-        </div>
-      </CardContent>
-    </Card>
-  );
+    </Card>;
 };
-
 export default DesignAssetsCard;

@@ -1,242 +1,410 @@
-
-import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import RoomMeasurementsCard from "./RoomMeasurementsCard";
+import React, { useState, useRef } from 'react';
+import { Card, CardContent } from "@/components/ui/card";
+import { FileText, Eye, Download, X, Upload } from "lucide-react";
+import EmptyDesignState from "./EmptyDesignState";
+import DesignTabHeader from "./DesignTabHeader";
 import BeforePhotosCard from "./BeforePhotosCard";
-import DesignAssetsCard from "./DesignAssetsCard";
-import PinterestInspirationSection from "./PinterestInspirationSection";
-import SelectPropertyPhotosDialog from "./SelectPropertyPhotosDialog";
+import RoomMeasurementsCard from './RoomMeasurementsCard';
+import { PropertyFileUpload } from "@/components/property/PropertyFileUpload";
+import { FileWithPreview } from "@/components/ui/file-upload";
+import { Button } from "@/components/ui/button";
 import SelectProjectFilesDialog from "./SelectProjectFilesDialog";
+import { FileListItem } from "./FileListItem";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import { useRoomDesign } from "@/hooks/useRoomDesign";
 import { supabase } from "@/integrations/supabase/client";
 
 interface RoomDetailsProps {
-  currentRoom: string;
-  propertyId?: string;
-  propertyPhotos?: string[];
-  propertyBlueprint?: string | null;
-  designPreferences?: any;
-  onSelectBeforePhotos?: (area: string, photos: string[]) => void;
-  onUploadBeforePhotos?: (area: string, photos: string[]) => void;
-  onAddProjectFiles?: (area: string, files: string[]) => void;
-  onSaveMeasurements?: (area: string, measurements: any) => void;
+  area: string;
+  location?: string;
+  designers?: Array<{ id: string; businessName: string; }>;
+  designAssets?: Array<{ name: string; url: string; }>;
+  measurements?: {
+    length?: number;
+    width?: number;
+    height?: number;
+    unit: 'ft' | 'm';
+    additionalNotes?: string;
+  };
   onAddDesigner?: () => void;
-  onAddRenderings?: () => void;
-  onAddDrawings?: () => void;
-  onAddBlueprints?: () => void;
-  getRoomIdByName?: (roomName: string) => string | undefined;
+  onUploadAssets?: () => void;
+  onSaveMeasurements?: (measurements: any) => void;
+  propertyPhotos?: string[];
+  onSelectBeforePhotos?: (photos: string[]) => void;
+  onUploadBeforePhotos?: (photos: string[]) => void;
+  beforePhotos?: string[];
   projectId?: string;
+  onSelectProjectFiles?: (files: string[]) => void;
+  onRemoveDesignAsset?: (index: number) => void;
 }
 
-const RoomDetails: React.FC<RoomDetailsProps> = ({
-  currentRoom,
-  propertyId,
+const RoomDetails = ({
+  area,
+  location,
+  designers,
+  designAssets = [],
+  measurements,
+  onAddDesigner,
+  onUploadAssets = () => {},
+  onSaveMeasurements = () => {},
   propertyPhotos = [],
-  propertyBlueprint,
-  designPreferences,
   onSelectBeforePhotos,
   onUploadBeforePhotos,
-  onAddProjectFiles,
-  onSaveMeasurements,
-  onAddDesigner,
-  onAddRenderings,
-  onAddDrawings,
-  onAddBlueprints,
-  getRoomIdByName,
-  projectId
-}) => {
-  // State for dialogs
-  const [isSelectPhotosOpen, setIsSelectPhotosOpen] = useState(false);
-  const [isSelectFilesOpen, setIsSelectFilesOpen] = useState(false);
-  
-  // State for selected materials
-  const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
-  const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
-  
-  // Room ID for the current room
-  const [roomId, setRoomId] = useState<string | undefined>(undefined);
-  
-  // Room preferences from the hook
-  const { createRoomIfNeeded } = useRoomDesign(propertyId);
-
-  // Parse property photos to avoid undefined
-  const parsedPropertyPhotos = propertyPhotos || [];
-  
-  // Get room measurements from design preferences
-  const roomMeasurements = designPreferences?.roomMeasurements?.[currentRoom ? currentRoom.toLowerCase().replace(/\s+/g, '_') : ''] || {};
-  
-  // Get before photos for this room
-  const beforePhotos = designPreferences?.beforePhotos?.[currentRoom ? currentRoom.toLowerCase().replace(/\s+/g, '_') : ''] || [];
-
-  // Check if this room has renderings
-  const hasRenderings = designPreferences?.hasRenderings?.[currentRoom ? currentRoom.toLowerCase().replace(/\s+/g, '_') : ''] || false;
-  
-  // Get rendering images for this room
-  const renderingImages = designPreferences?.renderingImages?.[currentRoom ? currentRoom.toLowerCase().replace(/\s+/g, '_') : ''] || [];
-
-  // Effect to set room ID
-  useEffect(() => {
-    if (getRoomIdByName && currentRoom) {
-      const id = getRoomIdByName(currentRoom);
-      setRoomId(id);
+  beforePhotos = [],
+  projectId,
+  onSelectProjectFiles,
+  onRemoveDesignAsset
+}: RoomDetailsProps) => {
+  const hasDesigner = designers && designers.length > 0;
+  const [roomFiles, setRoomFiles] = useState<FileWithPreview[]>(() => {
+    // Convert design assets to FileWithPreview format if available
+    if (designAssets && designAssets.length > 0) {
+      return designAssets.map((asset, index) => ({
+        id: `asset-${index}`,
+        name: asset.name,
+        url: asset.url,
+        size: 'Unknown',
+        type: asset.name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg',
+        progress: 100,
+        status: 'complete' as const,
+        tags: []
+      }));
     }
-  }, [getRoomIdByName, currentRoom]);
+    return [];
+  });
+  const [showProjectFilesDialog, setShowProjectFilesDialog] = useState(false);
+  const [previewAsset, setPreviewAsset] = useState<{name: string; url: string; type: string} | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Function to ensure the room exists
-  useEffect(() => {
-    const ensureRoomExists = async () => {
-      if (propertyId && currentRoom && !roomId) {
-        const room = await createRoomIfNeeded(propertyId, currentRoom);
-        if (room) {
-          setRoomId(room.id);
+  const handleFilesUploaded = (files: FileWithPreview[]) => {
+    setRoomFiles(files);
+    
+    // Convert FileWithPreview to design assets format
+    const assets = files
+      .filter(file => file.status === 'complete' && file.url)
+      .map(file => ({
+        name: file.name,
+        url: file.url as string
+      }));
+    
+    // Call onUploadAssets with the new assets if needed
+    onUploadAssets();
+  };
+
+  const handleSelectProjectFiles = (files: string[]) => {
+    if (onSelectProjectFiles) {
+      onSelectProjectFiles(files);
+    }
+  };
+
+  const handlePreviewAsset = (asset: {name: string; url: string}) => {
+    const fileExtension = asset.name.split('.').pop()?.toLowerCase() || '';
+    let fileType = 'unknown';
+    
+    if (['pdf'].includes(fileExtension)) {
+      fileType = 'pdf';
+    } else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension)) {
+      fileType = 'image';
+    } else if (['doc', 'docx'].includes(fileExtension)) {
+      fileType = 'document';
+    }
+    
+    setPreviewAsset({ ...asset, type: fileType });
+  };
+
+  const handleDownloadAsset = (asset: {name: string; url: string}) => {
+    const link = document.createElement('a');
+    link.href = asset.url;
+    link.download = asset.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: "Download started",
+      description: `Downloading ${asset.name}`
+    });
+  };
+
+  const handleRemoveAsset = (index: number) => {
+    if (onRemoveDesignAsset) {
+      onRemoveDesignAsset(index);
+    }
+  };
+
+  const handleQuickUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files?.length) return;
+
+    // Check authentication
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      toast({
+        title: "Authentication required",
+        description: "You must be signed in to upload files.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const uploadedUrls: {name: string; url: string}[] = [];
+    
+    try {
+      toast({
+        title: "Uploading files",
+        description: "Please wait while your files are being uploaded."
+      });
+
+      for (const file of files) {
+        const fileExt = file.name.split('.').pop();
+        const filePath = `${Math.random()}-${Date.now()}.${fileExt}`;
+
+        const { error: uploadError, data } = await supabase.storage
+          .from('properties')
+          .upload(filePath, file);
+
+        if (uploadError) {
+          console.error("Upload error:", uploadError);
+          throw uploadError;
+        }
+
+        if (data) {
+          const { data: { publicUrl } } = supabase.storage
+            .from('properties')
+            .getPublicUrl(filePath);
+          
+          uploadedUrls.push({
+            name: file.name,
+            url: publicUrl
+          });
         }
       }
-    };
-    
-    ensureRoomExists();
-  }, [propertyId, currentRoom, roomId, createRoomIfNeeded]);
 
-  // Handle selecting photos from property
-  const handleSelectPhotos = () => {
-    setIsSelectPhotosOpen(true);
-  };
+      if (uploadedUrls.length > 0 && onSelectProjectFiles) {
+        onSelectProjectFiles(uploadedUrls.map(item => item.url));
+      }
 
-  // Handle final selection of photos
-  const handleConfirmPhotoSelection = () => {
-    if (onSelectBeforePhotos && selectedPhotos.length > 0) {
-      onSelectBeforePhotos(currentRoom, selectedPhotos);
-      setIsSelectPhotosOpen(false);
-      setSelectedPhotos([]);
-    } else {
-      setIsSelectPhotosOpen(false);
-    }
-  };
-
-  // Handle photo select/deselect
-  const handlePhotoSelection = (photoUrl: string, isSelected: boolean) => {
-    if (isSelected) {
-      setSelectedPhotos(prev => [...prev, photoUrl]);
-    } else {
-      setSelectedPhotos(prev => prev.filter(url => url !== photoUrl));
-    }
-  };
-
-  // Handle selecting files
-  const handleSelectFiles = () => {
-    setIsSelectFilesOpen(true);
-  };
-
-  // Handle final selection of files
-  const handleConfirmFileSelection = () => {
-    if (onAddProjectFiles && selectedFiles.length > 0) {
-      onAddProjectFiles(currentRoom, selectedFiles);
-      setIsSelectFilesOpen(false);
-      setSelectedFiles([]);
-    } else {
-      setIsSelectFilesOpen(false);
-    }
-  };
-
-  // Handle file select/deselect
-  const handleFileSelection = (fileUrl: string, isSelected: boolean) => {
-    if (isSelected) {
-      setSelectedFiles(prev => [...prev, fileUrl]);
-    } else {
-      setSelectedFiles(prev => prev.filter(url => url !== fileUrl));
+      toast({
+        title: "Files uploaded successfully",
+        description: `${uploadedUrls.length} file(s) have been uploaded.`
+      });
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: "Upload failed",
+        description: "There was an error uploading your files.",
+        variant: "destructive"
+      });
+    } finally {
+      // Reset the input
+      if (event.target) {
+        event.target.value = '';
+      }
     }
   };
 
   return (
-    <div className="space-y-8">
-      <Tabs defaultValue="measurements" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="measurements">Measurements</TabsTrigger>
-          <TabsTrigger value="before-photos">Before Photos</TabsTrigger>
-          <TabsTrigger value="design-assets">Design Assets</TabsTrigger>
-          <TabsTrigger value="inspiration">Inspiration</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="measurements" className="pt-6">
-          <RoomMeasurementsCard 
-            area={currentRoom}
-            measurements={roomMeasurements}
-            onSave={(measurements) => {
-              if (onSaveMeasurements) {
-                onSaveMeasurements(currentRoom, measurements);
-              }
-            }}
-          />
-        </TabsContent>
-
-        <TabsContent value="before-photos" className="pt-6">
-          <BeforePhotosCard
-            area={currentRoom}
-            beforePhotos={beforePhotos}
-            onSelectPhotosClick={handleSelectPhotos}
-          />
-
-          <SelectPropertyPhotosDialog
-            open={isSelectPhotosOpen}
-            onOpenChange={setIsSelectPhotosOpen}
-            onConfirm={handleConfirmPhotoSelection}
-            propertyPhotos={parsedPropertyPhotos}
-            onSelectPhoto={handlePhotoSelection}
-            selectedPhotos={selectedPhotos}
-          />
-        </TabsContent>
-
-        <TabsContent value="design-assets" className="pt-6">
-          <DesignAssetsCard
-            hasRenderings={hasRenderings}
-            renderingImages={renderingImages}
-            onAddRenderings={onAddRenderings}
-            onAddDrawings={onAddDrawings}
-            onAddBlueprints={onAddBlueprints}
-            propertyBlueprint={propertyBlueprint}
-            propertyId={propertyId}
-            currentRoom={currentRoom}
-            propertyPhotos={parsedPropertyPhotos}
-          />
-
-          <SelectProjectFilesDialog
-            open={isSelectFilesOpen}
-            onOpenChange={setIsSelectFilesOpen}
-            onConfirm={handleConfirmFileSelection}
-            projectId={projectId || ''}
-            onSelect={handleConfirmFileSelection}
-          />
-        </TabsContent>
-
-        <TabsContent value="inspiration" className="pt-6">
-          <PinterestInspirationSection 
-            currentRoom={currentRoom}
-            roomId={roomId}
-            projectId={projectId}
-          />
-        </TabsContent>
-      </Tabs>
-
-      <div className="pt-6 mt-6 border-t border-gray-100">
-        <h3 className="text-lg font-medium mb-4">Design Team</h3>
-        
-        <div className="bg-gray-50 p-6 rounded-lg text-center">
-          <p className="text-gray-500 mb-4">
-            You haven't added any designers to this room yet.
-          </p>
+    <div className="flex flex-col space-y-6">
+      <Card>
+        <CardContent className="p-6">
+          <DesignTabHeader area={area} location={location} />
           
-          <Button
-            onClick={onAddDesigner}
-            variant="outline"
-            className="w-full sm:w-auto"
-          >
-            Add Designer
-          </Button>
-        </div>
-      </div>
+          {/* Designer Section */}
+          <div className="mt-6">
+            {hasDesigner ? (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-semibold">Designer</h3>
+                  <p className="text-sm text-gray-500 mt-1">Assigned project designer</p>
+                </div>
+                <div className="space-y-3">
+                  {designers.map((designer, index) => (
+                    <div key={index} className="flex items-center p-4 bg-gray-50 rounded-lg">
+                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 flex-shrink-0">
+                        {designer.businessName[0]}
+                      </div>
+                      <div className="ml-3">
+                        <p className="font-medium">{designer.businessName}</p>
+                        <p className="text-sm text-gray-500">Project Designer</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <EmptyDesignState 
+                type="designer" 
+                onAction={onAddDesigner}
+                designers={designers}
+              />
+            )}
+          </div>
+
+          {/* Combined Design Assets Section */}
+          <div className="pt-6 mt-6 border-t border-gray-100">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="font-semibold">Design Assets</h3>
+                <p className="text-sm text-gray-500 mt-1">Project documentation</p>
+              </div>
+              <div className="flex gap-2">
+                {/* Quick upload button */}
+                <div className="relative">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*, .pdf, .dwg, .doc, .docx, .xls"
+                    multiple
+                    onChange={handleQuickUpload}
+                    className="hidden"
+                  />
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    title="Upload files"
+                  >
+                    <Upload className="h-4 w-4" />
+                    <span className="ml-1 hidden sm:inline">Upload</span>
+                  </Button>
+                </div>
+                
+                {/* Select from project files */}
+                {projectId && (
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => setShowProjectFilesDialog(true)}
+                  >
+                    Select from Project Files
+                  </Button>
+                )}
+              </div>
+            </div>
+            
+            {designAssets && designAssets.length > 0 ? (
+              <div className="grid gap-3 mt-4">
+                {designAssets.map((asset, idx) => (
+                  <div key={idx} className="flex items-center justify-between gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                      <span className="text-sm text-gray-700 truncate">{asset.name}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button 
+                        onClick={() => handlePreviewAsset(asset)} 
+                        className="p-1.5 text-gray-500 hover:text-gray-700"
+                        title="Preview"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleDownloadAsset(asset)} 
+                        className="p-1.5 text-gray-500 hover:text-gray-700"
+                        title="Download"
+                      >
+                        <Download className="h-4 w-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleRemoveAsset(idx)} 
+                        className="p-1.5 text-gray-500 hover:text-red-600"
+                        title="Unlink"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-4">
+                <PropertyFileUpload
+                  accept="image/*, .pdf, .dwg, .doc, .docx, .xls"
+                  multiple={true}
+                  label={`Upload ${area} Design Plans and Specs`}
+                  description="Upload project documentation, plans, specifications, or materials"
+                  initialFiles={roomFiles}
+                  onFilesUploaded={handleFilesUploaded}
+                  roomOptions={[
+                    { value: "drawings", label: "Drawings" },
+                    { value: "renderings", label: "Renderings" },
+                    { value: "architectural", label: "Architectural" },
+                    { value: "blueprints", label: "Blueprints" },
+                    { value: "specifications", label: "Specifications" },
+                    { value: "materials", label: "Materials" },
+                    { value: "fixtures", label: "Fixtures" },
+                    { value: "finishes", label: "Finishes" },
+                    { value: "other", label: "Other" }
+                  ]}
+                />
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Room Measurements Section */}
+      <RoomMeasurementsCard 
+        area={area}
+        measurements={measurements}
+        onSaveMeasurements={onSaveMeasurements}
+      />
+
+      <BeforePhotosCard
+        area={area}
+        beforePhotos={beforePhotos}
+        propertyPhotos={propertyPhotos}
+        onSelectBeforePhotos={onSelectBeforePhotos!}
+        onUploadBeforePhotos={onUploadBeforePhotos!}
+      />
+
+      {/* Project Files Selection Dialog */}
+      {projectId && (
+        <SelectProjectFilesDialog
+          open={showProjectFilesDialog}
+          onOpenChange={setShowProjectFilesDialog}
+          projectId={projectId}
+          onSelect={handleSelectProjectFiles}
+        />
+      )}
+
+      {/* Asset Preview Dialog */}
+      <Dialog open={!!previewAsset} onOpenChange={(open) => !open && setPreviewAsset(null)}>
+        <DialogContent className="max-w-3xl h-auto max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{previewAsset?.name}</DialogTitle>
+          </DialogHeader>
+          
+          <div className="mt-4 flex items-center justify-center">
+            {previewAsset?.type === 'image' ? (
+              <img 
+                src={previewAsset.url} 
+                alt={previewAsset.name} 
+                className="max-w-full max-h-[70vh] object-contain" 
+              />
+            ) : previewAsset?.type === 'pdf' ? (
+              <iframe 
+                src={`https://docs.google.com/viewer?embedded=true&url=${encodeURIComponent(previewAsset.url)}`}
+                className="w-full h-[70vh]" 
+                title={previewAsset.name}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center p-10">
+                <FileText className="h-16 w-16 text-gray-400 mb-4" />
+                <p className="text-gray-500">Preview not available</p>
+                <Button className="mt-4" onClick={() => handleDownloadAsset(previewAsset)}>
+                  Download
+                </Button>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

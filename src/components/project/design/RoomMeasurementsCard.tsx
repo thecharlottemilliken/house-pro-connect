@@ -80,14 +80,11 @@ const RoomMeasurementsCard = ({
           ? designPreferences.roomMeasurements 
           : {};
 
-      // Safe conversion of area to lowercase, checking if area is defined first
-      const areaKey = area ? area.toLowerCase().replace(/\s+/g, '_') : '';
-
       const updatedDesignPreferences = {
         ...designPreferences,
         roomMeasurements: {
           ...roomMeasurements,
-          [areaKey]: newMeasurements
+          [area.toLowerCase()]: newMeasurements
         }
       };
 
@@ -129,13 +126,13 @@ const RoomMeasurementsCard = ({
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>Measure Your {area || 'Room'}</DialogTitle>
+                <DialogTitle>Measure Your {area}</DialogTitle>
                 <DialogDescription>
-                  Let's walk through measuring your {area ? area.toLowerCase() : 'room'} for your renovation project.
+                  Let's walk through measuring your {area.toLowerCase()} for your renovation project.
                 </DialogDescription>
               </DialogHeader>
               <MeasuringWizard 
-                area={area || 'Room'} 
+                area={area} 
                 initialMeasurements={measurements} 
                 onComplete={handleSaveMeasurements} 
               />
@@ -178,7 +175,7 @@ const RoomMeasurementsCard = ({
           <div className="text-center py-6 bg-gray-50 rounded-md">
             <Ruler className="w-8 h-8 text-gray-400 mx-auto mb-2" />
             <p className="font-medium">No measurements added</p>
-            <p className="text-sm text-gray-500 mt-1">Add the dimensions of your {area ? area.toLowerCase() : 'room'} for accurate planning</p>
+            <p className="text-sm text-gray-500 mt-1">Add the dimensions of your {area.toLowerCase()} for accurate planning</p>
           </div>
         )}
       </CardContent>
