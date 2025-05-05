@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { Card } from "@/components/ui/card";
@@ -20,7 +21,7 @@ const CoachDashboard = () => {
   const { fetchProjects } = useCoachProjects();
   const [isAddingCoaches, setIsAddingCoaches] = useState(false);
   const { user } = useAuth();
-  const { refreshNotifications } = useNotifications();
+  const { refreshNotifications, addNotification } = useNotifications();
 
   // Set up real-time notifications for new coaching requests
   useEffect(() => {
@@ -46,14 +47,15 @@ const CoachDashboard = () => {
           if (payload.new?.type === 'project_coaching_request') {
             toast.success('New coaching request received');
             console.log('Received coaching request notification:', payload.new);
+            refreshNotifications();
           } else if (payload.new?.type === 'new_meeting') {
             toast.success('New meeting scheduled');
             console.log('Received meeting notification:', payload.new);
+            refreshNotifications();
           }
           
           // Refresh data
           fetchProjects();
-          refreshNotifications();
         }
       )
       .subscribe((status) => {

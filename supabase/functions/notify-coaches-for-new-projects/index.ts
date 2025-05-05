@@ -25,16 +25,25 @@ Deno.serve(async (req) => {
   try {
     console.log("[notify-coaches-for-new-projects] Starting function");
     
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
-    );
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    
+    if (!supabaseUrl || !supabaseServiceRoleKey) {
+      throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variables");
+    }
+    
+    // Use the service role key to bypass RLS
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
     
     const requestData: ProjectUpdateEvent = await req.json();
     const { projectId, managementPreferences } = requestData;
     
     console.log(`[notify-coaches-for-new-projects] Project ID: ${projectId}, Management Preferences:`, managementPreferences);
+    
+    // Validate required fields
+    if (!projectId) {
+      throw new Error("Project ID is required");
+    }
     
     // Only proceed if the project has management preferences with coach request and time slots
     if (!managementPreferences?.wantProjectCoach || 
@@ -60,7 +69,7 @@ Deno.serve(async (req) => {
     console.log(`[notify-coaches-for-new-projects] Checking project ${projectId} for coach notification`);
 
     // Get project details with the user information through a separate join
-    const { data: projectData, error: projectError } = await supabaseClient
+    const { data: projectData, error: projectError } = await supabaseAdmin
       .from('projects')
       .select(`
         id,
@@ -76,7 +85,7 @@ Deno.serve(async (req) => {
     }
 
     // Get user information separately
-    const { data: userData, error: userError } = await supabaseClient
+    const { data: userData, error: userError } = await supabaseAdmin
       .from('profiles')
       .select('name, email')
       .eq('id', projectData.user_id)
@@ -88,19 +97,19 @@ Deno.serve(async (req) => {
     }
 
     // Get all coaches
-    const { data: coaches, error: coachesError } = await supabaseClient
+    const { data: coaches, error: coachesError } = await supabaseAdmin
       .from('profiles')
       .select('id, name')
       .eq('role', 'coach');
     
-    if (coachesError || !coaches) {
+    if (coachesError) {
       console.error('[notify-coaches-for-new-projects] Error getting coaches:', coachesError);
       throw new Error('Could not fetch coaches');
     }
     
-    console.log(`[notify-coaches-for-new-projects] Found ${coaches.length} coaches to notify`);
+    console.log(`[notify-coaches-for-new-projects] Found ${coaches?.length || 0} coaches to notify`);
     
-    if (coaches.length === 0) {
+    if (!coaches || coaches.length === 0) {
       console.error('[notify-coaches-for-new-projects] No coaches found to notify');
       return new Response(
         JSON.stringify({ error: 'No coaches found to notify' }),
@@ -140,7 +149,7 @@ Deno.serve(async (req) => {
       
       try {
         // Direct insert using service role key to bypass RLS
-        const { data: notification, error: notificationError } = await supabaseClient
+        const { data: notification, error: notificationError } = await supabaseAdmin
           .from('notifications')
           .insert(notificationData)
           .select()

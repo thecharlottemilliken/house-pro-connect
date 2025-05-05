@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Plus, PhoneIcon } from "lucide-react";
@@ -8,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Json } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { CoachPreferenceSelector } from "@/components/project/create/CoachPreferenceSelector";
@@ -269,6 +270,13 @@ const ManagementPreferences = () => {
                 toast({
                   title: "Success",
                   description: `Coaches have been notified of your request (${data.message})`,
+                });
+              } else if (data && data.error) {
+                console.error('Error in notification function response:', data.error);
+                toast({
+                  title: "Warning",
+                  description: `Preferences saved, but coaches couldn't be notified: ${data.error}`,
+                  variant: "default"
                 });
               } else {
                 toast({

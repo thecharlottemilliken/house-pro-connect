@@ -1,233 +1,183 @@
 
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42.0";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.43.0'
+
+interface EventData {
+  id: string;
+  project_id: string;
+  title: string;
+  description?: string;
+  start_time: string;
+  end_time: string;
+  location?: string;
+  event_type: string;
+  created_by: string;
+}
+
+interface NotifyMeetingRequest {
+  eventData: EventData;
+  coachName: string;
+}
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log("[notify-meeting-participants] Starting function");
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
     
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
-    );
-
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
-
-    // Get authentication details
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      console.error("[notify-meeting-participants] No authorization header provided");
-      return new Response(
-        JSON.stringify({ error: "No authorization header" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (!supabaseUrl || !supabaseServiceRoleKey) {
+      throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variables");
     }
-
-    // Extract the token from Bearer token
-    const token = authHeader.replace("Bearer ", "");
-    const {
-      data: { user },
-      error: userError,
-    } = await supabaseClient.auth.getUser(token);
-
-    if (userError || !user) {
-      console.error("[notify-meeting-participants] Unauthorized access attempt:", userError);
-      return new Response(
-        JSON.stringify({ error: "Unauthorized", details: userError }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Get request body with event details
-    const { eventData, coachName } = await req.json();
-    console.log("[notify-meeting-participants] Meeting event data received:", eventData);
     
-    if (!eventData || !eventData.project_id) {
-      console.error("[notify-meeting-participants] Missing required event data");
-      return new Response(
-        JSON.stringify({ error: "Missing required event data" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Get all team members for the project except the creator of the event
-    const { data: teamMembers, error: teamError } = await supabaseClient
-      .from("project_team_members")
-      .select("user_id, name, role")
-      .eq("project_id", eventData.project_id)
-      .neq("user_id", eventData.created_by);
+    // Use the service role key to bypass RLS
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
     
-    if (teamError) {
-      console.error("[notify-meeting-participants] Failed to fetch team members:", teamError);
-      return new Response(
-        JSON.stringify({ error: "Failed to fetch team members", details: teamError }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    console.log(`[notify-meeting-participants] Found ${teamMembers?.length || 0} team members to notify`);
+    console.log("Notify-meeting-participants function started");
+    const { eventData, coachName } = await req.json() as NotifyMeetingRequest;
     
-    if (!teamMembers?.length) {
-      console.log("[notify-meeting-participants] No team members to notify");
-      return new Response(
-        JSON.stringify({ message: "No team members to notify" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    console.log("Received event data:", eventData);
+    console.log("Coach name:", coachName);
+    
+    if (!eventData || !eventData.project_id || !eventData.id) {
+      throw new Error("Missing required event data");
     }
-
-    // Get project details for the notification
-    const { data: projectData, error: projectError } = await supabaseClient
-      .from("projects")
-      .select("title, user_id")
-      .eq("id", eventData.project_id)
+    
+    // Get project details
+    const { data: project, error: projectError } = await supabaseAdmin
+      .from('projects')
+      .select('title, user_id')
+      .eq('id', eventData.project_id)
       .single();
     
     if (projectError) {
-      console.error("[notify-meeting-participants] Failed to fetch project details:", projectError);
-      return new Response(
-        JSON.stringify({ error: "Failed to fetch project details", details: projectError }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      console.error("Error fetching project:", projectError);
+      throw new Error(`Error fetching project: ${projectError.message}`);
     }
-
-    const startTime = new Date(eventData.start_time);
-    const formattedDate = startTime.toLocaleDateString("en-US", {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
     
-    const formattedTime = startTime.toLocaleTimeString("en-US", {
+    // Format the date for notification
+    const meetingDate = new Date(eventData.start_time);
+    const formattedDate = meetingDate.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
     });
-
-    // Get creator name
-    const { data: creatorData, error: creatorError } = await supabaseClient
-      .from("profiles")
-      .select("name")
-      .eq("id", user.id)
+    
+    // Get team members for this project
+    const { data: teamMembers, error: teamError } = await supabaseAdmin
+      .from('project_team_members')
+      .select('user_id')
+      .eq('project_id', eventData.project_id)
+      .neq('user_id', eventData.created_by); // Skip the creator
+    
+    if (teamError) {
+      console.error("Error fetching team members:", teamError);
+      throw new Error(`Error fetching team members: ${teamError.message}`);
+    }
+    
+    console.log(`Found ${teamMembers?.length || 0} team members to notify`);
+    
+    // Get creator info for the notification
+    const { data: creatorData, error: creatorError } = await supabaseAdmin
+      .from('profiles')
+      .select('name')
+      .eq('id', eventData.created_by)
       .single();
     
     if (creatorError) {
-      console.error(`[notify-meeting-participants] Error getting creator name for ${user.id}:`, creatorError);
+      console.error("Error fetching creator info:", creatorError);
     }
     
-    const creatorName = creatorData?.name || coachName || "Your coach";
-    console.log(`[notify-meeting-participants] Creator name: ${creatorName}`);
-
-    // Make sure to notify project owner if they're not the creator
-    const projectOwnerId = projectData.user_id;
-    if (projectOwnerId !== eventData.created_by) {
-      // Add project owner to notification list if not already there
-      const isOwnerAlreadyInList = teamMembers.some(member => member.user_id === projectOwnerId);
-      if (!isOwnerAlreadyInList) {
-        console.log(`[notify-meeting-participants] Adding project owner ${projectOwnerId} to notification list`);
-        const { data: ownerData } = await supabaseClient
-          .from("profiles")
-          .select("name")
-          .eq("id", projectOwnerId)
-          .single();
-        
-        if (ownerData) {
-          teamMembers.push({
-            user_id: projectOwnerId,
-            name: ownerData.name,
-            role: "owner"
-          });
-        }
-      }
-    }
-
-    // Create notifications for each team member
-    const notificationPromises = teamMembers.map(async (member) => {
-      try {
-        console.log(`[notify-meeting-participants] Creating notification for team member ${member.user_id}`);
-        
-        // Create notification data
-        const notificationData = {
-          recipient_id: member.user_id,
-          type: 'new_meeting',
-          title: `${creatorName} has scheduled "${eventData.title}" on ${formattedDate}`,
-          content: eventData.description || `Meeting for project: ${projectData.title}`,
-          priority: 'high',
-          data: {
-            users: [{
-              id: user.id,
-              name: creatorName,
-              avatar: creatorName.substring(0, 1)
-            }],
-            meeting: {
-              id: eventData.id,
-              name: eventData.title,
-              date: `${formattedDate}, ${formattedTime}`
-            },
-            project: {
-              id: eventData.project_id,
-              name: projectData.title
-            },
-            availableActions: ['view_meeting', 'reschedule', 'mark_as_read']
+    const creatorName = coachName || creatorData?.name || "Your Coach";
+    
+    // Results tracking
+    const results = {
+      success: true,
+      notificationsSent: 0,
+      errors: [] as string[]
+    };
+    
+    // Send notifications to each team member
+    if (teamMembers && teamMembers.length > 0) {
+      for (const member of teamMembers) {
+        try {
+          const notificationData = {
+            recipient_id: member.user_id,
+            type: 'new_meeting',
+            title: `${creatorName} scheduled a meeting: ${eventData.title}`,
+            content: eventData.description || `Meeting scheduled for ${formattedDate}`,
+            priority: 'high',
+            data: {
+              users: [{
+                id: eventData.created_by,
+                name: creatorName,
+                avatar: creatorName.substring(0, 1)
+              }],
+              meeting: {
+                id: eventData.id,
+                name: eventData.title,
+                date: formattedDate
+              },
+              project: {
+                id: eventData.project_id,
+                name: project.title
+              },
+              availableActions: ['view_meeting', 'reschedule', 'mark_as_read']
+            }
+          };
+          
+          console.log(`Creating notification for user ${member.user_id}:`, notificationData);
+          
+          const { error: notificationError } = await supabaseAdmin
+            .from('notifications')
+            .insert(notificationData);
+          
+          if (notificationError) {
+            console.error(`Error creating notification for user ${member.user_id}:`, notificationError);
+            results.errors.push(`Failed to notify user ${member.user_id}: ${notificationError.message}`);
+          } else {
+            results.notificationsSent++;
+            console.log(`Notification created for user ${member.user_id}`);
           }
-        };
-
-        console.log("[notify-meeting-participants] Notification data:", notificationData);
-
-        // Use service role client to bypass any RLS issues
-        const { data: insertData, error: insertError } = await supabaseAdmin
-          .from('notifications')
-          .insert(notificationData)
-          .select();
-        
-        if (insertError) {
-          console.error(`[notify-meeting-participants] Error creating notification for ${member.user_id}:`, insertError);
-          return { success: false, error: insertError };
+        } catch (error) {
+          console.error(`Error processing notification for user ${member.user_id}:`, error);
+          results.errors.push(`Error for user ${member.user_id}: ${error.message}`);
         }
-        
-        console.log(`[notify-meeting-participants] Successfully created notification for ${member.user_id}:`, insertData);
-        return { success: true, data: insertData };
-      } catch (error) {
-        console.error(`[notify-meeting-participants] Error in notification creation for ${member.user_id}:`, error);
-        return { success: false, error };
       }
-    });
-
-    // Wait for all notifications to be created
-    const results = await Promise.all(notificationPromises);
-    const successful = results.filter(r => r.success).length;
-    const failed = results.filter(r => !r.success).length;
+    } else {
+      console.log("No team members to notify");
+    }
     
-    console.log(`[notify-meeting-participants] Sent ${successful} notifications to team members (${failed} failed)`);
-
+    // Update results
+    results.success = results.errors.length === 0;
+    
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: `Notifications sent to ${successful} team members (${failed} failed)`
-      }),
+      JSON.stringify(results),
       { 
-        status: 200, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
-    
   } catch (error) {
-    console.error("[notify-meeting-participants] Error in function:", error);
+    console.error("Error in notify-meeting-participants function:", error);
+    
     return new Response(
-      JSON.stringify({ error: "Internal server error", details: error.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ 
+        success: false, 
+        message: error.message || "Internal server error" 
+      }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
     );
   }
 });

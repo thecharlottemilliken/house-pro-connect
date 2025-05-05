@@ -184,26 +184,41 @@ export const MeetupScheduleWidget = () => {
         
         const newEvent = await EventsService.createProjectEvent(eventData);
         
-        // Send notifications to all project team members
-        const { data: notificationData, error: notificationError } = await supabase.functions.invoke(
-          'notify-meeting-participants',
-          {
-            body: { 
-              eventData: {
-                ...eventData,
-                id: newEvent.id
-              },
-              coachName: coachName
+        if (newEvent) {
+          // Send notifications to all project team members
+          try {
+            const { data: notificationData, error: notificationError } = await supabase.functions.invoke(
+              'notify-meeting-participants',
+              {
+                body: { 
+                  eventData: {
+                    ...eventData,
+                    id: newEvent.id
+                  },
+                  coachName: coachName
+                }
+              }
+            );
+            
+            if (notificationError) {
+              console.error("Error sending meeting notifications:", notificationError);
+              toast.warning("Meeting scheduled, but notifications failed to send.");
+            } else {
+              console.log("Meeting notification response:", notificationData);
+              if (!notificationData?.success) {
+                console.error("Meeting notification unsuccessful:", notificationData);
+                toast.warning("Meeting scheduled, but some notifications may not have been delivered.");
+              }
             }
+          } catch (notificationError) {
+            console.error("Error sending meeting notifications:", notificationError);
+            toast.warning("Meeting scheduled, but notifications failed to send.");
           }
-        );
-        
-        if (notificationError) {
-          console.error("Error sending meeting notifications:", notificationError);
-          toast.warning("Meeting scheduled, but notifications failed to send.");
+          
+          toast.success("Meeting scheduled and added to project calendar!");
+        } else {
+          toast.warning("Meeting scheduled, but calendar event creation failed.");
         }
-        
-        toast.success("Meeting scheduled and added to project calendar!");
       } catch (calendarError) {
         console.error("Error adding calendar event:", calendarError);
         toast.warning("Meeting scheduled, but calendar event creation failed.");
@@ -497,4 +512,3 @@ export const MeetupScheduleWidget = () => {
     </Card>
   );
 };
-
