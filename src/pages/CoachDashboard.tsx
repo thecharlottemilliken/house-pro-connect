@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { Card } from "@/components/ui/card";
@@ -46,8 +45,10 @@ const CoachDashboard = () => {
           // Check if it's a project coaching request
           if (payload.new?.type === 'project_coaching_request') {
             toast.success('New coaching request received');
+            console.log('Received coaching request notification:', payload.new);
           } else if (payload.new?.type === 'new_meeting') {
             toast.success('New meeting scheduled');
+            console.log('Received meeting notification:', payload.new);
           }
           
           // Refresh data
@@ -59,15 +60,36 @@ const CoachDashboard = () => {
         console.log(`Coach dashboard subscription status: ${status}`);
       });
     
+    // Also listen for direct changes to the project_events table
+    const eventsChannel = supabase
+      .channel(`coach_events_${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'project_events'
+        },
+        (payload) => {
+          console.log('New project event detected:', payload);
+          fetchProjects();
+        }
+      )
+      .subscribe((status) => {
+        console.log(`Coach events subscription status: ${status}`);
+      });
+    
     return () => {
       console.log(`Removing ${channelName} subscription`);
       supabase.removeChannel(channel);
+      supabase.removeChannel(eventsChannel);
     };
   }, [user, fetchProjects, refreshNotifications]);
 
   const handleRefresh = () => {
     fetchProjects();
     refreshNotifications();
+    toast.success('Dashboard data refreshed');
   };
 
   const handleAddCoachesToProjects = async () => {

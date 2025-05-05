@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Plus, PhoneIcon } from "lucide-react";
@@ -245,7 +244,7 @@ const ManagementPreferences = () => {
         // If user wants a coach and provided time slots, send notification to coaches
         if (wantProjectCoach === 'yes' && filledTimeSlots.length > 0) {
           try {
-            console.log('Sending notification to coaches');
+            console.log('Sending notification to coaches for project:', projectId);
             const { data, error } = await supabase.functions.invoke(
               'notify-coaches-for-new-projects',
               {
@@ -259,15 +258,33 @@ const ManagementPreferences = () => {
             
             if (error) {
               console.error('Error notifying coaches:', error);
+              toast({
+                title: "Warning",
+                description: "Preferences saved, but there was an issue notifying coaches. They'll be notified later.",
+                variant: "default"
+              });
             } else {
               console.log('Coach notification response:', data);
-              toast({
-                title: "Success",
-                description: "Coaches have been notified of your request",
-              });
+              if (data && data.success) {
+                toast({
+                  title: "Success",
+                  description: `Coaches have been notified of your request (${data.message})`,
+                });
+              } else {
+                toast({
+                  title: "Warning",
+                  description: "Preferences saved, but coaches couldn't be notified. Please try again later.",
+                  variant: "default"
+                });
+              }
             }
           } catch (notifyError) {
             console.error('Error calling coach notification function:', notifyError);
+            toast({
+              title: "Warning",
+              description: "Preferences saved, but there was an issue notifying coaches.",
+              variant: "default"
+            });
           }
         }
         

@@ -19,38 +19,48 @@ export const EventsService = {
   async createProjectEvent(event: ProjectEvent) {
     console.log("Creating project event:", event);
     
-    // Use a direct query without type checking for now
-    const { data, error } = await (supabase as any)
-      .from('project_events')
-      .insert(event)
-      .select();
+    try {
+      // Use a direct query without type checking for now
+      const { data, error } = await (supabase as any)
+        .from('project_events')
+        .insert(event)
+        .select();
+        
+      if (error) {
+        console.error("Error creating project event:", error);
+        throw error;
+      }
       
-    if (error) {
-      console.error("Error creating project event:", error);
+      console.log("Successfully created project event:", data?.[0]);
+      return data?.[0];
+    } catch (error) {
+      console.error("Unexpected error in createProjectEvent:", error);
       throw error;
     }
-    
-    console.log("Successfully created project event:", data?.[0]);
-    return data?.[0];
   },
   
   async getProjectEvents(projectId: string) {
     console.log("Fetching project events for:", projectId);
     
-    // Use a direct query without type checking for now
-    const { data, error } = await (supabase as any)
-      .from('project_events')
-      .select('*')
-      .eq('project_id', projectId)
-      .order('start_time', { ascending: true });
+    try {
+      // Use a direct query without type checking for now
+      const { data, error } = await (supabase as any)
+        .from('project_events')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('start_time', { ascending: true });
+        
+      if (error) {
+        console.error("Error fetching project events:", error);
+        throw error;
+      }
       
-    if (error) {
-      console.error("Error fetching project events:", error);
+      console.log(`Found ${data?.length || 0} project events`);
+      return data as ProjectEvent[];
+    } catch (error) {
+      console.error("Unexpected error in getProjectEvents:", error);
       throw error;
     }
-    
-    console.log(`Found ${data?.length || 0} project events`);
-    return data as ProjectEvent[];
   },
 
   async notifyEventParticipants(event: ProjectEvent, creatorName: string) {
@@ -73,14 +83,14 @@ export const EventsService = {
 
       if (error) {
         console.error("Error sending meeting notifications:", error);
-        return false;
+        return { success: false, error };
       }
       
       console.log("Meeting notification response:", data);
-      return true;
+      return data;
     } catch (error) {
       console.error("Error in notifyEventParticipants:", error);
-      return false;
+      return { success: false, error };
     }
   }
 };

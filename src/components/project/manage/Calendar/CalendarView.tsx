@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { format, addDays, startOfWeek, endOfWeek, addMonths, parseISO, isSameDay, isAfter } from "date-fns";
 import CalendarHeader from "./CalendarHeader";
@@ -300,17 +299,29 @@ const CalendarView = () => {
       console.log(`Sending notifications as ${userName}`);
       
       // Notify participants
-      const notificationSent = await EventsService.notifyEventParticipants(
-        createdEvent,
-        userName
-      );
-      
-      if (notificationSent) {
-        console.log("Meeting notifications sent successfully");
-        toast.success("Meeting scheduled and notifications sent");
-      } else {
-        console.warn("Meeting notifications may not have been sent to all participants");
-        toast.success("Meeting scheduled but notifications may not have been sent to all participants");
+      try {
+        console.log("Sending meeting notifications to participants");
+        const { data: notificationData, error: notifyError } = await EventsService.notifyEventParticipants(
+          createdEvent,
+          userName
+        );
+        
+        if (notifyError) {
+          console.error("Error sending meeting notifications:", notifyError);
+          toast.warning("Meeting scheduled, but some notifications may not have been sent");
+        } else {
+          console.log("Meeting notification response:", notificationData);
+          
+          if (notificationData && notificationData.success) {
+            console.log("Meeting notifications sent successfully");
+            toast.success(`Meeting scheduled and ${notificationData.message}`);
+          } else {
+            toast.warning("Meeting scheduled but notifications may not have been sent to all participants");
+          }
+        }
+      } catch (notifyError) {
+        console.error("Error in notification process:", notifyError);
+        toast.warning("Meeting scheduled but notifications could not be sent");
       }
       
       // Refresh events

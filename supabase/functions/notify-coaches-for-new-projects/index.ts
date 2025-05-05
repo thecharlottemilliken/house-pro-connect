@@ -100,6 +100,17 @@ Deno.serve(async (req) => {
     
     console.log(`[notify-coaches-for-new-projects] Found ${coaches.length} coaches to notify`);
     
+    if (coaches.length === 0) {
+      console.error('[notify-coaches-for-new-projects] No coaches found to notify');
+      return new Response(
+        JSON.stringify({ error: 'No coaches found to notify' }),
+        { 
+          status: 404, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+    
     // Create a notification for each coach
     const notificationResults = [];
     for (const coach of coaches) {
@@ -128,6 +139,7 @@ Deno.serve(async (req) => {
       console.log("[notify-coaches-for-new-projects] Notification data:", notificationData);
       
       try {
+        // Direct insert using service role key to bypass RLS
         const { data: notification, error: notificationError } = await supabaseClient
           .from('notifications')
           .insert(notificationData)

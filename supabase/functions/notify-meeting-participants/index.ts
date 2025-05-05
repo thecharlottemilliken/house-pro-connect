@@ -186,6 +186,7 @@ serve(async (req) => {
 
         console.log("[notify-meeting-participants] Notification data:", notificationData);
 
+        // Use service role client to bypass any RLS issues
         const { data: insertData, error: insertError } = await supabaseAdmin
           .from('notifications')
           .insert(notificationData)
