@@ -79,6 +79,14 @@ export const useProjectData = (projectId?: string, initialData?: any) => {
     return prefs as unknown as DesignPreferences;
   };
 
+  // Helper function to process JSON to Record<string, any>
+  const processJsonToRecord = (data: Json | null): Record<string, any> | undefined => {
+    if (!data || typeof data !== 'object') return undefined;
+    
+    // Cast JSON to Record<string, any> with safety check
+    return data as unknown as Record<string, any>;
+  };
+
   const fetchProjectData = async (id: string) => {
     try {
       setIsLoading(true);
@@ -101,7 +109,10 @@ export const useProjectData = (projectId?: string, initialData?: any) => {
             // Convert renovation_areas from Json to RenovationArea[]
             renovation_areas: processRenovationAreas(edgeData.renovation_areas),
             // Convert design_preferences from Json to DesignPreferences
-            design_preferences: processDesignPreferences(edgeData.design_preferences)
+            design_preferences: processDesignPreferences(edgeData.design_preferences),
+            // Convert other preference fields to Record<string, any>
+            project_preferences: processJsonToRecord(edgeData.project_preferences),
+            management_preferences: processJsonToRecord(edgeData.management_preferences)
           };
           
           setProjectData(processedData);
@@ -131,7 +142,10 @@ export const useProjectData = (projectId?: string, initialData?: any) => {
         // Convert renovation_areas from Json to RenovationArea[]
         renovation_areas: processRenovationAreas(data.renovation_areas),
         // Convert design_preferences from Json to DesignPreferences
-        design_preferences: processDesignPreferences(data.design_preferences)
+        design_preferences: processDesignPreferences(data.design_preferences),
+        // Convert other preference fields to Record<string, any>
+        project_preferences: processJsonToRecord(data.project_preferences),
+        management_preferences: processJsonToRecord(data.management_preferences)
       };
       
       setProjectData(processedData);
