@@ -36,7 +36,8 @@ const ProjectCalendar = () => {
           </div>
           
           <Card className="p-6">
-            <CalendarView projectId={projectId || ''} />
+            {/* We need to pass the correct props that CalendarView accepts */}
+            <CalendarView project_id={projectId || ''} />
           </Card>
         </main>
       </div>
