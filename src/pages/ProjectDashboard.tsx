@@ -2,7 +2,7 @@ import React from "react";
 import { useLocation, useParams, Navigate, useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useProjectData, RenovationArea, ProjectData } from "@/hooks/useProjectData";
+import { useProjectData, RenovationArea } from "@/hooks/useProjectData";
 import ProjectSidebar from "@/components/project/ProjectSidebar";
 import PropertyCard from "@/components/project/PropertyCard";
 import { SidebarProvider } from "@/components/ui/sidebar";
@@ -19,7 +19,6 @@ import ScheduleCardWidget from "@/components/project/ScheduleCardWidget";
 import ProjectMilestonesWidget from "@/components/project/ProjectMilestonesWidget";
 import FinancialComparisonCard from "@/components/project/FinancialComparisonCard";
 import ActionItemsWidget from "@/components/project/ActionItemsWidget";
-
 const ProjectDashboard = () => {
   const location = useLocation();
   const params = useParams();
@@ -43,17 +42,14 @@ const ProjectDashboard = () => {
     error
   } = useProjectData(projectId, location.state);
   const isLoading = isAccessLoading || isProjectLoading;
-
   React.useEffect(() => {
     if (error) {
-      toast.error(`Error loading project: ${error}`);
+      toast.error(`Error loading project: ${error.message}`);
     }
   }, [error]);
-
   if (!isAccessLoading && !hasAccess) {
     return <Navigate to="/projects" replace />;
   }
-
   if (isLoading) {
     return <div className="min-h-screen flex flex-col bg-white">
         <DashboardNavbar />
@@ -65,7 +61,6 @@ const ProjectDashboard = () => {
         </div>
       </div>;
   }
-
   if (error || !propertyDetails || !projectData) {
     return <div className="min-h-screen flex flex-col bg-white">
         <DashboardNavbar />
@@ -74,7 +69,7 @@ const ProjectDashboard = () => {
             <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-gray-800 mb-2">Unable to load project</h2>
             <p className="text-gray-600 mb-6">
-              {error ? error : "The project could not be loaded. It may have been deleted or you may not have access."}
+              {error ? error.message : "The project could not be loaded. It may have been deleted or you may not have access."}
             </p>
             <Button onClick={() => navigate('/projects')}>
               Return to Projects
@@ -83,13 +78,11 @@ const ProjectDashboard = () => {
         </div>
       </div>;
   }
-  
   const projectTitle = projectData?.title || "Project Overview";
   const renovationAreas = projectData?.renovation_areas as unknown as RenovationArea[] || [];
   const hasSOW = false;
   const hasDesignPlan = false;
   const isCoach = profile?.role === 'coach';
-
   const handleStartSOW = () => {
     if (!hasDesignPlan) {
       setShowNoDesignDialog(true);
@@ -97,11 +90,9 @@ const ProjectDashboard = () => {
       startSOWCreation();
     }
   };
-
   const startSOWCreation = () => {
     navigate(`/project-sow/${projectId}`);
   };
-
   const propertyCardData = {
     id: propertyDetails.id,
     property_name: propertyDetails.property_name,
@@ -112,9 +103,7 @@ const ProjectDashboard = () => {
     state: propertyDetails.state,
     zip_code: propertyDetails.zip_code
   };
-
   const userRole = isOwner ? "Owner" : role || "Team Member";
-  
   return <div className="flex flex-col bg-white min-h-screen">
       <DashboardNavbar />
       <SidebarProvider defaultOpen={!isMobile}>
@@ -204,5 +193,4 @@ const ProjectDashboard = () => {
       </AlertDialog>
     </div>;
 };
-
 export default ProjectDashboard;

@@ -18,15 +18,6 @@ import PinterestConnector from "@/components/project/design/PinterestConnector";
 import { type PinterestBoard } from "@/types/pinterest";
 import { useEffect, useState, useCallback } from "react";
 
-// Interface for designer contact info
-interface DesignerContactInfo {
-  businessName: string;
-  contactName: string;
-  email: string;
-  phone: string;
-  assignedArea: string;
-}
-
 const ProjectDesign = () => {
   const location = useLocation();
   const params = useParams();
@@ -45,14 +36,12 @@ const ProjectDesign = () => {
     pinterestBoards: PinterestBoard[];
   }>>({});
   const [defaultTab, setDefaultTab] = useState<string>("kitchen");
-  
   const handleAddDesignPlans = useCallback(() => console.log("Add design plans clicked"), []);
   const handleAddDesigner = useCallback(() => console.log("Add designer clicked"), []);
   const handleAddRenderings = useCallback(() => console.log("Add renderings clicked"), []);
   const handleAddDrawings = useCallback(() => console.log("Add drawings clicked"), []);
   const handleAddBlueprints = useCallback(() => console.log("Add blueprints clicked"), []);
   const handleAddInspiration = useCallback(() => console.log("Add inspiration clicked"), []);
-  
   const fetchRoomDesignPreferences = useCallback(async (roomId: string) => {
     try {
       const {
@@ -76,7 +65,6 @@ const ProjectDesign = () => {
       console.error('Error fetching room design preferences:', error);
     }
   }, []);
-  
   const createRoomIfNeeded = useCallback(async (propertyId: string, roomName: string) => {
     if (!propertyId || !roomName) return null;
     try {
@@ -106,7 +94,6 @@ const ProjectDesign = () => {
       return null;
     }
   }, []);
-  
   const fetchPropertyRooms = useCallback(async (propertyId: string) => {
     try {
       const {
@@ -124,7 +111,6 @@ const ProjectDesign = () => {
       console.error('Error fetching property rooms:', error);
     }
   }, [fetchRoomDesignPreferences]);
-  
   useEffect(() => {
     if (projectData?.renovation_areas?.length > 0) {
       const firstArea = (projectData.renovation_areas as unknown as RenovationArea[])[0];
@@ -133,13 +119,11 @@ const ProjectDesign = () => {
       }
     }
   }, [projectData?.renovation_areas]);
-  
   useEffect(() => {
     if (propertyDetails?.id) {
       fetchPropertyRooms(propertyDetails.id);
     }
   }, [propertyDetails?.id, fetchPropertyRooms]);
-  
   const setupRooms = useCallback(async () => {
     if (!propertyDetails?.id || !projectData?.renovation_areas) return;
     const areas = projectData.renovation_areas as unknown as RenovationArea[];
@@ -148,18 +132,15 @@ const ProjectDesign = () => {
       await createRoomIfNeeded(propertyDetails.id, area.area);
     }
   }, [propertyDetails?.id, projectData?.renovation_areas, createRoomIfNeeded]);
-  
   useEffect(() => {
     if (propertyDetails?.id && projectData?.renovation_areas) {
       setupRooms();
     }
   }, [propertyDetails?.id, projectData?.renovation_areas, setupRooms]);
-  
   const getRoomIdByName = useCallback((roomName: string) => {
     const room = propertyRooms.find(r => r.name.toLowerCase() === roomName.toLowerCase());
     return room?.id;
   }, [propertyRooms]);
-  
   const handleAddInspirationImages = async (images: string[], roomId?: string) => {
     try {
       if (!roomId) {
@@ -192,7 +173,6 @@ const ProjectDesign = () => {
       });
     }
   };
-  
   const handleAddPinterestBoards = async (boards: PinterestBoard[], roomName: string, roomId?: string) => {
     try {
       if (!roomId) {
@@ -301,7 +281,6 @@ const ProjectDesign = () => {
       });
     }
   };
-  
   const handleSelectBeforePhotos = async (area: string, selectedPhotos: string[]) => {
     try {
       if (!projectData) return;
@@ -336,7 +315,6 @@ const ProjectDesign = () => {
       });
     }
   };
-  
   const handleUploadBeforePhotos = async (area: string, uploadedPhotos: string[]) => {
     try {
       if (!projectData) return;
@@ -372,7 +350,6 @@ const ProjectDesign = () => {
       });
     }
   };
-  
   const handleSaveMeasurements = async (area: string, measurements: any) => {
     try {
       if (!projectData) return;
@@ -407,7 +384,6 @@ const ProjectDesign = () => {
       });
     }
   };
-  
   const handleAddProjectFiles = async (area: string, selectedFiles: string[]) => {
     try {
       if (!projectData) return;
@@ -463,7 +439,7 @@ const ProjectDesign = () => {
       });
     }
   };
-  
+
   const handleRemoveDesignAsset = async (assetIndex: number) => {
     try {
       if (!projectData) return;
@@ -511,13 +487,7 @@ const ProjectDesign = () => {
       });
     }
   };
-  
-  const getDesignersForArea = useCallback((area: string, designerContacts: DesignerContactInfo[] = []) => {
-    return designerContacts.filter(designer => 
-      designer.assignedArea === area || designer.assignedArea === "all_rooms"
-    );
-  }, []);
-  
+
   if (isLoading || !projectData) {
     return <div className="min-h-screen flex flex-col bg-white">
         <DashboardNavbar />
@@ -526,13 +496,11 @@ const ProjectDesign = () => {
         </div>
       </div>;
   }
-  
   const renovationAreas = projectData.renovation_areas as unknown as RenovationArea[] || [];
   const propertyPhotos = propertyDetails?.home_photos || [];
   const designPreferences = projectData.design_preferences as unknown as DesignPreferences || {
     hasDesigns: false,
     designers: [],
-    designerContactInfo: [],
     designAssets: [],
     renderingImages: [],
     inspirationImages: [],
@@ -540,17 +508,8 @@ const ProjectDesign = () => {
     beforePhotos: {},
     roomMeasurements: {}
   };
-  
-  // Ensure designerContactInfo is always an array
-  const designerContactInfo = Array.isArray(designPreferences.designerContactInfo) 
-    ? designPreferences.designerContactInfo 
-    : designPreferences.designerContactInfo 
-      ? [designPreferences.designerContactInfo] 
-      : [];
-  
   const hasDesigns = designPreferences.hasDesigns;
   const hasRenderings = designPreferences.renderingImages && designPreferences.renderingImages.length > 0;
-  
   return <div className="flex flex-col bg-white min-h-screen">
       <DashboardNavbar />
       
@@ -592,9 +551,6 @@ const ProjectDesign = () => {
                       const roomId = getRoomIdByName(area.area);
                       const roomPrefs = roomId ? roomPreferences[roomId] : null;
                       
-                      // Get designers assigned to this area
-                      const roomDesigners = getDesignersForArea(area.area, designerContactInfo);
-                      
                       return (
                         <TabsContent key={area.area} value={area.area.toLowerCase()} className="w-full">
                           {hasDesigns ? (
@@ -604,7 +560,6 @@ const ProjectDesign = () => {
                                   area={area.area}
                                   location={area.location}
                                   designers={designPreferences.designers}
-                                  designerContacts={roomDesigners}
                                   designAssets={designPreferences.designAssets}
                                   measurements={measurements}
                                   onAddDesigner={handleAddDesigner}

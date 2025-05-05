@@ -1,22 +1,49 @@
 
-import { Json } from "@/integrations/supabase/types";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
+import { Json } from "@/integrations/supabase/types";
+import { type PinterestBoard } from "@/types/pinterest";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+
+export interface PropertyDetails {
+  id: string;
+  property_name: string;
+  address: string;
+  address_line1: string;
+  city: string;
+  state: string;
+  zip: string;
+  zip_code: string;
+  home_photos: string[];
+  image_url: string;
+  blueprint_url?: string | null;
+}
+
+export interface ProjectData {
+  id: string;
+  created_at: string;
+  title: string;
+  description: string | null;
+  status: string;
+  property_id: string;
+  user_id: string;
+  design_preferences: DesignPreferences | null;
+  renovation_areas: RenovationArea[];
+  construction_preferences: Json;
+  management_preferences: Json;
+  project_preferences: Json;
+  prior_experience: Json;
+  state?: string;
+}
 
 export interface DesignPreferences {
   hasDesigns: boolean;
-  designers?: any[];
-  designerContactInfo?: {
-    businessName: string;
-    contactName: string;
-    email: string;
-    phone: string;
-    assignedArea: string;
-  }[];
-  designAssets?: { name: string; url: string }[];
+  designers?: Array<{ id: string; businessName: string; }>;
+  designAssets?: Array<{ name: string; url: string; }>;
   renderingImages?: string[];
   inspirationImages?: string[];
-  pinterestBoards?: Record<string, any>;
+  pinterestBoards?: PinterestBoard[];
   beforePhotos?: Record<string, string[]>;
   roomMeasurements?: Record<string, {
     length?: number;
@@ -32,156 +59,208 @@ export interface RenovationArea {
   location?: string;
 }
 
-export interface ProjectData {
-  id: string;
-  title?: string;
-  property_id?: string;
-  renovation_areas?: RenovationArea[];
-  design_preferences?: DesignPreferences;
-  project_preferences?: Record<string, any>;
-  management_preferences?: Record<string, any>;
-  [key: string]: any; // Allow for other properties
+interface UseProjectDataResult {
+  projectData: ProjectData | null;
+  propertyDetails: PropertyDetails | null;
+  isLoading: boolean;
+  error: Error | null;
 }
 
-export const useProjectData = (projectId?: string, initialData?: any) => {
-  const [projectData, setProjectData] = useState<ProjectData | null>(initialData || null);
-  const [propertyDetails, setPropertyDetails] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(!initialData && !!projectId);
-  const [error, setError] = useState<string | null>(null);
+export const useProjectData = (projectId: string | undefined, locationState: any = null): UseProjectDataResult => {
+  const [projectData, setProjectData] = useState<ProjectData | null>(null);
+  const [propertyDetails, setPropertyDetails] = useState<PropertyDetails | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const { user, profile } = useAuth();
 
   useEffect(() => {
-    if (projectId) {
-      fetchProjectData(projectId);
-    }
-  }, [projectId]);
-
-  // Helper function to convert JSON renovation areas to typed RenovationArea[]
-  const processRenovationAreas = (areas: Json | null): RenovationArea[] => {
-    if (!areas || !Array.isArray(areas)) return [];
-    
-    return areas.map(area => {
-      if (typeof area === 'object' && area !== null && 'area' in area) {
-        return {
-          area: String(area.area),
-          location: 'location' in area ? String(area.location) : undefined
-        };
-      }
-      // If the item doesn't have the expected structure, return a default
-      return { area: 'Unknown' };
-    });
-  };
-
-  // Helper function to process design preferences
-  const processDesignPreferences = (prefs: Json | null): DesignPreferences | undefined => {
-    if (!prefs || typeof prefs !== 'object') return undefined;
-    
-    // Cast to necessary type with safety checks
-    return prefs as unknown as DesignPreferences;
-  };
-
-  // Helper function to process JSON to Record<string, any>
-  const processJsonToRecord = (data: Json | null): Record<string, any> | undefined => {
-    if (!data || typeof data !== 'object') return undefined;
-    
-    // Cast JSON to Record<string, any> with safety check
-    return data as unknown as Record<string, any>;
-  };
-
-  const fetchProjectData = async (id: string) => {
-    try {
+    const fetchProjectData = async () => {
       setIsLoading(true);
       setError(null);
 
-      // First try to get data from the edge function
       try {
-        const { data: edgeData, error: edgeError } = await supabase.functions.invoke('handle-project-update', {
-          method: 'POST',
-          body: { 
-            projectId: id,
-            action: 'get'
-          }
-        });
-
-        if (!edgeError && edgeData) {
-          // Process the data to ensure it matches our ProjectData interface
-          const processedData: ProjectData = {
-            ...edgeData,
-            // Convert renovation_areas from Json to RenovationArea[]
-            renovation_areas: processRenovationAreas(edgeData.renovation_areas),
-            // Convert design_preferences from Json to DesignPreferences
-            design_preferences: processDesignPreferences(edgeData.design_preferences),
-            // Convert other preference fields to Record<string, any>
-            project_preferences: processJsonToRecord(edgeData.project_preferences),
-            management_preferences: processJsonToRecord(edgeData.management_preferences)
-          };
-          
-          setProjectData(processedData);
-          
-          if (processedData.property_id) {
-            fetchPropertyDetails(processedData.property_id);
-          }
-          
-          return;
+        if (!projectId || !user) {
+          throw new Error("Project ID is undefined or user is not authenticated");
         }
-      } catch (edgeErr) {
-        console.error("Edge function error:", edgeErr);
+
+        console.log(`Fetching project data for project: ${projectId} and user: ${user.id}`);
+
+        let projectDetails;
+        let propertyData;
+        const isCoach = profile?.role === 'coach';
+
+        // Coach access path - use direct database query with RLS bypassing functions
+        if (isCoach) {
+          console.log("Using coach access path for project data");
+          
+          try {
+            // Use direct database queries for coaches (RLS policies now allow this)
+            const { data: coachProjectData, error: coachProjectError } = await supabase
+              .from('projects')
+              .select('*')
+              .eq('id', projectId)
+              .maybeSingle();
+              
+            if (coachProjectError) {
+              console.error("Error fetching project using coach path:", coachProjectError);
+              throw coachProjectError;
+            }
+            
+            if (!coachProjectData) {
+              throw new Error("Project not found");
+            }
+            
+            projectDetails = coachProjectData;
+            
+            // Now get property data
+            const { data: coachPropertyData, error: coachPropertyError } = await supabase
+              .from('properties')
+              .select('*')
+              .eq('id', projectDetails.property_id)
+              .maybeSingle();
+              
+            if (coachPropertyError) {
+              console.error("Error fetching property using coach path:", coachPropertyError);
+              throw coachPropertyError;
+            }
+            
+            if (!coachPropertyData) {
+              throw new Error("Property not found");
+            }
+            
+            propertyData = coachPropertyData;
+          } catch (coachError) {
+            console.error("Coach access path failed, falling back to edge functions:", coachError);
+            
+            // Fall back to edge functions if direct access fails
+            const { data: projectEdgeData, error: projectError } = await supabase.functions.invoke(
+              'handle-project-update',
+              {
+                body: { 
+                  projectId, 
+                  userId: user.id 
+                }
+              }
+            );
+            
+            if (projectError) throw projectError;
+            projectDetails = projectEdgeData;
+
+            const { data: propertyEdgeData, error: propertyError } = await supabase.functions.invoke(
+              'get-property-details',
+              { 
+                body: { 
+                  propertyId: projectDetails.property_id,
+                  userId: user.id 
+                }
+              }
+            );
+            
+            if (propertyError) throw propertyError;
+            propertyData = propertyEdgeData;
+          }
+        } else {
+          // Non-coach path - use edge functions as before
+          const { data: projectEdgeData, error: projectError } = await supabase.functions.invoke(
+            'handle-project-update',
+            {
+              body: { 
+                projectId, 
+                userId: user.id 
+              }
+            }
+          );
+          
+          if (projectError) {
+            console.error("Error fetching project data via edge function:", projectError);
+            throw new Error("Failed to fetch project data");
+          }
+          projectDetails = projectEdgeData;
+
+          if (!projectDetails) {
+            console.error("Project details not found");
+            throw new Error("Project details not found");
+          }
+
+          const { data: propertyEdgeData, error: propertyError } = await supabase.functions.invoke(
+            'get-property-details',
+            { 
+              body: { 
+                propertyId: projectDetails.property_id,
+                userId: user.id 
+              }
+            }
+          );
+          
+          if (propertyError) {
+            console.error("Error fetching property via edge function:", propertyError);
+            throw propertyError;
+          }
+          
+          if (!propertyEdgeData) {
+            console.error("Property not found via edge function");
+            throw new Error("Property not found");
+          }
+          
+          propertyData = propertyEdgeData;
+        }
+
+        console.log("Project data retrieved successfully:", projectDetails);
+
+        const projectDataMapped: ProjectData = {
+          id: projectDetails.id,
+          created_at: projectDetails.created_at,
+          title: projectDetails.title,
+          description: (projectDetails as any).description || null,
+          status: projectDetails.state || 'active',
+          property_id: projectDetails.property_id,
+          user_id: projectDetails.user_id,
+          design_preferences: projectDetails.design_preferences as unknown as DesignPreferences || {
+            hasDesigns: false,
+            designers: [],
+            designAssets: [],
+            renderingImages: [],
+            inspirationImages: [],
+            pinterestBoards: [],
+            beforePhotos: {},
+            roomMeasurements: {}
+          },
+          renovation_areas: (projectDetails.renovation_areas as unknown as RenovationArea[]) || [],
+          construction_preferences: projectDetails.construction_preferences || {},
+          management_preferences: projectDetails.management_preferences || {},
+          project_preferences: projectDetails.project_preferences || {},
+          prior_experience: projectDetails.prior_experience || {},
+          state: projectDetails.state || 'active'
+        };
+
+        setProjectData(projectDataMapped);
+
+        const propertyDetailsMapped: PropertyDetails = {
+          id: propertyData.id,
+          property_name: propertyData.property_name,
+          address: `${propertyData.address_line1}, ${propertyData.city}, ${propertyData.state} ${propertyData.zip_code}`,
+          address_line1: propertyData.address_line1,
+          city: propertyData.city,
+          state: propertyData.state,
+          zip: propertyData.zip_code,
+          zip_code: propertyData.zip_code,
+          home_photos: propertyData.home_photos || [],
+          image_url: propertyData.image_url || '',
+          blueprint_url: propertyData.blueprint_url
+        };
+
+        setPropertyDetails(propertyDetailsMapped);
+      } catch (err: any) {
+        setError(err);
+        console.error("Error fetching project data:", err);
+        toast.error(`Error loading project: ${err.message}`);
+      } finally {
+        setIsLoading(false);
       }
+    };
 
-      // Fallback to direct query
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('id', id)
-        .single();
+    fetchProjectData();
+  }, [projectId, user, profile]);
 
-      if (error) throw error;
-      
-      // Process the data to ensure it matches our ProjectData interface
-      const processedData: ProjectData = {
-        ...data,
-        // Convert renovation_areas from Json to RenovationArea[]
-        renovation_areas: processRenovationAreas(data.renovation_areas),
-        // Convert design_preferences from Json to DesignPreferences
-        design_preferences: processDesignPreferences(data.design_preferences),
-        // Convert other preference fields to Record<string, any>
-        project_preferences: processJsonToRecord(data.project_preferences),
-        management_preferences: processJsonToRecord(data.management_preferences)
-      };
-      
-      setProjectData(processedData);
-      
-      if (processedData.property_id) {
-        fetchPropertyDetails(processedData.property_id);
-      }
-    } catch (err: any) {
-      console.error("Error fetching project data:", err);
-      setError(err.message || "Failed to load project data");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchPropertyDetails = async (propertyId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('properties')
-        .select('*')
-        .eq('id', propertyId)
-        .single();
-
-      if (error) throw error;
-      
-      setPropertyDetails(data);
-    } catch (err) {
-      console.error("Error fetching property details:", err);
-    }
-  };
-
-  return {
-    projectData,
-    propertyDetails,
-    isLoading,
-    error,
-    refetch: projectId ? () => fetchProjectData(projectId) : null
-  };
+  return { projectData, propertyDetails, isLoading, error };
 };

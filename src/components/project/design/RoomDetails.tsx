@@ -20,19 +20,10 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-interface DesignerInfo {
-  businessName: string;
-  contactName: string;
-  email: string;
-  phone: string;
-  assignedArea: string;
-}
-
 interface RoomDetailsProps {
   area: string;
   location?: string;
   designers?: Array<{ id: string; businessName: string; }>;
-  designerContacts?: DesignerInfo[];
   designAssets?: Array<{ name: string; url: string; }>;
   measurements?: {
     length?: number;
@@ -57,7 +48,6 @@ const RoomDetails = ({
   area,
   location,
   designers,
-  designerContacts = [],
   designAssets = [],
   measurements,
   onAddDesigner,
@@ -71,7 +61,7 @@ const RoomDetails = ({
   onSelectProjectFiles,
   onRemoveDesignAsset
 }: RoomDetailsProps) => {
-  const hasDesigner = designerContacts && designerContacts.length > 0;
+  const hasDesigner = designers && designers.length > 0;
   const [roomFiles, setRoomFiles] = useState<FileWithPreview[]>(() => {
     // Convert design assets to FileWithPreview format if available
     if (designAssets && designAssets.length > 0) {
@@ -230,22 +220,18 @@ const RoomDetails = ({
             {hasDesigner ? (
               <div className="space-y-4">
                 <div>
-                  <h3 className="font-semibold">Designer{designerContacts.length > 1 ? 's' : ''}</h3>
-                  <p className="text-sm text-gray-500 mt-1">Assigned project designer{designerContacts.length > 1 ? 's' : ''}</p>
+                  <h3 className="font-semibold">Designer</h3>
+                  <p className="text-sm text-gray-500 mt-1">Assigned project designer</p>
                 </div>
                 <div className="space-y-3">
-                  {designerContacts.map((designer, index) => (
+                  {designers.map((designer, index) => (
                     <div key={index} className="flex items-center p-4 bg-gray-50 rounded-lg">
                       <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 flex-shrink-0">
-                        {designer.businessName?.[0] || designer.contactName?.[0] || 'D'}
+                        {designer.businessName[0]}
                       </div>
                       <div className="ml-3">
-                        <p className="font-medium">{designer.businessName || 'Unknown'}</p>
-                        <p className="text-sm text-gray-500">{designer.contactName}</p>
-                        <div className="mt-1 flex items-center text-xs text-gray-500">
-                          <span className="mr-2">{designer.email}</span>
-                          {designer.phone && <span>{designer.phone}</span>}
-                        </div>
+                        <p className="font-medium">{designer.businessName}</p>
+                        <p className="text-sm text-gray-500">Project Designer</p>
                       </div>
                     </div>
                   ))}
