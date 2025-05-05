@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { FormItem } from "@/components/ui/form";
+
 const PriorExperience = () => {
   const {
     user
@@ -30,45 +31,25 @@ const PriorExperience = () => {
     designVision: "",
     additionalNotes: ""
   });
-  const steps = [{
-    number: 1,
-    title: "Select a Property",
-    current: false
-  }, {
-    number: 2,
-    title: "Select Renovation Areas",
-    current: false
-  }, {
-    number: 3,
-    title: "Project Preferences",
-    current: false
-  }, {
-    number: 4,
-    title: "Construction Preferences",
-    current: false
-  }, {
-    number: 5,
-    title: "Design Preferences",
-    current: false
-  }, {
-    number: 6,
-    title: "Management Preferences",
-    current: false
-  }, {
-    number: 7,
-    title: "Prior Experience",
-    current: true
-  }, {
-    number: 8,
-    title: "Summary",
-    current: false
-  }];
+  
+  const steps = [
+    { number: 1, title: "Select a Property", current: false },
+    { number: 2, title: "Select Renovation Areas", current: false },
+    { number: 3, title: "Project Preferences", current: false },
+    { number: 4, title: "Construction Preferences", current: false },
+    { number: 5, title: "Design Preferences", current: false },
+    { number: 6, title: "Management Preferences", current: false },
+    { number: 7, title: "Prior Experience", current: true },
+    { number: 8, title: "Summary", current: false }
+  ];
+  
   const handleUpdateField = (field: keyof typeof priorExperience, value: string) => {
     setPriorExperience(prev => ({
       ...prev,
       [field]: value
     }));
   };
+  
   const handleBack = () => {
     navigate("/management-preferences", {
       state: {
@@ -81,6 +62,7 @@ const PriorExperience = () => {
       }
     });
   };
+  
   const handleNext = () => {
     if (!propertyId) {
       toast({
@@ -90,7 +72,7 @@ const PriorExperience = () => {
       });
       return;
     }
-
+    
     // Navigate to the summary step
     navigate("/project-summary", {
       state: {
@@ -104,6 +86,7 @@ const PriorExperience = () => {
       }
     });
   };
+  
   return <div className="min-h-screen flex flex-col bg-white">
       <DashboardNavbar />
       
