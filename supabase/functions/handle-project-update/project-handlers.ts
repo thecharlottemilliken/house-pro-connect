@@ -92,30 +92,32 @@ async function updateOrCreateProject(supabase: any, body: any, corsHeaders: any)
   const userId = body.userId;
   const propertyId = body.propertyId;
   const title = body.title || "";
+  const description = body.description || null;
   const renovationAreas = body.renovationAreas || [];
   const projectPreferences = body.projectPreferences || {};
   const constructionPreferences = body.constructionPreferences || {};
   const designPreferences = body.designPreferences || {};
   const managementPreferences = body.managementPreferences || {};
-  const prior_experience = body.prior_experience || {};
+  const priorExperience = body.priorExperience || {};
 
   console.log("Processing project update/create with data:", JSON.stringify({
     projectId,
     userId,
     propertyId,
     title,
+    description,
     renovationAreas: Array.isArray(renovationAreas) ? renovationAreas.length : 'not array',
     hasProjectPrefs: !!Object.keys(projectPreferences || {}).length,
     hasConstructionPrefs: !!Object.keys(constructionPreferences || {}).length,
     hasDesignPrefs: !!Object.keys(designPreferences || {}).length,
     hasManagementPrefs: !!Object.keys(managementPreferences || {}).length,
-    hasPriorExp: !!Object.keys(prior_experience || {}).length,
+    hasPriorExp: !!Object.keys(priorExperience || {}).length,
     renovationAreas,
     projectPreferences,
     constructionPreferences, 
     designPreferences,
     managementPreferences,
-    prior_experience
+    priorExperience
   }, null, 2));
 
   try {
@@ -126,12 +128,13 @@ async function updateOrCreateProject(supabase: any, body: any, corsHeaders: any)
         userId,
         propertyId,
         title, 
+        description,
         renovationAreas,
         projectPreferences,
         constructionPreferences,
         designPreferences,
         managementPreferences,
-        prior_experience,
+        priorExperience,
         corsHeaders
       );
     } else if (propertyId && userId) {
@@ -140,12 +143,13 @@ async function updateOrCreateProject(supabase: any, body: any, corsHeaders: any)
         propertyId, 
         userId, 
         title, 
+        description,
         renovationAreas,
         projectPreferences,
         constructionPreferences, 
         designPreferences, 
         managementPreferences, 
-        prior_experience,
+        priorExperience,
         corsHeaders
       );
     }
@@ -175,12 +179,13 @@ async function updateExistingProject(
   userId: string,
   propertyId?: string,
   title?: string,
+  description?: string,
   renovationAreas?: any[],
   projectPreferences?: any,
   constructionPreferences?: any,
   designPreferences?: any,
   managementPreferences?: any,
-  prior_experience?: any,
+  priorExperience?: any,
   corsHeaders?: any
 ) {
   // First get the existing project to verify it exists
@@ -210,10 +215,11 @@ async function updateExistingProject(
   console.log("Project data before update:", JSON.stringify({
     projectId,
     userId,
+    description,
     constructionPreferences,
     designPreferences,
     managementPreferences,
-    prior_experience
+    priorExperience
   }, null, 2));
 
   // Update the project with the provided data
@@ -222,6 +228,7 @@ async function updateExistingProject(
   // Basic fields that are simple to update
   if (propertyId) updateData.property_id = propertyId;
   if (title) updateData.title = title;
+  if (description !== undefined) updateData.description = description;
   
   // Always include all preference data that was sent in the request
   if (renovationAreas !== undefined) {
@@ -247,9 +254,9 @@ async function updateExistingProject(
     updateData.management_preferences = managementPreferences;
   }
   
-  if (prior_experience !== undefined) {
-    console.log("Updating prior experience with:", JSON.stringify(prior_experience, null, 2));
-    updateData.prior_experience = prior_experience;
+  if (priorExperience !== undefined) {
+    console.log("Updating prior experience with:", JSON.stringify(priorExperience, null, 2));
+    updateData.prior_experience = priorExperience;
   }
   
   console.log("Final update data being sent:", JSON.stringify(updateData, null, 2));
@@ -281,24 +288,26 @@ async function createNewProject(
   propertyId: string, 
   userId: string,
   title: string,
+  description: string | null,
   renovationAreas: any[],
   projectPreferences: any,
   constructionPreferences: any,
   designPreferences: any,
   managementPreferences: any,
-  prior_experience: any,
+  priorExperience: any,
   corsHeaders: any
 ) {
   console.log("Creating new project with data:", {
     propertyId,
     userId,
     title: title || "New Project",
+    description,
     renovationAreas,
     projectPreferences,
     constructionPreferences,
     designPreferences,
     managementPreferences,
-    prior_experience
+    priorExperience
   });
   
   const { data, error } = await supabase
@@ -307,12 +316,13 @@ async function createNewProject(
       property_id: propertyId,
       user_id: userId,
       title: title || "New Project",
+      description: description,
       renovation_areas: renovationAreas,
       project_preferences: projectPreferences,
       construction_preferences: constructionPreferences,
       design_preferences: designPreferences,
       management_preferences: managementPreferences,
-      prior_experience: prior_experience
+      prior_experience: priorExperience
     })
     .select()
     .single();

@@ -304,6 +304,7 @@ const RenovationAreas = () => {
     { number: 5, title: "Design Preferences", current: false },
     { number: 6, title: "Management Preferences", current: false },
     { number: 7, title: "Prior Experience", current: false },
+    { number: 8, title: "Summary", current: false }
   ];
 
   const locationOptions = [

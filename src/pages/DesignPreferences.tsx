@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Plus } from "lucide-react";
@@ -315,6 +314,7 @@ const DesignPreferences = () => {
     { number: 5, title: "Design Preferences", current: true },
     { number: 6, title: "Management Preferences", current: false },
     { number: 7, title: "Prior Experience", current: false },
+    { number: 8, title: "Summary", current: false }
   ];
 
   return (

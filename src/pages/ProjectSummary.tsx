@@ -96,7 +96,7 @@ const ProjectSummary = () => {
       });
       
       // Navigate to the project dashboard with the new project ID
-      navigate(`/project-dashboard/${data}`);
+      navigate(`/project-dashboard/${data.id}`);
     } catch (error) {
       console.error("Error creating project:", error);
       toast({
