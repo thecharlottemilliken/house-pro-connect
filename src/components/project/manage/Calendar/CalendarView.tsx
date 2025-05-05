@@ -11,6 +11,10 @@ import EventDrawer from "@/components/project/calendar/EventDrawer";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
+interface CalendarViewProps {
+  project_id?: string;
+}
+
 interface CalendarDay {
   day: number;
   name: string;
@@ -27,8 +31,10 @@ interface Event {
   location?: string;
 }
 
-const CalendarView = () => {
-  const { projectId } = useParams<{ projectId: string }>();
+const CalendarView = ({ project_id }: CalendarViewProps) => {
+  const { projectId: urlProjectId } = useParams<{ projectId: string }>();
+  // Use passed project_id prop or fallback to URL parameter
+  const projectId = project_id || urlProjectId;
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<"Day" | "Week" | "Month">("Week");
