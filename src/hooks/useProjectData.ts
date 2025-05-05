@@ -32,7 +32,6 @@ export interface RenovationArea {
   location?: string;
 }
 
-// Export ProjectData interface that was missing
 export interface ProjectData {
   id: string;
   title?: string;
@@ -56,6 +55,30 @@ export const useProjectData = (projectId?: string, initialData?: any) => {
     }
   }, [projectId]);
 
+  // Helper function to convert JSON renovation areas to typed RenovationArea[]
+  const processRenovationAreas = (areas: Json | null): RenovationArea[] => {
+    if (!areas || !Array.isArray(areas)) return [];
+    
+    return areas.map(area => {
+      if (typeof area === 'object' && area !== null && 'area' in area) {
+        return {
+          area: String(area.area),
+          location: 'location' in area ? String(area.location) : undefined
+        };
+      }
+      // If the item doesn't have the expected structure, return a default
+      return { area: 'Unknown' };
+    });
+  };
+
+  // Helper function to process design preferences
+  const processDesignPreferences = (prefs: Json | null): DesignPreferences | undefined => {
+    if (!prefs || typeof prefs !== 'object') return undefined;
+    
+    // Cast to necessary type with safety checks
+    return prefs as unknown as DesignPreferences;
+  };
+
   const fetchProjectData = async (id: string) => {
     try {
       setIsLoading(true);
@@ -76,7 +99,9 @@ export const useProjectData = (projectId?: string, initialData?: any) => {
           const processedData: ProjectData = {
             ...edgeData,
             // Convert renovation_areas from Json to RenovationArea[]
-            renovation_areas: Array.isArray(edgeData.renovation_areas) ? edgeData.renovation_areas as RenovationArea[] : []
+            renovation_areas: processRenovationAreas(edgeData.renovation_areas),
+            // Convert design_preferences from Json to DesignPreferences
+            design_preferences: processDesignPreferences(edgeData.design_preferences)
           };
           
           setProjectData(processedData);
@@ -104,7 +129,9 @@ export const useProjectData = (projectId?: string, initialData?: any) => {
       const processedData: ProjectData = {
         ...data,
         // Convert renovation_areas from Json to RenovationArea[]
-        renovation_areas: Array.isArray(data.renovation_areas) ? data.renovation_areas as RenovationArea[] : []
+        renovation_areas: processRenovationAreas(data.renovation_areas),
+        // Convert design_preferences from Json to DesignPreferences
+        design_preferences: processDesignPreferences(data.design_preferences)
       };
       
       setProjectData(processedData);
