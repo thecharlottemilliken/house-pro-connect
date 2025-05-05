@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { FileText, Eye, Download, X, Upload } from "lucide-react";
@@ -241,6 +240,7 @@ const RoomDetails = ({
               <EmptyDesignState 
                 type="designer" 
                 onAction={onAddDesigner}
+                designers={designers}
               />
             )}
           </div>

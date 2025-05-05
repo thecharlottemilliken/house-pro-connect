@@ -1,82 +1,126 @@
 
-import React, { ReactNode } from "react";
+import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Pen, FileText, Image, Lightbulb } from "lucide-react";
+import { PlusCircle } from "lucide-react";
+import { DesignPreferences } from '@/hooks/useProjectData';
 
 interface EmptyDesignStateProps {
-  type: "no-designs" | "designer" | "design-assets" | "renderings" | "inspiration";
+  type: 'no-designs' | 'designer' | 'renderings' | 'drawings' | 'blueprints' | 'inspiration';
   onAction?: () => void;
-  customIcon?: ReactNode;
-  customTitle?: string;
-  customDescription?: string;
-  customActionLabel?: string;
+  designers?: Array<{ id: string; businessName: string; contactName?: string; email?: string; phone?: string; speciality?: string; }>;
 }
 
-const EmptyDesignState = ({ 
+const EmptyDesignState: React.FC<EmptyDesignStateProps> = ({ 
   type, 
   onAction,
-  customIcon,
-  customTitle,
-  customDescription,
-  customActionLabel 
-}: EmptyDesignStateProps) => {
-  const getContent = () => {
+  designers = []
+}) => {
+  const getTitle = () => {
     switch (type) {
-      case "no-designs":
-        return {
-          icon: <Pen className="w-12 h-12 text-gray-400" />,
-          title: "No Design Plans Yet",
-          description: "Start by adding your design plans or connecting with a designer.",
-          actionLabel: "Add Design Plans"
-        };
-      case "designer":
-        return {
-          icon: <Pen className="w-12 h-12 text-gray-400" />,
-          title: "No Designer Assigned",
-          description: "Add a designer to help bring your vision to life.",
-          actionLabel: "Add Designer"
-        };
-      case "design-assets":
-        return {
-          icon: <FileText className="w-12 h-12 text-gray-400" />,
-          title: "No Design Assets",
-          description: "Upload your design plans, blueprints, or specifications.",
-          actionLabel: "Upload Assets"
-        };
-      case "renderings":
-        return {
-          icon: <Image className="w-12 h-12 text-gray-400" />,
-          title: "No Renderings",
-          description: "Add 3D renderings or visualizations of your design.",
-          actionLabel: "Add Renderings"
-        };
-      case "inspiration":
-        return {
-          icon: <Lightbulb className="w-12 h-12 text-gray-400" />,
-          title: "No Inspiration Added",
-          description: "Add photos that inspire your design vision.",
-          actionLabel: "Add Inspiration"
-        };
+      case 'no-designs':
+        return 'No Design Plans Yet';
+      case 'designer':
+        return designers && designers.length > 0 
+          ? 'Designer Information' 
+          : 'No Designer Yet';
+      case 'renderings':
+        return 'No Renderings Yet';
+      case 'drawings':
+        return 'No Drawings Yet';
+      case 'blueprints':
+        return 'No Blueprints Yet';
+      case 'inspiration':
+        return 'No Inspiration Yet';
+      default:
+        return 'No Data Yet';
     }
   };
 
-  const content = getContent();
+  const getDescription = () => {
+    switch (type) {
+      case 'no-designs':
+        return 'There are no design plans yet for this area.';
+      case 'designer':
+        return designers && designers.length > 0
+          ? 'Here are the details of your assigned designers.'
+          : 'No designer has been assigned to this area yet.';
+      case 'renderings':
+        return 'There are no 3D renderings available yet.';
+      case 'drawings':
+        return 'There are no architectural drawings available yet.';
+      case 'blueprints':
+        return 'There are no blueprints available yet.';
+      case 'inspiration':
+        return 'No inspiration images have been added yet.';
+      default:
+        return 'No data available yet.';
+    }
+  };
+
+  const getButtonText = () => {
+    switch (type) {
+      case 'no-designs':
+        return 'Add Design Plans';
+      case 'designer':
+        return 'Add Designer';
+      case 'renderings':
+        return 'Add Renderings';
+      case 'drawings':
+        return 'Add Drawings';
+      case 'blueprints':
+        return 'Add Blueprints';
+      case 'inspiration':
+        return 'Add Inspiration';
+      default:
+        return 'Add Data';
+    }
+  };
+
+  if (type === 'designer' && designers && designers.length > 0) {
+    return (
+      <div className="p-6 bg-white rounded-lg border border-gray-200">
+        <h3 className="font-semibold text-lg mb-4">{getTitle()}</h3>
+        <div className="space-y-4">
+          {designers.map((designer, index) => (
+            <div key={index} className="p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center mb-2">
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg">
+                  {designer.businessName.charAt(0)}
+                </div>
+                <div className="ml-3">
+                  <h4 className="font-medium text-gray-900">{designer.businessName}</h4>
+                  {designer.contactName && <p className="text-sm text-gray-600">Contact: {designer.contactName}</p>}
+                </div>
+              </div>
+              
+              <div className="mt-3 space-y-1 text-sm text-gray-600">
+                {designer.email && <p>Email: {designer.email}</p>}
+                {designer.phone && <p>Phone: {designer.phone}</p>}
+                {designer.speciality && <p>Specialty: {designer.speciality}</p>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="text-center">
-      <div className="flex flex-col items-center space-y-3">
-        {customIcon || content?.icon}
-        <h3 className="font-medium">{customTitle || content?.title}</h3>
-        <p className="text-sm text-gray-500">{customDescription || content?.description}</p>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={onAction}
-          className="mt-2"
-        >
-          {customActionLabel || content?.actionLabel}
-        </Button>
+    <div className="p-8 bg-gray-50 rounded-lg text-center flex flex-col items-center space-y-3">
+      <div className="bg-white p-4 rounded-full shadow-sm">
+        <PlusCircle className="h-10 w-10 text-gray-400" />
       </div>
+      <h3 className="font-semibold text-lg">{getTitle()}</h3>
+      <p className="text-gray-500 max-w-md">{getDescription()}</p>
+      {onAction && (
+        <Button 
+          onClick={onAction}
+          variant="ghost" 
+          className="mt-4 border border-gray-200"
+        >
+          {getButtonText()}
+        </Button>
+      )}
     </div>
   );
 };
