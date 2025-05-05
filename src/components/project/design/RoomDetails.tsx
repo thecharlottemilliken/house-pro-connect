@@ -67,16 +67,16 @@ const RoomDetails: React.FC<RoomDetailsProps> = ({
   const parsedPropertyPhotos = propertyPhotos || [];
   
   // Get room measurements from design preferences
-  const roomMeasurements = designPreferences?.roomMeasurements?.[currentRoom.toLowerCase().replace(/\s+/g, '_')] || {};
+  const roomMeasurements = designPreferences?.roomMeasurements?.[currentRoom ? currentRoom.toLowerCase().replace(/\s+/g, '_') : ''] || {};
   
   // Get before photos for this room
-  const beforePhotos = designPreferences?.beforePhotos?.[currentRoom.toLowerCase().replace(/\s+/g, '_')] || [];
+  const beforePhotos = designPreferences?.beforePhotos?.[currentRoom ? currentRoom.toLowerCase().replace(/\s+/g, '_') : ''] || [];
 
   // Check if this room has renderings
-  const hasRenderings = designPreferences?.hasRenderings?.[currentRoom.toLowerCase().replace(/\s+/g, '_')] || false;
+  const hasRenderings = designPreferences?.hasRenderings?.[currentRoom ? currentRoom.toLowerCase().replace(/\s+/g, '_') : ''] || false;
   
   // Get rendering images for this room
-  const renderingImages = designPreferences?.renderingImages?.[currentRoom.toLowerCase().replace(/\s+/g, '_')] || [];
+  const renderingImages = designPreferences?.renderingImages?.[currentRoom ? currentRoom.toLowerCase().replace(/\s+/g, '_') : ''] || [];
 
   // Effect to set room ID
   useEffect(() => {
@@ -162,8 +162,8 @@ const RoomDetails: React.FC<RoomDetailsProps> = ({
 
         <TabsContent value="measurements" className="pt-6">
           <RoomMeasurementsCard 
-            roomName={currentRoom}
-            existingMeasurements={roomMeasurements}
+            area={currentRoom}
+            measurements={roomMeasurements}
             onSave={(measurements) => {
               if (onSaveMeasurements) {
                 onSaveMeasurements(currentRoom, measurements);
@@ -174,14 +174,14 @@ const RoomDetails: React.FC<RoomDetailsProps> = ({
 
         <TabsContent value="before-photos" className="pt-6">
           <BeforePhotosCard
-            roomName={currentRoom}
+            area={currentRoom}
             beforePhotos={beforePhotos}
             onSelectPhotosClick={handleSelectPhotos}
           />
 
           <SelectPropertyPhotosDialog
-            isOpen={isSelectPhotosOpen}
-            onClose={() => setIsSelectPhotosOpen(false)}
+            open={isSelectPhotosOpen}
+            onOpenChange={setIsSelectPhotosOpen}
             onConfirm={handleConfirmPhotoSelection}
             propertyPhotos={parsedPropertyPhotos}
             onSelectPhoto={handlePhotoSelection}
@@ -203,18 +203,17 @@ const RoomDetails: React.FC<RoomDetailsProps> = ({
           />
 
           <SelectProjectFilesDialog
-            isOpen={isSelectFilesOpen}
-            onClose={() => setIsSelectFilesOpen(false)}
+            open={isSelectFilesOpen}
+            onOpenChange={setIsSelectFilesOpen}
             onConfirm={handleConfirmFileSelection}
-            designAssets={designPreferences?.designAssets || []}
-            onSelectFile={handleFileSelection}
-            selectedFiles={selectedFiles}
+            projectId={projectId || ''}
+            onSelect={handleConfirmFileSelection}
           />
         </TabsContent>
 
         <TabsContent value="inspiration" className="pt-6">
           <PinterestInspirationSection 
-            roomName={currentRoom}
+            currentRoom={currentRoom}
             roomId={roomId}
             projectId={projectId}
           />

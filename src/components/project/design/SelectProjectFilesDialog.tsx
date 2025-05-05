@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,10 @@ interface SelectProjectFilesDialogProps {
   onOpenChange: (open: boolean) => void;
   projectId: string;
   onSelect: (files: string[]) => void;
+  onConfirm?: () => void;
+  designAssets?: any[];
+  onSelectFile?: (fileUrl: string, isSelected: boolean) => void;
+  selectedFiles?: string[];
 }
 
 const SelectProjectFilesDialog = ({
@@ -18,16 +21,27 @@ const SelectProjectFilesDialog = ({
   onOpenChange,
   projectId,
   onSelect,
+  onConfirm,
+  designAssets = [],
+  onSelectFile,
+  selectedFiles = []
 }: SelectProjectFilesDialogProps) => {
   const [loading, setLoading] = useState(false);
   const [projectFiles, setProjectFiles] = useState<{id: string; name: string; url: string; content_type: string}[]>([]);
-  const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  const [selectedFilesInternal, setSelectedFilesInternal] = useState<string[]>([]);
 
   useEffect(() => {
     if (open) {
       loadProjectFiles();
     }
   }, [open, projectId]);
+
+  useEffect(() => {
+    // Use the external selectedFiles if provided, otherwise use internal state
+    if (selectedFiles.length > 0) {
+      setSelectedFilesInternal(selectedFiles);
+    }
+  }, [selectedFiles]);
 
   const loadProjectFiles = async () => {
     if (!projectId) return;
@@ -111,7 +125,7 @@ const SelectProjectFilesDialog = ({
       }
       
       setProjectFiles(files);
-      setSelectedFiles([]);
+      setSelectedFilesInternal([]);
     } catch (error) {
       console.error('Error loading project files:', error);
       toast({
@@ -125,17 +139,28 @@ const SelectProjectFilesDialog = ({
   };
 
   const handleSelectFile = (fileUrl: string) => {
-    setSelectedFiles(prev => {
-      if (prev.includes(fileUrl)) {
-        return prev.filter(url => url !== fileUrl);
-      } else {
-        return [...prev, fileUrl];
-      }
-    });
+    if (onSelectFile) {
+      // If external handler provided, use it
+      const isSelected = !selectedFilesInternal.includes(fileUrl);
+      onSelectFile(fileUrl, isSelected);
+    } else {
+      // Otherwise use internal state
+      setSelectedFilesInternal(prev => {
+        if (prev.includes(fileUrl)) {
+          return prev.filter(url => url !== fileUrl);
+        } else {
+          return [...prev, fileUrl];
+        }
+      });
+    }
   };
 
   const handleConfirm = () => {
-    onSelect(selectedFiles);
+    if (onConfirm) {
+      onConfirm();
+    } else {
+      onSelect(selectedFilesInternal);
+    }
     onOpenChange(false);
   };
 
@@ -166,7 +191,7 @@ const SelectProjectFilesDialog = ({
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {projectFiles.map((file) => {
                 const isImage = isImageFile(file.content_type);
-                const isSelected = selectedFiles.includes(file.url);
+                const isSelected = selectedFiles.includes(file.url) || selectedFilesInternal.includes(file.url);
                 
                 return (
                   <div
@@ -199,7 +224,7 @@ const SelectProjectFilesDialog = ({
         <DialogFooter className="flex sm:justify-between gap-2">
           <div>
             <p className="text-sm text-gray-500">
-              {selectedFiles.length} file{selectedFiles.length !== 1 ? 's' : ''} selected
+              {(selectedFiles.length || selectedFilesInternal.length)} file{(selectedFiles.length || selectedFilesInternal.length) !== 1 ? 's' : ''} selected
             </p>
           </div>
           <div className="flex gap-2">
@@ -207,7 +232,7 @@ const SelectProjectFilesDialog = ({
               Cancel
             </Button>
             <Button
-              disabled={selectedFiles.length === 0 || loading}
+              disabled={(selectedFiles.length === 0 && selectedFilesInternal.length === 0) || loading}
               onClick={handleConfirm}
             >
               Select Files
