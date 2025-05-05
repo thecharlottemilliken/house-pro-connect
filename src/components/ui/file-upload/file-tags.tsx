@@ -1,97 +1,56 @@
 
-import React, { useState } from "react";
-import { FileWithPreview, RoomTagOption } from "./types";
-import { Badge } from "@/components/ui/badge";
+import React from "react";
+import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Plus, X } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface FileTagsProps {
-  file: FileWithPreview;
-  onAddTag: (tag: string) => void;
+  tags: string[];
   onRemoveTag: (tag: string) => void;
-  roomOptions?: RoomTagOption[];
 }
 
-export function FileTags({ file, onAddTag, onRemoveTag, roomOptions = [] }: FileTagsProps) {
-  const [isAdding, setIsAdding] = useState(false);
-  const [selectedTag, setSelectedTag] = useState("");
+export function FileTags({ tags, onRemoveTag }: FileTagsProps) {
+  if (tags.length === 0) {
+    return null;
+  }
 
-  const handleAddTag = () => {
-    if (selectedTag) {
-      onAddTag(selectedTag);
-      setSelectedTag("");
-      setIsAdding(false);
+  const getTagColor = (tag: string) => {
+    switch (tag.toLowerCase()) {
+      case 'drawing':
+      case 'drawings':
+        return 'bg-blue-100 text-blue-800';
+      case 'rendering':
+      case 'renderings':
+        return 'bg-purple-100 text-purple-800';
+      case 'architectural':
+        return 'bg-green-100 text-green-800';
+      case 'blueprint':
+      case 'blueprints':
+        return 'bg-indigo-100 text-indigo-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
   return (
-    <div className="mt-2">
-      <div className="flex flex-wrap gap-2 items-center">
-        {file.tags.map((tag) => (
-          <Badge key={tag} variant="secondary" className="flex items-center gap-1">
-            {tag}
-            <X
-              className="h-3 w-3 cursor-pointer"
-              onClick={() => onRemoveTag(tag)}
-            />
-          </Badge>
-        ))}
-
-        {!isAdding ? (
+    <div className="flex flex-wrap gap-1">
+      {tags.map((tag) => (
+        <span
+          key={tag}
+          className={`inline-flex items-center text-xs px-2 py-0.5 rounded ${getTagColor(tag)}`}
+        >
+          {tag}
           <Button
             type="button"
+            variant="ghost"
             size="sm"
-            variant="outline"
-            className="h-7 px-2 text-xs"
-            onClick={() => setIsAdding(true)}
+            className="h-4 w-4 p-0 ml-1 hover:bg-transparent"
+            onClick={() => onRemoveTag(tag)}
           >
-            <Plus className="h-3 w-3 mr-1" /> Add Tag
+            <X className="h-3 w-3" />
+            <span className="sr-only">Remove</span>
           </Button>
-        ) : (
-          <div className="flex items-center gap-2">
-            <Select value={selectedTag} onValueChange={setSelectedTag}>
-              <SelectTrigger className="w-[180px] h-8">
-                <SelectValue placeholder="Select tag" />
-              </SelectTrigger>
-              <SelectContent>
-                {roomOptions.length > 0 ? (
-                  roomOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))
-                ) : (
-                  <>
-                    <SelectItem value="livingRoom">Living Room</SelectItem>
-                    <SelectItem value="kitchen">Kitchen</SelectItem>
-                    <SelectItem value="bathroom">Bathroom</SelectItem>
-                    <SelectItem value="bedroom">Bedroom</SelectItem>
-                    <SelectItem value="exterior">Exterior</SelectItem>
-                    <SelectItem value="blueprint">Blueprint</SelectItem>
-                  </>
-                )}
-              </SelectContent>
-            </Select>
-            <Button size="sm" onClick={handleAddTag}>
-              Add
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setIsAdding(false)}
-            >
-              Cancel
-            </Button>
-          </div>
-        )}
-      </div>
+        </span>
+      ))}
     </div>
   );
 }

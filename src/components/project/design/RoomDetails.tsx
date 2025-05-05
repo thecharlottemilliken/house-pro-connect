@@ -331,13 +331,15 @@ const RoomDetails = ({
                   initialFiles={roomFiles}
                   onFilesUploaded={handleFilesUploaded}
                   roomOptions={[
-                    { value: "blueprint", label: "Blueprint" },
-                    { value: "floorPlan", label: "Floor Plan" },
-                    { value: "elevation", label: "Elevation" },
+                    { value: "drawings", label: "Drawings" },
+                    { value: "renderings", label: "Renderings" },
+                    { value: "architectural", label: "Architectural" },
+                    { value: "blueprints", label: "Blueprints" },
+                    { value: "specifications", label: "Specifications" },
                     { value: "materials", label: "Materials" },
                     { value: "fixtures", label: "Fixtures" },
                     { value: "finishes", label: "Finishes" },
-                    { value: "specifications", label: "Specifications" }
+                    { value: "other", label: "Other" }
                   ]}
                 />
               </div>
