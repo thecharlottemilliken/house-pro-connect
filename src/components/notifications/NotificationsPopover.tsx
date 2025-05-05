@@ -15,7 +15,7 @@ interface NotificationsPopoverProps {
 
 const NotificationsPopover = ({ hasNotifications, setHasNotifications }: NotificationsPopoverProps = {}) => {
   const navigate = useNavigate();
-  const { notifications, unreadCount, markAllAsRead, isActionInProgress } = useNotifications();
+  const { notifications, unreadCount, markAllAsRead, isActionInProgress, markAsRead } = useNotifications();
   
   // Internal state for notification indicator if not provided from parent
   const hasUnreadNotifications = useMemo(() => {
@@ -64,7 +64,11 @@ const NotificationsPopover = ({ hasNotifications, setHasNotifications }: Notific
           <>
             <ScrollArea className="h-[300px]">
               {notifications.map((notification) => (
-                <NotificationItem key={notification.id} notification={notification} />
+                <NotificationItem 
+                  key={notification.id} 
+                  notification={notification} 
+                  onMarkAsRead={markAsRead}
+                />
               ))}
             </ScrollArea>
             
