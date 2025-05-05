@@ -510,6 +510,8 @@ const ProjectDesign = () => {
   };
   const hasDesigns = designPreferences.hasDesigns;
   const hasRenderings = designPreferences.renderingImages && designPreferences.renderingImages.length > 0;
+  const designers = designPreferences.designers || [];
+
   return <div className="flex flex-col bg-white min-h-screen">
       <DashboardNavbar />
       
@@ -559,7 +561,7 @@ const ProjectDesign = () => {
                                 <RoomDetails 
                                   area={area.area}
                                   location={area.location}
-                                  designers={designPreferences.designers}
+                                  designers={designers}
                                   designAssets={designPreferences.designAssets}
                                   measurements={measurements}
                                   onAddDesigner={handleAddDesigner}
