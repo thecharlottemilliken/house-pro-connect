@@ -1,91 +1,88 @@
-import { NotificationTemplate, NotificationType } from "@/types/notifications";
-import { formatDistanceToNow } from "date-fns";
 
-export const notificationTemplates: Record<NotificationType, NotificationTemplate> = {
+import { NotificationTemplate } from "@/types/notifications";
+
+export const notificationTemplates: Record<string, NotificationTemplate> = {
   message: {
     type: 'message',
-    titleFormat: "[User] messaged you on [Date Message Sent]",
-    contentFormat: "First 50-100 characters of the message",
-    priority: 'high',
+    titleFormat: '{user} messaged you',
+    contentFormat: '{content}',
+    priority: 'medium',
     defaultActions: ['view', 'reply', 'mark_as_read'],
-    generateTitle: (data: { user: string; date: Date }) => {
-      return `${data.user} messaged you ${formatDistanceToNow(data.date, { addSuffix: true })}`;
+    generateTitle: (data) => {
+      return `${data.user} messaged you`;
     },
-    generateContent: (data: { message: string }) => {
-      if (!data.message) return '';
-      const maxLength = 100;
-      return data.message.length > maxLength 
-        ? `${data.message.substring(0, maxLength)}...` 
-        : data.message;
+    generateContent: (data) => {
+      return data.content || '';
     }
   },
+  
   sow_review: {
     type: 'sow_review',
-    titleFormat: "[Coach] has submitted an SOW for you to review.",
-    contentFormat: "To continue the project you will need to review the SOW.",
+    titleFormat: '{user} has submitted an SOW for you to review',
+    contentFormat: 'To continue the project you will need to review the SOW.',
     priority: 'high',
     defaultActions: ['view_sow', 'mark_as_read'],
-    generateTitle: (data: { coach: string }) => {
-      return `${data.coach} has submitted an SOW for you to review.`;
+    generateTitle: (data) => {
+      return `${data.user} has submitted an SOW for you to review`;
     },
     generateContent: () => {
-      return "To continue the project you will need to review the SOW.";
+      return 'To continue the project you will need to review the SOW.';
     }
   },
+  
   sow_approved: {
     type: 'sow_approved',
-    titleFormat: "[Project Owner] has approved the [project name] SOW.",
-    contentFormat: "Next, publish the project for bidding.",
+    titleFormat: '{user} has approved the {project} SOW',
+    contentFormat: 'Next, publish the project for bidding.',
     priority: 'high',
     defaultActions: ['publish_project', 'mark_as_read'],
-    generateTitle: (data: { owner: string; project: string }) => {
-      return `${data.owner} has approved the ${data.project} SOW.`;
+    generateTitle: (data) => {
+      return `${data.user} has approved the ${data.project} SOW`;
     },
     generateContent: () => {
-      return "Next, publish the project for bidding.";
+      return 'Next, publish the project for bidding.';
     }
   },
+  
   project_ready: {
     type: 'project_ready',
-    titleFormat: "[Project Name] is ready for a consultation.",
-    contentFormat: "Please select from the time slots to schedule",
-    priority: 'high',
-    defaultActions: ['schedule_consultation', 'mark_as_read'],
-    generateTitle: (data: { project: string }) => {
-      return `${data.project} is ready for a consultation.`;
+    titleFormat: 'Project {project} is ready for review',
+    contentFormat: 'The project is complete and ready for your review.',
+    priority: 'medium',
+    defaultActions: ['view', 'mark_as_read'],
+    generateTitle: (data) => {
+      return `Project ${data.project} is ready for review`;
     },
     generateContent: () => {
-      return "Please select from the time slots to schedule.";
+      return 'The project is complete and ready for your review.';
     }
   },
+  
   new_meeting: {
     type: 'new_meeting',
-    titleFormat: "[User] has invited you to [Meeting Name] on [Meeting date]",
-    contentFormat: "Meeting description",
+    titleFormat: '{user} has invited you to {meeting} on {date}',
+    contentFormat: '{description}',
     priority: 'high',
     defaultActions: ['view_meeting', 'reschedule', 'mark_as_read'],
-    generateTitle: (data: { user: string; meeting: string; date: string }) => {
+    generateTitle: (data) => {
       return `${data.user} has invited you to ${data.meeting} on ${data.date}`;
     },
-    generateContent: (data: { description?: string }) => {
-      if (!data.description) return '';
-      const maxLength = 100;
-      return data.description.length > maxLength 
-        ? `${data.description.substring(0, maxLength)}...` 
-        : data.description;
+    generateContent: (data) => {
+      return data.description || '';
     }
   },
+  
   project_coaching_request: {
     type: 'project_coaching_request',
-    titleFormat: "New project [Project Name] needs coaching",
-    contentFormat: "The resident has requested coaching help and provided time slots.",
+    titleFormat: 'New project "{project}" needs coaching',
+    contentFormat: '{user} has requested coaching help and provided time slots. Please schedule a consultation.',
     priority: 'high',
     defaultActions: ['schedule_consultation', 'mark_as_read'],
-    generateTitle: (data: { project: string }) => {
+    generateTitle: (data) => {
       return `New project "${data.project}" needs coaching`;
     },
-    generateContent: (data: { ownerName: string }) => {
-      return `${data.ownerName} has requested coaching help and provided time slots. Please schedule a consultation.`;
+    generateContent: (data) => {
+      return `${data.user} has requested coaching help and provided time slots. Please schedule a consultation.`;
     }
   }
 };

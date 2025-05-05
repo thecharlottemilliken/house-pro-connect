@@ -16,7 +16,6 @@ const DashboardNavbar = () => {
   } = useAuth();
   const isMobile = useIsMobile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [hasNotifications, setHasNotifications] = useState(true);
   
   const toggleMobileMenu = () => {
     setMobileMenuOpen(prev => !prev);
@@ -61,7 +60,7 @@ const DashboardNavbar = () => {
         {/* User Actions */}
         <div className="hidden md:flex items-center space-x-4">
           {/* Notification Bell with Popover */}
-          <NotificationsPopover hasNotifications={hasNotifications} setHasNotifications={setHasNotifications} />
+          <NotificationsPopover />
           
           <Button variant="ghost" size="icon" className="rounded-full text-white hover:bg-[#174c65]/90" onClick={() => navigate('/profile')}>
             <User className="h-6 w-6" />
@@ -91,7 +90,6 @@ const DashboardNavbar = () => {
             setMobileMenuOpen(false);
           }}>
                 <BellDot className="h-4 w-4 mr-2" /> Notifications
-                {hasNotifications && <span className="absolute top-2 left-6 block h-2 w-2 rounded-full bg-orange-500 ring-1 ring-[#174c65]"></span>}
               </Button>
               
               <Button variant="ghost" size="sm" className="text-white hover:bg-[#174c65]/90" onClick={() => {
