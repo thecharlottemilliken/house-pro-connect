@@ -153,11 +153,7 @@ const ManagementPreferences = () => {
       }
     } catch (error) {
       console.error('Error loading management preferences:', error);
-      toast({
-        title: "Error",
-        description: "Could not load management preferences. Please try again.",
-        variant: "destructive"
-      });
+      toast.error("Could not load management preferences. Please try again.");
     }
   };
   
@@ -193,11 +189,7 @@ const ManagementPreferences = () => {
   
   const savePreferences = async () => {
     if (!user?.id) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to save preferences",
-        variant: "destructive"
-      });
+      toast.error("You must be logged in to save preferences");
       return;
     }
 
@@ -259,54 +251,28 @@ const ManagementPreferences = () => {
             
             if (error) {
               console.error('Error notifying coaches:', error);
-              toast({
-                title: "Warning",
-                description: "Preferences saved, but there was an issue notifying coaches. They'll be notified later.",
-                variant: "default"
-              });
+              toast.warning("Preferences saved, but there was an issue notifying coaches. They'll be notified later.");
             } else {
               console.log('Coach notification response:', data);
               if (data && data.success) {
-                toast({
-                  title: "Success",
-                  description: `Coaches have been notified of your request (${data.message})`,
-                });
+                toast.success(`Coaches have been notified of your request (${data.message})`);
               } else if (data && data.error) {
                 console.error('Error in notification function response:', data.error);
-                toast({
-                  title: "Warning",
-                  description: `Preferences saved, but coaches couldn't be notified: ${data.error}`,
-                  variant: "default"
-                });
+                toast.warning(`Preferences saved, but coaches couldn't be notified: ${data.error}`);
               } else {
-                toast({
-                  title: "Warning",
-                  description: "Preferences saved, but coaches couldn't be notified. Please try again later.",
-                  variant: "default"
-                });
+                toast.warning("Preferences saved, but coaches couldn't be notified. Please try again later.");
               }
             }
           } catch (notifyError) {
             console.error('Error calling coach notification function:', notifyError);
-            toast({
-              title: "Warning",
-              description: "Preferences saved, but there was an issue notifying coaches.",
-              variant: "default"
-            });
+            toast.warning("Preferences saved, but there was an issue notifying coaches.");
           }
         }
         
-        toast({
-          title: "Success",
-          description: "Management preferences saved successfully",
-        });
+        toast.success("Management preferences saved successfully");
       } catch (error) {
         console.error('Error saving management preferences:', error);
-        toast({
-          title: "Error",
-          description: "Failed to save management preferences",
-          variant: "destructive"
-        });
+        toast.error("Failed to save management preferences");
         setIsLoading(false);
         return;
       }

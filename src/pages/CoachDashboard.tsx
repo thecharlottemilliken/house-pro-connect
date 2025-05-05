@@ -21,7 +21,7 @@ const CoachDashboard = () => {
   const { fetchProjects } = useCoachProjects();
   const [isAddingCoaches, setIsAddingCoaches] = useState(false);
   const { user } = useAuth();
-  const { refreshNotifications, addNotification } = useNotifications();
+  const { refreshNotifications } = useNotifications();
 
   // Set up real-time notifications for new coaching requests
   useEffect(() => {

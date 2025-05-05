@@ -5,6 +5,7 @@ import { useNotificationSubscription } from './notifications/useNotificationSubs
 import { useNotificationActions } from './notifications/useNotificationActions';
 import { useNotificationCreation } from './useNotificationCreation';
 import { useAuth } from '@/contexts/AuthContext';
+import { NotificationType } from '@/types/notifications';
 
 /**
  * Main notifications hook that combines all notification functionality
@@ -56,6 +57,7 @@ export const useNotifications = () => {
     markAllAsRead,
     createNotification,
     refreshNotifications,
-    isActionInProgress
+    isActionInProgress,
+    addNotification // Explicitly expose addNotification
   };
 };
