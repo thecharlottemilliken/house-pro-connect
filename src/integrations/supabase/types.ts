@@ -263,7 +263,6 @@ export type Database = {
         Row: {
           construction_preferences: Json | null
           created_at: string
-          description: string | null
           design_preferences: Json | null
           id: string
           management_preferences: Json | null
@@ -279,7 +278,6 @@ export type Database = {
         Insert: {
           construction_preferences?: Json | null
           created_at?: string
-          description?: string | null
           design_preferences?: Json | null
           id?: string
           management_preferences?: Json | null
@@ -295,7 +293,6 @@ export type Database = {
         Update: {
           construction_preferences?: Json | null
           created_at?: string
-          description?: string | null
           design_preferences?: Json | null
           id?: string
           management_preferences?: Json | null

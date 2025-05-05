@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -40,179 +41,223 @@ import Properties from "./pages/Properties";
 import PropertyDetails from "./pages/PropertyDetails";
 import Notifications from "./pages/Notifications";
 import ProjectCalendar from "./pages/ProjectCalendar";
-import ProjectSummary from "./pages/ProjectSummary";
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/dashboard" element={
-        <ProtectedRoute>
-          <ResidentDashboard />
-        </ProtectedRoute>
-      } />
-      <Route path="/notifications" element={
-        <ProtectedRoute>
-          <Notifications />
-        </ProtectedRoute>
-      } />
-      <Route path="/profile" element={
-        <ProtectedRoute>
-          <Profile />
-        </ProtectedRoute>
-      } />
-      
-      {/* Projects */}
-      <Route path="/projects" element={
-        <ProtectedRoute>
-          <Projects />
-        </ProtectedRoute>
-      } />
-      <Route path="/project-dashboard/:projectId" element={
-        <ProtectedRoute>
-          <ProjectDashboard />
-        </ProtectedRoute>
-      } />
-      <Route path="/project-design/:projectId" element={
-        <ProtectedRoute>
-          <ProjectDesign />
-        </ProtectedRoute>
-      } />
-      <Route path="/project-calendar/:projectId" element={
-        <ProtectedRoute>
-          <ProjectCalendar />
-        </ProtectedRoute>
-      } />
-      <Route path="/project-messages/:projectId" element={
-        <ProtectedRoute>
-          <ProjectMessages />
-        </ProtectedRoute>
-      } />
-      <Route path="/project-team/:projectId" element={
-        <ProtectedRoute>
-          <ProjectTeam />
-        </ProtectedRoute>
-      } />
-      <Route path="/project-activity/:projectId" element={
-        <ProtectedRoute>
-          <ProjectActivityHistory />
-        </ProtectedRoute>
-      } />
-      <Route path="/project-accounting/:projectId" element={
-        <ProtectedRoute>
-          <ProjectAccounting />
-        </ProtectedRoute>
-      } />
-      <Route path="/project-documents/:projectId" element={
-        <ProtectedRoute>
-          <ProjectDocuments />
-        </ProtectedRoute>
-      } />
-      <Route path="/project-materials/:projectId" element={
-        <ProtectedRoute>
-          <ProjectMaterials />
-        </ProtectedRoute>
-      } />
-      <Route path="/project-bids/:projectId" element={
-        <ProtectedRoute>
-          <ProjectBidsProposals />
-        </ProtectedRoute>
-      } />
-      <Route path="/project-manage/:projectId" element={
-        <ProtectedRoute>
-          <ProjectManage />
-        </ProtectedRoute>
-      } />
-      <Route path="/project-sow/:projectId" element={
-        <ProtectedRoute>
-          <ProjectSOW />
-        </ProtectedRoute>
-      } />
-      
-      {/* Properties */}
-      <Route path="/properties" element={
-        <ProtectedRoute>
-          <Properties />
-        </ProtectedRoute>
-      } />
-      <Route path="/property/:propertyId" element={
-        <ProtectedRoute>
-          <PropertyDetails />
-        </ProtectedRoute>
-      } />
-      <Route path="/add-property" element={
-        <ProtectedRoute>
-          <AddProperty />
-        </ProtectedRoute>
-      } />
-      
-      {/* Create Project Flow */}
-      <Route path="/create-project" element={
-        <ProtectedRoute>
-          <CreateProject />
-        </ProtectedRoute>
-      } />
-      <Route path="/renovation-areas" element={
-        <ProtectedRoute>
-          <RenovationAreas />
-        </ProtectedRoute>
-      } />
-      <Route path="/project-preferences" element={
-        <ProtectedRoute>
-          <ProjectPreferences />
-        </ProtectedRoute>
-      } />
-      <Route path="/construction-preferences" element={
-        <ProtectedRoute>
-          <ConstructionPreferences />
-        </ProtectedRoute>
-      } />
-      <Route path="/design-preferences" element={
-        <ProtectedRoute>
-          <DesignPreferences />
-        </ProtectedRoute>
-      } />
-      <Route path="/management-preferences" element={
-        <ProtectedRoute>
-          <ManagementPreferences />
-        </ProtectedRoute>
-      } />
-      <Route path="/prior-experience" element={
-        <ProtectedRoute>
-          <PriorExperience />
-        </ProtectedRoute>
-      } />
-      <Route path="/project-summary" element={
-        <ProtectedRoute>
-          <ProjectSummary />
-        </ProtectedRoute>
-      } />
-      
-      {/* Coach Routes */}
-      <Route path="/coach-dashboard" element={
-        <CoachRoute>
-          <CoachDashboard />
-        </CoachRoute>
-      } />
-      
-      {/* Jobs */}
-      <Route path="/jobs" element={
-        <ProtectedRoute>
-          <Jobs />
-        </ProtectedRoute>
-      } />
-      <Route path="/job/:jobId" element={
-        <ProtectedRoute>
-          <JobDetails />
-        </ProtectedRoute>
-      } />
-      
-      {/* Auth */}
-      <Route path="/signin" element={<SignIn />} />
-      <Route path="/signup" element={<SignUp />} />
-      
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/signin" element={<SignIn />} />
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <ResidentDashboard />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/coach-dashboard" element={
+          <CoachRoute>
+            <TooltipProvider>
+              <CoachDashboard />
+            </TooltipProvider>
+          </CoachRoute>
+        } />
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <Profile />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/create-project" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <CreateProject />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/renovation-areas" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <RenovationAreas />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/project-preferences" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <ProjectPreferences />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/construction-preferences" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <ConstructionPreferences />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/design-preferences" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <DesignPreferences />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/management-preferences" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <ManagementPreferences />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/prior-experience" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <PriorExperience />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/project-dashboard" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <ProjectDashboard />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/project-dashboard/:projectId" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <ProjectDashboard />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/project-manage/:projectId" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <ProjectManage />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/project-design/:projectId" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <ProjectDesign />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/project-team/:projectId" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <ProjectTeam />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/project-messages/:projectId" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <ProjectMessages />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/project-bids-proposals/:projectId" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <ProjectBidsProposals />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/project-documents/:projectId" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <ProjectDocuments />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/project-materials/:projectId" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <ProjectMaterials />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/project-accounting/:projectId" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <ProjectAccounting />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/project-activity-history/:projectId" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <ProjectActivityHistory />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/project-calendar/:projectId" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <ProjectCalendar />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/projects" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <Projects />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/add-property" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <AddProperty />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/project-sow/:projectId" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <ProjectSOW />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/project-sow/:projectId/review" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <SOWReviewPage />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/jobs" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <Jobs />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/job-details/:jobId" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <JobDetails />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/properties" element={<Properties />} />
+        <Route path="/your-properties" element={<Properties />} />
+        <Route path="/property/:id" element={<PropertyDetails />} />
+        <Route path="/notifications" element={
+          <ProtectedRoute>
+            <Notifications />
+          </ProtectedRoute>
+        } />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      <Toaster />
+      <Sonner />
+    </>
   );
 }
 
