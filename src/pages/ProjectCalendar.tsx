@@ -26,7 +26,7 @@ const ProjectCalendar = () => {
     <div className="min-h-screen flex flex-col bg-white">
       <DashboardNavbar />
       <div className="flex flex-1">
-        <ProjectSidebar projectId={projectId || ''} activeItem="calendar" />
+        <ProjectSidebar projectId={projectId || ''} activePage="calendar" />
         <main className="flex-1 p-4">
           <div className="mb-6">
             <h1 className="text-2xl font-bold">Project Calendar</h1>
