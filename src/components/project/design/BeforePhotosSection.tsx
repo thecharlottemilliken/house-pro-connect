@@ -38,7 +38,7 @@ const BeforePhotosSection = ({
       );
     } else if (beforePhotos.length === 2) {
       return (
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           {beforePhotos.map((photo, index) => (
             <PhotoItem key={index} photo={photo} index={index} />
           ))}
@@ -46,31 +46,34 @@ const BeforePhotosSection = ({
       );
     } else if (beforePhotos.length === 3) {
       return (
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <div className="col-span-1">
             <PhotoItem photo={beforePhotos[0]} index={0} />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="col-span-1">
             <PhotoItem photo={beforePhotos[1]} index={1} />
+          </div>
+          <div className="col-span-2">
             <PhotoItem photo={beforePhotos[2]} index={2} />
           </div>
         </div>
       );
     } else if (beforePhotos.length >= 4) {
       return (
-        <div className="grid grid-cols-1 gap-4">
-          <div className="col-span-1">
-            <PhotoItem photo={beforePhotos[0]} index={0} />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <PhotoItem photo={beforePhotos[1]} index={1} />
-            <PhotoItem photo={beforePhotos[2]} index={2} />
-          </div>
+        <div className="grid grid-cols-2 gap-4">
+          <PhotoItem photo={beforePhotos[0]} index={0} />
+          <PhotoItem photo={beforePhotos[1]} index={1} />
+          <PhotoItem photo={beforePhotos[2]} index={2} />
           {beforePhotos.length > 3 && (
-            <div className="grid grid-cols-1 gap-4">
-              {beforePhotos.slice(3).map((photo, idx) => (
-                <PhotoItem key={idx + 3} photo={photo} index={idx + 3} />
-              ))}
+            <PhotoItem photo={beforePhotos[3]} index={3} />
+          )}
+          {beforePhotos.length > 4 && (
+            <div className="col-span-2">
+              <div className="grid grid-cols-2 gap-4">
+                {beforePhotos.slice(4).map((photo, idx) => (
+                  <PhotoItem key={idx + 4} photo={photo} index={idx + 4} />
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -122,68 +125,84 @@ const BeforePhotosSection = ({
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {hasBeforePhotos ? (
-        <div className="space-y-6">
+        <>
           {/* Display photos in grid layout */}
           {getPhotoGrid()}
           
-          {/* Photo controls */}
-          <div className="flex flex-col sm:flex-row gap-3">
+          {/* Photo controls - updated to use outlined buttons */}
+          <div className="grid grid-cols-2 gap-4 mt-6">
             <SelectPropertyPhotosDialog
               photos={propertyPhotos}
               onSelect={onSelectBeforePhotos}
+              customButton={
+                <Button
+                  variant="outline"
+                  className="w-full border-[#1A6985] border-2 text-[#1A6985] hover:bg-transparent hover:text-[#1A6985]/90 font-medium uppercase tracking-wider py-6"
+                >
+                  Select from files
+                </Button>
+              }
             />
             <FileUpload
-              label="Upload More Photos"
+              label="Upload"
               description="Upload additional photos of the room's current state"
               accept="image/*"
               multiple={true}
               onUploadComplete={onUploadBeforePhotos}
-              className="border-white text-white hover:bg-white/10"
+              className="w-full border-[#1A6985] border-2 text-[#1A6985] hover:bg-transparent hover:text-[#1A6985]/90 font-medium uppercase tracking-wider py-6"
             >
-              <Plus className="h-4 w-4 mr-1" /> Upload More Photos
+              Upload
             </FileUpload>
           </div>
-        </div>
+        </>
       ) : (
         <div className="flex flex-col items-center justify-center text-center py-6">
-          <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center mb-3">
-            <Upload className="h-6 w-6 text-white" />
+          <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+            <Upload className="h-6 w-6 text-gray-500" />
           </div>
-          <h4 className="font-semibold text-white">No before photos added yet</h4>
-          <p className="text-gray-400 max-w-md mt-1 mb-4">
+          <h4 className="font-semibold text-gray-900">No before photos added yet</h4>
+          <p className="text-gray-500 max-w-md mt-1 mb-6">
             Upload photos of your {area.toLowerCase()} before renovation to document the transformation
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-3 mt-2">
+          <div className="grid grid-cols-2 gap-4 w-full mt-2">
             {propertyPhotos.length > 0 ? (
               <>
                 <SelectPropertyPhotosDialog
                   photos={propertyPhotos}
                   onSelect={onSelectBeforePhotos}
+                  customButton={
+                    <Button
+                      variant="outline"
+                      className="w-full border-[#1A6985] border-2 text-[#1A6985] hover:bg-transparent hover:text-[#1A6985]/90 font-medium uppercase tracking-wider py-6"
+                    >
+                      Select from files
+                    </Button>
+                  }
                 />
                 <FileUpload
-                  label="Upload Photos"
+                  label="Upload"
                   description="Upload photos of the room's current state"
                   accept="image/*"
                   multiple={true}
                   onUploadComplete={onUploadBeforePhotos}
-                  className="border-white text-white hover:bg-white/10"
+                  className="w-full border-[#1A6985] border-2 text-[#1A6985] hover:bg-transparent hover:text-[#1A6985]/90 font-medium uppercase tracking-wider py-6"
                 >
-                  <Plus className="h-4 w-4 mr-1" /> Upload Photos
+                  Upload
                 </FileUpload>
               </>
             ) : (
               <FileUpload
-                label="Upload Photos"
+                label="Upload"
                 description="Upload photos of the room's current state"
                 accept="image/*"
                 multiple={true}
                 onUploadComplete={onUploadBeforePhotos}
-                className="border-white text-white hover:bg-white/10"
+                className="col-span-2 w-full border-[#1A6985] border-2 text-[#1A6985] hover:bg-transparent hover:text-[#1A6985]/90 font-medium uppercase tracking-wider py-6"
               >
-                <Plus className="h-4 w-4 mr-1" /> Upload Photos
+                Upload
               </FileUpload>
             )}
           </div>

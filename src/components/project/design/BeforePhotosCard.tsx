@@ -33,31 +33,27 @@ const BeforePhotosCard = ({
   };
 
   return (
-    <Card className="overflow-hidden border-0 shadow-none bg-black text-white h-full">
-      <CardContent className="p-0">
-        <div className="flex justify-between items-center p-4">
-          <h3 className="font-bold text-xl">Before Photos</h3>
-          {beforePhotos.length > 0 && (
-            <Button 
-              variant="ghost" 
-              className="text-blue-400 hover:text-blue-500 uppercase tracking-wider text-xs underline underline-offset-4 p-0 h-auto"
-            >
-              MANAGE PHOTOS
-            </Button>
-          )}
+    <Card className="overflow-hidden border border-gray-200 rounded-xl shadow-sm bg-white text-black h-full">
+      <CardContent className="p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="font-bold text-2xl">Before Photos</h3>
+          <Button 
+            variant="ghost" 
+            className="text-black hover:text-gray-700 font-medium text-lg p-0 h-auto"
+          >
+            Edit
+          </Button>
         </div>
         
-        <div className="p-4 pt-0">
-          <BeforePhotosSection
-            area={area}
-            beforePhotos={beforePhotos}
-            propertyPhotos={propertyPhotos}
-            onSelectBeforePhotos={onSelectBeforePhotos}
-            onUploadBeforePhotos={onUploadBeforePhotos}
-            onRemovePhoto={handleRemovePhoto}
-            onReorderPhotos={handleReorderPhotos}
-          />
-        </div>
+        <BeforePhotosSection
+          area={area}
+          beforePhotos={beforePhotos}
+          propertyPhotos={propertyPhotos}
+          onSelectBeforePhotos={onSelectBeforePhotos}
+          onUploadBeforePhotos={onUploadBeforePhotos}
+          onRemovePhoto={handleRemovePhoto}
+          onReorderPhotos={handleReorderPhotos}
+        />
       </CardContent>
     </Card>
   );
