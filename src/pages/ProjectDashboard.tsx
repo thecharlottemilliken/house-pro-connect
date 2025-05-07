@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useLocation, useParams, Navigate, useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
@@ -146,16 +145,21 @@ const ProjectDashboard = () => {
                 <PropertyCard propertyDetails={propertyCardData} renovationAreas={renovationAreas} />
                 <FinancialComparisonCard projectId={projectId} />
               </div>
+
+              {/* Project Milestones - full width on all screens */}
+              <div className="w-full">
+                <ProjectMilestonesWidget projectId={projectId} className="h-full" />
+              </div>
               
-              {/* Bottom section: Schedule, Action Items, and Milestones - UPDATED LAYOUT */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {/* Schedule Card - 1 column on mobile, 1 on tablet, 1 on desktop */}
+              {/* Bottom section: Schedule and Action Items */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                {/* Schedule Card */}
                 <div className="w-full">
                   <ScheduleCardWidget projectId={projectId} className="h-full" />
                 </div>
                 
-                {/* Action Items - 1 column on mobile, full width on tablet, 1 on desktop */}
-                <div className="w-full md:col-span-2 lg:col-span-1">
+                {/* Action Items */}
+                <div className="w-full">
                   <ActionItemsWidget 
                     projectId={projectId} 
                     projectData={projectData} 
@@ -163,11 +167,6 @@ const ProjectDashboard = () => {
                     isCoach={isCoach} 
                     className="h-full"
                   />
-                </div>
-                
-                {/* Project Milestones - full width on all screens for better readability */}
-                <div className="w-full md:col-span-2 lg:col-span-1">
-                  <ProjectMilestonesWidget projectId={projectId} className="h-full" />
                 </div>
               </div>
               
