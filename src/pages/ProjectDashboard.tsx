@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useLocation, useParams, Navigate, useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
@@ -145,11 +146,6 @@ const ProjectDashboard = () => {
                 <PropertyCard propertyDetails={propertyCardData} renovationAreas={renovationAreas} />
                 <FinancialComparisonCard projectId={projectId} />
               </div>
-
-              {/* Project Milestones - full width on all screens */}
-              <div className="w-full">
-                <ProjectMilestonesWidget projectId={projectId} className="h-full" />
-              </div>
               
               {/* Bottom section: Schedule and Action Items */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
@@ -188,6 +184,11 @@ const ProjectDashboard = () => {
                   </div>
                 </div>
               )}
+              
+              {/* Project Milestones - now as the last row */}
+              <div className="w-full">
+                <ProjectMilestonesWidget projectId={projectId} className="h-full" />
+              </div>
             </div>
           </div>
         </div>
