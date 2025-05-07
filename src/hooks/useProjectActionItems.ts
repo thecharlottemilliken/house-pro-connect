@@ -37,16 +37,21 @@ export const useProjectActionItems = (projectId: string) => {
       try {
         const userRole = profile?.role || '';
         
-        // Use a direct fetch query with string interpolation to avoid TypeScript limitations
-        // We cast the response type to any and then map to our ActionItem interface
-        const { data: rawData, error: fetchError } = await supabase
-          .from('project_action_items')
-          .select('*')
-          .eq('project_id', projectId)
-          .eq('completed', false)
-          .order('created_at', { ascending: false }) as { data: any, error: any };
-            
-        if (fetchError) throw fetchError;
+        // Use REST API directly to avoid TypeScript issues
+        const response = await fetch(
+          `${supabase.supabaseUrl}/rest/v1/project_action_items?project_id=eq.${projectId}&completed=eq.false&order=created_at.desc`,
+          {
+            headers: {
+              'apikey': supabase.supabaseKey,
+              'Authorization': `Bearer ${supabase.supabaseKey}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+        
+        if (!response.ok) throw new Error('Failed to fetch action items');
+        
+        const rawData = await response.json();
         
         // Cast the raw data to our ActionItem interface
         const typedData = rawData as ActionItem[];
@@ -73,17 +78,26 @@ export const useProjectActionItems = (projectId: string) => {
   
   const markActionItemComplete = async (itemId: string) => {
     try {
-      // Direct update using string interpolation to avoid TypeScript limitations
-      const { error } = await supabase
-        .from('project_action_items')
-        .update({
-          completed: true,
-          completion_date: new Date().toISOString()
-        })
-        .eq('id', itemId) as { error: any };
-        
-      if (error) throw error;
+      // Use REST API directly to avoid TypeScript issues
+      const response = await fetch(
+        `${supabase.supabaseUrl}/rest/v1/project_action_items?id=eq.${itemId}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'apikey': supabase.supabaseKey,
+            'Authorization': `Bearer ${supabase.supabaseKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
+            completed: true,
+            completion_date: new Date().toISOString()
+          })
+        }
+      );
       
+      if (!response.ok) throw new Error('Failed to update action item');
+        
       // Update local state
       setActionItems(prev => prev.filter(item => item.id !== itemId));
       
