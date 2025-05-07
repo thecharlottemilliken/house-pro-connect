@@ -62,80 +62,24 @@ const RoomDetails = ({
   onRemoveDesignAsset
 }: RoomDetailsProps) => {
   const hasDesigner = designers && designers.length > 0;
-  const [roomFiles, setRoomFiles] = useState<FileWithPreview[]>(() => {
-    // Convert design assets to FileWithPreview format if available
-    if (designAssets && designAssets.length > 0) {
-      return designAssets.map((asset, index) => ({
-        id: `asset-${index}`,
-        name: asset.name,
-        url: asset.url,
-        size: 'Unknown',
-        type: asset.name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg',
-        progress: 100,
-        status: 'complete' as const,
-        tags: []
-      }));
-    }
-    return [];
-  });
   const [showProjectFilesDialog, setShowProjectFilesDialog] = useState(false);
   const [previewAsset, setPreviewAsset] = useState<{name: string; url: string; type: string} | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFilesUploaded = (files: FileWithPreview[]) => {
-    setRoomFiles(files);
-    
-    // Convert FileWithPreview to design assets format
-    const assets = files
-      .filter(file => file.status === 'complete' && file.url)
-      .map(file => ({
-        name: file.name,
-        url: file.url as string
-      }));
-    
-    // Call onUploadAssets with the new assets if needed
-    onUploadAssets();
-  };
-
-  const handleSelectProjectFiles = (files: string[]) => {
-    if (onSelectProjectFiles) {
-      onSelectProjectFiles(files);
+  // Calculate square footage based on measurements
+  const calculateSquareFootage = (): string => {
+    if (measurements?.length && measurements?.width) {
+      return `${measurements.length * measurements.width} SQFT`;
     }
+    return ""; // Return blank when no measurements
   };
 
-  const handlePreviewAsset = (asset: {name: string; url: string}) => {
-    const fileExtension = asset.name.split('.').pop()?.toLowerCase() || '';
-    let fileType = 'unknown';
-    
-    if (['pdf'].includes(fileExtension)) {
-      fileType = 'pdf';
-    } else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension)) {
-      fileType = 'image';
-    } else if (['doc', 'docx'].includes(fileExtension)) {
-      fileType = 'document';
+  // Format measurements based on the available data
+  const formatMeasurements = (): string => {
+    if (measurements?.length && measurements?.width && measurements?.height) {
+      return `${measurements.length}x${measurements.width}x${measurements.height}"`;
     }
-    
-    setPreviewAsset({ ...asset, type: fileType });
-  };
-
-  const handleDownloadAsset = (asset: {name: string; url: string}) => {
-    const link = document.createElement('a');
-    link.href = asset.url;
-    link.download = asset.name;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    toast({
-      title: "Download started",
-      description: `Downloading ${asset.name}`
-    });
-  };
-
-  const handleRemoveAsset = (index: number) => {
-    if (onRemoveDesignAsset) {
-      onRemoveDesignAsset(index);
-    }
+    return ""; // Return blank when no measurements
   };
 
   const handleQuickUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -209,147 +153,137 @@ const RoomDetails = ({
     }
   };
 
-  // Calculate square footage based on measurements
-  const calculateSquareFootage = (): string => {
-    if (measurements?.length && measurements?.width) {
-      return `${measurements.length * measurements.width} SQFT`;
+  const handleSelectProjectFiles = (files: string[]) => {
+    if (onSelectProjectFiles) {
+      onSelectProjectFiles(files);
     }
-    return ""; // Return blank when no measurements
   };
 
-  // Format measurements based on the available data
-  const formatMeasurements = (): string => {
-    if (measurements?.length && measurements?.width && measurements?.height) {
-      return `${measurements.length}x${measurements.width}x${measurements.height}"`;
+  const handleRemoveAsset = (index: number) => {
+    if (onRemoveDesignAsset) {
+      onRemoveDesignAsset(index);
     }
-    return ""; // Return blank when no measurements
   };
 
   return (
-    <div className="flex flex-col space-y-6">
-      <Card className="overflow-hidden rounded-2xl border shadow-sm">
-        <CardContent className="p-6">
-          <DesignTabHeader area={area} location={location} />
-          
-          {/* Property Information Section */}
-          <div className="space-y-4 mb-8">
-            <div className="flex items-center gap-3 text-gray-700">
-              <span className="text-xl font-medium">Designer:</span>
-              {hasDesigner ? (
-                <div className="flex items-center px-4 py-2 bg-gray-100 rounded-full">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-800 mr-2">
-                    {designers![0].businessName[0]}
-                  </div>
-                  <span className="text-xl text-gray-600">Don Smith</span>
+    <Card className="overflow-hidden rounded-lg border shadow-sm h-full">
+      <CardContent className="p-6">
+        <DesignTabHeader area={area} location={location} />
+        
+        {/* Property Information Section */}
+        <div className="space-y-4 mb-8">
+          <div className="flex items-center gap-3 text-gray-700">
+            <span className="text-base font-medium">Designer:</span>
+            {hasDesigner ? (
+              <div className="flex items-center px-3 py-1 bg-gray-100 rounded-full">
+                <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-800 mr-2">
+                  {designers![0].businessName[0]}
                 </div>
-              ) : (
-                <span className="text-xl text-gray-500">Not assigned</span>
-              )}
-            </div>
-            
-            <div className="flex items-center gap-3 text-gray-700">
-              <span className="text-xl font-medium">Square Feet:</span>
-              <div className="flex items-center">
-                <SquareDot className="h-5 w-5 mr-2 text-gray-500" />
-                <span className="text-xl">
-                  {calculateSquareFootage() ? (
-                    <>
-                      <span className="text-gray-500">est</span> {calculateSquareFootage()}
-                    </>
-                  ) : (
-                    <span className="text-gray-400">Not available</span>
-                  )}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 text-gray-700">
-              <span className="text-xl font-medium">Measurements:</span>
-              <div className="flex items-center">
-                <Ruler className="h-5 w-5 mr-2 text-gray-500" />
-                <span className="text-xl">
-                  {formatMeasurements() || <span className="text-gray-400">Not available</span>}
-                </span>
-              </div>
-            </div>
-
-            {location && (
-              <div className="flex items-center gap-3 text-gray-700">
-                <span className="text-xl font-medium">Location:</span>
-                <div className="flex items-center">
-                  <MapPin className="h-5 w-5 mr-2 text-gray-500" />
-                  <span className="text-xl">{location}</span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Design Assets Section */}
-          <div className="pt-4 border-t border-gray-200">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-4xl font-bold text-black">Design Assets</h3>
-              <Button variant="link" className="text-lg font-semibold text-black hover:underline p-0 h-auto">
-                Edit
-              </Button>
-            </div>
-            
-            {designAssets && designAssets.length > 0 ? (
-              <div className="space-y-3">
-                {designAssets.map((asset, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-4 border rounded-xl">
-                    <div className="flex items-center gap-3">
-                      <FileText className="h-6 w-6 text-gray-500" />
-                      <span className="font-medium">{asset.name}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center px-2 py-1 rounded-md">
-                        <FileText className="h-4 w-4 text-gray-500" />
-                        <span className="ml-1">1</span>
-                      </div>
-                      <button 
-                        onClick={() => handleRemoveAsset(idx)} 
-                        className="p-1 text-gray-500 hover:text-gray-700"
-                        title="Remove"
-                      >
-                        <X className="h-5 w-5" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                <span className="text-sm text-gray-600">Don Smith</span>
               </div>
             ) : (
-              <div className="text-center py-4">
-                <p className="text-gray-500 mb-4">No design assets added yet</p>
-              </div>
+              <span className="text-sm text-gray-500">Not assigned</span>
             )}
-
-            <div className="grid grid-cols-2 gap-4 mt-6">
-              <Button 
-                variant="outline" 
-                className="w-full py-6 text-[#174c65] border-[#174c65] hover:bg-[#174c65]/5"
-                onClick={() => setShowProjectFilesDialog(true)}
-              >
-                SELECT FROM FILES
-              </Button>
-              <Button 
-                variant="outline" 
-                className="w-full py-6 text-[#174c65] border-[#174c65] hover:bg-[#174c65]/5"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                UPLOAD
-              </Button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*, .pdf, .dwg, .doc, .docx, .xls"
-                multiple
-                onChange={handleQuickUpload}
-                className="hidden"
-              />
+          </div>
+          
+          <div className="flex items-center gap-3 text-gray-700">
+            <span className="text-base font-medium">Square Feet:</span>
+            <div className="flex items-center">
+              <SquareDot className="h-4 w-4 mr-1 text-gray-500" />
+              <span className="text-sm">
+                {calculateSquareFootage() ? (
+                  <>
+                    <span className="text-gray-500">est</span> {calculateSquareFootage()}
+                  </>
+                ) : (
+                  <span className="text-gray-400">Not available</span>
+                )}
+              </span>
             </div>
           </div>
-        </CardContent>
-      </Card>
+
+          <div className="flex items-center gap-3 text-gray-700">
+            <span className="text-base font-medium">Measurements:</span>
+            <div className="flex items-center">
+              <Ruler className="h-4 w-4 mr-1 text-gray-500" />
+              <span className="text-sm">
+                {formatMeasurements() || <span className="text-gray-400">Not available</span>}
+              </span>
+            </div>
+          </div>
+
+          {location && (
+            <div className="flex items-center gap-3 text-gray-700">
+              <span className="text-base font-medium">Location:</span>
+              <div className="flex items-center">
+                <MapPin className="h-4 w-4 mr-1 text-gray-500" />
+                <span className="text-sm">{location}</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Design Assets Section */}
+        <div className="pt-4 border-t border-gray-200">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-bold text-black">Design Assets</h3>
+            <Button variant="ghost" className="text-sm font-medium text-gray-600 hover:text-black p-1 h-auto">
+              Edit
+            </Button>
+          </div>
+          
+          {designAssets && designAssets.length > 0 ? (
+            <div className="space-y-2">
+              {designAssets.map((asset, idx) => (
+                <div key={idx} className="flex items-center justify-between p-2 border rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm font-medium truncate max-w-[180px]">{asset.name}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <button 
+                      onClick={() => handleRemoveAsset(idx)} 
+                      className="p-1 text-gray-400 hover:text-gray-700"
+                      title="Remove"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-3">
+              <p className="text-gray-500 text-sm">No design assets added yet</p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-2 mt-4">
+            <Button 
+              variant="outline" 
+              className="w-full py-1 text-xs text-[#174c65] border-[#174c65] hover:bg-[#174c65]/5"
+              onClick={() => setShowProjectFilesDialog(true)}
+            >
+              SELECT FROM FILES
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full py-1 text-xs text-[#174c65] border-[#174c65] hover:bg-[#174c65]/5"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              UPLOAD
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*, .pdf, .dwg, .doc, .docx, .xls"
+              multiple
+              onChange={handleQuickUpload}
+              className="hidden"
+            />
+          </div>
+        </div>
+      </CardContent>
 
       {/* Project Files Selection Dialog */}
       {projectId && (
@@ -385,7 +319,7 @@ const RoomDetails = ({
               <div className="flex flex-col items-center justify-center p-10">
                 <FileText className="h-16 w-16 text-gray-400 mb-4" />
                 <p className="text-gray-500">Preview not available</p>
-                <Button className="mt-4" onClick={() => handleDownloadAsset(previewAsset)}>
+                <Button className="mt-4" onClick={() => {}}>
                   Download
                 </Button>
               </div>
@@ -393,7 +327,7 @@ const RoomDetails = ({
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </Card>
   );
 };
 

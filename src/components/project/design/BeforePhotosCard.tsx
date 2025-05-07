@@ -33,21 +33,21 @@ const BeforePhotosCard = ({
   };
 
   return (
-    <Card className="overflow-hidden border-0 shadow-none bg-black text-white rounded-none h-full">
+    <Card className="overflow-hidden border-0 shadow-none bg-black text-white h-full">
       <CardContent className="p-0">
-        <div className="flex justify-between items-center p-6">
-          <h3 className="font-bold text-3xl">Before Photos</h3>
+        <div className="flex justify-between items-center p-4">
+          <h3 className="font-bold text-xl">Before Photos</h3>
           {beforePhotos.length > 0 && (
             <Button 
-              variant="link" 
-              className="text-blue-400 hover:text-blue-500 uppercase tracking-wider text-sm underline underline-offset-4 p-0 h-auto"
+              variant="ghost" 
+              className="text-blue-400 hover:text-blue-500 uppercase tracking-wider text-xs underline underline-offset-4 p-0 h-auto"
             >
-              Manage Photos
+              MANAGE PHOTOS
             </Button>
           )}
         </div>
         
-        <div className="p-6 pt-0">
+        <div className="p-4 pt-0">
           <BeforePhotosSection
             area={area}
             beforePhotos={beforePhotos}

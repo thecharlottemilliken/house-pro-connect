@@ -51,7 +51,7 @@ const RecommendedContent = () => {
   return (
     <div>
       <h2 className="text-xl font-bold text-gray-900 mb-6">
-        Recommended for You
+        Recommended Content
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {contentItems.map(item => (

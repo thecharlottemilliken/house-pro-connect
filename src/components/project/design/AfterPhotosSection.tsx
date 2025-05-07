@@ -19,17 +19,17 @@ const AfterPhotosSection = ({
   const hasPhotos = photos.length > 0;
 
   return (
-    <Card className="overflow-hidden border-0 shadow-none rounded-none h-full bg-[#e9f1f4]">
+    <Card className="overflow-hidden border-0 shadow-none h-full bg-[#e9f1f4]">
       <CardContent className="p-0">
         {hasPhotos ? (
-          <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-3xl text-gray-900">After Photos</h3>
+          <div className="p-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-xl text-gray-900">After Photos</h3>
               <Button 
-                variant="link" 
-                className="text-blue-600 hover:text-blue-700 uppercase tracking-wider text-sm underline underline-offset-4 p-0 h-auto"
+                variant="ghost"
+                className="text-blue-600 hover:text-blue-700 uppercase tracking-wider text-xs underline underline-offset-4 p-0 h-auto"
               >
-                Manage Photos
+                MANAGE PHOTOS
               </Button>
             </div>
             
@@ -46,11 +46,11 @@ const AfterPhotosSection = ({
             </div>
           </div>
         ) : (
-          <div className="p-6 flex flex-col h-full">
-            <h3 className="font-bold text-3xl text-gray-900 mb-6">Upload photos for Tile Milestone 1.</h3>
+          <div className="p-4 flex flex-col h-full">
+            <h3 className="font-bold text-xl text-gray-900 mb-2">Upload photos for Tile Milestone 1.</h3>
             
             <div className="flex-1 flex flex-col justify-center">
-              <p className="text-gray-700 text-xl mb-8 max-w-md">
+              <p className="text-gray-700 text-sm mb-4 max-w-md">
                 It looks like you recently finished a project milestone, take some photos and upload them to capture the progress.
               </p>
               
@@ -61,7 +61,7 @@ const AfterPhotosSection = ({
                   accept="image/*"
                   multiple={true}
                   onUploadComplete={onUploadPhotos}
-                  className="bg-[#b8d1db] text-gray-800 hover:bg-[#a7c0ca] border-0 px-8 py-6 text-base font-medium"
+                  className="bg-[#b8d1db] text-gray-800 hover:bg-[#a7c0ca] border-0 px-4 py-2 text-sm font-medium"
                 >
                   UPLOAD PHOTOS
                 </FileUpload>

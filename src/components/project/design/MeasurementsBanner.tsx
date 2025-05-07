@@ -24,7 +24,7 @@ const MeasurementsBanner = ({
         </div>
         <Button
           onClick={onMeasureRoom}
-          className="bg-white/20 hover:bg-white/30 text-white border border-white/30 font-semibold py-2 px-4 rounded-md whitespace-nowrap"
+          className="bg-white hover:bg-white/90 text-[#174c65] font-semibold py-2 px-4 rounded-md whitespace-nowrap"
           size="lg"
         >
           MEASURE ROOM

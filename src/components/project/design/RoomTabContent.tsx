@@ -85,56 +85,65 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
     <div className="w-full space-y-8">
       {hasDesigns ? (
         <div className="space-y-8">
-          {/* Room Details Card */}
-          <RoomDetails 
-            area={area.area}
-            location={area.location}
-            designers={designers}
-            designAssets={designAssets}
-            measurements={measurements}
-            onAddDesigner={onAddDesigner}
-            onUploadAssets={() => console.log("Upload assets clicked")}
-            onSaveMeasurements={onSaveMeasurements}
-            propertyPhotos={propertyPhotos}
-            onSelectBeforePhotos={onSelectBeforePhotos}
-            onUploadBeforePhotos={onUploadBeforePhotos}
-            beforePhotos={beforePhotos}
-            projectId={projectId}
-            onSelectProjectFiles={onAddProjectFiles}
-            onRemoveDesignAsset={onRemoveDesignAsset}
-          />
-          
-          {/* Two-column layout for Before/After Photos and Measurement Banner */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <BeforePhotosCard
-              area={area.area}
-              beforePhotos={beforePhotos}
-              propertyPhotos={propertyPhotos}
-              onSelectBeforePhotos={onSelectBeforePhotos}
-              onUploadBeforePhotos={onUploadBeforePhotos}
-            />
+          {/* Three-column layout for Room Details, Measurements Banner, and Before/After Photos */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Column 1: Room Details Card */}
+            <div className="lg:col-span-1">
+              <RoomDetails 
+                area={area.area}
+                location={area.location}
+                designers={designers}
+                designAssets={designAssets}
+                measurements={measurements}
+                onAddDesigner={onAddDesigner}
+                onUploadAssets={() => console.log("Upload assets clicked")}
+                onSaveMeasurements={onSaveMeasurements}
+                propertyPhotos={propertyPhotos}
+                onSelectBeforePhotos={onSelectBeforePhotos}
+                onUploadBeforePhotos={onUploadBeforePhotos}
+                beforePhotos={beforePhotos}
+                projectId={projectId}
+                onSelectProjectFiles={onAddProjectFiles}
+                onRemoveDesignAsset={onRemoveDesignAsset}
+              />
+            </div>
             
-            <AfterPhotosSection 
-              area={area.area}
-              photos={[]} // Initialize with empty array since this is a new component
-              onUploadPhotos={() => console.log("Upload after photos clicked")}
-            />
+            {/* Column 2-3: Measurements Banner/Card + Before/After Photos */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Show Measurements Banner or Measurements Card */}
+              {!hasMeasurements ? (
+                <MeasurementsBanner 
+                  area={area.area}
+                  onMeasureRoom={() => setShowMeasuringDialog(true)}
+                />
+              ) : (
+                <RoomMeasurementsCard 
+                  area={area.area}
+                  measurements={measurements}
+                  onSaveMeasurements={onSaveMeasurements}
+                />
+              )}
+              
+              {/* Before and After Photos Side-by-Side */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <BeforePhotosCard
+                  area={area.area}
+                  beforePhotos={beforePhotos}
+                  propertyPhotos={propertyPhotos}
+                  onSelectBeforePhotos={onSelectBeforePhotos}
+                  onUploadBeforePhotos={onUploadBeforePhotos}
+                />
+                
+                <AfterPhotosSection 
+                  area={area.area}
+                  photos={[]} // Initialize with empty array since this is a new component
+                  onUploadPhotos={() => console.log("Upload after photos clicked")}
+                />
+              </div>
+            </div>
           </div>
           
-          {/* Show Measurements Banner or Measurements Card */}
-          {!hasMeasurements ? (
-            <MeasurementsBanner 
-              area={area.area}
-              onMeasureRoom={() => setShowMeasuringDialog(true)}
-            />
-          ) : (
-            <RoomMeasurementsCard 
-              area={area.area}
-              measurements={measurements}
-              onSaveMeasurements={onSaveMeasurements}
-            />
-          )}
-          
+          {/* Design Assets Card - Full width */}
           <DesignAssetsCard 
             hasRenderings={hasRenderings}
             renderingImages={renderingImages}
@@ -172,6 +181,7 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
         </DialogContent>
       </Dialog>
       
+      {/* Pinterest Inspiration Section - Full width */}
       <div className="mt-8 w-full">
         {roomId && (
           <PinterestInspirationSection 
@@ -185,6 +195,7 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
         )}
       </div>
 
+      {/* Recommended Content - Full width */}
       <div className="mt-8 w-full">
         <RecommendedContent />
       </div>

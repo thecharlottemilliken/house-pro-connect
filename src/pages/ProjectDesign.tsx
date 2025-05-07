@@ -94,8 +94,8 @@ const ProjectDesign = () => {
         <div className="flex flex-1 h-[calc(100vh-64px)] w-full">
           <ProjectSidebar projectId={projectData.id} projectTitle={projectData.title} activePage="design" />
           
-          <div className="flex-1 p-4 sm:p-6 md:p-8 bg-white overflow-y-auto">
-            <div className="mb-4 sm:mb-6">
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-4 sm:p-6 md:p-8 max-w-[1600px] mx-auto">
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">
                 Project Design
               </h1>
@@ -125,10 +125,6 @@ const ProjectDesign = () => {
                   onAddInspirationImages={handleAddInspirationImages}
                   onAddPinterestBoards={handleAddPinterestBoards}
                 />
-              </div>
-              
-              <div className="mt-8 w-full">
-                <RecommendedContent />
               </div>
             </div>
           </div>
