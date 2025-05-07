@@ -37,26 +37,55 @@ export const useProjectActionItems = (projectId: string) => {
       try {
         const userRole = profile?.role || '';
         
-        // Since we're using raw SQL for queries to avoid TypeScript issues with the new table
-        const { data, error: queryError } = await supabase
-          .from('project_action_items')
-          .select('*')
-          .eq('project_id', projectId)
-          .eq('completed', false)
-          .order('created_at', { ascending: false });
+        // Use raw SQL query to avoid TypeScript issues
+        const { data, error: queryError } = await supabase.rpc(
+          'execute_sql',
+          { 
+            query: `
+              SELECT * FROM project_action_items 
+              WHERE project_id = '${projectId}' 
+              AND completed = false 
+              ORDER BY created_at DESC
+            `
+          }
+        ).returns<ActionItem[]>();
           
-        if (queryError) throw queryError;
-
-        // For coaches, fetch all action items
-        // For owners or team members, fetch only relevant items
-        let filteredItems = data || [];
-        if (userRole !== 'coach') {
-          filteredItems = filteredItems.filter(item => 
-            item.for_role === userRole || item.for_role === null
-          );
+        if (queryError) {
+          // Fallback to using direct SQL
+          const { data: rawData, error: rawError } = await supabase
+            .from('project_action_items')
+            .select('*')
+            .eq('project_id', projectId)
+            .eq('completed', false)
+            .order('created_at', { ascending: false });
+            
+          if (rawError) throw rawError;
+          
+          // Type cast the result since TypeScript doesn't know the table structure
+          const typedData = rawData as unknown as ActionItem[];
+          
+          // For coaches, fetch all action items
+          // For owners or team members, fetch only relevant items
+          let filteredItems = typedData || [];
+          if (userRole !== 'coach') {
+            filteredItems = filteredItems.filter(item => 
+              item.for_role === userRole || item.for_role === null
+            );
+          }
+          
+          setActionItems(filteredItems);
+        } else {
+          // For coaches, fetch all action items
+          // For owners or team members, fetch only relevant items
+          let filteredItems = data || [];
+          if (userRole !== 'coach') {
+            filteredItems = filteredItems.filter(item => 
+              item.for_role === userRole || item.for_role === null
+            );
+          }
+          
+          setActionItems(filteredItems);
         }
-        
-        setActionItems(filteredItems as ActionItem[]);
       } catch (err: any) {
         console.error("Error fetching action items:", err);
         setError(err);
@@ -70,25 +99,25 @@ export const useProjectActionItems = (projectId: string) => {
   
   const markActionItemComplete = async (itemId: string) => {
     try {
-      // Using raw SQL to avoid TypeScript issues
-      const { error: updateError } = await supabase
-        .rpc('update_action_item_completion', { 
+      // Call the RPC function we created
+      const { data, error } = await supabase.rpc(
+        'update_action_item_completion',
+        { 
           item_id: itemId,
           is_completed: true
-        })
-        .select();
+        }
+      );
       
-      if (updateError) {
+      if (error) {
         // Fallback to direct update if RPC fails
-        const { error } = await supabase
-          .from('project_action_items')
+        const { error: fallbackError } = await supabase.from('project_action_items')
           .update({
             completed: true,
             completion_date: new Date().toISOString()
           })
           .eq('id', itemId);
-        
-        if (error) throw error;
+          
+        if (fallbackError) throw fallbackError;
       }
       
       // Update local state
