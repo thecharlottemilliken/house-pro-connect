@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
 import { FileUpload } from "@/components/ui/file-upload";
 import SelectPropertyPhotosDialog from "./SelectPropertyPhotosDialog";
+import { Dialog } from "@/components/ui/dialog";
 
 interface EmptyPhotoStateProps {
   area: string;
@@ -31,18 +32,20 @@ const EmptyPhotoState = ({
       <div className="grid grid-cols-2 gap-4 w-full mt-2">
         {propertyPhotos.length > 0 ? (
           <>
-            <SelectPropertyPhotosDialog
-              photos={propertyPhotos}
-              onSelect={onSelectBeforePhotos}
-              customButton={
-                <Button
-                  variant="outline"
-                  className="w-full border-[#1A6985] border-2 text-[#1A6985] hover:bg-transparent hover:text-[#1A6985]/90 font-medium uppercase tracking-wider py-6"
-                >
-                  Select from files
-                </Button>
-              }
-            />
+            <Dialog>
+              <SelectPropertyPhotosDialog
+                photos={propertyPhotos}
+                onSelect={onSelectBeforePhotos}
+                customButton={
+                  <Button
+                    variant="outline"
+                    className="w-full border-[#1A6985] border-2 text-[#1A6985] hover:bg-transparent hover:text-[#1A6985]/90 font-medium uppercase tracking-wider py-6"
+                  >
+                    Select from files
+                  </Button>
+                }
+              />
+            </Dialog>
             <FileUpload
               label="Upload"
               description="Upload photos of the room's current state"
