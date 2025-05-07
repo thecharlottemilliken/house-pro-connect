@@ -1,6 +1,7 @@
+
 import React, { useState, useRef } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { FileText, Eye, Download, X, Upload, MapPin, Ruler, SquareFoot } from "lucide-react";
+import { FileText, Eye, Download, X, Upload, MapPin, Ruler, SquareDot } from "lucide-react";
 import EmptyDesignState from "./EmptyDesignState";
 import DesignTabHeader from "./DesignTabHeader";
 import BeforePhotosCard from "./BeforePhotosCard";
@@ -249,7 +250,7 @@ const RoomDetails = ({
             <div className="flex items-center gap-3 text-gray-700">
               <span className="text-xl font-medium">Square Feet:</span>
               <div className="flex items-center">
-                <SquareFoot className="h-5 w-5 mr-2 text-gray-500" />
+                <SquareDot className="h-5 w-5 mr-2 text-gray-500" />
                 <span className="text-xl">
                   <span className="text-gray-500">est</span>
                   {calculateSquareFootage()}
