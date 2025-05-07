@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { PropertyImageCarousel } from "@/components/property/PropertyImageCarousel";
 
@@ -58,9 +58,9 @@ const SelectPropertyPhotosDialog = ({
     <>
       {!isControlled && (
         customButton ? (
-          <Dialog.Trigger asChild>
+          <DialogTrigger asChild>
             {customButton}
-          </Dialog.Trigger>
+          </DialogTrigger>
         ) : (
           <Button 
             variant="outline"
