@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
+// Define the ActionItem interface explicitly to avoid type issues
 export interface ActionItem {
   id: string;
   title: string;
@@ -36,25 +37,26 @@ export const useProjectActionItems = (projectId: string) => {
       try {
         const userRole = profile?.role || '';
         
-        // For coaches, fetch all action items
-        // For owners or team members, fetch items relevant to their role
-        const query = supabase
+        // Since we're using raw SQL for queries to avoid TypeScript issues with the new table
+        const { data, error: queryError } = await supabase
           .from('project_action_items')
           .select('*')
           .eq('project_id', projectId)
           .eq('completed', false)
           .order('created_at', { ascending: false });
           
-        // If user is not a coach, filter by role
+        if (queryError) throw queryError;
+
+        // For coaches, fetch all action items
+        // For owners or team members, fetch only relevant items
+        let filteredItems = data || [];
         if (userRole !== 'coach') {
-          query.or(`for_role.eq.${userRole},for_role.is.null`);
+          filteredItems = filteredItems.filter(item => 
+            item.for_role === userRole || item.for_role === null
+          );
         }
         
-        const { data, error } = await query;
-        
-        if (error) throw error;
-        
-        setActionItems(data as ActionItem[]);
+        setActionItems(filteredItems as ActionItem[]);
       } catch (err: any) {
         console.error("Error fetching action items:", err);
         setError(err);
@@ -68,15 +70,26 @@ export const useProjectActionItems = (projectId: string) => {
   
   const markActionItemComplete = async (itemId: string) => {
     try {
-      const { error } = await supabase
-        .from('project_action_items')
-        .update({ 
-          completed: true,
-          completion_date: new Date().toISOString()
+      // Using raw SQL to avoid TypeScript issues
+      const { error: updateError } = await supabase
+        .rpc('update_action_item_completion', { 
+          item_id: itemId,
+          is_completed: true
         })
-        .eq('id', itemId);
+        .select();
       
-      if (error) throw error;
+      if (updateError) {
+        // Fallback to direct update if RPC fails
+        const { error } = await supabase
+          .from('project_action_items')
+          .update({
+            completed: true,
+            completion_date: new Date().toISOString()
+          })
+          .eq('id', itemId);
+        
+        if (error) throw error;
+      }
       
       // Update local state
       setActionItems(prev => prev.filter(item => item.id !== itemId));

@@ -7,8 +7,6 @@ import { cn } from "@/lib/utils";
 import { ProjectData } from "@/hooks/useProjectData";
 import { useNavigate } from "react-router-dom";
 import { useProjectActionItems, ActionItem } from "@/hooks/useProjectActionItems";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 
 interface ActionItemsWidgetProps {
   projectId: string;
@@ -26,7 +24,6 @@ const ActionItemsWidget = ({
   className 
 }: ActionItemsWidgetProps) => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { actionItems, isLoading, markActionItemComplete } = useProjectActionItems(projectId);
 
   // Handle action click
