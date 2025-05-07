@@ -214,7 +214,7 @@ const RoomDetails = ({
     if (measurements?.length && measurements?.width) {
       return `${measurements.length * measurements.width} SQFT`;
     }
-    return "100 SQFT"; // Default value as shown in the image
+    return ""; // Return blank when no measurements
   };
 
   // Format measurements based on the available data
@@ -222,7 +222,7 @@ const RoomDetails = ({
     if (measurements?.length && measurements?.width && measurements?.height) {
       return `${measurements.length}x${measurements.width}x${measurements.height}"`;
     }
-    return "12x12x12\""; // Default value as shown in the image
+    return ""; // Return blank when no measurements
   };
 
   return (
@@ -252,8 +252,13 @@ const RoomDetails = ({
               <div className="flex items-center">
                 <SquareDot className="h-5 w-5 mr-2 text-gray-500" />
                 <span className="text-xl">
-                  <span className="text-gray-500">est</span>
-                  {calculateSquareFootage()}
+                  {calculateSquareFootage() ? (
+                    <>
+                      <span className="text-gray-500">est</span> {calculateSquareFootage()}
+                    </>
+                  ) : (
+                    <span className="text-gray-400">Not available</span>
+                  )}
                 </span>
               </div>
             </div>
@@ -262,7 +267,9 @@ const RoomDetails = ({
               <span className="text-xl font-medium">Measurements:</span>
               <div className="flex items-center">
                 <Ruler className="h-5 w-5 mr-2 text-gray-500" />
-                <span className="text-xl">{formatMeasurements()}</span>
+                <span className="text-xl">
+                  {formatMeasurements() || <span className="text-gray-400">Not available</span>}
+                </span>
               </div>
             </div>
 

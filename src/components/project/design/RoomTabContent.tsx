@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { DesignPreferences, RenovationArea } from "@/hooks/useProjectData";
 import EmptyDesignState from "./EmptyDesignState";
 import RoomDetails from "./RoomDetails";
@@ -10,6 +10,8 @@ import { RoomPreference } from "@/hooks/useRoomDesign";
 import AfterPhotosSection from './AfterPhotosSection';
 import BeforePhotosCard from './BeforePhotosCard';
 import RoomMeasurementsCard from './RoomMeasurementsCard';
+import MeasurementsBanner from './MeasurementsBanner';
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 interface RoomTabContentProps {
   area: RenovationArea;
@@ -73,6 +75,11 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
   onAddPinterestBoards
 }) => {
   const handleAddDesignPlans = () => console.log("Add design plans clicked");
+  const [showMeasuringDialog, setShowMeasuringDialog] = useState(false);
+  
+  // Check if measurements exist
+  const hasMeasurements = measurements && 
+    (measurements.length || measurements.width || measurements.height || measurements.additionalNotes);
 
   return (
     <div className="w-full space-y-8">
@@ -97,7 +104,7 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
             onRemoveDesignAsset={onRemoveDesignAsset}
           />
           
-          {/* Two-column layout for Before/After Photos */}
+          {/* Two-column layout for Before/After Photos and Measurement Banner */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <BeforePhotosCard
               area={area.area}
@@ -114,11 +121,19 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
             />
           </div>
           
-          <RoomMeasurementsCard 
-            area={area.area}
-            measurements={measurements}
-            onSaveMeasurements={onSaveMeasurements}
-          />
+          {/* Show Measurements Banner or Measurements Card */}
+          {!hasMeasurements ? (
+            <MeasurementsBanner 
+              area={area.area}
+              onMeasureRoom={() => setShowMeasuringDialog(true)}
+            />
+          ) : (
+            <RoomMeasurementsCard 
+              area={area.area}
+              measurements={measurements}
+              onSaveMeasurements={onSaveMeasurements}
+            />
+          )}
           
           <DesignAssetsCard 
             hasRenderings={hasRenderings}
@@ -138,6 +153,24 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
           onAction={handleAddDesignPlans}
         />
       )}
+      
+      {/* Room Measuring Dialog */}
+      <Dialog open={showMeasuringDialog} onOpenChange={setShowMeasuringDialog}>
+        <DialogContent className="max-w-4xl">
+          <div className="p-6">
+            <h2 className="text-2xl font-bold mb-4">Measure Your Room</h2>
+            <RoomMeasurementsCard 
+              area={area.area}
+              measurements={measurements || { unit: 'ft' }}
+              onSaveMeasurements={(newMeasurements) => {
+                onSaveMeasurements(newMeasurements);
+                setShowMeasuringDialog(false);
+              }}
+              initialEditMode={true}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
       
       <div className="mt-8 w-full">
         {roomId && (

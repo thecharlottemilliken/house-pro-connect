@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,19 +16,30 @@ interface RoomMeasurementsCardProps {
     additionalNotes?: string;
   };
   onSaveMeasurements: (measurements: any) => void;
+  initialEditMode?: boolean;
 }
 
 const RoomMeasurementsCard = ({
   area,
   measurements,
-  onSaveMeasurements
+  onSaveMeasurements,
+  initialEditMode = false
 }: RoomMeasurementsCardProps) => {
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(initialEditMode);
   const [length, setLength] = useState<string>(measurements?.length?.toString() || "");
   const [width, setWidth] = useState<string>(measurements?.width?.toString() || "");
   const [height, setHeight] = useState<string>(measurements?.height?.toString() || "");
   const [unit, setUnit] = useState<'ft' | 'm'>(measurements?.unit || 'ft');
   const [notes, setNotes] = useState<string>(measurements?.additionalNotes || "");
+
+  // Update local state when measurements prop changes
+  useEffect(() => {
+    setLength(measurements?.length?.toString() || "");
+    setWidth(measurements?.width?.toString() || "");
+    setHeight(measurements?.height?.toString() || "");
+    setUnit(measurements?.unit || 'ft');
+    setNotes(measurements?.additionalNotes || "");
+  }, [measurements]);
 
   const handleSave = () => {
     const newMeasurements = {
