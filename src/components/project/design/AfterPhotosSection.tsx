@@ -19,29 +19,21 @@ const AfterPhotosSection = ({
   const hasPhotos = photos.length > 0;
 
   return (
-    <Card className="overflow-hidden border-0 shadow-md">
+    <Card className="overflow-hidden border-0 shadow-none rounded-none h-full bg-[#e9f1f4]">
       <CardContent className="p-0">
-        <div className="bg-[#174c65] text-white p-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="font-semibold text-xl">After Photos</h3>
-              <p className="text-white/80 mt-1">Document the transformation of your {area}</p>
-            </div>
-            {hasPhotos && (
+        {hasPhotos ? (
+          <div className="p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-bold text-3xl text-gray-900">After Photos</h3>
               <Button 
-                variant="secondary" 
-                size="sm"
-                className="bg-white text-[#174c65] hover:bg-gray-100"
+                variant="link" 
+                className="text-blue-600 hover:text-blue-700 uppercase tracking-wider text-sm underline underline-offset-4 p-0 h-auto"
               >
                 Manage Photos
               </Button>
-            )}
-          </div>
-        </div>
-        
-        {hasPhotos ? (
-          <div className="p-6">
-            <div className="grid grid-cols-1 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+            </div>
+            
+            <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
               {photos.map((photo, index) => (
                 <div key={index} className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200">
                   <img 
@@ -54,24 +46,27 @@ const AfterPhotosSection = ({
             </div>
           </div>
         ) : (
-          <div className="p-6 flex flex-col items-center justify-center text-center">
-            <div className="w-12 h-12 rounded-full bg-[#174c65]/10 flex items-center justify-center mb-3">
-              <Upload className="h-6 w-6 text-[#174c65]" />
+          <div className="p-6 flex flex-col h-full">
+            <h3 className="font-bold text-3xl text-gray-900 mb-6">Upload photos for Tile Milestone 1.</h3>
+            
+            <div className="flex-1 flex flex-col justify-center">
+              <p className="text-gray-700 text-xl mb-8 max-w-md">
+                It looks like you recently finished a project milestone, take some photos and upload them to capture the progress.
+              </p>
+              
+              <div>
+                <FileUpload
+                  label="UPLOAD PHOTOS"
+                  description="Upload photos of your completed milestone"
+                  accept="image/*"
+                  multiple={true}
+                  onUploadComplete={onUploadPhotos}
+                  className="bg-[#b8d1db] text-gray-800 hover:bg-[#a7c0ca] border-0 px-8 py-6 text-base font-medium"
+                >
+                  UPLOAD PHOTOS
+                </FileUpload>
+              </div>
             </div>
-            <h4 className="font-semibold text-gray-900">No after photos added yet</h4>
-            <p className="text-gray-500 max-w-md mt-1 mb-4">
-              Upload photos of your {area} after renovation to document the transformation
-            </p>
-            <FileUpload
-              label="Upload Photos"
-              description="Add photos of your completed renovation"
-              accept="image/*"
-              multiple={true}
-              onUploadComplete={onUploadPhotos}
-              className="border-[#174c65] text-[#174c65] hover:bg-[#174c65]/5"
-            >
-              <Plus className="h-4 w-4 mr-1" /> Upload Photos
-            </FileUpload>
           </div>
         )}
       </CardContent>

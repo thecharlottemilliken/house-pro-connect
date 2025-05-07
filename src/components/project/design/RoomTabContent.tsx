@@ -77,7 +77,8 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
   return (
     <div className="w-full space-y-8">
       {hasDesigns ? (
-        <div className="grid grid-cols-1 w-full space-y-8">
+        <div className="space-y-8">
+          {/* Room Details Card */}
           <RoomDetails 
             area={area.area}
             location={area.location}
@@ -96,24 +97,27 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
             onRemoveDesignAsset={onRemoveDesignAsset}
           />
           
+          {/* Two-column layout for Before/After Photos */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <BeforePhotosCard
+              area={area.area}
+              beforePhotos={beforePhotos}
+              propertyPhotos={propertyPhotos}
+              onSelectBeforePhotos={onSelectBeforePhotos}
+              onUploadBeforePhotos={onUploadBeforePhotos}
+            />
+            
+            <AfterPhotosSection 
+              area={area.area}
+              photos={[]} // Initialize with empty array since this is a new component
+              onUploadPhotos={() => console.log("Upload after photos clicked")}
+            />
+          </div>
+          
           <RoomMeasurementsCard 
             area={area.area}
             measurements={measurements}
             onSaveMeasurements={onSaveMeasurements}
-          />
-          
-          <BeforePhotosCard
-            area={area.area}
-            beforePhotos={beforePhotos}
-            propertyPhotos={propertyPhotos}
-            onSelectBeforePhotos={onSelectBeforePhotos}
-            onUploadBeforePhotos={onUploadBeforePhotos}
-          />
-          
-          <AfterPhotosSection 
-            area={area.area}
-            photos={[]} // Initialize with empty array since this is a new component
-            onUploadPhotos={() => console.log("Upload after photos clicked")}
           />
           
           <DesignAssetsCard 
