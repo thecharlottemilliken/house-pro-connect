@@ -9,13 +9,15 @@ interface SelectPropertyPhotosDialogProps {
   onSelect: (selectedPhotos: string[]) => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  customButton?: React.ReactNode;
 }
 
 const SelectPropertyPhotosDialog = ({ 
   photos, 
   onSelect, 
   open: controlledOpen, 
-  onOpenChange 
+  onOpenChange,
+  customButton 
 }: SelectPropertyPhotosDialogProps) => {
   const [isControlled] = useState(controlledOpen !== undefined && onOpenChange !== undefined);
   const [internalOpen, setInternalOpen] = useState(false);
@@ -55,13 +57,19 @@ const SelectPropertyPhotosDialog = ({
   return (
     <>
       {!isControlled && (
-        <Button 
-          variant="outline"
-          onClick={() => handleOpenChange(true)}
-          className="w-full"
-        >
-          Select from Property Photos
-        </Button>
+        customButton ? (
+          <Dialog.Trigger asChild>
+            {customButton}
+          </Dialog.Trigger>
+        ) : (
+          <Button 
+            variant="outline"
+            onClick={() => handleOpenChange(true)}
+            className="w-full"
+          >
+            Select from Property Photos
+          </Button>
+        )
       )}
       
       <Dialog open={isOpen} onOpenChange={handleOpenChange}>

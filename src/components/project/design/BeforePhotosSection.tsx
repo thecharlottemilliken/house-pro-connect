@@ -129,7 +129,47 @@ const BeforePhotosSection = ({
       {hasBeforePhotos ? (
         <>
           {/* Display photos in grid layout */}
-          {getPhotoGrid()}
+          {beforePhotos.length === 1 ? (
+            <div className="w-full">
+              <PhotoItem photo={beforePhotos[0]} index={0} />
+            </div>
+          ) : beforePhotos.length === 2 ? (
+            <div className="grid grid-cols-2 gap-4">
+              {beforePhotos.map((photo, index) => (
+                <PhotoItem key={index} photo={photo} index={index} />
+              ))}
+            </div>
+          ) : beforePhotos.length === 3 ? (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-1">
+                <PhotoItem photo={beforePhotos[0]} index={0} />
+              </div>
+              <div className="col-span-1">
+                <PhotoItem photo={beforePhotos[1]} index={1} />
+              </div>
+              <div className="col-span-2">
+                <PhotoItem photo={beforePhotos[2]} index={2} />
+              </div>
+            </div>
+          ) : beforePhotos.length >= 4 ? (
+            <div className="grid grid-cols-2 gap-4">
+              <PhotoItem photo={beforePhotos[0]} index={0} />
+              <PhotoItem photo={beforePhotos[1]} index={1} />
+              <PhotoItem photo={beforePhotos[2]} index={2} />
+              {beforePhotos.length > 3 && (
+                <PhotoItem photo={beforePhotos[3]} index={3} />
+              )}
+              {beforePhotos.length > 4 && (
+                <div className="col-span-2">
+                  <div className="grid grid-cols-2 gap-4">
+                    {beforePhotos.slice(4).map((photo, idx) => (
+                      <PhotoItem key={idx + 4} photo={photo} index={idx + 4} />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : null}
           
           {/* Photo controls - updated to use outlined buttons */}
           <div className="grid grid-cols-2 gap-4 mt-6">
