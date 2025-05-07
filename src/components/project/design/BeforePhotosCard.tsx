@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import BeforePhotosSection from "./BeforePhotosSection";
 
 interface BeforePhotosCardProps {
-  area: string; // This was missing and causing the TypeScript error
+  area: string;
   beforePhotos: string[];
   propertyPhotos: string[];
   onSelectBeforePhotos: (photos: string[]) => void;

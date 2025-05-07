@@ -80,11 +80,14 @@ const RoomMeasurementsCard = ({
           ? designPreferences.roomMeasurements 
           : {};
 
+      // Make sure area is a string before calling toLowerCase()
+      const safeArea = typeof area === 'string' ? area.toLowerCase() : String(area).toLowerCase();
+
       const updatedDesignPreferences = {
         ...designPreferences,
         roomMeasurements: {
           ...roomMeasurements,
-          [area.toLowerCase()]: newMeasurements
+          [safeArea]: newMeasurements
         }
       };
 
@@ -114,17 +117,18 @@ const RoomMeasurementsCard = ({
 
   return (
     <Card className="shadow-sm border-gray-200/50 mt-6">
-      <CardContent className="p-6">
+      <CardContent className="p-4 sm:p-6">
         <div className="flex justify-between items-center mb-4">
           <h3 className="font-medium text-base">Room Measurements</h3>
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
-                <Ruler className="h-4 w-4" />
-                {hasMeasurements ? "Edit Measurements" : "Help me measure"}
+              <Button variant="outline" size="sm" className="gap-2 text-xs sm:text-sm whitespace-nowrap">
+                <Ruler className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden xs:inline">{hasMeasurements ? "Edit Measurements" : "Help me measure"}</span>
+                <span className="xs:hidden">{hasMeasurements ? "Edit" : "Measure"}</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md max-w-[90vw] p-4 sm:p-6">
               <DialogHeader>
                 <DialogTitle>Measure Your {area}</DialogTitle>
                 <DialogDescription>
@@ -141,41 +145,41 @@ const RoomMeasurementsCard = ({
         </div>
 
         {hasMeasurements ? (
-          <div className="bg-gray-50 rounded-md p-4">
-            <div className="grid grid-cols-2 gap-4 mb-2">
+          <div className="bg-gray-50 rounded-md p-3 sm:p-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-2">
               <div>
-                <p className="text-sm text-gray-500">Length</p>
-                <p className="font-medium">{measurements.length} {measurements.unit}</p>
+                <p className="text-xs sm:text-sm text-gray-500">Length</p>
+                <p className="font-medium text-sm sm:text-base">{measurements.length} {measurements.unit}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Width</p>
-                <p className="font-medium">{measurements.width} {measurements.unit}</p>
+                <p className="text-xs sm:text-sm text-gray-500">Width</p>
+                <p className="font-medium text-sm sm:text-base">{measurements.width} {measurements.unit}</p>
               </div>
               {measurements.height && (
                 <div>
-                  <p className="text-sm text-gray-500">Height</p>
-                  <p className="font-medium">{measurements.height} {measurements.unit}</p>
+                  <p className="text-xs sm:text-sm text-gray-500">Height</p>
+                  <p className="font-medium text-sm sm:text-base">{measurements.height} {measurements.unit}</p>
                 </div>
               )}
               {squareFootage && (
                 <div>
-                  <p className="text-sm text-gray-500">Square Footage</p>
-                  <p className="font-medium">{formattedSquareFootage} SQFT</p>
+                  <p className="text-xs sm:text-sm text-gray-500">Square Footage</p>
+                  <p className="font-medium text-sm sm:text-base">{formattedSquareFootage} SQFT</p>
                 </div>
               )}
             </div>
             {measurements.additionalNotes && (
               <div className="mt-2 pt-2 border-t border-gray-200">
-                <p className="text-sm text-gray-500">Notes</p>
-                <p className="text-sm">{measurements.additionalNotes}</p>
+                <p className="text-xs sm:text-sm text-gray-500">Notes</p>
+                <p className="text-xs sm:text-sm">{measurements.additionalNotes}</p>
               </div>
             )}
           </div>
         ) : (
-          <div className="text-center py-6 bg-gray-50 rounded-md">
-            <Ruler className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-            <p className="font-medium">No measurements added</p>
-            <p className="text-sm text-gray-500 mt-1">Add the dimensions of your {area.toLowerCase()} for accurate planning</p>
+          <div className="text-center py-4 sm:py-6 bg-gray-50 rounded-md">
+            <Ruler className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400 mx-auto mb-2" />
+            <p className="font-medium text-sm sm:text-base">No measurements added</p>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1 px-2">Add the dimensions of your {area.toLowerCase()} for accurate planning</p>
           </div>
         )}
       </CardContent>
