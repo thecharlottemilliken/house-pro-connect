@@ -1,11 +1,13 @@
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Check, FileText, Camera, Ruler, ListTodo, PenBox } from "lucide-react";
+import { ArrowRight, Check, FileText, Camera, Ruler, ListTodo, PenBox, FilePen, FilePlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ProjectData } from "@/hooks/useProjectData";
 import { useNavigate } from "react-router-dom";
+import { useProjectActionItems, ActionItem } from "@/hooks/useProjectActionItems";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ActionItemsWidgetProps {
@@ -16,17 +18,6 @@ interface ActionItemsWidgetProps {
   className?: string;
 }
 
-type ActionItem = {
-  id: string;
-  title: string;
-  description: string;
-  priority: "high" | "medium" | "low";
-  icon: React.ReactNode;
-  action?: () => void;
-  buttonText?: string;
-  completed?: boolean;
-};
-
 const ActionItemsWidget = ({ 
   projectId, 
   projectData, 
@@ -35,139 +26,56 @@ const ActionItemsWidget = ({
   className 
 }: ActionItemsWidgetProps) => {
   const navigate = useNavigate();
-  const [actionItems, setActionItems] = useState<ActionItem[]>([]);
-  const [hasSOW, setHasSOW] = useState<boolean>(false);
-  const [showNoDesignDialog, setShowNoDesignDialog] = useState(false);
-  
-  // Check if a SOW exists for this project
-  useEffect(() => {
-    const checkSOW = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("statement_of_work")
-          .select("id")
-          .eq("project_id", projectId)
-          .maybeSingle();
-          
-        if (error) throw error;
-        setHasSOW(!!data);
-      } catch (error) {
-        console.error("Error checking SOW:", error);
-        setHasSOW(false);
-      }
-    };
-    
-    if (projectId) {
-      checkSOW();
-    }
-  }, [projectId]);
+  const { toast } = useToast();
+  const { actionItems, isLoading, markActionItemComplete } = useProjectActionItems(projectId);
 
-  // Handle SOW creation
-  const handleStartSOW = () => {
-    const hasDesignPlan = projectData?.design_preferences?.hasDesigns;
+  // Handle action click
+  const handleActionClick = (item: ActionItem) => {
+    // If the action is a navigation
+    if (item.action_type === 'navigate' && item.action_data?.route) {
+      navigate(item.action_data.route);
+      return;
+    }
     
-    if (!hasDesignPlan) {
-      setShowNoDesignDialog(true);
-    } else {
-      navigate(`/project-sow/${projectId}`);
+    // If the action is SOW related
+    if (item.action_type === 'sow' && item.action_data?.route) {
+      navigate(item.action_data.route);
+      return;
+    }
+    
+    // For any other action types we might add in the future
+    switch (item.action_type) {
+      case 'modal':
+        // Handle modal actions
+        break;
+      case 'function':
+        // Handle function calls
+        break;
+      default:
+        // Default action is to navigate to project dashboard
+        navigate(`/project-dashboard/${projectId}`);
     }
   };
-
-  // Determine action items based on project state
-  useEffect(() => {
-    const items: ActionItem[] = [];
-
-    // If we have project data, determine needed actions
-    if (projectData) {
-      const designPrefs = projectData.design_preferences || {};
-      
-      // Type casting to ensure we can access these properties
-      const typedDesignPrefs = designPrefs as {
-        hasDesigns?: boolean;
-        designers?: Array<{ id: string; businessName: string; }>;
-        designAssets?: Array<{ name: string; url: string; }>;
-        beforePhotos?: Record<string, string[]>;
-        roomMeasurements?: Record<string, any>;
-      };
-      
-      // SOW related actions for coaches
-      if (isCoach && !hasSOW) {
-        items.push({
-          id: "create-sow",
-          title: "Create Statement of Work",
-          description: "Draft a Statement of Work for this project",
-          priority: "high",
-          icon: <PenBox className="h-5 w-5" />,
-          action: handleStartSOW,
-          buttonText: "Create SOW"
-        });
-      }
-      
-      // For project owner
-      if (isOwner) {
-        // If SOW is pending review (this would come from SOW data)
-        const sowPendingReview = false; // This should come from API
-        if (sowPendingReview) {
-          items.push({
-            id: "review-sow",
-            title: "Review Statement of Work",
-            description: "Your SOW needs review before work can begin",
-            priority: "high",
-            icon: <FileText className="h-5 w-5" />,
-            action: () => navigate(`/project-sow/${projectId}/review`),
-            buttonText: "Review SOW"
-          });
-        }
-        
-        // If before photos are missing
-        const hasBeforePhotos = typedDesignPrefs.beforePhotos && 
-          Object.keys(typedDesignPrefs.beforePhotos || {}).length > 0;
-          
-        if (!hasBeforePhotos) {
-          items.push({
-            id: "upload-photos",
-            title: "Upload Before Photos",
-            description: "Add photos of your current space",
-            priority: "medium",
-            icon: <Camera className="h-5 w-5" />,
-            action: () => navigate(`/project-design/${projectId}`),
-            buttonText: "Add Photos"
-          });
-        }
-        
-        // If room measurements are missing
-        const hasRoomMeasurements = typedDesignPrefs.roomMeasurements && 
-          Object.keys(typedDesignPrefs.roomMeasurements || {}).length > 0;
-          
-        if (!hasRoomMeasurements) {
-          items.push({
-            id: "add-measurements",
-            title: "Add Room Measurements",
-            description: "Provide accurate measurements for design planning",
-            priority: "medium",
-            icon: <Ruler className="h-5 w-5" />,
-            action: () => navigate(`/project-design/${projectId}`),
-            buttonText: "Add Measurements"
-          });
-        }
-      }
-      
-      // General action item example
-      if (items.length === 0) {
-        items.push({
-          id: "default-action",
-          title: "Complete Your Project Setup",
-          description: "Finish setting up your project details",
-          priority: "medium",
-          icon: <ListTodo className="h-5 w-5" />,
-          action: () => navigate(`/project-design/${projectId}`),
-          buttonText: "Continue Setup"
-        });
-      }
+  
+  // Function to get the appropriate icon component based on icon_name
+  const getIconComponent = (iconName: string | null) => {
+    switch (iconName) {
+      case 'file-plus':
+        return <FilePlus className="h-5 w-5" />;
+      case 'file-pen':
+        return <FilePen className="h-5 w-5" />;
+      case 'camera':
+        return <Camera className="h-5 w-5" />;
+      case 'ruler':
+        return <Ruler className="h-5 w-5" />;
+      case 'pen-box':
+        return <PenBox className="h-5 w-5" />;
+      case 'file-text':
+        return <FileText className="h-5 w-5" />;
+      default:
+        return <ListTodo className="h-5 w-5" />;
     }
-
-    setActionItems(items);
-  }, [projectData, projectId, isOwner, isCoach, navigate, hasSOW]);
+  };
 
   const getPriorityColor = (priority: string) => {
     switch(priority) {
@@ -200,37 +108,45 @@ const ActionItemsWidget = ({
       </CardHeader>
       <CardContent className="p-0">
         <div className="divide-y">
-          {actionItems.map((item) => (
-            <div key={item.id} className="p-4 hover:bg-gray-50">
-              <div className="flex gap-3">
-                <div className={cn("p-2 rounded-lg flex-shrink-0", getPriorityColor(item.priority))}>
-                  {item.icon}
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-medium text-gray-900 mb-1">{item.title}</h4>
-                  <p className="text-gray-600 text-sm mb-3">{item.description}</p>
-                  {item.action && (
-                    <Button 
-                      variant="outline"
-                      size="sm"
-                      className="text-sm"
-                      onClick={item.action}
-                    >
-                      {item.buttonText || "Take Action"} <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-                    </Button>
-                  )}
-                </div>
-              </div>
+          {isLoading ? (
+            <div className="p-4 text-center">
+              <div className="animate-spin h-6 w-6 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-2"></div>
+              <p className="text-gray-600 text-sm">Loading action items...</p>
             </div>
-          ))}
-          
-          {actionItems.length === 0 && (
-            <div className="p-8 text-center">
-              <div className="bg-green-100 h-12 w-12 rounded-full flex items-center justify-center mx-auto mb-3">
-                <Check className="h-6 w-6 text-green-600" />
-              </div>
-              <p className="text-gray-600">All caught up! No pending action items.</p>
-            </div>
+          ) : (
+            <>
+              {actionItems.map((item) => (
+                <div key={item.id} className="p-4 hover:bg-gray-50">
+                  <div className="flex gap-3">
+                    <div className={cn("p-2 rounded-lg flex-shrink-0", getPriorityColor(item.priority))}>
+                      {getIconComponent(item.icon_name)}
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-900 mb-1">{item.title}</h4>
+                      <p className="text-gray-600 text-sm mb-3">{item.description}</p>
+                      <Button 
+                        variant="outline"
+                        size="sm"
+                        className="text-sm"
+                        onClick={() => handleActionClick(item)}
+                      >
+                        {item.action_type === 'sow' ? (item.title.includes('Create') ? 'Create SOW' : 'Continue SOW') : "Take Action"} 
+                        <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              
+              {actionItems.length === 0 && !isLoading && (
+                <div className="p-8 text-center">
+                  <div className="bg-green-100 h-12 w-12 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Check className="h-6 w-6 text-green-600" />
+                  </div>
+                  <p className="text-gray-600">All caught up! No pending action items.</p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </CardContent>

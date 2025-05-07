@@ -1,5 +1,4 @@
-
-import React from "react";
+import React, { useEffect } from "react";
 import { useLocation, useParams, Navigate, useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -13,6 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useProjectAccess } from "@/hooks/useProjectAccess";
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useActionItemsGenerator } from "@/hooks/useActionItemsGenerator";
 
 // Import our components
 import ProjectProgressCard from "@/components/project/ProjectProgressCard";
@@ -43,7 +43,16 @@ const ProjectDashboard = () => {
     isLoading: isProjectLoading,
     error
   } = useProjectData(projectId, location.state);
+  
   const isLoading = isAccessLoading || isProjectLoading;
+  const { generateActionItems } = useActionItemsGenerator();
+  
+  // Generate action items when dashboard loads
+  useEffect(() => {
+    if (!isLoading && projectData) {
+      generateActionItems(projectId);
+    }
+  }, [projectId, isLoading, projectData]);
   
   React.useEffect(() => {
     if (error) {
