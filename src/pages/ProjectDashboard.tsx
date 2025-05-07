@@ -87,21 +87,7 @@ const ProjectDashboard = () => {
   
   const projectTitle = projectData?.title || "Project Overview";
   const renovationAreas = projectData?.renovation_areas as unknown as RenovationArea[] || [];
-  const hasSOW = false;
-  const hasDesignPlan = false;
   const isCoach = profile?.role === 'coach';
-  
-  const handleStartSOW = () => {
-    if (!hasDesignPlan) {
-      setShowNoDesignDialog(true);
-    } else {
-      startSOWCreation();
-    }
-  };
-  
-  const startSOWCreation = () => {
-    navigate(`/project-sow/${projectId}`);
-  };
   
   const propertyCardData = {
     id: propertyDetails.id,
@@ -166,25 +152,6 @@ const ProjectDashboard = () => {
                 </div>
               </div>
               
-              {/* SOW creation block - full width on all screens */}
-              {!hasSOW && isCoach && (
-                <div className="w-full mt-4 sm:mt-6">
-                  <div className="border border-gray-200 rounded-lg p-4 sm:p-6 lg:p-8 text-center">
-                    <PenBox className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-[#0f566c] mb-3 sm:mb-4" />
-                    
-                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
-                      Begin Building the Statement of Work
-                    </h3>
-                    <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 max-w-md mx-auto">
-                      Create a comprehensive Statement of Work (SOW) that outlines the project's scope, specific deliverables, timeline, and key milestones.
-                    </p>
-                    <Button onClick={handleStartSOW} className="bg-[#0f566c] hover:bg-[#0d4a5d] w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3">
-                      Start SOW
-                    </Button>
-                  </div>
-                </div>
-              )}
-              
               {/* Project Milestones - now as the last row */}
               <div className="w-full">
                 <ProjectMilestonesWidget projectId={projectId} className="h-full" />
@@ -204,7 +171,7 @@ const ProjectDashboard = () => {
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
             <AlertDialogCancel className="w-full sm:w-auto mt-2 sm:mt-0">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={startSOWCreation} className="w-full sm:w-auto">
+            <AlertDialogAction onClick={() => navigate(`/project-sow/${projectId}`)} className="w-full sm:w-auto">
               Proceed
             </AlertDialogAction>
           </AlertDialogFooter>

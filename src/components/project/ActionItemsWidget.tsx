@@ -1,13 +1,12 @@
+
 import React, { useEffect, useState } from "react";
-import { ArrowRight, Check } from "lucide-react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { ArrowRight, Check, FileText, Camera, Ruler, ListTodo, PenBox } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ProjectData } from "@/hooks/useProjectData";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ActionItemsWidgetProps {
   projectId: string;
@@ -17,240 +16,223 @@ interface ActionItemsWidgetProps {
   className?: string;
 }
 
-interface SOWData {
-  id: string;
-  status: string;
-  feedback?: string | null;
-  created_at?: string;
-}
-
-interface ActionItem {
+type ActionItem = {
   id: string;
   title: string;
   description: string;
   priority: "high" | "medium" | "low";
+  icon: React.ReactNode;
   action?: () => void;
   buttonText?: string;
   completed?: boolean;
-  date?: string;
-}
+};
 
-const ActionItemsWidget = ({
-  projectId,
-  projectData,
-  isOwner,
+const ActionItemsWidget = ({ 
+  projectId, 
+  projectData, 
+  isOwner, 
   isCoach,
-  className
+  className 
 }: ActionItemsWidgetProps) => {
   const navigate = useNavigate();
-  const {
-    profile
-  } = useAuth();
-  const [sowData, setSowData] = useState<SOWData | null>(null);
   const [actionItems, setActionItems] = useState<ActionItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [completedItems, setCompletedItems] = useState<string[]>([]);
-
-  // Fetch SOW data
+  const [hasSOW, setHasSOW] = useState<boolean>(false);
+  const [showNoDesignDialog, setShowNoDesignDialog] = useState(false);
+  
+  // Check if a SOW exists for this project
   useEffect(() => {
-    const fetchSOW = async () => {
-      setIsLoading(true);
+    const checkSOW = async () => {
       try {
-        const {
-          data,
-          error
-        } = await supabase.from("statement_of_work").select("id, status, feedback, created_at").eq("project_id", projectId).maybeSingle();
+        const { data, error } = await supabase
+          .from("statement_of_work")
+          .select("id")
+          .eq("project_id", projectId)
+          .maybeSingle();
+          
         if (error) throw error;
-        if (data && typeof data === "object") {
-          setSowData(data);
-        } else {
-          setSowData(null);
-        }
+        setHasSOW(!!data);
       } catch (error) {
-        console.error("Error fetching SOW:", error);
-        setSowData(null);
-      } finally {
-        setIsLoading(false);
+        console.error("Error checking SOW:", error);
+        setHasSOW(false);
       }
     };
+    
     if (projectId) {
-      fetchSOW();
+      checkSOW();
     }
   }, [projectId]);
 
-  // Build action items based on project state and SOW data
+  // Handle SOW creation
+  const handleStartSOW = () => {
+    const hasDesignPlan = projectData?.design_preferences?.hasDesigns;
+    
+    if (!hasDesignPlan) {
+      setShowNoDesignDialog(true);
+    } else {
+      navigate(`/project-sow/${projectId}`);
+    }
+  };
+
+  // Determine action items based on project state
   useEffect(() => {
     const items: ActionItem[] = [];
 
-    // Format date helper
-    const formatRelativeDate = (dateString?: string) => {
-      if (!dateString) return "";
-      const date = new Date(dateString);
-      const now = new Date();
-      const diffTime = Math.abs(now.getTime() - date.getTime());
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-      if (diffDays === 0) return "Today";
-      if (diffDays === 1) return "1 day ago";
-      return `${diffDays} days ago`;
-    };
-
-    // If owner and SOW is pending review
-    if (isOwner && sowData?.status === "pending") {
-      items.push({
-        id: "review-sow",
-        title: "Review SOW",
-        description: "Your project coach has completed an SOW for you to review",
-        priority: "high",
-        action: () => navigate(`/project-sow/${projectId}/review`),
-        buttonText: "REVIEW",
-        date: formatRelativeDate(sowData.created_at)
-      });
-    }
-
-    // Coach sees revision task if SOW status is "pending revision"
-    if (isCoach && sowData?.status === "pending revision") {
-      items.push({
-        id: "revise-sow",
-        title: "Revise SOW",
-        description: "The resident has requested revisions on the Statement of Work",
-        priority: "high",
-        action: () => navigate(`/project-sow/${projectId}`),
-        buttonText: "REVIEW",
-        date: formatRelativeDate(sowData.created_at)
-      });
-    }
-
-    // SOW creation for coach
-    if (isCoach && !sowData) {
-      items.push({
-        id: "create-sow",
-        title: "Create SOW",
-        description: "Draft a Statement of Work for this project",
-        priority: "high",
-        action: () => navigate(`/project-sow/${projectId}`),
-        buttonText: "CREATE",
-        date: "New"
-      });
-    }
+    // If we have project data, determine needed actions
     if (projectData) {
       const designPrefs = projectData.design_preferences || {};
-
+      
       // Type casting to ensure we can access these properties
       const typedDesignPrefs = designPrefs as {
+        hasDesigns?: boolean;
+        designers?: Array<{ id: string; businessName: string; }>;
+        designAssets?: Array<{ name: string; url: string; }>;
         beforePhotos?: Record<string, string[]>;
         roomMeasurements?: Record<string, any>;
       };
-
-      // If before photos are missing
-      const hasBeforePhotos = typedDesignPrefs.beforePhotos && Object.keys(typedDesignPrefs.beforePhotos || {}).length > 0;
-      if (isOwner && !hasBeforePhotos) {
+      
+      // SOW related actions for coaches
+      if (isCoach && !hasSOW) {
         items.push({
-          id: "upload-photos",
-          title: "Upload Before Photos",
-          description: "Add photos of your current space",
+          id: "create-sow",
+          title: "Create Statement of Work",
+          description: "Draft a Statement of Work for this project",
+          priority: "high",
+          icon: <PenBox className="h-5 w-5" />,
+          action: handleStartSOW,
+          buttonText: "Create SOW"
+        });
+      }
+      
+      // For project owner
+      if (isOwner) {
+        // If SOW is pending review (this would come from SOW data)
+        const sowPendingReview = false; // This should come from API
+        if (sowPendingReview) {
+          items.push({
+            id: "review-sow",
+            title: "Review Statement of Work",
+            description: "Your SOW needs review before work can begin",
+            priority: "high",
+            icon: <FileText className="h-5 w-5" />,
+            action: () => navigate(`/project-sow/${projectId}/review`),
+            buttonText: "Review SOW"
+          });
+        }
+        
+        // If before photos are missing
+        const hasBeforePhotos = typedDesignPrefs.beforePhotos && 
+          Object.keys(typedDesignPrefs.beforePhotos || {}).length > 0;
+          
+        if (!hasBeforePhotos) {
+          items.push({
+            id: "upload-photos",
+            title: "Upload Before Photos",
+            description: "Add photos of your current space",
+            priority: "medium",
+            icon: <Camera className="h-5 w-5" />,
+            action: () => navigate(`/project-design/${projectId}`),
+            buttonText: "Add Photos"
+          });
+        }
+        
+        // If room measurements are missing
+        const hasRoomMeasurements = typedDesignPrefs.roomMeasurements && 
+          Object.keys(typedDesignPrefs.roomMeasurements || {}).length > 0;
+          
+        if (!hasRoomMeasurements) {
+          items.push({
+            id: "add-measurements",
+            title: "Add Room Measurements",
+            description: "Provide accurate measurements for design planning",
+            priority: "medium",
+            icon: <Ruler className="h-5 w-5" />,
+            action: () => navigate(`/project-design/${projectId}`),
+            buttonText: "Add Measurements"
+          });
+        }
+      }
+      
+      // General action item example
+      if (items.length === 0) {
+        items.push({
+          id: "default-action",
+          title: "Complete Your Project Setup",
+          description: "Finish setting up your project details",
           priority: "medium",
+          icon: <ListTodo className="h-5 w-5" />,
           action: () => navigate(`/project-design/${projectId}`),
-          buttonText: "ADD",
-          date: "Required"
+          buttonText: "Continue Setup"
         });
       }
     }
 
-    // Add a sample milestone approval task
-    if (items.length === 0 || isOwner && items.length < 2) {
-      items.push({
-        id: "approve-milestone",
-        title: "Approve milestone",
-        description: "Joe has marked milestone 1 for the tile job as complete",
-        priority: "medium",
-        action: () => console.log("View milestone"),
-        buttonText: "REVIEW",
-        date: "Today"
-      });
-    }
     setActionItems(items);
-  }, [projectData, projectId, sowData, isOwner, isCoach, navigate]);
-  const toggleItemCompletion = (itemId: string) => {
-    setCompletedItems(prev => {
-      if (prev.includes(itemId)) {
-        return prev.filter(id => id !== itemId);
-      } else {
-        return [...prev, itemId];
-      }
-    });
+  }, [projectData, projectId, isOwner, isCoach, navigate, hasSOW]);
+
+  const getPriorityColor = (priority: string) => {
+    switch(priority) {
+      case "high": return "bg-orange-100 text-orange-700";
+      case "medium": return "bg-blue-100 text-blue-700";
+      case "low": return "bg-gray-100 text-gray-700";
+      default: return "bg-gray-100 text-gray-700";
+    }
   };
+
   return (
-    <Card className={cn("overflow-hidden rounded-lg shadow-[0_2px_10px_rgba(0,0,0,0.08)] border-0 h-full flex flex-col", className)}>
-      <CardHeader className="flex flex-row items-center justify-between pb-3 pt-4 sm:pt-6 px-4 sm:px-6">
-        <h2 className="text-base sm:text-lg font-semibold">Action Items</h2>
-        <div className="text-orange-500 font-medium text-base sm:text-lg">
-          {completedItems.length}/{actionItems.length}
+    <Card className={cn("overflow-hidden", className)}>
+      <CardHeader className="bg-[#f8f9fa] border-b p-4">
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-semibold">Action Items</h3>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-500">
+              {actionItems.filter(item => item.completed).length}/{actionItems.length} Complete
+            </span>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className="text-blue-600 hover:text-blue-800 p-0"
+              onClick={() => navigate(`/project-dashboard/${projectId}`)}
+            >
+              View All
+            </Button>
+          </div>
         </div>
       </CardHeader>
-      <CardContent className="px-0 pb-2 flex-1 overflow-auto">
-        {isLoading ? (
-          <div className="px-4 sm:px-6 text-gray-400 flex items-center justify-center py-4">
-            <div className="animate-spin w-5 h-5 border-2 border-t-blue-500 border-blue-200 rounded-full mr-2"></div>
-            <span>Loading action items...</span>
-          </div>
-        ) : (
-          <div className="divide-y h-full">
-            {actionItems.length > 0 ? (
-              actionItems.map(item => {
-                const isCompleted = completedItems.includes(item.id);
-                return (
-                  <div 
-                    key={item.id} 
-                    className={cn("py-3 sm:py-4 flex flex-col px-4 sm:px-6", isCompleted && "bg-gray-50")}
-                  >
-                    <div className="flex items-start gap-2 sm:gap-3 mb-1 sm:mb-2">
-                      <Checkbox 
-                        id={`checkbox-${item.id}`} 
-                        checked={isCompleted} 
-                        onCheckedChange={() => toggleItemCompletion(item.id)} 
-                        className="mt-1"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center sm:mb-1">
-                          <label 
-                            htmlFor={`checkbox-${item.id}`} 
-                            className="font-semibold text-sm sm:text-base cursor-pointer truncate"
-                          >
-                            {item.title}
-                          </label>
-                          <div className="text-gray-500 text-xs sm:text-sm mt-0.5 sm:mt-0">
-                            {item.date}
-                          </div>
-                        </div>
-                        <p className="text-gray-600 text-xs sm:text-sm line-clamp-2">
-                          {item.description}
-                        </p>
-                      </div>
-                    </div>
-                    {item.action && (
-                      <div className="flex justify-end mt-1 px-0">
-                        <Button 
-                          variant="ghost" 
-                          className="font-semibold text-[#0f566c] hover:text-[#0f566c]/80 p-0 h-auto text-xs sm:text-sm" 
-                          onClick={item.action}
-                        >
-                          {item.buttonText} <ArrowRight className="ml-1 h-3 w-3 sm:h-4 sm:w-4" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })
-            ) : (
-              <div className="px-4 sm:px-6 py-6 sm:py-8 text-center flex-1 flex flex-col items-center justify-center">
-                <div className="bg-green-100 h-10 w-10 sm:h-12 sm:w-12 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Check className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
+      <CardContent className="p-0">
+        <div className="divide-y">
+          {actionItems.map((item) => (
+            <div key={item.id} className="p-4 hover:bg-gray-50">
+              <div className="flex gap-3">
+                <div className={cn("p-2 rounded-lg flex-shrink-0", getPriorityColor(item.priority))}>
+                  {item.icon}
                 </div>
-                <p className="text-gray-600 text-sm sm:text-base">All caught up! No pending action items.</p>
+                <div className="flex-1">
+                  <h4 className="font-medium text-gray-900 mb-1">{item.title}</h4>
+                  <p className="text-gray-600 text-sm mb-3">{item.description}</p>
+                  {item.action && (
+                    <Button 
+                      variant="outline"
+                      size="sm"
+                      className="text-sm"
+                      onClick={item.action}
+                    >
+                      {item.buttonText || "Take Action"} <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                </div>
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          ))}
+          
+          {actionItems.length === 0 && (
+            <div className="p-8 text-center">
+              <div className="bg-green-100 h-12 w-12 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Check className="h-6 w-6 text-green-600" />
+              </div>
+              <p className="text-gray-600">All caught up! No pending action items.</p>
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
