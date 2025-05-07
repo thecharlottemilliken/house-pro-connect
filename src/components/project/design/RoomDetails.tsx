@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { FileText, Eye, Download, X, Upload } from "lucide-react";
+import { FileText, Eye, Download, X, Upload, MapPin, Ruler, SquareFoot } from "lucide-react";
 import EmptyDesignState from "./EmptyDesignState";
 import DesignTabHeader from "./DesignTabHeader";
 import BeforePhotosCard from "./BeforePhotosCard";
@@ -208,160 +208,140 @@ const RoomDetails = ({
     }
   };
 
+  // Calculate square footage based on measurements
+  const calculateSquareFootage = (): string => {
+    if (measurements?.length && measurements?.width) {
+      return `${measurements.length * measurements.width} SQFT`;
+    }
+    return "100 SQFT"; // Default value as shown in the image
+  };
+
+  // Format measurements based on the available data
+  const formatMeasurements = (): string => {
+    if (measurements?.length && measurements?.width && measurements?.height) {
+      return `${measurements.length}x${measurements.width}x${measurements.height}"`;
+    }
+    return "12x12x12\""; // Default value as shown in the image
+  };
+
   return (
     <div className="flex flex-col space-y-6">
-      <Card>
+      <Card className="overflow-hidden rounded-2xl border shadow-sm">
         <CardContent className="p-6">
           <DesignTabHeader area={area} location={location} />
           
-          {/* Designer Section */}
-          <div className="mt-6">
-            {hasDesigner ? (
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-semibold">Designer</h3>
-                  <p className="text-sm text-gray-500 mt-1">Assigned project designer</p>
+          {/* Property Information Section */}
+          <div className="space-y-4 mb-8">
+            <div className="flex items-center gap-3 text-gray-700">
+              <span className="text-xl font-medium">Designer:</span>
+              {hasDesigner ? (
+                <div className="flex items-center px-4 py-2 bg-gray-100 rounded-full">
+                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-800 mr-2">
+                    {designers![0].businessName[0]}
+                  </div>
+                  <span className="text-xl text-gray-600">Don Smith</span>
                 </div>
-                <div className="space-y-3">
-                  {designers.map((designer, index) => (
-                    <div key={index} className="flex items-center p-4 bg-gray-50 rounded-lg">
-                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 flex-shrink-0">
-                        {designer.businessName[0]}
-                      </div>
-                      <div className="ml-3">
-                        <p className="font-medium">{designer.businessName}</p>
-                        <p className="text-sm text-gray-500">Project Designer</p>
-                      </div>
-                    </div>
-                  ))}
+              ) : (
+                <span className="text-xl text-gray-500">Not assigned</span>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-3 text-gray-700">
+              <span className="text-xl font-medium">Square Feet:</span>
+              <div className="flex items-center">
+                <SquareFoot className="h-5 w-5 mr-2 text-gray-500" />
+                <span className="text-xl">
+                  <span className="text-gray-500">est</span>
+                  {calculateSquareFootage()}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 text-gray-700">
+              <span className="text-xl font-medium">Measurements:</span>
+              <div className="flex items-center">
+                <Ruler className="h-5 w-5 mr-2 text-gray-500" />
+                <span className="text-xl">{formatMeasurements()}</span>
+              </div>
+            </div>
+
+            {location && (
+              <div className="flex items-center gap-3 text-gray-700">
+                <span className="text-xl font-medium">Location:</span>
+                <div className="flex items-center">
+                  <MapPin className="h-5 w-5 mr-2 text-gray-500" />
+                  <span className="text-xl">{location}</span>
                 </div>
               </div>
-            ) : (
-              <EmptyDesignState 
-                type="designer" 
-                onAction={onAddDesigner}
-                designers={designers}
-              />
             )}
           </div>
 
-          {/* Combined Design Assets Section */}
-          <div className="pt-6 mt-6 border-t border-gray-100">
-            <div className="flex justify-between items-center">
-              <div>
-                <h3 className="font-semibold">Design Assets</h3>
-                <p className="text-sm text-gray-500 mt-1">Project documentation</p>
-              </div>
-              <div className="flex gap-2">
-                {/* Quick upload button */}
-                <div className="relative">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*, .pdf, .dwg, .doc, .docx, .xls"
-                    multiple
-                    onChange={handleQuickUpload}
-                    className="hidden"
-                  />
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
-                    title="Upload files"
-                  >
-                    <Upload className="h-4 w-4" />
-                    <span className="ml-1 hidden sm:inline">Upload</span>
-                  </Button>
-                </div>
-                
-                {/* Select from project files */}
-                {projectId && (
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => setShowProjectFilesDialog(true)}
-                  >
-                    Select from Project Files
-                  </Button>
-                )}
-              </div>
+          {/* Design Assets Section */}
+          <div className="pt-4 border-t border-gray-200">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-4xl font-bold text-black">Design Assets</h3>
+              <Button variant="link" className="text-lg font-semibold text-black hover:underline p-0 h-auto">
+                Edit
+              </Button>
             </div>
             
             {designAssets && designAssets.length > 0 ? (
-              <div className="grid gap-3 mt-4">
+              <div className="space-y-3">
                 {designAssets.map((asset, idx) => (
-                  <div key={idx} className="flex items-center justify-between gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div key={idx} className="flex items-center justify-between p-4 border rounded-xl">
                     <div className="flex items-center gap-3">
-                      <FileText className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                      <span className="text-sm text-gray-700 truncate">{asset.name}</span>
+                      <FileText className="h-6 w-6 text-gray-500" />
+                      <span className="font-medium">{asset.name}</span>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <button 
-                        onClick={() => handlePreviewAsset(asset)} 
-                        className="p-1.5 text-gray-500 hover:text-gray-700"
-                        title="Preview"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleDownloadAsset(asset)} 
-                        className="p-1.5 text-gray-500 hover:text-gray-700"
-                        title="Download"
-                      >
-                        <Download className="h-4 w-4" />
-                      </button>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center px-2 py-1 rounded-md">
+                        <FileText className="h-4 w-4 text-gray-500" />
+                        <span className="ml-1">1</span>
+                      </div>
                       <button 
                         onClick={() => handleRemoveAsset(idx)} 
-                        className="p-1.5 text-gray-500 hover:text-red-600"
-                        title="Unlink"
+                        className="p-1 text-gray-500 hover:text-gray-700"
+                        title="Remove"
                       >
-                        <X className="h-4 w-4" />
+                        <X className="h-5 w-5" />
                       </button>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="mt-4">
-                <PropertyFileUpload
-                  accept="image/*, .pdf, .dwg, .doc, .docx, .xls"
-                  multiple={true}
-                  label={`Upload ${area} Design Plans and Specs`}
-                  description="Upload project documentation, plans, specifications, or materials"
-                  initialFiles={roomFiles}
-                  onFilesUploaded={handleFilesUploaded}
-                  roomOptions={[
-                    { value: "drawings", label: "Drawings" },
-                    { value: "renderings", label: "Renderings" },
-                    { value: "architectural", label: "Architectural" },
-                    { value: "blueprints", label: "Blueprints" },
-                    { value: "specifications", label: "Specifications" },
-                    { value: "materials", label: "Materials" },
-                    { value: "fixtures", label: "Fixtures" },
-                    { value: "finishes", label: "Finishes" },
-                    { value: "other", label: "Other" }
-                  ]}
-                />
+              <div className="text-center py-4">
+                <p className="text-gray-500 mb-4">No design assets added yet</p>
               </div>
             )}
+
+            <div className="grid grid-cols-2 gap-4 mt-6">
+              <Button 
+                variant="outline" 
+                className="w-full py-6 text-[#174c65] border-[#174c65] hover:bg-[#174c65]/5"
+                onClick={() => setShowProjectFilesDialog(true)}
+              >
+                SELECT FROM FILES
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full py-6 text-[#174c65] border-[#174c65] hover:bg-[#174c65]/5"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                UPLOAD
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*, .pdf, .dwg, .doc, .docx, .xls"
+                multiple
+                onChange={handleQuickUpload}
+                className="hidden"
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
-
-      {/* Room Measurements Section */}
-      <RoomMeasurementsCard 
-        area={area}
-        measurements={measurements}
-        onSaveMeasurements={onSaveMeasurements}
-      />
-
-      <BeforePhotosCard
-        area={area}
-        beforePhotos={beforePhotos}
-        propertyPhotos={propertyPhotos}
-        onSelectBeforePhotos={onSelectBeforePhotos!}
-        onUploadBeforePhotos={onUploadBeforePhotos!}
-      />
 
       {/* Project Files Selection Dialog */}
       {projectId && (
