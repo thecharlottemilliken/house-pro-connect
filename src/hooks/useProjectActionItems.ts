@@ -37,55 +37,29 @@ export const useProjectActionItems = (projectId: string) => {
       try {
         const userRole = profile?.role || '';
         
-        // Use raw SQL query to avoid TypeScript issues
-        const { data, error: queryError } = await supabase.rpc(
-          'execute_sql',
-          { 
-            query: `
-              SELECT * FROM project_action_items 
-              WHERE project_id = '${projectId}' 
-              AND completed = false 
-              ORDER BY created_at DESC
-            `
-          }
-        ).returns<ActionItem[]>();
-          
-        if (queryError) {
-          // Fallback to using direct SQL
-          const { data: rawData, error: rawError } = await supabase
-            .from('project_action_items')
-            .select('*')
-            .eq('project_id', projectId)
-            .eq('completed', false)
-            .order('created_at', { ascending: false });
+        // Use a direct fetch query with string interpolation to avoid TypeScript limitations
+        // We cast the response type to any and then map to our ActionItem interface
+        const { data: rawData, error: fetchError } = await supabase
+          .from('project_action_items')
+          .select('*')
+          .eq('project_id', projectId)
+          .eq('completed', false)
+          .order('created_at', { ascending: false }) as { data: any, error: any };
             
-          if (rawError) throw rawError;
-          
-          // Type cast the result since TypeScript doesn't know the table structure
-          const typedData = rawData as unknown as ActionItem[];
-          
-          // For coaches, fetch all action items
-          // For owners or team members, fetch only relevant items
-          let filteredItems = typedData || [];
-          if (userRole !== 'coach') {
-            filteredItems = filteredItems.filter(item => 
-              item.for_role === userRole || item.for_role === null
-            );
-          }
-          
-          setActionItems(filteredItems);
-        } else {
-          // For coaches, fetch all action items
-          // For owners or team members, fetch only relevant items
-          let filteredItems = data || [];
-          if (userRole !== 'coach') {
-            filteredItems = filteredItems.filter(item => 
-              item.for_role === userRole || item.for_role === null
-            );
-          }
-          
-          setActionItems(filteredItems);
+        if (fetchError) throw fetchError;
+        
+        // Cast the raw data to our ActionItem interface
+        const typedData = rawData as ActionItem[];
+        
+        // Filter items based on user role
+        let filteredItems = typedData || [];
+        if (userRole !== 'coach') {
+          filteredItems = filteredItems.filter(item => 
+            item.for_role === userRole || item.for_role === null
+          );
         }
+        
+        setActionItems(filteredItems);
       } catch (err: any) {
         console.error("Error fetching action items:", err);
         setError(err);
@@ -99,26 +73,16 @@ export const useProjectActionItems = (projectId: string) => {
   
   const markActionItemComplete = async (itemId: string) => {
     try {
-      // Call the RPC function we created
-      const { data, error } = await supabase.rpc(
-        'update_action_item_completion',
-        { 
-          item_id: itemId,
-          is_completed: true
-        }
-      );
-      
-      if (error) {
-        // Fallback to direct update if RPC fails
-        const { error: fallbackError } = await supabase.from('project_action_items')
-          .update({
-            completed: true,
-            completion_date: new Date().toISOString()
-          })
-          .eq('id', itemId);
-          
-        if (fallbackError) throw fallbackError;
-      }
+      // Direct update using string interpolation to avoid TypeScript limitations
+      const { error } = await supabase
+        .from('project_action_items')
+        .update({
+          completed: true,
+          completion_date: new Date().toISOString()
+        })
+        .eq('id', itemId) as { error: any };
+        
+      if (error) throw error;
       
       // Update local state
       setActionItems(prev => prev.filter(item => item.id !== itemId));
