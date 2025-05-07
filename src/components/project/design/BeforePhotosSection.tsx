@@ -90,13 +90,14 @@ const BeforePhotosSection = ({
               onSelect={onSelectBeforePhotos}
             />
             <FileUpload
-              label={<div className="flex items-center"><Plus className="h-4 w-4 mr-1" /> Upload More Photos</div>}
+              label="Upload More Photos"
               description="Upload additional photos of the room's current state"
               accept="image/*"
               multiple={true}
               onUploadComplete={onUploadBeforePhotos}
               buttonVariant="outline"
               buttonClassName="border-[#174c65] text-[#174c65] hover:bg-[#174c65]/5"
+              buttonIcon={<Plus className="h-4 w-4 mr-1" />}
             />
           </div>
         </div>
@@ -118,24 +119,26 @@ const BeforePhotosSection = ({
                   onSelect={onSelectBeforePhotos}
                 />
                 <FileUpload
-                  label={<div className="flex items-center"><Plus className="h-4 w-4 mr-1" /> Upload Photos</div>}
+                  label="Upload Photos"
                   description="Upload photos of the room's current state"
                   accept="image/*"
                   multiple={true}
                   onUploadComplete={onUploadBeforePhotos}
                   buttonVariant="outline"
                   buttonClassName="border-[#174c65] text-[#174c65] hover:bg-[#174c65]/5"
+                  buttonIcon={<Plus className="h-4 w-4 mr-1" />}
                 />
               </>
             ) : (
               <FileUpload
-                label={<div className="flex items-center"><Plus className="h-4 w-4 mr-1" /> Upload Photos</div>}
+                label="Upload Photos"
                 description="Upload photos of the room's current state"
                 accept="image/*"
                 multiple={true}
                 onUploadComplete={onUploadBeforePhotos}
                 buttonVariant="outline"
                 buttonClassName="border-[#174c65] text-[#174c65] hover:bg-[#174c65]/5"
+                buttonIcon={<Plus className="h-4 w-4 mr-1" />}
               />
             )}
           </div>

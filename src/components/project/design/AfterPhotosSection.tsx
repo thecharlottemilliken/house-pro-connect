@@ -63,13 +63,14 @@ const AfterPhotosSection = ({
               Upload photos of your {area} after renovation to document the transformation
             </p>
             <FileUpload
-              label={<div className="flex items-center"><Plus className="h-4 w-4 mr-1" /> Upload Photos</div>}
+              label="Upload Photos"
               description="Add photos of your completed renovation"
               accept="image/*"
               multiple={true}
               onUploadComplete={onUploadPhotos}
               buttonVariant="outline"
               buttonClassName="border-[#174c65] text-[#174c65] hover:bg-[#174c65]/5"
+              buttonIcon={<Plus className="h-4 w-4 mr-1" />}
             />
           </div>
         )}

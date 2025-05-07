@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
@@ -18,9 +17,13 @@ import { X } from "lucide-react";
 
 interface PinterestConnectorProps {
   onBoardsSelected: (boards: PinterestBoard[]) => void;
+  buttonClassName?: string; // Add the new prop
 }
 
-const PinterestConnector: React.FC<PinterestConnectorProps> = ({ onBoardsSelected }) => {
+const PinterestConnector: React.FC<PinterestConnectorProps> = ({ 
+  onBoardsSelected,
+  buttonClassName = "" // Default to empty string
+}) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [boardUrls, setBoardUrls] = useState<string[]>(['']);
   const [isLoading, setIsLoading] = useState(false);
@@ -141,7 +144,7 @@ const PinterestConnector: React.FC<PinterestConnectorProps> = ({ onBoardsSelecte
     <>
       <Button 
         variant="outline" 
-        className="flex items-center gap-2 border-pink-500 text-pink-500 hover:bg-pink-50"
+        className={`flex items-center gap-2 border-pink-500 text-pink-500 hover:bg-pink-50 ${buttonClassName}`}
         onClick={() => setIsDialogOpen(true)}
       >
         <div className="flex items-center justify-center w-5 h-5 rounded-full bg-pink-500 text-white">
