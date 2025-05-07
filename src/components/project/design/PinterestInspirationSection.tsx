@@ -351,7 +351,7 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </Card>
   );
 };
 
