@@ -1,14 +1,10 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Ruler } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
-import MeasuringWizard from './MeasuringWizard';
-import { supabase } from "@/integrations/supabase/client";
-import { useParams } from 'react-router-dom';
-import { Json } from "@/integrations/supabase/types";
+import { Input } from "@/components/ui/input";
+import { Pencil, X, Check, Save } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 interface RoomMeasurementsCardProps {
   area: string;
@@ -22,97 +18,49 @@ interface RoomMeasurementsCardProps {
   onSaveMeasurements: (measurements: any) => void;
 }
 
-const RoomMeasurementsCard = ({ 
-  area, 
-  measurements, 
-  onSaveMeasurements 
+const RoomMeasurementsCard = ({
+  area,
+  measurements,
+  onSaveMeasurements
 }: RoomMeasurementsCardProps) => {
-  const { toast } = useToast();
-  const params = useParams();
-  const projectId = params.projectId;
-  const hasMeasurements = measurements && (measurements.length || measurements.width);
+  const [isEditing, setIsEditing] = useState(false);
+  const [length, setLength] = useState<string>(measurements?.length?.toString() || "");
+  const [width, setWidth] = useState<string>(measurements?.width?.toString() || "");
+  const [height, setHeight] = useState<string>(measurements?.height?.toString() || "");
+  const [unit, setUnit] = useState<'ft' | 'm'>(measurements?.unit || 'ft');
+  const [notes, setNotes] = useState<string>(measurements?.additionalNotes || "");
 
-  const calculateSquareFootage = () => {
-    if (!measurements?.length || !measurements?.width) return null;
-    
-    // Ensure we're working with numbers
-    const length = Number(measurements.length);
-    const width = Number(measurements.width);
-    
-    if (isNaN(length) || isNaN(width)) return null;
-    
-    const area = length * width;
-    
-    // Convert to square feet if measurements are in meters
-    return measurements.unit === 'm' ? area * 10.764 : area;
+  const handleSave = () => {
+    const newMeasurements = {
+      length: length ? parseFloat(length) : undefined,
+      width: width ? parseFloat(width) : undefined,
+      height: height ? parseFloat(height) : undefined,
+      unit,
+      additionalNotes: notes
+    };
+    onSaveMeasurements(newMeasurements);
+    setIsEditing(false);
   };
 
-  const formatSquareFootage = (sqft: number | null) => {
-    if (sqft === null) return null;
-    return sqft.toLocaleString('en-US', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    });
+  const handleCancel = () => {
+    setLength(measurements?.length?.toString() || "");
+    setWidth(measurements?.width?.toString() || "");
+    setHeight(measurements?.height?.toString() || "");
+    setUnit(measurements?.unit || 'ft');
+    setNotes(measurements?.additionalNotes || "");
+    setIsEditing(false);
   };
 
-  const squareFootage = calculateSquareFootage();
-  const formattedSquareFootage = formatSquareFootage(squareFootage);
-  
-  const handleSaveMeasurements = async (newMeasurements: any) => {
-    try {
-      const { data: currentProject, error: fetchError } = await supabase
-        .from('projects')
-        .select('design_preferences')
-        .eq('id', projectId)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      // Handle the design_preferences as an object, accounting for it possibly being null or another type
-      const designPreferences = typeof currentProject.design_preferences === 'object' && currentProject.design_preferences !== null 
-        ? currentProject.design_preferences 
-        : {};
-      
-      // Handle roomMeasurements, ensuring we're working with an object
-      const roomMeasurements = typeof designPreferences === 'object' && 
-        'roomMeasurements' in designPreferences && 
-        typeof designPreferences.roomMeasurements === 'object' 
-          ? designPreferences.roomMeasurements 
-          : {};
-
-      // Make sure area is a string before calling toLowerCase()
-      const safeArea = typeof area === 'string' ? area.toLowerCase() : String(area).toLowerCase();
-
-      const updatedDesignPreferences = {
-        ...designPreferences,
-        roomMeasurements: {
-          ...roomMeasurements,
-          [safeArea]: newMeasurements
-        }
-      };
-
-      const { error: updateError } = await supabase
-        .from('projects')
-        .update({
-          design_preferences: updatedDesignPreferences as Json
-        })
-        .eq('id', projectId);
-
-      if (updateError) throw updateError;
-
-      onSaveMeasurements(newMeasurements);
-      toast({
-        title: "Measurements saved",
-        description: `Room measurements for ${area} have been saved successfully.`
-      });
-    } catch (error: any) {
-      console.error('Error saving measurements:', error);
-      toast({
-        title: "Error saving measurements",
-        description: "There was a problem saving the room measurements. Please try again.",
-        variant: "destructive"
-      });
-    }
+  const formatMeasurements = () => {
+    const parts = [];
+    if (measurements?.length) parts.push(`${measurements.length} ${measurements.unit}`);
+    if (measurements?.width) parts.push(`${measurements.width} ${measurements.unit}`);
+    if (measurements?.height) parts.push(`${measurements.height} ${measurements.unit}`);
+    
+    if (parts.length === 0) return "No measurements added";
+    if (parts.length === 1) return parts[0];
+    if (parts.length === 2) return `${parts[0]} × ${parts[1]}`;
+    return `${parts[0]} × ${parts[1]} × ${parts[2]}`;
   };
 
   return (
@@ -122,73 +70,126 @@ const RoomMeasurementsCard = ({
           <div className="flex justify-between items-center">
             <div>
               <h3 className="font-semibold text-xl">Room Measurements</h3>
-              <p className="text-white/80 mt-1">Add measurements of your {area.toLowerCase()}</p>
+              <p className="text-white/80 mt-1">Add measurements for your {area}</p>
             </div>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button className="bg-white text-[#174c65] hover:bg-gray-100">
-                  {hasMeasurements ? "Edit Measurements" : "Measure Room"}
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md max-w-[90vw] p-4 sm:p-6">
-                <DialogHeader>
-                  <DialogTitle>Measure Your {area}</DialogTitle>
-                  <DialogDescription>
-                    Let's walk through measuring your {area.toLowerCase()} for your renovation project.
-                  </DialogDescription>
-                </DialogHeader>
-                <MeasuringWizard 
-                  area={area} 
-                  initialMeasurements={measurements} 
-                  onComplete={handleSaveMeasurements} 
-                />
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
-
-        {hasMeasurements ? (
-          <div className="p-6 bg-white">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-500">Length</p>
-                <p className="font-medium text-base">{measurements.length} {measurements.unit}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Width</p>
-                <p className="font-medium text-base">{measurements.width} {measurements.unit}</p>
-              </div>
-              {measurements.height && (
-                <div>
-                  <p className="text-sm text-gray-500">Height</p>
-                  <p className="font-medium text-base">{measurements.height} {measurements.unit}</p>
-                </div>
-              )}
-              {squareFootage && (
-                <div>
-                  <p className="text-sm text-gray-500">Square Footage</p>
-                  <p className="font-medium text-base">{formattedSquareFootage} SQFT</p>
-                </div>
-              )}
-            </div>
-            {measurements.additionalNotes && (
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <p className="text-sm text-gray-500">Notes</p>
-                <p className="text-sm">{measurements.additionalNotes}</p>
-              </div>
+            {!isEditing && (
+              <Button 
+                variant="secondary" 
+                size="sm"
+                className="bg-white text-[#174c65] hover:bg-gray-100"
+                onClick={() => setIsEditing(true)}
+              >
+                <Pencil className="h-4 w-4 mr-1" /> Edit
+              </Button>
             )}
           </div>
-        ) : (
-          <div className="p-10 flex flex-col items-center justify-center text-center">
-            <div className="w-12 h-12 rounded-full bg-[#174c65]/10 flex items-center justify-center mb-3">
-              <Ruler className="h-6 w-6 text-[#174c65]" />
+        </div>
+        
+        <div className="p-6">
+          {!isEditing ? (
+            <div>
+              <div className="flex flex-col gap-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Dimensions</p>
+                  <p className="text-base font-medium text-gray-900 mt-1">{formatMeasurements()}</p>
+                </div>
+                {measurements?.additionalNotes && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Additional Notes</p>
+                    <p className="text-base text-gray-900 mt-1 whitespace-pre-wrap">{measurements.additionalNotes}</p>
+                  </div>
+                )}
+              </div>
             </div>
-            <h4 className="font-semibold text-gray-900">Add your room measurements</h4>
-            <p className="text-gray-500 max-w-md mt-1">
-              Provide accurate dimensions for better planning and more precise project estimates
-            </p>
-          </div>
-        )}
+          ) : (
+            <div className="space-y-4">
+              <p className="font-medium">Room Dimensions</p>
+              <div className="grid grid-cols-4 gap-4">
+                <div className="col-span-1">
+                  <label htmlFor="length" className="text-sm text-gray-500">Length</label>
+                  <Input
+                    id="length"
+                    type="number"
+                    value={length}
+                    onChange={(e) => setLength(e.target.value)}
+                    placeholder="Length"
+                    className="mt-1"
+                  />
+                </div>
+                <div className="col-span-1">
+                  <label htmlFor="width" className="text-sm text-gray-500">Width</label>
+                  <Input
+                    id="width"
+                    type="number"
+                    value={width}
+                    onChange={(e) => setWidth(e.target.value)}
+                    placeholder="Width"
+                    className="mt-1"
+                  />
+                </div>
+                <div className="col-span-1">
+                  <label htmlFor="height" className="text-sm text-gray-500">Height</label>
+                  <Input
+                    id="height"
+                    type="number"
+                    value={height}
+                    onChange={(e) => setHeight(e.target.value)}
+                    placeholder="Height"
+                    className="mt-1"
+                  />
+                </div>
+                <div className="col-span-1">
+                  <label className="text-sm text-gray-500">Unit</label>
+                  <div className="flex mt-1">
+                    <Button
+                      type="button"
+                      variant={unit === 'ft' ? "default" : "outline"}
+                      className={`flex-1 ${unit === 'ft' ? 'bg-[#174c65]' : ''}`}
+                      onClick={() => setUnit('ft')}
+                    >
+                      ft
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={unit === 'm' ? "default" : "outline"}
+                      className={`flex-1 ${unit === 'm' ? 'bg-[#174c65]' : ''}`}
+                      onClick={() => setUnit('m')}
+                    >
+                      m
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="notes" className="text-sm text-gray-500">Additional Notes</label>
+                <Textarea
+                  id="notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Add any additional details about the room measurements..."
+                  className="h-32"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 mt-4">
+                <Button
+                  variant="outline"
+                  onClick={handleCancel}
+                  className="flex items-center gap-1"
+                >
+                  <X className="h-4 w-4" /> Cancel
+                </Button>
+                <Button
+                  onClick={handleSave}
+                  className="bg-[#174c65] hover:bg-[#174c65]/90 flex items-center gap-1"
+                >
+                  <Save className="h-4 w-4" /> Save Measurements
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

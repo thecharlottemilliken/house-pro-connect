@@ -1,118 +1,110 @@
 
-import React, { useState } from "react";
-import { Button } from "../button";
-import { ArrowUpFromLine, CheckCircle2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import React, { useState } from 'react';
+import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 
-interface FileUploadProps {
-  accept?: string;
-  multiple?: boolean;
-  onUploadComplete: (urls: string[]) => void;
+export interface FileUploadProps {
   label: string;
   description: string;
-  uploadedFiles?: string[];
+  accept?: string;
+  multiple?: boolean;
+  maxFileSize?: number;
+  maxFiles?: number;
+  onUploadComplete: (uploadedUrls: string[]) => void;
+  className?: string;
+  children?: React.ReactNode;
 }
 
-export function FileUpload({ 
-  accept = "image/*,application/pdf,image/jpeg,image/png,application/vnd.ms-excel", 
-  multiple = false,
-  onUploadComplete,
+export const FileUpload: React.FC<FileUploadProps> = ({
   label,
   description,
-  uploadedFiles = []
-}: FileUploadProps) {
+  accept = "*",
+  multiple = false,
+  maxFileSize = 5, // MB
+  maxFiles = 10,
+  onUploadComplete,
+  className = "",
+  children
+}) => {
   const [isUploading, setIsUploading] = useState(false);
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
     if (!files?.length) return;
 
-    setIsUploading(true);
-    const uploadedUrls: string[] = [];
+    // Check number of files
+    if (multiple && files.length > maxFiles) {
+      toast({
+        title: "Too many files",
+        description: `You can upload a maximum of ${maxFiles} files at once`,
+        variant: "destructive",
+      });
+      return;
+    }
 
-    try {
-      // Check authentication first
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) {
+    // Check file size
+    const maxSizeInBytes = maxFileSize * 1024 * 1024; // Convert MB to bytes
+    for (let i = 0; i < files.length; i++) {
+      if (files[i].size > maxSizeInBytes) {
         toast({
-          title: "Authentication required",
-          description: "You must be signed in to upload files.",
-          variant: "destructive"
+          title: "File too large",
+          description: `${files[i].name} exceeds the maximum file size of ${maxFileSize}MB`,
+          variant: "destructive",
         });
-        setIsUploading(false);
         return;
       }
+    }
 
-      for (const file of files) {
-        const fileExt = file.name.split('.').pop();
-        const filePath = `${Math.random()}-${Date.now()}.${fileExt}`;
-
-        const { error: uploadError, data } = await supabase.storage
-          .from('properties')
-          .upload(filePath, file);
-
-        if (uploadError) {
-          console.error("Upload error:", uploadError);
-          throw uploadError;
-        }
-
-        if (data) {
-          const { data: { publicUrl } } = supabase.storage
-            .from('properties')
-            .getPublicUrl(filePath);
-          
-          uploadedUrls.push(publicUrl);
-        }
-      }
-
+    // Mock upload process
+    setIsUploading(true);
+    try {
+      // This is a simplified mock that would be replaced with actual upload logic
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      
+      // Generate mock URLs (in a real app, these would be actual URLs to the uploaded files)
+      const uploadedUrls = Array.from(files).map(
+        (file) => URL.createObjectURL(file)
+      );
+      
       onUploadComplete(uploadedUrls);
+      e.target.value = ""; // Reset input
+      
       toast({
-        title: "Files uploaded successfully",
-        description: "Your files have been uploaded."
+        title: "Files uploaded",
+        description: `Successfully uploaded ${files.length} file${files.length !== 1 ? "s" : ""}`,
       });
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error("Error uploading files:", error);
       toast({
         title: "Upload failed",
-        description: "There was an error uploading your files. Please ensure you're signed in.",
-        variant: "destructive"
+        description: "There was an error uploading your files",
+        variant: "destructive",
       });
     } finally {
       setIsUploading(false);
-      // Reset the input
-      event.target.value = '';
     }
   };
 
   return (
-    <div className="border border-gray-200 rounded-md p-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <p className="font-medium">{label}</p>
-          <p className="text-gray-500 text-sm">{description}</p>
-          {uploadedFiles.length > 0 && (
-            <p className="text-green-600 text-sm mt-1 flex items-center">
-              <CheckCircle2 className="w-4 h-4 mr-1" />
-              {uploadedFiles.length} file{uploadedFiles.length !== 1 ? 's' : ''} uploaded
-            </p>
-          )}
-        </div>
-        <div className="relative">
-          <input
-            type="file"
-            accept={accept}
-            multiple={multiple}
-            onChange={handleFileUpload}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-            disabled={isUploading}
-          />
-          <Button className="bg-[#174c65]" disabled={isUploading}>
-            <ArrowUpFromLine className="mr-2 h-4 w-4" />
-            {isUploading ? 'UPLOADING...' : 'UPLOAD'}
-          </Button>
-        </div>
-      </div>
+    <div className="relative">
+      <input
+        type="file"
+        id="file-upload"
+        accept={accept}
+        multiple={multiple}
+        onChange={handleFileChange}
+        className="absolute inset-0 w-full h-full opacity-0 z-10 cursor-pointer"
+        disabled={isUploading}
+      />
+      <Button
+        type="button"
+        variant="outline"
+        className={className}
+        disabled={isUploading}
+      >
+        {isUploading ? "Uploading..." : children || label}
+      </Button>
+      <p className="sr-only">{description}</p>
     </div>
   );
-}
+};

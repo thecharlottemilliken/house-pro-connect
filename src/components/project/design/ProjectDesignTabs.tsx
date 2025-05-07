@@ -58,10 +58,6 @@ const ProjectDesignTabs: React.FC<ProjectDesignTabsProps> = ({
     );
   }
 
-  const hasDesigns = designPreferences.hasDesigns;
-  const hasRenderings = designPreferences.renderingImages && designPreferences.renderingImages.length > 0;
-  const designers = designPreferences.designers || [];
-  
   return (
     <Tabs defaultValue={defaultTab} className="w-full">
       <TabsList className="mb-6 bg-gray-100 p-1 rounded-full h-auto flex">
@@ -90,9 +86,9 @@ const ProjectDesignTabs: React.FC<ProjectDesignTabsProps> = ({
           <TabsContent key={area.area} value={area.area.toLowerCase()} className="w-full">
             <RoomTabContent
               area={area}
-              hasDesigns={hasDesigns}
-              hasRenderings={hasRenderings}
-              designers={designers}
+              hasDesigns={designPreferences.hasDesigns}
+              hasRenderings={designPreferences.renderingImages && designPreferences.renderingImages.length > 0}
+              designers={designPreferences.designers || []}
               designAssets={designPreferences.designAssets}
               renderingImages={designPreferences.renderingImages}
               beforePhotos={beforePhotos}

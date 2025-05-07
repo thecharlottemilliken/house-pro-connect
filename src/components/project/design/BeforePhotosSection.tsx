@@ -95,10 +95,10 @@ const BeforePhotosSection = ({
               accept="image/*"
               multiple={true}
               onUploadComplete={onUploadBeforePhotos}
-              buttonVariant="outline"
-              buttonClassName="border-[#174c65] text-[#174c65] hover:bg-[#174c65]/5"
-              buttonIcon={<Plus className="h-4 w-4 mr-1" />}
-            />
+              className="border-[#174c65] text-[#174c65] hover:bg-[#174c65]/5"
+            >
+              <Plus className="h-4 w-4 mr-1" /> Upload More Photos
+            </FileUpload>
           </div>
         </div>
       ) : (
@@ -124,10 +124,10 @@ const BeforePhotosSection = ({
                   accept="image/*"
                   multiple={true}
                   onUploadComplete={onUploadBeforePhotos}
-                  buttonVariant="outline"
-                  buttonClassName="border-[#174c65] text-[#174c65] hover:bg-[#174c65]/5"
-                  buttonIcon={<Plus className="h-4 w-4 mr-1" />}
-                />
+                  className="border-[#174c65] text-[#174c65] hover:bg-[#174c65]/5"
+                >
+                  <Plus className="h-4 w-4 mr-1" /> Upload Photos
+                </FileUpload>
               </>
             ) : (
               <FileUpload
@@ -136,10 +136,10 @@ const BeforePhotosSection = ({
                 accept="image/*"
                 multiple={true}
                 onUploadComplete={onUploadBeforePhotos}
-                buttonVariant="outline"
-                buttonClassName="border-[#174c65] text-[#174c65] hover:bg-[#174c65]/5"
-                buttonIcon={<Plus className="h-4 w-4 mr-1" />}
-              />
+                className="border-[#174c65] text-[#174c65] hover:bg-[#174c65]/5"
+              >
+                <Plus className="h-4 w-4 mr-1" /> Upload Photos
+              </FileUpload>
             )}
           </div>
         </div>
