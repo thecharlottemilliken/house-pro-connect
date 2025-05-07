@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { ProjectData } from "@/hooks/useProjectData";
+
 interface ActionItemsWidgetProps {
   projectId: string;
   projectData: ProjectData | null;
@@ -15,12 +16,14 @@ interface ActionItemsWidgetProps {
   isCoach: boolean;
   className?: string;
 }
+
 interface SOWData {
   id: string;
   status: string;
   feedback?: string | null;
   created_at?: string;
 }
+
 interface ActionItem {
   id: string;
   title: string;
@@ -31,6 +34,7 @@ interface ActionItem {
   completed?: boolean;
   date?: string;
 }
+
 const ActionItemsWidget = ({
   projectId,
   projectData,
@@ -175,48 +179,81 @@ const ActionItemsWidget = ({
       }
     });
   };
-  return <Card className={cn("overflow-hidden rounded-lg shadow-[0_2px_10px_rgba(0,0,0,0.08)] border-0", className)}>
-      <CardHeader className="flex flex-row items-center justify-between pb-3 pt-6 px-[8px] py-[8px]">
-        <h2 className="text-lg font-semibold">Action Items</h2>
-        <div className="text-orange-500 font-medium text-lg">
+  return (
+    <Card className={cn("overflow-hidden rounded-lg shadow-[0_2px_10px_rgba(0,0,0,0.08)] border-0 h-full flex flex-col", className)}>
+      <CardHeader className="flex flex-row items-center justify-between pb-3 pt-4 sm:pt-6 px-4 sm:px-6">
+        <h2 className="text-base sm:text-lg font-semibold">Action Items</h2>
+        <div className="text-orange-500 font-medium text-base sm:text-lg">
           {completedItems.length}/{actionItems.length}
         </div>
       </CardHeader>
-      <CardContent className="px-0 pb-2">
-        {isLoading ? <div className="px-6 text-gray-400">Loading action items...</div> : <div className="divide-y">
-            {actionItems.length > 0 ? actionItems.map(item => {
-          const isCompleted = completedItems.includes(item.id);
-          return <div key={item.id} className={cn("py-4 flex flex-col", isCompleted && "bg-gray-50")}>
-                    <div className="flex items-start gap-3 mb-2 px-0">
-                      <Checkbox id={`checkbox-${item.id}`} checked={isCompleted} onCheckedChange={() => toggleItemCompletion(item.id)} className="mt-1" />
-                      <div className="flex-1">
-                        <div className="flex justify-between items-center mb-1">
-                          <label htmlFor={`checkbox-${item.id}`} className="font-semibold text-md cursor-pointer">
+      <CardContent className="px-0 pb-2 flex-1 overflow-auto">
+        {isLoading ? (
+          <div className="px-4 sm:px-6 text-gray-400 flex items-center justify-center py-4">
+            <div className="animate-spin w-5 h-5 border-2 border-t-blue-500 border-blue-200 rounded-full mr-2"></div>
+            <span>Loading action items...</span>
+          </div>
+        ) : (
+          <div className="divide-y h-full">
+            {actionItems.length > 0 ? (
+              actionItems.map(item => {
+                const isCompleted = completedItems.includes(item.id);
+                return (
+                  <div 
+                    key={item.id} 
+                    className={cn("py-3 sm:py-4 flex flex-col px-4 sm:px-6", isCompleted && "bg-gray-50")}
+                  >
+                    <div className="flex items-start gap-2 sm:gap-3 mb-1 sm:mb-2">
+                      <Checkbox 
+                        id={`checkbox-${item.id}`} 
+                        checked={isCompleted} 
+                        onCheckedChange={() => toggleItemCompletion(item.id)} 
+                        className="mt-1"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center sm:mb-1">
+                          <label 
+                            htmlFor={`checkbox-${item.id}`} 
+                            className="font-semibold text-sm sm:text-base cursor-pointer truncate"
+                          >
                             {item.title}
                           </label>
-                          <div className="text-gray-500 text-sm">
+                          <div className="text-gray-500 text-xs sm:text-sm mt-0.5 sm:mt-0">
                             {item.date}
                           </div>
                         </div>
-                        <p className="text-gray-600">
+                        <p className="text-gray-600 text-xs sm:text-sm line-clamp-2">
                           {item.description}
                         </p>
                       </div>
                     </div>
-                    {item.action && <div className="flex justify-end mt-1 px-0">
-                        <Button variant="ghost" className="font-semibold text-[#0f566c] hover:text-[#0f566c]/80 p-0 h-auto" onClick={item.action}>
-                          {item.buttonText} <ArrowRight className="ml-1 h-4 w-4" />
+                    {item.action && (
+                      <div className="flex justify-end mt-1 px-0">
+                        <Button 
+                          variant="ghost" 
+                          className="font-semibold text-[#0f566c] hover:text-[#0f566c]/80 p-0 h-auto text-xs sm:text-sm" 
+                          onClick={item.action}
+                        >
+                          {item.buttonText} <ArrowRight className="ml-1 h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
-                      </div>}
-                  </div>;
-        }) : <div className="px-6 py-8 text-center">
-                <div className="bg-green-100 h-12 w-12 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Check className="h-6 w-6 text-green-600" />
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            ) : (
+              <div className="px-4 sm:px-6 py-6 sm:py-8 text-center flex-1 flex flex-col items-center justify-center">
+                <div className="bg-green-100 h-10 w-10 sm:h-12 sm:w-12 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Check className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
                 </div>
-                <p className="text-gray-600">All caught up! No pending action items.</p>
-              </div>}
-          </div>}
+                <p className="text-gray-600 text-sm sm:text-base">All caught up! No pending action items.</p>
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
-    </Card>;
+    </Card>
+  );
 };
+
 export default ActionItemsWidget;

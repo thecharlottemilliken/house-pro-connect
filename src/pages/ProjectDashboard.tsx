@@ -147,21 +147,27 @@ const ProjectDashboard = () => {
                 <FinancialComparisonCard projectId={projectId} />
               </div>
               
-              {/* Bottom section: Schedule, Action Items, and Milestones */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {/* Schedule Card - spans 1 column on mobile, 1 on tablet, 1 on desktop */}
+              {/* Bottom section: Schedule, Action Items, and Milestones - UPDATED LAYOUT */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                {/* Schedule Card - 1 column on mobile, 1 on tablet, 1 on desktop */}
                 <div className="w-full">
-                  <ScheduleCardWidget projectId={projectId} />
+                  <ScheduleCardWidget projectId={projectId} className="h-full" />
                 </div>
                 
-                {/* Action Items - spans 1 column on mobile, 1 on tablet, 1 on desktop */}
-                <div className="w-full">
-                  <ActionItemsWidget projectId={projectId} projectData={projectData} isOwner={isOwner} isCoach={isCoach} />
+                {/* Action Items - 1 column on mobile, full width on tablet, 1 on desktop */}
+                <div className="w-full md:col-span-2 lg:col-span-1">
+                  <ActionItemsWidget 
+                    projectId={projectId} 
+                    projectData={projectData} 
+                    isOwner={isOwner} 
+                    isCoach={isCoach} 
+                    className="h-full"
+                  />
                 </div>
                 
-                {/* Project Milestones - spans full width on mobile, 2 columns on larger screens */}
-                <div className="w-full sm:col-span-2 lg:col-span-1">
-                  <ProjectMilestonesWidget projectId={projectId} />
+                {/* Project Milestones - full width on all screens for better readability */}
+                <div className="w-full md:col-span-2 lg:col-span-1">
+                  <ProjectMilestonesWidget projectId={projectId} className="h-full" />
                 </div>
               </div>
               
