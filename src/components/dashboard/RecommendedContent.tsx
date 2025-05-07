@@ -1,5 +1,6 @@
 
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface ContentCardProps {
   image: string;
@@ -8,22 +9,23 @@ interface ContentCardProps {
 
 const ContentCard = ({ image, title }: ContentCardProps) => {
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 h-full flex flex-col">
-      <img 
-        src={image} 
-        alt={title}
-        className="w-full h-32 sm:h-40 md:h-48 object-cover" 
-      />
-      <div className="p-3 md:p-4 flex flex-col flex-1">
-        <p className="text-sm md:text-base text-gray-800 mb-4 md:mb-6 flex-1">{title}</p>
+    <Card className="overflow-hidden shadow-md border-0 h-full flex flex-col">
+      <div className="overflow-hidden h-40">
+        <img 
+          src={image} 
+          alt={title}
+          className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" 
+        />
+      </div>
+      <CardContent className="p-5 flex flex-col flex-1">
+        <p className="text-base text-gray-800 mb-6 flex-1">{title}</p>
         <Button 
-          variant="outline" 
-          className="w-full bg-[#174c65] text-white hover:bg-[#174c65]/90 border-[#174c65] text-xs md:text-sm mt-auto"
+          className="w-full bg-[#174c65] text-white hover:bg-[#174c65]/90 mt-auto"
         >
           CHECK IT OUT
         </Button>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
@@ -41,26 +43,19 @@ const RecommendedContent = () => {
     },
     {
       id: 3,
-      image: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2301&q=80",
-      title: "Transform your home into a stylish and practical space that reflects your vision."
-    },
-    {
-      id: 4,
-      image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2558&q=80",
-      title: "Elevate your space with chic interior design that highlights your unique style."
+      image: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
+      title: "Maximize your renovation budget with these smart tips and cost-saving strategies."
     }
   ];
-
+  
   return (
     <div>
-      <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6">Recommended Content</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-        {contentItems.map((item) => (
-          <ContentCard 
-            key={item.id}
-            image={item.image}
-            title={item.title}
-          />
+      <h2 className="text-xl font-bold text-gray-900 mb-6">
+        Recommended for You
+      </h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {contentItems.map(item => (
+          <ContentCard key={item.id} image={item.image} title={item.title} />
         ))}
       </div>
     </div>

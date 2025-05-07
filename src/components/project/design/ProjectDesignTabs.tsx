@@ -64,14 +64,14 @@ const ProjectDesignTabs: React.FC<ProjectDesignTabsProps> = ({
   
   return (
     <Tabs defaultValue={defaultTab} className="w-full">
-      <TabsList className="mb-4">
+      <TabsList className="mb-6 bg-gray-100 p-1 rounded-full h-auto flex">
         {renovationAreas.map((area, index) => (
           <TabsTrigger 
             key={area.area} 
             value={area.area.toLowerCase()} 
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 rounded-full px-4 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm"
           >
-            <span className={`w-5 h-5 flex items-center justify-center ${index === 0 ? 'bg-[#174c65] text-white' : 'bg-gray-300 text-gray-600'} rounded-full text-xs`}>
+            <span className={`w-6 h-6 flex items-center justify-center rounded-full text-xs ${index === 0 ? 'bg-[#174c65] text-white' : 'bg-gray-300 text-gray-600'}`}>
               {index + 1}
             </span>
             {area.area}

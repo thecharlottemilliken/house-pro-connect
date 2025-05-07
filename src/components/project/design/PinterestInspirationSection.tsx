@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import PinterestConnector from "./PinterestConnector";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, ImagePlus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import EmptyDesignState from "./EmptyDesignState";
 import { type PinterestBoard } from "@/types/pinterest";
@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Json } from "@/integrations/supabase/types";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface PinterestInspirationSectionProps {
   inspirationImages: string[];
@@ -39,14 +40,13 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
   roomId
 }) => {
   const [hasInspiration, setHasInspiration] = useState(false);
-  const [selectedTab, setSelectedTab] = useState<'images' | 'boards'>('images');
+  const [selectedTab, setSelectedTab] = useState<'uploaded' | 'pinterest'>('uploaded');
   const [expandedBoard, setExpandedBoard] = useState<string | null>(null);
   const [boardToDelete, setBoardToDelete] = useState<PinterestBoard | null>(null);
   const [localPinterestBoards, setLocalPinterestBoards] = useState<PinterestBoard[]>(pinterestBoards);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   useEffect(() => {
-    console.log("Current Pinterest boards:", pinterestBoards);
     setLocalPinterestBoards(pinterestBoards);
   }, [pinterestBoards]);
 
@@ -157,11 +157,24 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
   };
 
   const renderTabContent = () => {
-    if (selectedTab === 'images') {
-      return <InspirationImagesGrid 
-        images={inspirationImages} 
-        onDeleteImage={handleDeleteImage}
-      />;
+    if (selectedTab === 'uploaded') {
+      return inspirationImages.length > 0 ? (
+        <InspirationImagesGrid 
+          images={inspirationImages} 
+          onDeleteImage={handleDeleteImage}
+        />
+      ) : (
+        <div className="text-center py-10">
+          <p className="text-gray-500">No images uploaded yet</p>
+          <Button 
+            variant="outline" 
+            className="mt-4 border-[#174c65] text-[#174c65] hover:bg-[#174c65]/5"
+            onClick={() => setIsUploadModalOpen(true)}
+          >
+            <Plus className="h-4 w-4 mr-2" /> Upload Images
+          </Button>
+        </div>
+      );
     }
 
     return (
@@ -195,56 +208,122 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
   };
 
   return (
-    <div className="w-full">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">
-          Inspiration for {currentRoom}
-        </h2>
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="uppercase text-xs flex items-center gap-1"
-            onClick={() => setIsUploadModalOpen(true)}
-          >
-            <Plus className="h-3.5 w-3.5" /> Add Images
-          </Button>
-          <PinterestConnector onBoardsSelected={handlePinterestBoardsSelected} />
-        </div>
-      </div>
-      
-      {!hasInspiration ? (
-        <EmptyDesignState 
-          type="inspiration" 
-          onAction={() => {}}
-        />
-      ) : (
-        <>
-          <div className="flex space-x-2 mb-4 border-b">
-            <button
-              className={`pb-2 px-4 text-sm font-medium ${
-                selectedTab === 'images'
-                  ? 'text-pink-500 border-b-2 border-pink-500'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-              onClick={() => setSelectedTab('images')}
-            >
-              Images ({inspirationImages.length})
-            </button>
-            <button
-              className={`pb-2 px-4 text-sm font-medium ${
-                selectedTab === 'boards'
-                  ? 'text-pink-500 border-b-2 border-pink-500'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-              onClick={() => setSelectedTab('boards')}
-            >
-              Pinterest Boards ({localPinterestBoards.length})
-            </button>
+    <Card className="overflow-hidden border-0 shadow-md">
+      <CardContent className="p-0">
+        <div className="bg-[#174c65] text-white p-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="font-semibold text-xl">Inspiration</h3>
+              <p className="text-white/80 mt-1">Collect design ideas for your {currentRoom.toLowerCase()}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="secondary"
+                size="sm"
+                className="bg-white text-[#174c65] hover:bg-gray-100 flex items-center gap-1"
+                onClick={() => setIsUploadModalOpen(true)}
+              >
+                <ImagePlus className="h-4 w-4" /> 
+                <span className="hidden sm:inline">Add Inspiration</span>
+              </Button>
+              <PinterestConnector onBoardsSelected={handlePinterestBoardsSelected} />
+            </div>
           </div>
-          {renderTabContent()}
-        </>
-      )}
+        </div>
+        
+        {!hasInspiration ? (
+          <div className="p-10 flex flex-col items-center justify-center text-center">
+            <div className="w-12 h-12 rounded-full bg-[#174c65]/10 flex items-center justify-center mb-3">
+              <ImagePlus className="h-6 w-6 text-[#174c65]" />
+            </div>
+            <h4 className="font-semibold text-gray-900">Add design inspiration</h4>
+            <p className="text-gray-500 max-w-md mt-1 mb-4">
+              Upload images or connect your Pinterest boards to organize your design ideas
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button 
+                variant="outline" 
+                className="border-[#174c65] text-[#174c65] hover:bg-[#174c65]/5"
+                onClick={() => setIsUploadModalOpen(true)}
+              >
+                <Plus className="h-4 w-4 mr-2" /> Upload Images
+              </Button>
+              <PinterestConnector 
+                onBoardsSelected={handlePinterestBoardsSelected} 
+                buttonClassName="border-[#174c65] text-[#174c65] hover:bg-[#174c65]/5"
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="p-6">
+            <div className="flex space-x-4 mb-6">
+              <button
+                className={`pb-2 text-base font-medium border-b-2 transition-colors ${
+                  selectedTab === 'uploaded'
+                    ? 'border-[#174c65] text-[#174c65]'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+                onClick={() => setSelectedTab('uploaded')}
+              >
+                Uploaded ({inspirationImages.length})
+              </button>
+              <button
+                className={`pb-2 text-base font-medium border-b-2 transition-colors ${
+                  selectedTab === 'pinterest'
+                    ? 'border-[#174c65] text-[#174c65]'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+                onClick={() => setSelectedTab('pinterest')}
+              >
+                Pinterest ({localPinterestBoards.length})
+              </button>
+            </div>
+            
+            {selectedTab === 'uploaded' ? (
+              inspirationImages.length > 0 ? (
+                <InspirationImagesGrid 
+                  images={inspirationImages} 
+                  onDeleteImage={handleDeleteImage}
+                />
+              ) : (
+                <div className="text-center py-10">
+                  <p className="text-gray-500">No images uploaded yet</p>
+                  <Button 
+                    variant="outline" 
+                    className="mt-4 border-[#174c65] text-[#174c65] hover:bg-[#174c65]/5"
+                    onClick={() => setIsUploadModalOpen(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-2" /> Upload Images
+                  </Button>
+                </div>
+              )
+            ) : (
+              localPinterestBoards.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {localPinterestBoards.map((board) => (
+                    <PinterestBoardCard
+                      key={board.id}
+                      board={board}
+                      isExpanded={expandedBoard === board.id}
+                      onToggleExpand={toggleBoardExpansion}
+                      onOpenBoard={openPinterestBoard}
+                      onRequestDelete={setBoardToDelete}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-10">
+                  <p className="text-gray-500">No Pinterest boards connected yet</p>
+                  <PinterestConnector 
+                    onBoardsSelected={handlePinterestBoardsSelected}
+                    buttonClassName="mt-4 border-[#174c65] text-[#174c65] hover:bg-[#174c65]/5"
+                  />
+                </div>
+              )
+            )}
+          </div>
+        )}
+      </CardContent>
       
       <UploadInspirationModal
         isOpen={isUploadModalOpen}

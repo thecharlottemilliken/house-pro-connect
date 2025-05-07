@@ -13,9 +13,9 @@ const InspirationImagesGrid: React.FC<InspirationImagesGridProps> = ({
   onDeleteImage
 }) => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
       {images.map((img, idx) => (
-        <div key={idx} className="group relative aspect-video bg-gray-100 rounded overflow-hidden">
+        <div key={idx} className="group relative aspect-square rounded-lg overflow-hidden border border-gray-200">
           <img 
             src={img} 
             alt={`Inspiration ${idx + 1}`} 

@@ -33,17 +33,37 @@ const BeforePhotosCard = ({
   };
 
   return (
-    <Card className="shadow-lg border-gray-200/50 w-full">
-      <CardContent className="p-4 sm:p-6">
-        <BeforePhotosSection
-          area={area}
-          beforePhotos={beforePhotos}
-          propertyPhotos={propertyPhotos}
-          onSelectBeforePhotos={onSelectBeforePhotos}
-          onUploadBeforePhotos={onUploadBeforePhotos}
-          onRemovePhoto={handleRemovePhoto}
-          onReorderPhotos={handleReorderPhotos}
-        />
+    <Card className="overflow-hidden border-0 shadow-md">
+      <CardContent className="p-0">
+        <div className="bg-[#174c65] text-white p-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="font-semibold text-xl">Before Photos</h3>
+              <p className="text-white/80 mt-1">Document the current state of your {area}</p>
+            </div>
+            {beforePhotos.length > 0 && (
+              <Button 
+                variant="secondary" 
+                size="sm"
+                className="bg-white text-[#174c65] hover:bg-gray-100"
+              >
+                Manage Photos
+              </Button>
+            )}
+          </div>
+        </div>
+        
+        <div className="p-6">
+          <BeforePhotosSection
+            area={area}
+            beforePhotos={beforePhotos}
+            propertyPhotos={propertyPhotos}
+            onSelectBeforePhotos={onSelectBeforePhotos}
+            onUploadBeforePhotos={onUploadBeforePhotos}
+            onRemovePhoto={handleRemovePhoto}
+            onReorderPhotos={handleReorderPhotos}
+          />
+        </div>
       </CardContent>
     </Card>
   );

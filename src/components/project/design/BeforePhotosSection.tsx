@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { X, Plus, Upload } from "lucide-react";
 import { FileUpload } from "@/components/ui/file-upload";
 import { PropertyImageCarousel } from "@/components/property/PropertyImageCarousel";
 import SelectPropertyPhotosDialog from "./SelectPropertyPhotosDialog";
@@ -30,31 +30,17 @@ const BeforePhotosSection = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h3 className="font-semibold text-gray-900">Before Photos</h3>
-          <p className="text-sm text-gray-500 mt-1">Document the current state of your {area}</p>
-        </div>
-        {hasBeforePhotos && (
-          <Button 
-            variant="ghost" 
-            size="sm"
-            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-            onClick={() => onSelectBeforePhotos([])}
-          >
-            Clear All
-          </Button>
-        )}
-      </div>
-      
       {hasBeforePhotos ? (
         <div className="space-y-6">
-          <div className="rounded-lg overflow-hidden border border-gray-100">
-            <PropertyImageCarousel images={beforePhotos} />
-          </div>
-          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          {beforePhotos.length > 1 && (
+            <div className="rounded-lg overflow-hidden border border-gray-100">
+              <PropertyImageCarousel images={beforePhotos} />
+            </div>
+          )}
+          
+          <div className="grid grid-cols-1 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
             {beforePhotos.map((photo, index) => (
-              <div key={index} className="relative group aspect-square rounded-lg overflow-hidden">
+              <div key={index} className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200">
                 <img 
                   src={photo} 
                   alt={`Before photo ${index + 1}`}
@@ -97,48 +83,62 @@ const BeforePhotosSection = ({
               </div>
             ))}
           </div>
+          
           <div className="flex flex-col sm:flex-row gap-3">
             <SelectPropertyPhotosDialog
               photos={propertyPhotos}
               onSelect={onSelectBeforePhotos}
             />
             <FileUpload
-              label="Upload More Photos"
+              label={<div className="flex items-center"><Plus className="h-4 w-4 mr-1" /> Upload More Photos</div>}
               description="Upload additional photos of the room's current state"
               accept="image/*"
               multiple={true}
               onUploadComplete={onUploadBeforePhotos}
-              uploadedFiles={beforePhotos}
+              buttonVariant="outline"
+              buttonClassName="border-[#174c65] text-[#174c65] hover:bg-[#174c65]/5"
             />
           </div>
         </div>
       ) : (
-        <div className="space-y-4">
-          {propertyPhotos.length > 0 ? (
-            <div className="flex flex-col sm:flex-row gap-3">
-              <SelectPropertyPhotosDialog
-                photos={propertyPhotos}
-                onSelect={onSelectBeforePhotos}
-              />
+        <div className="flex flex-col items-center justify-center text-center py-6">
+          <div className="w-12 h-12 rounded-full bg-[#174c65]/10 flex items-center justify-center mb-3">
+            <Upload className="h-6 w-6 text-[#174c65]" />
+          </div>
+          <h4 className="font-semibold text-gray-900">No before photos added yet</h4>
+          <p className="text-gray-500 max-w-md mt-1 mb-4">
+            Upload photos of your {area.toLowerCase()} before renovation to document the transformation
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-3 mt-2">
+            {propertyPhotos.length > 0 ? (
+              <>
+                <SelectPropertyPhotosDialog
+                  photos={propertyPhotos}
+                  onSelect={onSelectBeforePhotos}
+                />
+                <FileUpload
+                  label={<div className="flex items-center"><Plus className="h-4 w-4 mr-1" /> Upload Photos</div>}
+                  description="Upload photos of the room's current state"
+                  accept="image/*"
+                  multiple={true}
+                  onUploadComplete={onUploadBeforePhotos}
+                  buttonVariant="outline"
+                  buttonClassName="border-[#174c65] text-[#174c65] hover:bg-[#174c65]/5"
+                />
+              </>
+            ) : (
               <FileUpload
-                label="Upload Before Photos"
+                label={<div className="flex items-center"><Plus className="h-4 w-4 mr-1" /> Upload Photos</div>}
                 description="Upload photos of the room's current state"
                 accept="image/*"
                 multiple={true}
                 onUploadComplete={onUploadBeforePhotos}
-                uploadedFiles={beforePhotos}
+                buttonVariant="outline"
+                buttonClassName="border-[#174c65] text-[#174c65] hover:bg-[#174c65]/5"
               />
-            </div>
-          ) : (
-            <FileUpload
-              label="Upload Before Photos"
-              description="Upload photos of the room's current state"
-              accept="image/*"
-              multiple={true}
-              onUploadComplete={onUploadBeforePhotos}
-              uploadedFiles={beforePhotos}
-            />
-          )}
+            )}
+          </div>
         </div>
       )}
     </div>
