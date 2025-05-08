@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { X } from "lucide-react";
+import { X, Plus } from "lucide-react";
 import {
   DialogContent,
   DialogHeader,
@@ -9,12 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
-// Common tags that users might want to use
-const commonTags = [
-  "Blueprint", "Rendering", "Drawing", "Contract", "Material", "Invoice", 
-  "Measurement", "Reference", "Proposal", "Quote", "Design", "Inspiration"
-];
+import { Badge } from "@/components/ui/badge";
 
 interface TagsDialogContentProps {
   tags: string[];
@@ -29,6 +24,12 @@ const TagsDialogContent: React.FC<TagsDialogContentProps> = ({
 }) => {
   const [selectedTags, setSelectedTags] = useState<string[]>(initialTags);
   const [newTag, setNewTag] = useState('');
+
+  // Common tag suggestions for design assets
+  const tagSuggestions = [
+    "Blueprint", "Floor Plan", "Rendering", "3D Model", "Drawing",
+    "Material", "Finish", "Fixture", "Layout", "Concept"
+  ];
 
   // Add a new tag
   const handleAddTag = () => {
@@ -50,6 +51,11 @@ const TagsDialogContent: React.FC<TagsDialogContentProps> = ({
     }
   };
 
+  // Save tags
+  const handleSaveTags = () => {
+    onSave(selectedTags);
+  };
+
   return (
     <DialogContent className="sm:max-w-md">
       <DialogHeader>
@@ -57,17 +63,24 @@ const TagsDialogContent: React.FC<TagsDialogContentProps> = ({
       </DialogHeader>
       
       <div className="mt-4 space-y-4">
-        <div className="flex flex-wrap gap-2 min-h-[60px] border p-2 rounded-md">
+        <div className="flex flex-wrap gap-2 min-h-[60px] border p-3 rounded-md">
           {selectedTags.length === 0 ? (
             <span className="text-gray-400 text-sm">No tags added yet</span>
           ) : (
             selectedTags.map((tag) => (
-              <span key={tag} className="inline-flex items-center bg-gray-100 px-2 py-1 rounded-md text-sm">
+              <Badge 
+                key={tag} 
+                variant="outline" 
+                className="bg-gray-50 text-gray-700 hover:bg-gray-50 flex items-center gap-1 py-0 h-6"
+              >
                 {tag}
-                <button onClick={() => handleRemoveTag(tag)} className="ml-1 text-gray-500 hover:text-gray-700">
+                <button 
+                  onClick={() => handleRemoveTag(tag)} 
+                  className="ml-1 text-gray-400 hover:text-gray-700"
+                >
                   <X className="h-3 w-3" />
                 </button>
-              </span>
+              </Badge>
             ))
           )}
         </div>
@@ -86,25 +99,26 @@ const TagsDialogContent: React.FC<TagsDialogContentProps> = ({
             }}
           />
           <Button onClick={handleAddTag} size="sm" className="px-2">
-            +
+            <Plus className="h-4 w-4" />
           </Button>
         </div>
         
         <div>
           <p className="text-sm text-gray-500 mb-2">Common tags:</p>
           <div className="flex flex-wrap gap-2">
-            {commonTags.map(tag => (
-              <button
+            {tagSuggestions.map(tag => (
+              <Badge
                 key={tag}
-                onClick={() => handleAddCommonTag(tag)}
-                className={`text-xs px-2 py-1 rounded-md border ${
+                variant="outline"
+                className={`cursor-pointer ${
                   selectedTags.includes(tag) 
                     ? 'bg-[#174c65] text-white border-[#174c65]' 
                     : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                 }`}
+                onClick={() => handleAddCommonTag(tag)}
               >
                 {tag}
-              </button>
+              </Badge>
             ))}
           </div>
         </div>
@@ -114,7 +128,7 @@ const TagsDialogContent: React.FC<TagsDialogContentProps> = ({
         <Button variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button onClick={() => onSave(selectedTags)} className="bg-[#174c65] hover:bg-[#174c65]/90">
+        <Button onClick={handleSaveTags} className="bg-[#174c65] hover:bg-[#174c65]/90">
           Save Tags
         </Button>
       </DialogFooter>

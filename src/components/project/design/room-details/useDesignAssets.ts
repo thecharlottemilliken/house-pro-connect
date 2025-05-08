@@ -1,104 +1,60 @@
 
 import { useState, useRef } from 'react';
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
 
 export const useDesignAssets = (onSelectProjectFiles?: (files: string[]) => void) => {
-  const [previewAsset, setPreviewAsset] = useState<{name: string; url: string; type: string} | null>(null);
+  // File input reference for direct uploads
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Asset preview state
+  const [previewAsset, setPreviewAsset] = useState<{ name: string; url: string } | null>(null);
+  
+  // Tag management dialog state
   const [tagDialogOpen, setTagDialogOpen] = useState(false);
   const [selectedAssetIndex, setSelectedAssetIndex] = useState<number>(-1);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Project files dialog state
   const [showProjectFilesDialog, setShowProjectFilesDialog] = useState(false);
-
-  const handleQuickUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  
+  // Handle direct file upload
+  const handleQuickUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (!files?.length) return;
-
-    // Check authentication
-    const { data: sessionData } = await supabase.auth.getSession();
-    if (!sessionData.session) {
-      toast({
-        title: "Authentication required",
-        description: "You must be signed in to upload files.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const uploadedUrls: {name: string; url: string}[] = [];
+    if (!files || files.length === 0) return;
     
-    try {
-      toast({
-        title: "Uploading files",
-        description: "Please wait while your files are being uploaded."
-      });
-
-      for (const file of files) {
-        const fileExt = file.name.split('.').pop();
-        const filePath = `${Math.random()}-${Date.now()}.${fileExt}`;
-
-        const { error: uploadError, data } = await supabase.storage
-          .from('properties')
-          .upload(filePath, file);
-
-        if (uploadError) {
-          console.error("Upload error:", uploadError);
-          throw uploadError;
-        }
-
-        if (data) {
-          const { data: { publicUrl } } = supabase.storage
-            .from('properties')
-            .getPublicUrl(filePath);
-          
-          uploadedUrls.push({
-            name: file.name,
-            url: publicUrl
-          });
-        }
-      }
-
-      if (uploadedUrls.length > 0 && onSelectProjectFiles) {
-        // Pass urls to associate files
-        onSelectProjectFiles(uploadedUrls.map(item => item.url));
-      }
-
-      toast({
-        title: "Files uploaded successfully",
-        description: `${uploadedUrls.length} file(s) have been uploaded.`
-      });
-    } catch (error) {
-      console.error('Upload error:', error);
-      toast({
-        title: "Upload failed",
-        description: "There was an error uploading your files.",
-        variant: "destructive"
-      });
-    } finally {
-      // Reset the input
-      if (event.target) {
-        event.target.value = '';
-      }
+    // Convert FileList to array of File objects
+    const fileArray = Array.from(files);
+    
+    // Upload files (this would typically use your upload service)
+    console.log("Files selected for upload:", fileArray);
+    
+    // Reset the input
+    if (event.target.value) {
+      event.target.value = '';
     }
   };
-
+  
+  // Open file uploader
   const openFileUploader = () => {
-    fileInputRef.current?.click();
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
   };
-
+  
+  // Open file selector dialog
   const openFileSelector = () => {
     setShowProjectFilesDialog(true);
   };
-
+  
+  // Open tag management dialog
   const openTagDialog = (index: number) => {
     setSelectedAssetIndex(index);
     setTagDialogOpen(true);
   };
-
-  const handleViewAsset = (asset: {name: string; url: string; type: string}) => {
+  
+  // View asset
+  const handleViewAsset = (asset: { name: string; url: string }) => {
     setPreviewAsset(asset);
   };
-
+  
   return {
     fileInputRef,
     previewAsset,

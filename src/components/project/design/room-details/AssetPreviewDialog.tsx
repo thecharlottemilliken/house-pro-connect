@@ -1,17 +1,17 @@
 
 import React from 'react';
-import { FileText } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
 interface AssetPreviewDialogProps {
-  asset: { name: string; url: string; type: string } | null;
-  onOpenChange: (open: boolean) => void;
+  asset: { name: string; url: string } | null;
+  onOpenChange: () => void;
 }
 
 const AssetPreviewDialog: React.FC<AssetPreviewDialogProps> = ({
@@ -19,36 +19,55 @@ const AssetPreviewDialog: React.FC<AssetPreviewDialogProps> = ({
   onOpenChange
 }) => {
   if (!asset) return null;
+  
+  const fileExtension = asset.url.split('.').pop()?.toLowerCase() || '';
+  const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension);
+  const isPDF = fileExtension === 'pdf';
 
   return (
-    <Dialog open={!!asset} onOpenChange={(open) => !open && onOpenChange(false)}>
-      <DialogContent className="max-w-3xl h-auto max-h-[90vh] overflow-y-auto">
+    <Dialog open={!!asset} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{asset.name}</DialogTitle>
+          <DialogDescription>
+            {isImage ? 'Image Preview' : isPDF ? 'PDF Document' : 'File Preview'}
+          </DialogDescription>
         </DialogHeader>
         
-        <div className="mt-4 flex items-center justify-center">
-          {asset.type === 'image' ? (
+        <div className="flex-1 overflow-auto min-h-[300px] flex items-center justify-center p-4 bg-gray-50 rounded-md">
+          {isImage ? (
             <img 
               src={asset.url} 
               alt={asset.name} 
-              className="max-w-full max-h-[70vh] object-contain" 
+              className="max-w-full max-h-[60vh] object-contain" 
             />
-          ) : asset.type === 'pdf' ? (
-            <iframe 
+          ) : isPDF ? (
+            <iframe
               src={`https://docs.google.com/viewer?embedded=true&url=${encodeURIComponent(asset.url)}`}
-              className="w-full h-[70vh]" 
+              className="w-full h-[60vh]"
               title={asset.name}
             />
           ) : (
-            <div className="flex flex-col items-center justify-center p-10">
-              <FileText className="h-16 w-16 text-gray-400 mb-4" />
-              <p className="text-gray-500">Preview not available</p>
-              <Button className="mt-4" onClick={() => {}}>
-                Download
+            <div className="text-center p-8">
+              <p className="mb-4 text-gray-500">Preview not available for this file type</p>
+              <Button asChild>
+                <a href={asset.url} target="_blank" rel="noopener noreferrer">
+                  Open File
+                </a>
               </Button>
             </div>
           )}
+        </div>
+        
+        <div className="mt-4 flex justify-end">
+          <Button variant="outline" onClick={onOpenChange}>
+            Close
+          </Button>
+          <Button asChild className="ml-2">
+            <a href={asset.url} target="_blank" rel="noopener noreferrer" download>
+              Download
+            </a>
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
