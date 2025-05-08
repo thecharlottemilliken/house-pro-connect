@@ -31,9 +31,10 @@ interface FileListItemProps {
   onView: () => void;
   onDelete: () => void;
   onRemove: () => void; // Added the missing onRemove prop
+  tags?: string[]; // Add support for tags
 }
 
-export const FileListItem = ({ name, size, type, url, onDownload, onView, onDelete, onRemove }: FileListItemProps) => {
+export const FileListItem = ({ name, size, type, url, onDownload, onView, onDelete, onRemove, tags = [] }: FileListItemProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
@@ -61,42 +62,76 @@ export const FileListItem = ({ name, size, type, url, onDownload, onView, onDele
     }
   };
 
+  const getTagColor = (tag: string) => {
+    switch (tag.toLowerCase()) {
+      case 'drawing':
+      case 'drawings':
+        return 'bg-blue-100 text-blue-800';
+      case 'rendering':
+      case 'renderings':
+        return 'bg-purple-100 text-purple-800';
+      case 'architectural':
+        return 'bg-green-100 text-green-800';
+      case 'blueprint':
+      case 'blueprints':
+        return 'bg-indigo-100 text-indigo-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   const fileTypeColors = getFileTypeColor();
 
   return (
     <>
-      <div className="flex items-center justify-between py-2">
-        <div className="flex items-center gap-3">
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${fileTypeColors.bg}`}>
-            <span className={`text-xs font-medium uppercase ${fileTypeColors.text}`}>
-              {type}
-            </span>
+      <div className="flex flex-col py-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${fileTypeColors.bg}`}>
+              <span className={`text-xs font-medium uppercase ${fileTypeColors.text}`}>
+                {type}
+              </span>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-700">{name}</p>
+              <p className="text-xs text-gray-500">{size}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-medium text-gray-700">{name}</p>
-            <p className="text-xs text-gray-500">{size}</p>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={onDownload}
+              className="p-1.5 text-gray-500 hover:text-gray-700"
+            >
+              <Download className="w-4 h-4" />
+            </button>
+            <button 
+              onClick={() => setShowDeleteDialog(true)}
+              className="p-1.5 text-gray-500 hover:text-red-600"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <button 
+              onClick={handlePreview}
+              className="p-1.5 text-gray-500 hover:text-gray-700"
+            >
+              <Eye className="w-4 h-4" />
+            </button>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button 
-            onClick={onDownload}
-            className="p-1.5 text-gray-500 hover:text-gray-700"
-          >
-            <Download className="w-4 h-4" />
-          </button>
-          <button 
-            onClick={() => setShowDeleteDialog(true)}
-            className="p-1.5 text-gray-500 hover:text-red-600"
-          >
-            <X className="w-4 h-4" />
-          </button>
-          <button 
-            onClick={handlePreview}
-            className="p-1.5 text-gray-500 hover:text-gray-700"
-          >
-            <Eye className="w-4 h-4" />
-          </button>
-        </div>
+        
+        {/* Tags section - moved under the file name and details */}
+        {tags.length > 0 && (
+          <div className="ml-11 mt-1 flex flex-wrap gap-1">
+            {tags.map((tag, idx) => (
+              <span 
+                key={idx} 
+                className={`inline-flex items-center text-xs px-2 py-0.5 rounded ${getTagColor(tag)}`}
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       <Drawer open={showPreview} onOpenChange={setShowPreview}>

@@ -9,7 +9,7 @@ import SelectPropertyPhotosDialog from "./SelectPropertyPhotosDialog";
 
 interface CategorySectionProps {
   title: string;
-  files?: { name: string; size: string; type: 'pdf' | 'xls' | 'jpg' | 'png'; url?: string }[];
+  files?: { name: string; size: string; type: 'pdf' | 'xls' | 'jpg' | 'png'; url?: string; tags?: string[] }[];
   onUpload: (urls: string[]) => void;
   onDelete: () => void;
   propertyPhotos?: string[];
@@ -69,7 +69,8 @@ const CategorySection = ({ title, files = [], onUpload, onDelete, propertyPhotos
               onDownload={() => console.log('Download:', file.name)}
               onView={() => console.log('View:', file.name)}
               onDelete={onDelete}
-              onRemove={onDelete} // Added missing onRemove prop
+              onRemove={onDelete}
+              tags={file.tags} // Pass the tags to the FileListItem
             />
           ))}
         </div>
