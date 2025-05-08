@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { FileUpload } from "@/components/ui/file-upload";
 import SelectPropertyPhotosDialog from "./SelectPropertyPhotosDialog";
 import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
 
 interface PhotoControlsProps {
   propertyPhotos: string[];
@@ -19,20 +20,22 @@ const PhotoControls = ({
 
   return (
     <div className="grid grid-cols-2 gap-4 mt-6">
-      <Button
-        variant="outline"
-        onClick={() => setIsSelectDialogOpen(true)}
-        className="w-full border-[#1A6985] border-2 text-[#1A6985] hover:bg-transparent hover:text-[#1A6985]/90 font-medium uppercase tracking-wider py-6"
-      >
-        Select from files
-      </Button>
-      
-      <SelectPropertyPhotosDialog
-        photos={propertyPhotos}
-        onSelect={onSelectBeforePhotos}
-        open={isSelectDialogOpen}
-        onOpenChange={setIsSelectDialogOpen}
-      />
+      <Dialog open={isSelectDialogOpen} onOpenChange={setIsSelectDialogOpen}>
+        <Button
+          variant="outline"
+          onClick={() => setIsSelectDialogOpen(true)}
+          className="w-full border-[#1A6985] border-2 text-[#1A6985] hover:bg-transparent hover:text-[#1A6985]/90 font-medium uppercase tracking-wider py-6"
+        >
+          Select from files
+        </Button>
+        
+        <SelectPropertyPhotosDialog
+          photos={propertyPhotos}
+          onSelect={onSelectBeforePhotos}
+          open={isSelectDialogOpen}
+          onOpenChange={setIsSelectDialogOpen}
+        />
+      </Dialog>
       
       <FileUpload
         label="Upload"

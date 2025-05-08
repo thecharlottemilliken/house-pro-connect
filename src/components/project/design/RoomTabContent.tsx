@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { DesignPreferences, RenovationArea } from "@/hooks/useProjectData";
 import EmptyDesignState from "./EmptyDesignState";
 import RoomDetails from "./RoomDetails";
-import DesignAssetsCard from "./DesignAssetsCard";
 import PinterestInspirationSection from "./PinterestInspirationSection";
 import RecommendedContent from "@/components/dashboard/RecommendedContent";
 import { RoomPreference } from "@/hooks/useRoomDesign";
@@ -145,20 +144,6 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
               </div>
             </div>
           </div>
-          
-          {/* Design Assets Card - Full width - Pass roomId to enable room-specific assets */}
-          <DesignAssetsCard 
-            hasRenderings={hasRenderings}
-            renderingImages={renderingImages}
-            onAddRenderings={onAddRenderings}
-            onAddDrawings={onAddDrawings}
-            onAddBlueprints={onAddBlueprints}
-            propertyBlueprint={propertyBlueprint}
-            propertyId={propertyId}
-            currentRoom={area.area}
-            roomId={roomId} // Pass roomId for room-specific assets
-            propertyPhotos={propertyPhotos}
-          />
         </div>
       ) : (
         <EmptyDesignState 
