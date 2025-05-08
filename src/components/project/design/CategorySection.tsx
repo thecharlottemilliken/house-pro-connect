@@ -1,7 +1,6 @@
 
 import React, { useState } from "react";
 import { Upload, FileSearch, Tag as TagIcon } from "lucide-react";
-import { FileListItem } from "./FileListItem";
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { FileUpload } from "@/components/ui/file-upload";
