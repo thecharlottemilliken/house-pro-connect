@@ -95,6 +95,20 @@ export const FileListItem = ({ name, size, type, url, onDownload, onView, onDele
             <div>
               <p className="text-sm font-medium text-gray-700">{name}</p>
               <p className="text-xs text-gray-500">{size}</p>
+              
+              {/* Tags section - moved here, directly under the file name and details */}
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {tags.map((tag, idx) => (
+                    <span 
+                      key={idx} 
+                      className={`inline-flex items-center text-xs px-2 py-0.5 rounded ${getTagColor(tag)}`}
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -118,20 +132,6 @@ export const FileListItem = ({ name, size, type, url, onDownload, onView, onDele
             </button>
           </div>
         </div>
-        
-        {/* Tags section - displayed below the file name and details */}
-        {tags.length > 0 && (
-          <div className="ml-11 mt-1 flex flex-wrap gap-1">
-            {tags.map((tag, idx) => (
-              <span 
-                key={idx} 
-                className={`inline-flex items-center text-xs px-2 py-0.5 rounded ${getTagColor(tag)}`}
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
       </div>
 
       <Drawer open={showPreview} onOpenChange={setShowPreview}>
