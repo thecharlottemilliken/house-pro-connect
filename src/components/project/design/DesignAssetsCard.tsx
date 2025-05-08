@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
@@ -241,6 +242,7 @@ const DesignAssetsCard = ({
                               []) : 
                             [];
       
+      // Filter out existing blueprints and add the new one
       const updatedAssets = [
         ...existingAssets.filter((asset: any) => 
           !(asset.tags && asset.tags.includes('Blueprint'))
@@ -251,11 +253,11 @@ const DesignAssetsCard = ({
       let updateError;
       
       if (existingPrefs) {
-        // Update existing record
+        // Update existing record - This is where the error occurs
         const {
           error
         } = await supabase.from('room_design_preferences').update({
-          design_assets: updatedAssets,
+          design_assets: updatedAssets as Json,
           updated_at: new Date().toISOString()
         }).eq('room_id', roomId);
         updateError = error;
@@ -265,7 +267,7 @@ const DesignAssetsCard = ({
           error
         } = await supabase.from('room_design_preferences').insert({
           room_id: roomId,
-          design_assets: [blueprintAsset],
+          design_assets: [blueprintAsset] as unknown as Json,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         });
@@ -331,7 +333,7 @@ const DesignAssetsCard = ({
         const {
           error: updateError
         } = await supabase.from('room_design_preferences').update({
-          design_assets: updatedAssets,
+          design_assets: updatedAssets as Json,
           updated_at: new Date().toISOString()
         }).eq('room_id', roomId);
         
@@ -771,7 +773,7 @@ const DesignAssetsCard = ({
           const {
             error: updateError
           } = await supabase.from('room_design_preferences').update({
-            design_assets: updatedAssets,
+            design_assets: updatedAssets as Json,
             updated_at: new Date().toISOString()
           }).eq('room_id', roomId);
           
@@ -784,7 +786,7 @@ const DesignAssetsCard = ({
         const {
           error: updateError
         } = await supabase.from('room_design_preferences').update({
-          tags_metadata: tagsMetadata,
+          tags_metadata: tagsMetadata as Json,
           updated_at: new Date().toISOString()
         }).eq('room_id', roomId);
         
