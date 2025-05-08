@@ -58,12 +58,27 @@ const CategorySection = ({
   };
 
   // Filter files to only show those associated with the current room
-  const roomFiles = files.filter(file => 
-    !file.roomId || file.roomId === roomId || 
-    // Also include files with tags matching the current room
-    (file.tags && currentRoom && 
-     file.tags.some(tag => tag.toLowerCase() === currentRoom.toLowerCase()))
-  );
+  const roomFiles = files.filter(file => {
+    // First, check if the file has a roomId that matches the current roomId
+    if (file.roomId && roomId && file.roomId === roomId) {
+      return true;
+    }
+    
+    // If file has no roomId but has tags matching the current room name, include it
+    if (!file.roomId && file.tags && currentRoom && 
+        file.tags.some(tag => tag.toLowerCase() === currentRoom.toLowerCase())) {
+      return true;
+    }
+    
+    // If the file has no roomId and no room-related tags, only include it if current room is primary
+    if (!file.roomId && (!file.tags || file.tags.length === 0)) {
+      // Only include unassociated files in the primary room tab
+      // (This is a fallback - ideally all files should have proper room association)
+      return false;
+    }
+    
+    return false;
+  });
 
   return (
     <div className="mb-6">

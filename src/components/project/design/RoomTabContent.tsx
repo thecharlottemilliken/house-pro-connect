@@ -78,17 +78,28 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
   const handleAddDesignPlans = () => console.log("Add design plans clicked");
   const [showMeasuringDialog, setShowMeasuringDialog] = useState(false);
   
-  // Filter design assets for the current room
-  const roomDesignAssets = designAssets.filter(asset => 
-    !asset.roomId || asset.roomId === roomId || 
-    // Also include assets that have a tag matching the room name
-    (asset.tags && asset.tags.some(tag => 
-      tag.toLowerCase() === area.area.toLowerCase()))
-  );
+  // Filter design assets for the current room with improved logic
+  const roomDesignAssets = designAssets.filter(asset => {
+    // Match by roomId (exact match)
+    if (asset.roomId && roomId && asset.roomId === roomId) {
+      return true;
+    }
+    
+    // Match by tag if area name is in the tags
+    if (asset.tags && asset.tags.some(tag => 
+      tag.toLowerCase() === area.area.toLowerCase())) {
+      return true;
+    }
+    
+    // For assets with no room association, exclude them
+    return false;
+  });
   
   // Check if measurements exist
   const hasMeasurements = measurements && 
     (measurements.length || measurements.width || measurements.height || measurements.additionalNotes);
+
+  console.log(`Room ${area.area} has ${roomDesignAssets.length} design assets`);
 
   return (
     <div className="w-full space-y-8">
@@ -121,7 +132,10 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
                   asset.name === assetToRemove.name && 
                   asset.url === assetToRemove.url
                 );
-                onRemoveDesignAsset(originalIndex);
+                
+                if (originalIndex !== -1) {
+                  onRemoveDesignAsset(originalIndex);
+                }
               }}
               onUpdateAssetTags={(index, tags) => {
                 // Find the original index in the full designAssets array
@@ -130,7 +144,10 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
                   asset.name === assetToUpdate.name && 
                   asset.url === assetToUpdate.url
                 );
-                onUpdateAssetTags(originalIndex, tags);
+                
+                if (originalIndex !== -1) {
+                  onUpdateAssetTags(originalIndex, tags);
+                }
               }}
               roomId={roomId}
             />
