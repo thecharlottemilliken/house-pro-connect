@@ -2,15 +2,12 @@
 import React, { useState } from 'react';
 import { DesignPreferences, RenovationArea } from "@/hooks/useProjectData";
 import EmptyDesignState from "./EmptyDesignState";
-import RoomDetails from "./RoomDetails";
 import PinterestInspirationSection from "./PinterestInspirationSection";
 import RecommendedContent from "@/components/dashboard/RecommendedContent";
 import { RoomPreference } from "@/hooks/useRoomDesign";
-import AfterPhotosSection from './AfterPhotosSection';
-import BeforePhotosCard from './BeforePhotosCard';
-import RoomMeasurementsCard from './RoomMeasurementsCard';
-import MeasurementsBanner from './MeasurementsBanner';
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import RoomDetailsSection from './room-tabs/RoomDetailsSection';
+import RoomPhotosSection from './room-tabs/RoomPhotosSection';
+import RoomMeasurementsDialog from './room-tabs/RoomMeasurementsDialog';
 
 interface RoomTabContentProps {
   area: RenovationArea;
@@ -99,94 +96,61 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
   const hasMeasurements = measurements && 
     (measurements.length || measurements.width || measurements.height || measurements.additionalNotes);
 
-  console.log(`Room ${area.area} has ${roomDesignAssets.length} design assets`);
-
   return (
     <div className="w-full space-y-8">
-      {/* Always render the content regardless of hasDesigns - removed the conditional rendering */}
       <div className="space-y-8">
-        {/* Three-column layout for Room Details, Measurements Banner, and Before/After Photos */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Column 1: Room Details Card - Always rendered now */}
-          <div className="lg:col-span-1">
-            <RoomDetails 
-              area={area.area}
-              location={area.location}
-              designers={designers}
-              // Pass the filtered design assets specific to this room
-              designAssets={roomDesignAssets}
-              measurements={measurements}
-              onAddDesigner={onAddDesigner}
-              onUploadAssets={() => console.log("Upload assets clicked")}
-              onSaveMeasurements={onSaveMeasurements}
-              propertyPhotos={propertyPhotos}
-              onSelectBeforePhotos={onSelectBeforePhotos}
-              onUploadBeforePhotos={onUploadBeforePhotos}
-              beforePhotos={beforePhotos}
-              projectId={projectId}
-              onSelectProjectFiles={onAddProjectFiles}
-              onRemoveDesignAsset={(index) => {
-                // Find the original index in the full designAssets array
-                const assetToRemove = roomDesignAssets[index];
-                const originalIndex = designAssets.findIndex(asset => 
-                  asset.name === assetToRemove.name && 
-                  asset.url === assetToRemove.url
-                );
-                
-                if (originalIndex !== -1) {
-                  onRemoveDesignAsset(originalIndex);
-                }
-              }}
-              onUpdateAssetTags={(index, tags) => {
-                // Find the original index in the full designAssets array
-                const assetToUpdate = roomDesignAssets[index];
-                const originalIndex = designAssets.findIndex(asset => 
-                  asset.name === assetToUpdate.name && 
-                  asset.url === assetToUpdate.url
-                );
-                
-                if (originalIndex !== -1) {
-                  onUpdateAssetTags(originalIndex, tags);
-                }
-              }}
-              roomId={roomId}
-            />
-          </div>
-          
-          {/* Column 2-3: Measurements Banner/Card + Before/After Photos */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Show Measurements Banner or Measurements Card */}
-            {!hasMeasurements ? (
-              <MeasurementsBanner 
-                area={area.area}
-                onMeasureRoom={() => setShowMeasuringDialog(true)}
-              />
-            ) : (
-              <RoomMeasurementsCard 
-                area={area.area}
-                measurements={measurements}
-                onSaveMeasurements={onSaveMeasurements}
-              />
-            )}
+        {/* Room Details and Measurements Section */}
+        <RoomDetailsSection 
+          area={area.area}
+          location={area.location}
+          designers={designers}
+          designAssets={roomDesignAssets}
+          measurements={measurements}
+          roomId={roomId}
+          projectId={projectId}
+          hasMeasurements={!!hasMeasurements}
+          onAddDesigner={onAddDesigner}
+          onSaveMeasurements={onSaveMeasurements}
+          onSelectBeforePhotos={onSelectBeforePhotos}
+          onUploadBeforePhotos={onUploadBeforePhotos}
+          onAddProjectFiles={onAddProjectFiles}
+          onRemoveDesignAsset={(index) => {
+            // Find the original index in the full designAssets array
+            const assetToRemove = roomDesignAssets[index];
+            const originalIndex = designAssets.findIndex(asset => 
+              asset.name === assetToRemove.name && 
+              asset.url === assetToRemove.url
+            );
             
-            {/* Before and After Photos Side-by-Side */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <BeforePhotosCard
-                area={area.area}
-                beforePhotos={beforePhotos}
-                propertyPhotos={propertyPhotos}
-                onSelectBeforePhotos={onSelectBeforePhotos}
-                onUploadBeforePhotos={onUploadBeforePhotos}
-              />
-              
-              <AfterPhotosSection 
-                area={area.area}
-                photos={[]} // Initialize with empty array since this is a new component
-                onUploadPhotos={() => console.log("Upload after photos clicked")}
-              />
-            </div>
-          </div>
-        </div>
+            if (originalIndex !== -1) {
+              onRemoveDesignAsset(originalIndex);
+            }
+          }}
+          onUpdateAssetTags={(index, tags) => {
+            // Find the original index in the full designAssets array
+            const assetToUpdate = roomDesignAssets[index];
+            const originalIndex = designAssets.findIndex(asset => 
+              asset.name === assetToUpdate.name && 
+              asset.url === assetToUpdate.url
+            );
+            
+            if (originalIndex !== -1) {
+              onUpdateAssetTags(originalIndex, tags);
+            }
+          }}
+          onMeasureRoom={() => setShowMeasuringDialog(true)}
+          beforePhotos={beforePhotos}
+          propertyPhotos={propertyPhotos}
+        />
+        
+        {/* Room Photos Section */}
+        <RoomPhotosSection 
+          area={area.area}
+          beforePhotos={beforePhotos}
+          propertyPhotos={propertyPhotos}
+          onSelectBeforePhotos={onSelectBeforePhotos}
+          onUploadBeforePhotos={onUploadBeforePhotos}
+        />
       </div>
       
       {/* Show empty design state only when explicitly indicated and no designers or assets */}
@@ -198,22 +162,13 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
       )}
       
       {/* Room Measuring Dialog */}
-      <Dialog open={showMeasuringDialog} onOpenChange={setShowMeasuringDialog}>
-        <DialogContent className="max-w-4xl">
-          <div className="p-6">
-            <h2 className="text-2xl font-bold mb-4">Measure Your Room</h2>
-            <RoomMeasurementsCard 
-              area={area.area}
-              measurements={measurements || { unit: 'ft' }}
-              onSaveMeasurements={(newMeasurements) => {
-                onSaveMeasurements(newMeasurements);
-                setShowMeasuringDialog(false);
-              }}
-              initialEditMode={true}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
+      <RoomMeasurementsDialog
+        open={showMeasuringDialog}
+        onOpenChange={setShowMeasuringDialog}
+        area={area.area}
+        measurements={measurements}
+        onSaveMeasurements={onSaveMeasurements}
+      />
       
       {/* Pinterest Inspiration Section - Full width */}
       <div className="mt-8 w-full">
