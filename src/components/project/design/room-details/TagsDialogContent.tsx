@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface TagsDialogContentProps {
   tags: string[];
@@ -28,8 +29,9 @@ const TagsDialogContent: React.FC<TagsDialogContentProps> = ({
   // Common tag suggestions for design assets
   const tagSuggestions = [
     "Blueprint", "Floor Plan", "Rendering", "3D Model", "Drawing",
-    "Material", "Finish", "Fixture", "Layout", "Concept"
-  ];
+    "Material", "Finish", "Fixture", "Layout", "Concept", 
+    "Kitchen", "Bathroom", "Living Room", "Bedroom", "Exterior"
+  ].sort();
 
   // Add a new tag
   const handleAddTag = () => {
@@ -44,10 +46,31 @@ const TagsDialogContent: React.FC<TagsDialogContentProps> = ({
     setSelectedTags(prev => prev.filter(t => t !== tag));
   };
 
-  // Add common tag
-  const handleAddCommonTag = (tag: string) => {
-    if (!selectedTags.includes(tag)) {
+  // Toggle common tag
+  const handleToggleTag = (tag: string, checked: boolean) => {
+    if (checked && !selectedTags.includes(tag)) {
       setSelectedTags(prev => [...prev, tag]);
+    } else if (!checked && selectedTags.includes(tag)) {
+      setSelectedTags(prev => prev.filter(t => t !== tag));
+    }
+  };
+
+  // Add multiple custom tags at once
+  const handleAddMultipleTags = () => {
+    if (!newTag.trim()) return;
+    
+    // Split by commas and filter out empty strings
+    const tagsToAdd = newTag
+      .split(',')
+      .map(tag => tag.trim())
+      .filter(tag => tag !== '');
+    
+    // Add only unique tags
+    const uniqueNewTags = tagsToAdd.filter(tag => !selectedTags.includes(tag));
+    
+    if (uniqueNewTags.length > 0) {
+      setSelectedTags(prev => [...prev, ...uniqueNewTags]);
+      setNewTag('');
     }
   };
 
@@ -85,41 +108,50 @@ const TagsDialogContent: React.FC<TagsDialogContentProps> = ({
           )}
         </div>
         
-        <div className="flex gap-2">
-          <Input
-            placeholder="Add a new tag..."
-            value={newTag}
-            onChange={(e) => setNewTag(e.target.value)}
-            className="flex-1"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleAddTag();
-              }
-            }}
-          />
-          <Button onClick={handleAddTag} size="sm" className="px-2">
-            <Plus className="h-4 w-4" />
-          </Button>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Add Custom Tags</label>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Add tags (comma separated)..."
+              value={newTag}
+              onChange={(e) => setNewTag(e.target.value)}
+              className="flex-1"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddMultipleTags();
+                }
+              }}
+            />
+            <Button onClick={handleAddMultipleTags} size="sm" className="px-2">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+          <p className="text-xs text-gray-500">Separate multiple tags with commas</p>
         </div>
         
         <div>
-          <p className="text-sm text-gray-500 mb-2">Common tags:</p>
-          <div className="flex flex-wrap gap-2">
-            {tagSuggestions.map(tag => (
-              <Badge
-                key={tag}
-                variant="outline"
-                className={`cursor-pointer ${
-                  selectedTags.includes(tag) 
-                    ? 'bg-[#174c65] text-white border-[#174c65]' 
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                }`}
-                onClick={() => handleAddCommonTag(tag)}
-              >
-                {tag}
-              </Badge>
-            ))}
+          <p className="text-sm font-medium mb-2">Common tags:</p>
+          <div className="max-h-[180px] overflow-y-auto">
+            <div className="grid grid-cols-2 gap-2">
+              {tagSuggestions.map(tag => (
+                <div key={tag} className="flex items-center space-x-2">
+                  <Checkbox 
+                    id={`tag-${tag}`} 
+                    checked={selectedTags.includes(tag)}
+                    onCheckedChange={(checked) => 
+                      handleToggleTag(tag, checked === true)
+                    } 
+                  />
+                  <label 
+                    htmlFor={`tag-${tag}`}
+                    className="text-sm cursor-pointer"
+                  >
+                    {tag}
+                  </label>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

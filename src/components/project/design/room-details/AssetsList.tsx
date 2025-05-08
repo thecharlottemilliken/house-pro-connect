@@ -2,6 +2,7 @@
 import React from 'react';
 import { FileText, Image, Tag, Eye, Trash } from "lucide-react";
 import { FileTags } from "@/components/ui/file-upload";
+import { Button } from "@/components/ui/button";
 
 interface AssetsListProps {
   designAssets?: Array<{ name: string; url: string; tags?: string[] }>;
@@ -47,15 +48,26 @@ const AssetsList: React.FC<AssetsListProps> = ({
               <div>
                 <p className="text-sm font-medium text-gray-800">{asset.name}</p>
                 
-                {/* Tags display */}
-                {asset.tags && asset.tags.length > 0 && (
-                  <div className="mt-1.5">
-                    <FileTags 
-                      tags={asset.tags} 
-                      onRemoveTag={undefined} 
-                    />
-                  </div>
-                )}
+                {/* Tags display with improved component */}
+                <div className="mt-1.5">
+                  <FileTags 
+                    tags={asset.tags || []} 
+                    maxDisplay={3}
+                  />
+                  
+                  {/* Add tag button if manage tags is available */}
+                  {onManageTags && (
+                    <Button
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => onManageTags(index)}
+                      className="h-6 px-2 py-0 text-xs flex items-center gap-1 mt-1 text-gray-500 hover:text-gray-900"
+                    >
+                      <Tag className="h-3 w-3 mr-1" />
+                      Manage Tags
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
             
@@ -67,15 +79,6 @@ const AssetsList: React.FC<AssetsListProps> = ({
                   title="View asset"
                 >
                   <Eye className="h-4 w-4" />
-                </button>
-              )}
-              {onManageTags && (
-                <button 
-                  onClick={() => onManageTags(index)}
-                  className="p-1 text-gray-500 hover:text-gray-700 rounded"
-                  title="Manage tags"
-                >
-                  <Tag className="h-4 w-4" />
                 </button>
               )}
               {onRemoveAsset && (
