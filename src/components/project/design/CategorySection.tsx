@@ -69,6 +69,7 @@ const CategorySection = ({ title, files = [], onUpload, onDelete, propertyPhotos
               onDownload={() => console.log('Download:', file.name)}
               onView={() => console.log('View:', file.name)}
               onDelete={onDelete}
+              onRemove={onDelete} // Added missing onRemove prop
             />
           ))}
         </div>

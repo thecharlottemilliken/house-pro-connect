@@ -39,6 +39,7 @@ const ProjectDesign = () => {
     handleUploadBeforePhotos,
     handleAddProjectFiles,
     handleRemoveDesignAsset,
+    handleUpdateAssetTags,
     handleAddPinterestBoards,
     handleAddInspirationImages
   } = useDesignActions(projectData?.id);
@@ -122,6 +123,7 @@ const ProjectDesign = () => {
                   onUploadBeforePhotos={(area, photos) => handleUploadBeforePhotos(area, photos, designPreferences)}
                   onAddProjectFiles={(area, files) => handleAddProjectFiles(area, files, designPreferences)}
                   onRemoveDesignAsset={(index) => handleRemoveDesignAsset(index, designPreferences)}
+                  onUpdateAssetTags={(index, tags) => handleUpdateAssetTags(index, tags, designPreferences)}
                   onAddInspirationImages={handleAddInspirationImages}
                   onAddPinterestBoards={handleAddPinterestBoards}
                 />

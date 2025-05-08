@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
@@ -126,7 +125,8 @@ export const useDesignActions = (projectId?: string) => {
         const fileName = url.split('/').pop() || 'File';
         return {
           name: fileName,
-          url: url
+          url: url,
+          tags: []
         };
       });
       
@@ -196,6 +196,49 @@ export const useDesignActions = (projectId?: string) => {
       toast({
         title: "Error",
         description: "Failed to remove design asset. Please try again.",
+        variant: "destructive"
+      });
+    }
+  }, [projectId]);
+
+  // Add a new function to handle updating tags for a design asset
+  const handleUpdateAssetTags = useCallback(async (assetIndex: number, tags: string[], designPreferences: DesignPreferences) => {
+    try {
+      if (!projectId) return;
+      
+      const existingAssets = [...(designPreferences.designAssets || [])];
+      
+      if (assetIndex >= 0 && assetIndex < existingAssets.length) {
+        existingAssets[assetIndex] = {
+          ...existingAssets[assetIndex],
+          tags
+        };
+      }
+      
+      const updatedDesignPreferences: Record<string, unknown> = {
+        ...designPreferences,
+        designAssets: existingAssets
+      };
+      
+      const { error } = await supabase
+        .from('projects')
+        .update({
+          design_preferences: updatedDesignPreferences as unknown as Json
+        })
+        .eq('id', projectId);
+        
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Tags updated successfully"
+      });
+      
+    } catch (error: any) {
+      console.error('Error updating asset tags:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update tags. Please try again.",
         variant: "destructive"
       });
     }
@@ -340,6 +383,7 @@ export const useDesignActions = (projectId?: string) => {
     handleUploadBeforePhotos,
     handleAddProjectFiles,
     handleRemoveDesignAsset,
+    handleUpdateAssetTags,
     handleAddPinterestBoards,
     handleAddInspirationImages
   };

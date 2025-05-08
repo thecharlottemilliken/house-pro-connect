@@ -7,14 +7,14 @@ import SelectPropertyPhotosDialog from "./SelectPropertyPhotosDialog";
 import { Dialog } from "@/components/ui/dialog";
 
 interface EmptyPhotoStateProps {
-  area: string;
+  area?: string;
   propertyPhotos: string[];
   onSelectBeforePhotos: (photos: string[]) => void;
   onUploadBeforePhotos: (photos: string[]) => void;
 }
 
 const EmptyPhotoState = ({
-  area,
+  area = '',
   propertyPhotos,
   onSelectBeforePhotos,
   onUploadBeforePhotos

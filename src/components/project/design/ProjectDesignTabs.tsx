@@ -24,6 +24,7 @@ interface ProjectDesignTabsProps {
   onUploadBeforePhotos: (area: string, photos: string[]) => void;
   onAddProjectFiles: (area: string, files: string[]) => void;
   onRemoveDesignAsset: (index: number) => void;
+  onUpdateAssetTags: (index: number, tags: string[]) => void;
   onAddInspirationImages: (images: string[], roomId?: string) => void;
   onAddPinterestBoards: (boards: any[], room: string, roomId?: string) => void;
 }
@@ -47,6 +48,7 @@ const ProjectDesignTabs: React.FC<ProjectDesignTabsProps> = ({
   onUploadBeforePhotos,
   onAddProjectFiles,
   onRemoveDesignAsset,
+  onUpdateAssetTags,
   onAddInspirationImages,
   onAddPinterestBoards
 }) => {
@@ -105,6 +107,7 @@ const ProjectDesignTabs: React.FC<ProjectDesignTabsProps> = ({
               onUploadBeforePhotos={(photos) => onUploadBeforePhotos(area.area, photos)}
               onAddProjectFiles={(files) => onAddProjectFiles(area.area, files)}
               onRemoveDesignAsset={onRemoveDesignAsset}
+              onUpdateAssetTags={onUpdateAssetTags}
               onAddInspirationImages={onAddInspirationImages}
               onAddPinterestBoards={onAddPinterestBoards}
             />
