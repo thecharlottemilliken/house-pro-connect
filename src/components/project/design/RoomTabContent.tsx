@@ -18,7 +18,7 @@ interface RoomTabContentProps {
   hasDesigns: boolean;
   hasRenderings: boolean;
   designers: Array<{ id: string; businessName: string }>;
-  designAssets?: Array<{ name: string; url: string; tags?: string[] }>;
+  designAssets?: Array<{ name: string; url: string; tags?: string[]; }>;
   renderingImages?: string[];
   beforePhotos: string[];
   measurements?: {
@@ -43,7 +43,7 @@ interface RoomTabContentProps {
   onUploadBeforePhotos: (photos: string[]) => void;
   onAddProjectFiles: (files: string[]) => void;
   onRemoveDesignAsset: (index: number) => void;
-  onUpdateAssetTags: (assetIndex: number, tags: string[]) => void; // Added missing prop
+  onUpdateAssetTags: (assetIndex: number, tags: string[]) => void;
   onAddInspirationImages: (images: string[], roomId?: string) => void;
   onAddPinterestBoards: (boards: any[], room: string, roomId?: string) => void;
 }
@@ -72,7 +72,7 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
   onUploadBeforePhotos,
   onAddProjectFiles,
   onRemoveDesignAsset,
-  onUpdateAssetTags, // Added the prop here
+  onUpdateAssetTags,
   onAddInspirationImages,
   onAddPinterestBoards
 }) => {
@@ -107,7 +107,7 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
                 projectId={projectId}
                 onSelectProjectFiles={onAddProjectFiles}
                 onRemoveDesignAsset={onRemoveDesignAsset}
-                onUpdateAssetTags={onUpdateAssetTags} // Pass the prop to RoomDetails
+                onUpdateAssetTags={onUpdateAssetTags}
               />
             </div>
             
@@ -146,7 +146,7 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
             </div>
           </div>
           
-          {/* Design Assets Card - Full width */}
+          {/* Design Assets Card - Full width - Pass roomId to enable room-specific assets */}
           <DesignAssetsCard 
             hasRenderings={hasRenderings}
             renderingImages={renderingImages}
@@ -156,6 +156,7 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
             propertyBlueprint={propertyBlueprint}
             propertyId={propertyId}
             currentRoom={area.area}
+            roomId={roomId} // Pass roomId for room-specific assets
             propertyPhotos={propertyPhotos}
           />
         </div>

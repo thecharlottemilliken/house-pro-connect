@@ -9,13 +9,25 @@ import SelectPropertyPhotosDialog from "./SelectPropertyPhotosDialog";
 
 interface CategorySectionProps {
   title: string;
-  files?: { name: string; size: string; type: 'pdf' | 'xls' | 'jpg' | 'png'; url?: string; tags?: string[] }[];
-  onUpload: (urls: string[]) => void;
-  onDelete: () => void;
+  roomId?: string;
+  currentRoom?: string;
+  files?: { name: string; size: string; type: 'pdf' | 'xls' | 'jpg' | 'png'; url?: string; tags?: string[]; roomId?: string }[];
+  onUpload: (urls: string[], roomId?: string) => void;
+  onDelete: (fileIndex?: number) => void;
+  onUpdateTags?: (fileIndex: number, tags: string[]) => void;
   propertyPhotos?: string[];
 }
 
-const CategorySection = ({ title, files = [], onUpload, onDelete, propertyPhotos = [] }: CategorySectionProps) => {
+const CategorySection = ({ 
+  title, 
+  roomId, 
+  currentRoom, 
+  files = [], 
+  onUpload, 
+  onDelete, 
+  onUpdateTags,
+  propertyPhotos = [] 
+}: CategorySectionProps) => {
   const [showUploadDialog, setShowUploadDialog] = React.useState(false);
   const [showSelectDialog, setShowSelectDialog] = React.useState(false);
 
@@ -34,9 +46,12 @@ const CategorySection = ({ title, files = [], onUpload, onDelete, propertyPhotos
   };
 
   const handleSelectExistingFiles = (selectedPhotos: string[]) => {
-    onUpload(selectedPhotos);
+    onUpload(selectedPhotos, roomId);
     setShowSelectDialog(false);
   };
+
+  // Filter files to only show those associated with the current room
+  const roomFiles = files.filter(file => !file.roomId || file.roomId === roomId);
 
   return (
     <div className="mb-6">
@@ -60,17 +75,17 @@ const CategorySection = ({ title, files = [], onUpload, onDelete, propertyPhotos
         </div>
       </div>
       
-      {files.length > 0 ? (
+      {roomFiles.length > 0 ? (
         <div className="space-y-1">
-          {files.map((file, index) => (
+          {roomFiles.map((file, index) => (
             <FileListItem
               key={index}
               {...file}
               onDownload={() => console.log('Download:', file.name)}
               onView={() => console.log('View:', file.name)}
-              onDelete={onDelete}
-              onRemove={onDelete}
-              tags={file.tags} // Pass the tags to the FileListItem
+              onDelete={() => onDelete(index)}
+              onRemove={() => onDelete(index)}
+              tags={file.tags}
             />
           ))}
         </div>
@@ -92,11 +107,11 @@ const CategorySection = ({ title, files = [], onUpload, onDelete, propertyPhotos
             accept={getAcceptedFileTypes()}
             multiple={false}
             onUploadComplete={(urls) => {
-              onUpload(urls);
+              onUpload(urls, roomId);
               setShowUploadDialog(false);
             }}
             label={`${title} File`}
-            description={`Upload your ${title.toLowerCase()} file`}
+            description={`Upload your ${title.toLowerCase()} file${currentRoom ? ` for ${currentRoom}` : ''}`}
           />
           
           <DialogFooter>

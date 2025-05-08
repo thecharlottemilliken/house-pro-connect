@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Download, Eye, X } from "lucide-react";
 import {
@@ -118,7 +119,7 @@ export const FileListItem = ({ name, size, type, url, onDownload, onView, onDele
           </div>
         </div>
         
-        {/* Tags section - moved under the file name and details */}
+        {/* Tags section - displayed below the file name and details */}
         {tags.length > 0 && (
           <div className="ml-11 mt-1 flex flex-wrap gap-1">
             {tags.map((tag, idx) => (
