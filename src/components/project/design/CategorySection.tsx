@@ -50,6 +50,12 @@ const CategorySection = ({
     setShowSelectDialog(false);
   };
 
+  const handleUpdateTags = (fileIndex: number, updatedTags: string[]) => {
+    if (onUpdateTags) {
+      onUpdateTags(fileIndex, updatedTags);
+    }
+  };
+
   // Filter files to only show those associated with the current room
   const roomFiles = files.filter(file => !file.roomId || file.roomId === roomId);
 
@@ -86,6 +92,7 @@ const CategorySection = ({
               onDelete={() => onDelete(index)}
               onRemove={() => onDelete(index)}
               tags={file.tags}
+              onUpdateTags={onUpdateTags ? (tags) => handleUpdateTags(index, tags) : undefined}
             />
           ))}
         </div>

@@ -21,6 +21,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import { FileTags } from "@/components/ui/file-upload";
 
 interface FileListItemProps {
   name: string;
@@ -32,9 +33,21 @@ interface FileListItemProps {
   onDelete: () => void;
   onRemove: () => void;
   tags?: string[];
+  onUpdateTags?: (tags: string[]) => void;
 }
 
-export const FileListItem = ({ name, size, type, url, onDownload, onView, onDelete, onRemove, tags = [] }: FileListItemProps) => {
+export const FileListItem = ({ 
+  name, 
+  size, 
+  type, 
+  url, 
+  onDownload, 
+  onView, 
+  onDelete, 
+  onRemove, 
+  tags = [],
+  onUpdateTags
+}: FileListItemProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
@@ -48,6 +61,13 @@ export const FileListItem = ({ name, size, type, url, onDownload, onView, onDele
     setShowPreview(true);
   };
 
+  const handleRemoveTag = (tagToRemove: string) => {
+    if (onUpdateTags) {
+      const newTags = tags.filter(tag => tag !== tagToRemove);
+      onUpdateTags(newTags);
+    }
+  };
+
   const getFileTypeColor = () => {
     switch (type) {
       case 'pdf':
@@ -59,24 +79,6 @@ export const FileListItem = ({ name, size, type, url, onDownload, onView, onDele
         return { bg: 'bg-purple-100', text: 'text-purple-600' };
       default:
         return { bg: 'bg-gray-100', text: 'text-gray-600' };
-    }
-  };
-
-  const getTagColor = (tag: string) => {
-    switch (tag.toLowerCase()) {
-      case 'drawing':
-      case 'drawings':
-        return 'bg-blue-100 text-blue-800';
-      case 'rendering':
-      case 'renderings':
-        return 'bg-purple-100 text-purple-800';
-      case 'architectural':
-        return 'bg-green-100 text-green-800';
-      case 'blueprint':
-      case 'blueprints':
-        return 'bg-indigo-100 text-indigo-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -119,17 +121,13 @@ export const FileListItem = ({ name, size, type, url, onDownload, onView, onDele
           </div>
         </div>
         
-        {/* Tags section - properly positioned below the file details */}
+        {/* Tags section - using FileTags component */}
         {tags.length > 0 && (
-          <div className="ml-11 mt-1 flex flex-wrap gap-1">
-            {tags.map((tag, idx) => (
-              <span 
-                key={idx} 
-                className={`inline-flex items-center text-xs px-2 py-0.5 rounded ${getTagColor(tag)}`}
-              >
-                {tag}
-              </span>
-            ))}
+          <div className="ml-11 mt-1">
+            <FileTags 
+              tags={tags} 
+              onRemoveTag={onUpdateTags ? handleRemoveTag : undefined} 
+            />
           </div>
         )}
       </div>
