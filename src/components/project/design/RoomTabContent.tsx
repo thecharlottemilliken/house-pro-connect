@@ -18,7 +18,7 @@ interface RoomTabContentProps {
   hasDesigns: boolean;
   hasRenderings: boolean;
   designers: Array<{ id: string; businessName: string }>;
-  designAssets?: Array<{ name: string; url: string }>;
+  designAssets?: Array<{ name: string; url: string; tags?: string[] }>;
   renderingImages?: string[];
   beforePhotos: string[];
   measurements?: {
@@ -43,6 +43,7 @@ interface RoomTabContentProps {
   onUploadBeforePhotos: (photos: string[]) => void;
   onAddProjectFiles: (files: string[]) => void;
   onRemoveDesignAsset: (index: number) => void;
+  onUpdateAssetTags: (assetIndex: number, tags: string[]) => void; // Added missing prop
   onAddInspirationImages: (images: string[], roomId?: string) => void;
   onAddPinterestBoards: (boards: any[], room: string, roomId?: string) => void;
 }
@@ -71,6 +72,7 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
   onUploadBeforePhotos,
   onAddProjectFiles,
   onRemoveDesignAsset,
+  onUpdateAssetTags, // Added the prop here
   onAddInspirationImages,
   onAddPinterestBoards
 }) => {
@@ -105,6 +107,7 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
                 projectId={projectId}
                 onSelectProjectFiles={onAddProjectFiles}
                 onRemoveDesignAsset={onRemoveDesignAsset}
+                onUpdateAssetTags={onUpdateAssetTags} // Pass the prop to RoomDetails
               />
             </div>
             

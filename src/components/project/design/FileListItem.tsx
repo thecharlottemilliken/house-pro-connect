@@ -30,9 +30,10 @@ interface FileListItemProps {
   onDownload: () => void;
   onView: () => void;
   onDelete: () => void;
+  onRemove: () => void; // Added the missing onRemove prop
 }
 
-export const FileListItem = ({ name, size, type, url, onDownload, onView, onDelete }: FileListItemProps) => {
+export const FileListItem = ({ name, size, type, url, onDownload, onView, onDelete, onRemove }: FileListItemProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
