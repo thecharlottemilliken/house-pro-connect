@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import PinterestConnector from "./PinterestConnector";
 import { Button } from "@/components/ui/button";
@@ -209,33 +208,31 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
   };
 
   return (
-    <Card className="overflow-hidden border-0 shadow-md">
-      <CardContent className="p-0">
-        <div className="bg-[#174c65] text-white p-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="font-semibold text-xl">Inspiration</h3>
-              <p className="text-white/80 mt-1">Collect design ideas for your {currentRoom.toLowerCase()}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="secondary"
-                size="sm"
-                className="bg-white text-[#174c65] hover:bg-gray-100 flex items-center gap-1"
-                onClick={() => setIsUploadModalOpen(true)}
-              >
-                <ImagePlus className="h-4 w-4" /> 
-                <span className="hidden sm:inline">Add Inspiration</span>
-              </Button>
-              <PinterestConnector onBoardsSelected={handlePinterestBoardsSelected} />
-            </div>
+    <Card className="overflow-hidden border border-gray-200 rounded-xl shadow-sm bg-white text-black h-full">
+      <CardContent className="p-6">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h3 className="font-bold text-2xl">Inspiration</h3>
+            <p className="text-gray-500 mt-1">Collect design ideas for your {currentRoom.toLowerCase()}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline"
+              size="sm"
+              className="bg-white text-gray-700 hover:bg-gray-100 flex items-center gap-1"
+              onClick={() => setIsUploadModalOpen(true)}
+            >
+              <ImagePlus className="h-4 w-4" /> 
+              <span className="hidden sm:inline">Add Inspiration</span>
+            </Button>
+            <PinterestConnector onBoardsSelected={handlePinterestBoardsSelected} />
           </div>
         </div>
         
         {!hasInspiration ? (
           <div className="p-10 flex flex-col items-center justify-center text-center">
-            <div className="w-12 h-12 rounded-full bg-[#174c65]/10 flex items-center justify-center mb-3">
-              <ImagePlus className="h-6 w-6 text-[#174c65]" />
+            <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+              <ImagePlus className="h-6 w-6 text-gray-500" />
             </div>
             <h4 className="font-semibold text-gray-900">Add design inspiration</h4>
             <p className="text-gray-500 max-w-md mt-1 mb-4">
@@ -244,24 +241,24 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
             <div className="flex flex-col sm:flex-row gap-3">
               <Button 
                 variant="outline" 
-                className="border-[#174c65] text-[#174c65] hover:bg-[#174c65]/5"
+                className="border-gray-300 text-gray-700 hover:bg-gray-100"
                 onClick={() => setIsUploadModalOpen(true)}
               >
                 <Plus className="h-4 w-4 mr-2" /> Upload Images
               </Button>
               <PinterestConnector 
                 onBoardsSelected={handlePinterestBoardsSelected} 
-                buttonClassName="border-[#174c65] text-[#174c65] hover:bg-[#174c65]/5"
+                buttonClassName="border-gray-300 text-gray-700 hover:bg-gray-100"
               />
             </div>
           </div>
         ) : (
-          <div className="p-6">
+          <div>
             <div className="flex space-x-4 mb-6">
               <button
                 className={`pb-2 text-base font-medium border-b-2 transition-colors ${
                   selectedTab === 'uploaded'
-                    ? 'border-[#174c65] text-[#174c65]'
+                    ? 'border-gray-900 text-gray-900'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
                 onClick={() => setSelectedTab('uploaded')}
@@ -271,7 +268,7 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
               <button
                 className={`pb-2 text-base font-medium border-b-2 transition-colors ${
                   selectedTab === 'pinterest'
-                    ? 'border-[#174c65] text-[#174c65]'
+                    ? 'border-gray-900 text-gray-900'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
                 onClick={() => setSelectedTab('pinterest')}
@@ -291,7 +288,7 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
                   <p className="text-gray-500">No images uploaded yet</p>
                   <Button 
                     variant="outline" 
-                    className="mt-4 border-[#174c65] text-[#174c65] hover:bg-[#174c65]/5"
+                    className="mt-4 border-gray-300 text-gray-700 hover:bg-gray-100"
                     onClick={() => setIsUploadModalOpen(true)}
                   >
                     <Plus className="h-4 w-4 mr-2" /> Upload Images
@@ -317,7 +314,7 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
                   <p className="text-gray-500">No Pinterest boards connected yet</p>
                   <PinterestConnector 
                     onBoardsSelected={handlePinterestBoardsSelected}
-                    buttonClassName="mt-4 border-[#174c65] text-[#174c65] hover:bg-[#174c65]/5"
+                    buttonClassName="mt-4 border-gray-300 text-gray-700 hover:bg-gray-100"
                   />
                 </div>
               )
