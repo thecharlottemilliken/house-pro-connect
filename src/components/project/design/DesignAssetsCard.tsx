@@ -3,6 +3,19 @@ import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import CategorySection from "./CategorySection";
+import { Json } from "@/integrations/supabase/types";
+
+// Interface for design asset objects
+interface DesignAsset {
+  name: string;
+  size: string;
+  type: 'pdf' | 'xls' | 'jpg' | 'png';
+  url?: string;
+  tags?: string[];
+  roomId?: string;
+  id?: string;
+  createdAt?: string;
+}
 
 interface DesignAssetsCardProps {
   hasRenderings: boolean;
@@ -30,36 +43,15 @@ const DesignAssetsCard = ({
   propertyPhotos = []
 }: DesignAssetsCardProps) => {
   const [isUploading, setIsUploading] = useState(false);
-  const [blueprintFile, setBlueprintFile] = useState<{
-    name: string;
-    size: string;
-    type: 'pdf' | 'xls' | 'jpg' | 'png';
-    url?: string;
-    tags?: string[];
-    roomId?: string;
-  } | null>(propertyBlueprint ? {
+  const [blueprintFile, setBlueprintFile] = useState<DesignAsset | null>(propertyBlueprint ? {
     name: "Blueprint.pdf",
     size: "1.2MB",
     type: 'pdf',
     url: propertyBlueprint,
     tags: ['Blueprint']
   } : null);
-  const [renderingFiles, setRenderingFiles] = useState<{
-    name: string;
-    size: string;
-    type: 'jpg' | 'png' | 'pdf';
-    url?: string;
-    tags?: string[];
-    roomId?: string;
-  }[]>([]);
-  const [drawingFiles, setDrawingFiles] = useState<{
-    name: string;
-    size: string;
-    type: 'jpg' | 'png' | 'pdf';
-    url?: string;
-    tags?: string[];
-    roomId?: string;
-  }[]>([]);
+  const [renderingFiles, setRenderingFiles] = useState<DesignAsset[]>([]);
+  const [drawingFiles, setDrawingFiles] = useState<DesignAsset[]>([]);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   // Effect to load data when component mounts or room changes
@@ -101,7 +93,7 @@ const DesignAssetsCard = ({
       }
       if (preferences?.renderings) {
         console.log('Found existing renderings:', preferences.renderings);
-        const files = preferences.renderings.map((url: string, index: number) => {
+        const files = (preferences.renderings as string[]).map((url: string, index: number) => {
           const fileType = url.toLowerCase().endsWith('.png') ? 'png' : 'jpg';
           return {
             name: `Rendering_${index + 1}.${fileType}`,
@@ -138,7 +130,7 @@ const DesignAssetsCard = ({
       }
       if (preferences?.drawings) {
         console.log('Found existing drawings:', preferences.drawings);
-        const files = preferences.drawings.map((url: string, index: number) => {
+        const files = (preferences.drawings as string[]).map((url: string, index: number) => {
           const fileType = url.toLowerCase().endsWith('.png') ? 'png' : 'jpg';
           return {
             name: `Drawing_${index + 1}.${fileType}`,
@@ -180,8 +172,9 @@ const DesignAssetsCard = ({
       
       // Check if we have design assets and find any blueprints
       if (preferences?.design_assets && Array.isArray(preferences.design_assets)) {
-        const blueprintAssets = preferences.design_assets.filter(
-          (asset: any) => asset.tags && asset.tags.includes('Blueprint')
+        const designAssets = preferences.design_assets as any[];
+        const blueprintAssets = designAssets.filter(
+          (asset) => asset.tags && asset.tags.includes('Blueprint')
         );
         
         if (blueprintAssets.length > 0) {
@@ -230,7 +223,7 @@ const DesignAssetsCard = ({
       }
       
       // Create new blueprint asset object
-      const blueprintAsset = {
+      const blueprintAsset: DesignAsset = {
         id: Date.now().toString(),
         name: "Blueprint.pdf",
         size: "1.2MB",
@@ -242,7 +235,12 @@ const DesignAssetsCard = ({
       };
       
       // Update existing design assets or create new array
-      const existingAssets = existingPrefs?.design_assets || [];
+      const existingAssets = existingPrefs?.design_assets ? 
+                            (Array.isArray(existingPrefs.design_assets) ? 
+                              existingPrefs.design_assets as any[] : 
+                              []) : 
+                            [];
+      
       const updatedAssets = [
         ...existingAssets.filter((asset: any) => 
           !(asset.tags && asset.tags.includes('Blueprint'))
@@ -322,7 +320,11 @@ const DesignAssetsCard = ({
       
       if (existingPrefs && existingPrefs.design_assets) {
         // Filter out blueprint assets
-        const updatedAssets = existingPrefs.design_assets.filter(
+        const designAssets = Array.isArray(existingPrefs.design_assets) ? 
+                            existingPrefs.design_assets as any[] : 
+                            [];
+        
+        const updatedAssets = designAssets.filter(
           (asset: any) => !(asset.tags && asset.tags.includes('Blueprint'))
         );
         
@@ -727,7 +729,11 @@ const DesignAssetsCard = ({
       }
       
       // Create or update the tags_metadata field
-      let tagsMetadata = preferences?.tags_metadata || {};
+      let tagsMetadata = preferences?.tags_metadata ? 
+                         (typeof preferences.tags_metadata === 'object' ? 
+                          preferences.tags_metadata as Record<string, any> : 
+                          {}) : 
+                         {};
       
       if (!tagsMetadata[field]) {
         tagsMetadata[field] = {};
@@ -736,7 +742,7 @@ const DesignAssetsCard = ({
       if (fileType === 'blueprint') {
         // For blueprints, update the matching asset in the design_assets array
         const {
-          data: designAssets,
+          data: designPrefs,
           error: assetsError
         } = await supabase.from('room_design_preferences')
                           .select('design_assets')
@@ -747,8 +753,12 @@ const DesignAssetsCard = ({
           throw assetsError;
         }
         
-        if (designAssets?.design_assets) {
-          const updatedAssets = designAssets.design_assets.map((asset: any) => {
+        if (designPrefs?.design_assets) {
+          const designAssets = Array.isArray(designPrefs.design_assets) ? 
+                              designPrefs.design_assets as any[] : 
+                              [];
+          
+          const updatedAssets = designAssets.map((asset: any) => {
             if (asset.tags && asset.tags.includes('Blueprint')) {
               return {
                 ...asset,
