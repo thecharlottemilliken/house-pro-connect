@@ -120,19 +120,13 @@ export const useDesignActions = (projectId?: string) => {
     try {
       if (!projectId) return;
       
-      // Update type definition here to include tags
-      const existingAssets = [...(designPreferences.designAssets || [])].map(asset => ({
-        name: asset.name,
-        url: asset.url,
-        tags: asset.tags || []
-      }));
+      const existingAssets = [...(designPreferences.designAssets || [])];
       
       const newAssets = selectedFiles.map(url => {
         const fileName = url.split('/').pop() || 'File';
         return {
           name: fileName,
-          url: url,
-          tags: []
+          url: url
         };
       });
       
@@ -172,12 +166,7 @@ export const useDesignActions = (projectId?: string) => {
     try {
       if (!projectId) return;
       
-      // Update existing assets with tags support
-      const existingAssets = [...(designPreferences.designAssets || [])].map(asset => ({
-        name: asset.name,
-        url: asset.url,
-        tags: asset.tags || []
-      }));
+      const existingAssets = [...(designPreferences.designAssets || [])];
       
       if (assetIndex >= 0 && assetIndex < existingAssets.length) {
         existingAssets.splice(assetIndex, 1);
@@ -207,53 +196,6 @@ export const useDesignActions = (projectId?: string) => {
       toast({
         title: "Error",
         description: "Failed to remove design asset. Please try again.",
-        variant: "destructive"
-      });
-    }
-  }, [projectId]);
-
-  const handleUpdateAssetTags = useCallback(async (assetIndex: number, tags: string[], designPreferences: DesignPreferences) => {
-    try {
-      if (!projectId) return;
-      
-      // Update existing assets with tags support
-      const existingAssets = [...(designPreferences.designAssets || [])].map(asset => ({
-        name: asset.name,
-        url: asset.url,
-        tags: asset.tags || []
-      }));
-      
-      if (assetIndex >= 0 && assetIndex < existingAssets.length) {
-        existingAssets[assetIndex] = {
-          ...existingAssets[assetIndex],
-          tags
-        };
-      }
-      
-      const updatedDesignPreferences: Record<string, unknown> = {
-        ...designPreferences,
-        designAssets: existingAssets
-      };
-      
-      const { error } = await supabase
-        .from('projects')
-        .update({
-          design_preferences: updatedDesignPreferences as unknown as Json
-        })
-        .eq('id', projectId);
-        
-      if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Asset tags updated successfully"
-      });
-      
-    } catch (error: any) {
-      console.error('Error updating asset tags:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update asset tags. Please try again.",
         variant: "destructive"
       });
     }
@@ -398,7 +340,6 @@ export const useDesignActions = (projectId?: string) => {
     handleUploadBeforePhotos,
     handleAddProjectFiles,
     handleRemoveDesignAsset,
-    handleUpdateAssetTags,
     handleAddPinterestBoards,
     handleAddInspirationImages
   };

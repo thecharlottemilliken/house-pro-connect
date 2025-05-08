@@ -40,7 +40,7 @@ export interface ProjectData {
 export interface DesignPreferences {
   hasDesigns: boolean;
   designers?: Array<{ id: string; businessName: string; }>;
-  designAssets?: Array<{ name: string; url: string; tags?: string[] }>;
+  designAssets?: Array<{ name: string; url: string; }>;
   renderingImages?: string[];
   inspirationImages?: string[];
   pinterestBoards?: PinterestBoard[];

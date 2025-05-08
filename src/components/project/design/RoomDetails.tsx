@@ -1,7 +1,7 @@
 
 import React, { useState, useRef } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { FileText, Eye, Download, X, Upload, MapPin, Ruler, SquareDot, Tag } from "lucide-react";
+import { FileText, Eye, Download, X, Upload, MapPin, Ruler, SquareDot } from "lucide-react";
 import EmptyDesignState from "./EmptyDesignState";
 import DesignTabHeader from "./DesignTabHeader";
 import BeforePhotosCard from "./BeforePhotosCard";
@@ -24,7 +24,7 @@ interface RoomDetailsProps {
   area: string;
   location?: string;
   designers?: Array<{ id: string; businessName: string; }>;
-  designAssets?: Array<{ name: string; url: string; tags?: string[] }>;
+  designAssets?: Array<{ name: string; url: string; }>;
   measurements?: {
     length?: number;
     width?: number;
@@ -42,7 +42,6 @@ interface RoomDetailsProps {
   projectId?: string;
   onSelectProjectFiles?: (files: string[]) => void;
   onRemoveDesignAsset?: (index: number) => void;
-  onUpdateAssetTags?: (index: number, tags: string[]) => void;
 }
 
 const RoomDetails = ({
@@ -60,16 +59,11 @@ const RoomDetails = ({
   beforePhotos = [],
   projectId,
   onSelectProjectFiles,
-  onRemoveDesignAsset,
-  onUpdateAssetTags
+  onRemoveDesignAsset
 }: RoomDetailsProps) => {
   const hasDesigner = designers && designers.length > 0;
   const [showProjectFilesDialog, setShowProjectFilesDialog] = useState(false);
   const [previewAsset, setPreviewAsset] = useState<{name: string; url: string; type: string} | null>(null);
-  const [tagDialogOpen, setTagDialogOpen] = useState(false);
-  const [currentAssetIndex, setCurrentAssetIndex] = useState<number | null>(null);
-  const [assetTags, setAssetTags] = useState<string[]>([]);
-  const [newTag, setNewTag] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Calculate square footage based on measurements
@@ -171,40 +165,6 @@ const RoomDetails = ({
     }
   };
 
-  const openTagDialog = (index: number) => {
-    setCurrentAssetIndex(index);
-    setAssetTags(designAssets[index].tags || []);
-    setTagDialogOpen(true);
-  };
-
-  const handleAddTag = () => {
-    if (newTag.trim() && !assetTags.includes(newTag.trim())) {
-      const updatedTags = [...assetTags, newTag.trim()];
-      setAssetTags(updatedTags);
-      setNewTag('');
-      
-      if (currentAssetIndex !== null && onUpdateAssetTags) {
-        onUpdateAssetTags(currentAssetIndex, updatedTags);
-      }
-    }
-  };
-
-  const handleRemoveTag = (tagToRemove: string) => {
-    const updatedTags = assetTags.filter(tag => tag !== tagToRemove);
-    setAssetTags(updatedTags);
-    
-    if (currentAssetIndex !== null && onUpdateAssetTags) {
-      onUpdateAssetTags(currentAssetIndex, updatedTags);
-    }
-  };
-
-  const handleSubmitTags = () => {
-    if (currentAssetIndex !== null && onUpdateAssetTags) {
-      onUpdateAssetTags(currentAssetIndex, assetTags);
-    }
-    setTagDialogOpen(false);
-  };
-
   return (
     <Card className="overflow-hidden rounded-lg border shadow-sm h-full">
       <CardContent className="p-6">
@@ -279,32 +239,8 @@ const RoomDetails = ({
                   <div className="flex items-center gap-2">
                     <FileText className="h-4 w-4 text-gray-500" />
                     <span className="text-sm font-medium truncate max-w-[180px]">{asset.name}</span>
-                    {asset.tags && asset.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {asset.tags.slice(0, 2).map((tag) => (
-                          <span 
-                            key={tag}
-                            className="inline-flex items-center text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-700"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                        {asset.tags.length > 2 && (
-                          <span className="inline-flex items-center text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-700">
-                            +{asset.tags.length - 2}
-                          </span>
-                        )}
-                      </div>
-                    )}
                   </div>
                   <div className="flex items-center">
-                    <button
-                      onClick={() => openTagDialog(idx)}
-                      className="p-1 text-gray-400 hover:text-gray-700 mr-1"
-                      title="Add Tags"
-                    >
-                      <Tag className="h-4 w-4" />
-                    </button>
                     <button 
                       onClick={() => handleRemoveAsset(idx)} 
                       className="p-1 text-gray-400 hover:text-gray-700"
@@ -388,66 +324,6 @@ const RoomDetails = ({
                 </Button>
               </div>
             )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Tag Dialog */}
-      <Dialog open={tagDialogOpen} onOpenChange={setTagDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Manage Asset Tags</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            {/* Display existing tags */}
-            <div className="flex flex-wrap gap-2">
-              {assetTags.map((tag) => (
-                <div 
-                  key={tag}
-                  className="flex items-center gap-1 bg-gray-100 px-3 py-1 rounded-full"
-                >
-                  <span>{tag}</span>
-                  <button 
-                    onClick={() => handleRemoveTag(tag)}
-                    className="text-gray-400 hover:text-gray-700"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-            
-            {/* Add new tag */}
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newTag}
-                onChange={(e) => setNewTag(e.target.value)}
-                placeholder="Add a tag..."
-                className="flex-1 px-3 py-2 border rounded-md"
-                onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
-              />
-              <Button 
-                onClick={handleAddTag}
-                variant="outline"
-                type="button"
-              >
-                Add
-              </Button>
-            </div>
-          </div>
-          
-          <div className="flex justify-end gap-2">
-            <Button 
-              variant="outline"
-              onClick={() => setTagDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleSubmitTags}>
-              Save Tags
-            </Button>
           </div>
         </DialogContent>
       </Dialog>

@@ -7,21 +7,18 @@ import SelectPropertyPhotosDialog from "./SelectPropertyPhotosDialog";
 import { Dialog } from "@/components/ui/dialog";
 
 interface EmptyPhotoStateProps {
-  area: string | undefined;
+  area: string;
   propertyPhotos: string[];
   onSelectBeforePhotos: (photos: string[]) => void;
   onUploadBeforePhotos: (photos: string[]) => void;
 }
 
 const EmptyPhotoState = ({
-  area = "",
+  area,
   propertyPhotos,
   onSelectBeforePhotos,
   onUploadBeforePhotos
 }: EmptyPhotoStateProps) => {
-  // Safely handle the area string, ensuring it exists before calling toLowerCase()
-  const areaText = area ? area.toLowerCase() : "room";
-
   return (
     <div className="flex flex-col items-center justify-center text-center py-6">
       <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
@@ -29,7 +26,7 @@ const EmptyPhotoState = ({
       </div>
       <h4 className="font-semibold text-gray-900">No before photos added yet</h4>
       <p className="text-gray-500 max-w-md mt-1 mb-6">
-        Upload photos of your {areaText} before renovation to document the transformation
+        Upload photos of your {area.toLowerCase()} before renovation to document the transformation
       </p>
       
       <div className="grid grid-cols-2 gap-4 w-full mt-2">
