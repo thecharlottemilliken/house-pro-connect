@@ -17,7 +17,7 @@ interface RoomTabContentProps {
   hasDesigns: boolean;
   hasRenderings: boolean;
   designers: Array<{ id: string; businessName: string }>;
-  designAssets?: Array<{ name: string; url: string; tags?: string[]; }>;
+  designAssets?: Array<{ name: string; url: string; tags?: string[]; roomId?: string }>;
   renderingImages?: string[];
   beforePhotos: string[];
   measurements?: {
@@ -78,6 +78,14 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
   const handleAddDesignPlans = () => console.log("Add design plans clicked");
   const [showMeasuringDialog, setShowMeasuringDialog] = useState(false);
   
+  // Filter design assets for the current room
+  const roomDesignAssets = designAssets.filter(asset => 
+    !asset.roomId || asset.roomId === roomId || 
+    // Also include assets that have a tag matching the room name
+    (asset.tags && asset.tags.some(tag => 
+      tag.toLowerCase() === area.area.toLowerCase()))
+  );
+  
   // Check if measurements exist
   const hasMeasurements = measurements && 
     (measurements.length || measurements.width || measurements.height || measurements.additionalNotes);
@@ -94,7 +102,8 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
               area={area.area}
               location={area.location}
               designers={designers}
-              designAssets={designAssets}
+              // Pass the filtered design assets specific to this room
+              designAssets={roomDesignAssets}
               measurements={measurements}
               onAddDesigner={onAddDesigner}
               onUploadAssets={() => console.log("Upload assets clicked")}
@@ -105,8 +114,25 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
               beforePhotos={beforePhotos}
               projectId={projectId}
               onSelectProjectFiles={onAddProjectFiles}
-              onRemoveDesignAsset={onRemoveDesignAsset}
-              onUpdateAssetTags={onUpdateAssetTags}
+              onRemoveDesignAsset={(index) => {
+                // Find the original index in the full designAssets array
+                const assetToRemove = roomDesignAssets[index];
+                const originalIndex = designAssets.findIndex(asset => 
+                  asset.name === assetToRemove.name && 
+                  asset.url === assetToRemove.url
+                );
+                onRemoveDesignAsset(originalIndex);
+              }}
+              onUpdateAssetTags={(index, tags) => {
+                // Find the original index in the full designAssets array
+                const assetToUpdate = roomDesignAssets[index];
+                const originalIndex = designAssets.findIndex(asset => 
+                  asset.name === assetToUpdate.name && 
+                  asset.url === assetToUpdate.url
+                );
+                onUpdateAssetTags(originalIndex, tags);
+              }}
+              roomId={roomId}
             />
           </div>
           
@@ -147,7 +173,7 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
       </div>
       
       {/* Show empty design state only when explicitly indicated and no designers or assets */}
-      {!hasDesigns && designAssets.length === 0 && designers.length === 0 && (
+      {!hasDesigns && roomDesignAssets.length === 0 && designers.length === 0 && (
         <EmptyDesignState 
           type="no-designs"
           onAction={handleAddDesignPlans}

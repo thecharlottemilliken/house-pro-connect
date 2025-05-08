@@ -46,6 +46,7 @@ const CategorySection = ({
   };
 
   const handleSelectExistingFiles = (selectedPhotos: string[]) => {
+    // Pass the roomId to associate files with the specific room
     onUpload(selectedPhotos, roomId);
     setShowSelectDialog(false);
   };
@@ -57,7 +58,12 @@ const CategorySection = ({
   };
 
   // Filter files to only show those associated with the current room
-  const roomFiles = files.filter(file => !file.roomId || file.roomId === roomId);
+  const roomFiles = files.filter(file => 
+    !file.roomId || file.roomId === roomId || 
+    // Also include files with tags matching the current room
+    (file.tags && currentRoom && 
+     file.tags.some(tag => tag.toLowerCase() === currentRoom.toLowerCase()))
+  );
 
   return (
     <div className="mb-6">
@@ -114,6 +120,7 @@ const CategorySection = ({
             accept={getAcceptedFileTypes()}
             multiple={false}
             onUploadComplete={(urls) => {
+              // Pass the roomId to associate uploads with specific room
               onUpload(urls, roomId);
               setShowUploadDialog(false);
             }}

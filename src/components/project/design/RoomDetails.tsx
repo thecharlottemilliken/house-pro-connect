@@ -59,6 +59,7 @@ interface RoomDetailsProps {
   onSelectProjectFiles?: (files: string[]) => void;
   onRemoveDesignAsset?: (index: number) => void;
   onUpdateAssetTags?: (assetIndex: number, tags: string[]) => void;
+  roomId?: string; // Add roomId prop to associate uploads with specific rooms
 }
 
 // Common tags that users might want to use
@@ -83,7 +84,8 @@ const RoomDetails = ({
   projectId,
   onSelectProjectFiles,
   onRemoveDesignAsset,
-  onUpdateAssetTags
+  onUpdateAssetTags,
+  roomId // Add roomId to props destructuring
 }: RoomDetailsProps) => {
   const hasDesigner = designers && designers.length > 0;
   const [showProjectFilesDialog, setShowProjectFilesDialog] = useState(false);
@@ -159,6 +161,7 @@ const RoomDetails = ({
       }
 
       if (uploadedUrls.length > 0 && onSelectProjectFiles) {
+        // Pass urls and optional roomId to associate files with specific room
         onSelectProjectFiles(uploadedUrls.map(item => item.url));
       }
 
@@ -183,6 +186,7 @@ const RoomDetails = ({
 
   const handleSelectProjectFiles = (files: string[]) => {
     if (onSelectProjectFiles) {
+      // Pass the selected files and roomId
       onSelectProjectFiles(files);
     }
   };

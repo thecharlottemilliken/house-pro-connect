@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
@@ -121,12 +122,16 @@ export const useDesignActions = (projectId?: string) => {
       
       const existingAssets = [...(designPreferences.designAssets || [])];
       
+      // Get the room ID for this area
+      const areaKey = area.toLowerCase().replace(/\s+/g, '_');
+      
       const newAssets = selectedFiles.map(url => {
         const fileName = url.split('/').pop() || 'File';
         return {
           name: fileName,
           url: url,
-          tags: []
+          tags: [area], // Add the room area as a default tag
+          roomId: areaKey // Associate asset with specific room ID
         };
       });
       
