@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Download, Eye, X } from "lucide-react";
 import {
@@ -30,8 +29,8 @@ interface FileListItemProps {
   onDownload: () => void;
   onView: () => void;
   onDelete: () => void;
-  onRemove: () => void; // Added the missing onRemove prop
-  tags?: string[]; // Add support for tags
+  onRemove: () => void;
+  tags?: string[];
 }
 
 export const FileListItem = ({ name, size, type, url, onDownload, onView, onDelete, onRemove, tags = [] }: FileListItemProps) => {
