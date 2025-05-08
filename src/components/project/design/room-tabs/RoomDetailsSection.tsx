@@ -3,6 +3,8 @@ import React from 'react';
 import RoomDetails from "../RoomDetails";
 import MeasurementsBanner from '../MeasurementsBanner';
 import RoomMeasurementsCard from '../RoomMeasurementsCard';
+import BeforePhotosCard from '../BeforePhotosCard';
+import AfterPhotosSection from '../AfterPhotosSection';
 
 interface RoomDetailsSectionProps {
   area: string;
@@ -76,7 +78,7 @@ const RoomDetailsSection: React.FC<RoomDetailsSectionProps> = ({
         />
       </div>
       
-      {/* Column 2-3: Measurements Banner/Card */}
+      {/* Column 2-3: Measurements Banner/Card and Photos */}
       <div className="lg:col-span-2 space-y-6">
         {/* Show Measurements Banner or Measurements Card */}
         {!hasMeasurements ? (
@@ -91,6 +93,23 @@ const RoomDetailsSection: React.FC<RoomDetailsSectionProps> = ({
             onSaveMeasurements={onSaveMeasurements}
           />
         )}
+        
+        {/* Before and After Photos Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <BeforePhotosCard
+            area={area}
+            beforePhotos={beforePhotos}
+            propertyPhotos={propertyPhotos}
+            onSelectBeforePhotos={onSelectBeforePhotos}
+            onUploadBeforePhotos={onUploadBeforePhotos}
+          />
+          
+          <AfterPhotosSection 
+            area={area}
+            photos={[]} 
+            onUploadPhotos={() => console.log("Upload after photos clicked")}
+          />
+        </div>
       </div>
     </div>
   );

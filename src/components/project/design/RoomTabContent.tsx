@@ -6,7 +6,6 @@ import PinterestInspirationSection from "./PinterestInspirationSection";
 import RecommendedContent from "@/components/dashboard/RecommendedContent";
 import { RoomPreference } from "@/hooks/useRoomDesign";
 import RoomDetailsSection from './room-tabs/RoomDetailsSection';
-import RoomPhotosSection from './room-tabs/RoomPhotosSection';
 import RoomMeasurementsDialog from './room-tabs/RoomMeasurementsDialog';
 
 interface RoomTabContentProps {
@@ -99,7 +98,7 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
   return (
     <div className="w-full space-y-8">
       <div className="space-y-8">
-        {/* Room Details and Measurements Section */}
+        {/* Room Details and Measurements Section with Photos */}
         <RoomDetailsSection 
           area={area.area}
           location={area.location}
@@ -141,15 +140,6 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
           onMeasureRoom={() => setShowMeasuringDialog(true)}
           beforePhotos={beforePhotos}
           propertyPhotos={propertyPhotos}
-        />
-        
-        {/* Room Photos Section */}
-        <RoomPhotosSection 
-          area={area.area}
-          beforePhotos={beforePhotos}
-          propertyPhotos={propertyPhotos}
-          onSelectBeforePhotos={onSelectBeforePhotos}
-          onUploadBeforePhotos={onUploadBeforePhotos}
         />
       </div>
       
