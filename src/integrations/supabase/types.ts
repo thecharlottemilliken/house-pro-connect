@@ -431,32 +431,38 @@ export type Database = {
       room_design_preferences: {
         Row: {
           created_at: string
+          design_assets: Json | null
           drawings: string[] | null
           id: string
           inspiration_images: string[] | null
           pinterest_boards: Json | null
           renderings: string[] | null
           room_id: string
+          tags_metadata: Json | null
           updated_at: string
         }
         Insert: {
           created_at?: string
+          design_assets?: Json | null
           drawings?: string[] | null
           id?: string
           inspiration_images?: string[] | null
           pinterest_boards?: Json | null
           renderings?: string[] | null
           room_id: string
+          tags_metadata?: Json | null
           updated_at?: string
         }
         Update: {
           created_at?: string
+          design_assets?: Json | null
           drawings?: string[] | null
           id?: string
           inspiration_images?: string[] | null
           pinterest_boards?: Json | null
           renderings?: string[] | null
           room_id?: string
+          tags_metadata?: Json | null
           updated_at?: string
         }
         Relationships: [

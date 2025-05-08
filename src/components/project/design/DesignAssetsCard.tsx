@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
@@ -169,26 +168,40 @@ const DesignAssetsCard = ({
       const {
         data: preferences,
         error
-      } = await supabase.from('room_design_preferences').select('blueprints').eq('room_id', roomId).maybeSingle();
+      } = await supabase.from('room_design_preferences')
+                        .select('design_assets')
+                        .eq('room_id', roomId)
+                        .maybeSingle();
+                        
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching blueprints:', error);
         return;
       }
       
-      if (preferences?.blueprints && preferences.blueprints.length > 0) {
-        const url = preferences.blueprints[0]; // Get first blueprint
-        console.log('Found existing blueprint:', url);
+      // Check if we have design assets and find any blueprints
+      if (preferences?.design_assets && Array.isArray(preferences.design_assets)) {
+        const blueprintAssets = preferences.design_assets.filter(
+          (asset: any) => asset.tags && asset.tags.includes('Blueprint')
+        );
         
-        setBlueprintFile({
-          name: `Blueprint.${url.toLowerCase().endsWith('.pdf') ? 'pdf' : 'jpg'}`,
-          size: "1.2MB",
-          type: url.toLowerCase().endsWith('.pdf') ? 'pdf' : 'jpg',
-          url: url,
-          tags: ['Blueprint'],
-          roomId: roomId
-        });
+        if (blueprintAssets.length > 0) {
+          const blueprint = blueprintAssets[0]; // Get first blueprint
+          console.log('Found existing blueprint:', blueprint);
+          
+          setBlueprintFile({
+            name: blueprint.name || "Blueprint",
+            size: blueprint.size || "1.2MB",
+            type: blueprint.type || 'pdf',
+            url: blueprint.url,
+            tags: blueprint.tags || ['Blueprint'],
+            roomId: roomId
+          });
+        } else {
+          // If no blueprints found in design_assets, clear blueprint
+          setBlueprintFile(null);
+        }
       } else {
-        // Clear blueprint if none found for this room
+        // Clear blueprint if no design assets found
         setBlueprintFile(null);
       }
     } catch (error) {
@@ -206,12 +219,36 @@ const DesignAssetsCard = ({
       const {
         data: existingPrefs,
         error: fetchError
-      } = await supabase.from('room_design_preferences').select('blueprints').eq('room_id', roomId).maybeSingle();
+      } = await supabase.from('room_design_preferences')
+                        .select('design_assets')
+                        .eq('room_id', roomId)
+                        .maybeSingle();
       
       if (fetchError && fetchError.code !== 'PGRST116') {
         console.error('Error fetching room design preferences:', fetchError);
         throw fetchError;
       }
+      
+      // Create new blueprint asset object
+      const blueprintAsset = {
+        id: Date.now().toString(),
+        name: "Blueprint.pdf",
+        size: "1.2MB",
+        type: 'pdf',
+        url: urls[0],
+        tags: ['Blueprint'],
+        roomId: roomId,
+        createdAt: new Date().toISOString()
+      };
+      
+      // Update existing design assets or create new array
+      const existingAssets = existingPrefs?.design_assets || [];
+      const updatedAssets = [
+        ...existingAssets.filter((asset: any) => 
+          !(asset.tags && asset.tags.includes('Blueprint'))
+        ),
+        blueprintAsset
+      ];
       
       let updateError;
       
@@ -220,7 +257,7 @@ const DesignAssetsCard = ({
         const {
           error
         } = await supabase.from('room_design_preferences').update({
-          blueprints: [urls[0]],
+          design_assets: updatedAssets,
           updated_at: new Date().toISOString()
         }).eq('room_id', roomId);
         updateError = error;
@@ -230,7 +267,7 @@ const DesignAssetsCard = ({
           error
         } = await supabase.from('room_design_preferences').insert({
           room_id: roomId,
-          blueprints: [urls[0]],
+          design_assets: [blueprintAsset],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         });
@@ -274,17 +311,25 @@ const DesignAssetsCard = ({
       const {
         data: existingPrefs,
         error: fetchError
-      } = await supabase.from('room_design_preferences').select('blueprints').eq('room_id', roomId).maybeSingle();
+      } = await supabase.from('room_design_preferences')
+                        .select('design_assets')
+                        .eq('room_id', roomId)
+                        .maybeSingle();
       
       if (fetchError && fetchError.code !== 'PGRST116') {
         throw fetchError;
       }
       
-      if (existingPrefs) {
+      if (existingPrefs && existingPrefs.design_assets) {
+        // Filter out blueprint assets
+        const updatedAssets = existingPrefs.design_assets.filter(
+          (asset: any) => !(asset.tags && asset.tags.includes('Blueprint'))
+        );
+        
         const {
           error: updateError
         } = await supabase.from('room_design_preferences').update({
-          blueprints: [],
+          design_assets: updatedAssets,
           updated_at: new Date().toISOString()
         }).eq('room_id', roomId);
         
@@ -305,6 +350,9 @@ const DesignAssetsCard = ({
       });
     }
   };
+
+  // Keep existing rendering, drawing handling functions
+  // ... keep existing code (handleAddRenderings and handleRemoveRendering functions)
 
   const handleAddRenderings = async (urls: string[], targetRoomId?: string) => {
     console.log("Adding rendering URLs:", urls);
@@ -458,6 +506,8 @@ const DesignAssetsCard = ({
       });
     }
   };
+
+  // ... keep existing code (handleAddDrawings and handleRemoveDrawing functions)
 
   const handleAddDrawings = async (urls: string[], targetRoomId?: string) => {
     console.log("Adding drawing URLs:", urls);
@@ -632,8 +682,8 @@ const DesignAssetsCard = ({
         files = drawingFiles;
         field = 'drawings';
       } else if (fileType === 'blueprint') {
-        // For blueprints, we don't need the index since there's only one
-        field = 'blueprints';
+        // For blueprints, we'll update the design_assets array
+        field = 'design_assets';
       } else {
         throw new Error('Invalid file type');
       }
@@ -662,11 +712,14 @@ const DesignAssetsCard = ({
         });
       }
       
-      // Save tags in design preferences metadata
+      // Save tags in design preferences tags_metadata
       const {
         data: preferences,
         error: fetchError
-      } = await supabase.from('room_design_preferences').select('*').eq('room_id', roomId).maybeSingle();
+      } = await supabase.from('room_design_preferences')
+                        .select('tags_metadata')
+                        .eq('room_id', roomId)
+                        .maybeSingle();
       
       if (fetchError && fetchError.code !== 'PGRST116') {
         console.error('Error fetching preferences:', fetchError);
@@ -681,22 +734,54 @@ const DesignAssetsCard = ({
       }
       
       if (fileType === 'blueprint') {
-        tagsMetadata[field]['0'] = newTags;
+        // For blueprints, update the matching asset in the design_assets array
+        const {
+          data: designAssets,
+          error: assetsError
+        } = await supabase.from('room_design_preferences')
+                          .select('design_assets')
+                          .eq('room_id', roomId)
+                          .maybeSingle();
+        
+        if (assetsError && assetsError.code !== 'PGRST116') {
+          throw assetsError;
+        }
+        
+        if (designAssets?.design_assets) {
+          const updatedAssets = designAssets.design_assets.map((asset: any) => {
+            if (asset.tags && asset.tags.includes('Blueprint')) {
+              return {
+                ...asset,
+                tags: newTags
+              };
+            }
+            return asset;
+          });
+          
+          const {
+            error: updateError
+          } = await supabase.from('room_design_preferences').update({
+            design_assets: updatedAssets,
+            updated_at: new Date().toISOString()
+          }).eq('room_id', roomId);
+          
+          if (updateError) throw updateError;
+        }
       } else {
+        // For other file types, update the tags metadata
         tagsMetadata[field][index.toString()] = newTags;
-      }
-      
-      // Update the database
-      const {
-        error: updateError
-      } = await supabase.from('room_design_preferences').update({
-        tags_metadata: tagsMetadata,
-        updated_at: new Date().toISOString()
-      }).eq('room_id', roomId);
-      
-      if (updateError) {
-        console.error('Error updating tags:', updateError);
-        throw updateError;
+        
+        const {
+          error: updateError
+        } = await supabase.from('room_design_preferences').update({
+          tags_metadata: tagsMetadata,
+          updated_at: new Date().toISOString()
+        }).eq('room_id', roomId);
+        
+        if (updateError) {
+          console.error('Error updating tags:', updateError);
+          throw updateError;
+        }
       }
       
       toast({
