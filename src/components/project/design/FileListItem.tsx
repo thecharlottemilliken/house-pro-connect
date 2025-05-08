@@ -7,9 +7,24 @@ interface FileListItemProps {
   url: string;
   onRemove: () => void;
   tags?: string[];
+  onView?: () => void;
+  onDownload?: () => void;
+  onDelete?: () => void;
+  type?: 'pdf' | 'xls' | 'jpg' | 'png';
+  size?: string;
 }
 
-export const FileListItem = ({ name, url, onRemove, tags = [] }: FileListItemProps) => {
+export const FileListItem = ({ 
+  name, 
+  url, 
+  onRemove, 
+  tags = [],
+  onView,
+  onDownload,
+  onDelete,
+  type,
+  size
+}: FileListItemProps) => {
   return (
     <div className="flex items-center justify-between p-2 border rounded-lg">
       <div className="flex items-center gap-2">

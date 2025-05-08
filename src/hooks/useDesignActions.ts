@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
@@ -125,7 +126,8 @@ export const useDesignActions = (projectId?: string) => {
         const fileName = url.split('/').pop() || 'File';
         return {
           name: fileName,
-          url: url
+          url: url,
+          tags: []
         };
       });
       
@@ -209,7 +211,7 @@ export const useDesignActions = (projectId?: string) => {
       if (assetIndex >= 0 && assetIndex < existingAssets.length) {
         existingAssets[assetIndex] = {
           ...existingAssets[assetIndex],
-          tags: tags
+          tags
         };
       }
       

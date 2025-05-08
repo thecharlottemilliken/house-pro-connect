@@ -67,6 +67,24 @@ const ProjectDesignTabs = ({
     const areaRoomPreferences = roomId ? roomPreferences[roomId] || {} : {};
     const inspirationImages = areaRoomPreferences.inspiration_images || [];
     const pinterestBoards = areaRoomPreferences.pinterest_boards || [];
+
+    // Handlers for photo management
+    const handleRemovePhoto = (index: number) => {
+      if (onSelectBeforePhotos) {
+        const updatedPhotos = [...beforePhotos];
+        updatedPhotos.splice(index, 1);
+        onSelectBeforePhotos(area, updatedPhotos);
+      }
+    };
+
+    const handleReorderPhotos = (fromIndex: number, toIndex: number) => {
+      if (onSelectBeforePhotos) {
+        const updatedPhotos = [...beforePhotos];
+        const [movedPhoto] = updatedPhotos.splice(fromIndex, 1);
+        updatedPhotos.splice(toIndex, 0, movedPhoto);
+        onSelectBeforePhotos(area, updatedPhotos);
+      }
+    };
     
     return (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -88,11 +106,13 @@ const ProjectDesignTabs = ({
           />
           
           <BeforePhotosSection 
+            area={area}
             propertyPhotos={propertyPhotos}
             beforePhotos={beforePhotos}
             onSelectBeforePhotos={photos => onSelectBeforePhotos?.(area, photos)}
             onUploadBeforePhotos={photos => onUploadBeforePhotos?.(area, photos)}
-            currentRoom={area}
+            onRemovePhoto={handleRemovePhoto}
+            onReorderPhotos={handleReorderPhotos}
           />
         </div>
         
