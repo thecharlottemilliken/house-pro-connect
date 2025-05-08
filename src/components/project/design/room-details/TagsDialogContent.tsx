@@ -33,28 +33,6 @@ const TagsDialogContent: React.FC<TagsDialogContentProps> = ({
     "Kitchen", "Bathroom", "Living Room", "Bedroom", "Exterior"
   ].sort();
 
-  // Add a new tag
-  const handleAddTag = () => {
-    if (newTag.trim() !== '' && !selectedTags.includes(newTag.trim())) {
-      setSelectedTags(prev => [...prev, newTag.trim()]);
-      setNewTag('');
-    }
-  };
-
-  // Remove a tag
-  const handleRemoveTag = (tag: string) => {
-    setSelectedTags(prev => prev.filter(t => t !== tag));
-  };
-
-  // Toggle common tag
-  const handleToggleTag = (tag: string, checked: boolean) => {
-    if (checked && !selectedTags.includes(tag)) {
-      setSelectedTags(prev => [...prev, tag]);
-    } else if (!checked && selectedTags.includes(tag)) {
-      setSelectedTags(prev => prev.filter(t => t !== tag));
-    }
-  };
-
   // Add multiple custom tags at once
   const handleAddMultipleTags = () => {
     if (!newTag.trim()) return;
@@ -74,8 +52,23 @@ const TagsDialogContent: React.FC<TagsDialogContentProps> = ({
     }
   };
 
+  // Remove a tag
+  const handleRemoveTag = (tag: string) => {
+    setSelectedTags(prev => prev.filter(t => t !== tag));
+  };
+
+  // Toggle common tag
+  const handleToggleTag = (tag: string, checked: boolean) => {
+    if (checked && !selectedTags.includes(tag)) {
+      setSelectedTags(prev => [...prev, tag]);
+    } else if (!checked && selectedTags.includes(tag)) {
+      setSelectedTags(prev => prev.filter(t => t !== tag));
+    }
+  };
+
   // Save tags
   const handleSaveTags = () => {
+    console.log("Saving tags in dialog:", selectedTags);
     onSave(selectedTags);
   };
 

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Upload, FileSearch, Tag as TagIcon, Eye, Trash, Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from "@/components/ui/dialog";
@@ -33,9 +34,7 @@ const CategorySection = ({
 }: CategorySectionProps) => {
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [showSelectDialog, setShowSelectDialog] = useState(false);
-  const [tagInput, setTagInput] = useState('');
   const [selectedFileIndex, setSelectedFileIndex] = useState<number | null>(null);
-  const [isTagPopoverOpen, setIsTagPopoverOpen] = useState(false);
   const [showTagsDialog, setShowTagsDialog] = useState(false);
 
   // Common tag suggestions based on room categories
@@ -77,8 +76,10 @@ const CategorySection = ({
 
   const handleSaveTags = (tags: string[]) => {
     if (selectedFileIndex !== null && onUpdateTags) {
+      console.log("Saving tags:", tags);
       onUpdateTags(selectedFileIndex, tags);
       setShowTagsDialog(false);
+      setSelectedFileIndex(null);
     }
   };
 
@@ -146,7 +147,7 @@ const CategorySection = ({
                     <h4 className="text-sm font-medium text-gray-900">{file.name}</h4>
                     <p className="text-xs text-gray-500">{file.size}</p>
                     
-                    {/* Tags section with property form styling */}
+                    {/* Tags section with improved styling */}
                     <div className="mt-2">
                       <FileTags 
                         tags={file.tags || []} 
@@ -238,12 +239,15 @@ const CategorySection = ({
       )}
 
       {/* Tags Dialog */}
-      {selectedFileIndex !== null && roomFiles[selectedFileIndex] && (
+      {selectedFileIndex !== null && (
         <Dialog open={showTagsDialog} onOpenChange={setShowTagsDialog}>
           <TagsDialogContent 
-            tags={roomFiles[selectedFileIndex].tags || []}
+            tags={roomFiles[selectedFileIndex]?.tags || []}
             onSave={handleSaveTags}
-            onCancel={() => setShowTagsDialog(false)}
+            onCancel={() => {
+              setShowTagsDialog(false);
+              setSelectedFileIndex(null);
+            }}
           />
         </Dialog>
       )}

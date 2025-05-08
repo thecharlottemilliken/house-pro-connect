@@ -1,237 +1,381 @@
 
-import { useCallback } from 'react';
-import { supabase } from "@/integrations/supabase/client";
-import { Json } from "@/integrations/supabase/types";
-import { type PinterestBoard } from "@/types/pinterest";
-import { DesignPreferences } from "@/hooks/useProjectData";
-import { toast } from "@/hooks/use-toast";
+import { useState, useCallback } from 'react';
+import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { FileWithPreview } from '@/components/ui/file-upload';
 
-export const useDesignActions = (projectId?: string) => {
-  // Handle room measurements
-  const handleSaveMeasurements = useCallback(async (area: string, measurements: any, designPreferences: DesignPreferences) => {
+export const useDesignActions = (projectId: string | undefined) => {
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  
+  // Save room measurements
+  const handleSaveMeasurements = useCallback(async (
+    area: string,
+    measurements: Record<string, any>,
+    designPreferences: any
+  ) => {
+    if (!projectId) {
+      toast({
+        title: "Error",
+        description: "Project ID is required to save measurements",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsSaving(true);
+    
     try {
-      if (!projectId) return;
+      // Update the designPreferences object with the new measurements
+      const updatedPrefs = { ...designPreferences };
       
-      const areaKey = area.toLowerCase().replace(/\s+/g, '_');
-      const updatedMeasurements = {
-        ...(designPreferences.roomMeasurements || {}),
-        [areaKey]: measurements
-      };
+      // Make sure the measurements structure exists
+      if (!updatedPrefs.roomMeasurements) {
+        updatedPrefs.roomMeasurements = {};
+      }
       
-      const updatedDesignPreferences: Record<string, unknown> = {
-        ...designPreferences,
-        roomMeasurements: updatedMeasurements
-      };
+      // Update or add the measurements for this area
+      updatedPrefs.roomMeasurements[area] = measurements;
       
-      const { error } = await supabase.from('projects').update({
-        design_preferences: updatedDesignPreferences as unknown as Json
-      }).eq('id', projectId);
+      // Update the project in Supabase
+      const { error } = await supabase
+        .from('projects')
+        .update({ design_preferences: updatedPrefs })
+        .eq('id', projectId);
       
       if (error) throw error;
       
       toast({
         title: "Success",
-        description: `Measurements saved for ${area}`
+        description: "Room measurements saved successfully"
       });
-    } catch (error: any) {
-      console.error('Error updating room measurements:', error);
+      
+    } catch (error) {
+      console.error('Error saving measurements:', error);
       toast({
         title: "Error",
-        description: "Failed to save measurements. Please try again.",
+        description: "Failed to save measurements",
         variant: "destructive"
       });
+    } finally {
+      setIsSaving(false);
     }
   }, [projectId]);
-
-  // Handle before photos
-  const handleSelectBeforePhotos = useCallback(async (area: string, selectedPhotos: string[], designPreferences: DesignPreferences) => {
+  
+  // Select before photos from property photos
+  const handleSelectBeforePhotos = useCallback(async (
+    area: string,
+    photos: string[],
+    designPreferences: any
+  ) => {
+    if (!projectId) {
+      toast({
+        title: "Error",
+        description: "Project ID is required to save photos",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsSaving(true);
+    
     try {
-      if (!projectId) return;
+      // Update the designPreferences object with the selected photos
+      const updatedPrefs = { ...designPreferences };
       
-      const areaKey = area.toLowerCase().replace(/\s+/g, '_');
-      const updatedBeforePhotos = {
-        ...(designPreferences.beforePhotos || {}),
-        [areaKey]: selectedPhotos
-      };
+      // Make sure the beforePhotos structure exists
+      if (!updatedPrefs.beforePhotos) {
+        updatedPrefs.beforePhotos = {};
+      }
       
-      const updatedDesignPreferences: Record<string, unknown> = {
-        ...designPreferences,
-        beforePhotos: updatedBeforePhotos
-      };
+      // Add the selected photos to this area
+      updatedPrefs.beforePhotos[area] = [
+        ...(updatedPrefs.beforePhotos[area] || []),
+        ...photos
+      ];
       
-      const { error } = await supabase.from('projects').update({
-        design_preferences: updatedDesignPreferences as unknown as Json
-      }).eq('id', projectId);
+      // Remove duplicates
+      updatedPrefs.beforePhotos[area] = [...new Set(updatedPrefs.beforePhotos[area])];
+      
+      // Update the project in Supabase
+      const { error } = await supabase
+        .from('projects')
+        .update({ design_preferences: updatedPrefs })
+        .eq('id', projectId);
       
       if (error) throw error;
       
       toast({
         title: "Success",
-        description: `Selected photos added to ${area}`
+        description: `Photos added to ${area}`
       });
-    } catch (error: any) {
-      console.error('Error updating before photos:', error);
+      
+      return updatedPrefs;
+      
+    } catch (error) {
+      console.error('Error saving before photos:', error);
       toast({
         title: "Error",
-        description: "Failed to save selected photos. Please try again.",
+        description: "Failed to add photos",
         variant: "destructive"
       });
+    } finally {
+      setIsSaving(false);
     }
   }, [projectId]);
-
-  const handleUploadBeforePhotos = useCallback(async (area: string, uploadedPhotos: string[], designPreferences: DesignPreferences) => {
+  
+  // Upload new before photos
+  const handleUploadBeforePhotos = useCallback(async (
+    area: string,
+    photos: FileWithPreview[],
+    designPreferences: any
+  ) => {
+    if (!projectId) {
+      toast({
+        title: "Error",
+        description: "Project ID is required to upload photos",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsSaving(true);
+    
     try {
-      if (!projectId) return;
+      // Get urls from uploaded photos
+      const photoUrls = photos
+        .filter(p => p.status === 'complete' && p.url)
+        .map(p => p.url) as string[];
       
-      const areaKey = area.toLowerCase().replace(/\s+/g, '_');
-      const existingPhotos = designPreferences.beforePhotos?.[areaKey] || [];
-      const updatedBeforePhotos = {
-        ...(designPreferences.beforePhotos || {}),
-        [areaKey]: [...existingPhotos, ...uploadedPhotos]
-      };
+      // If no valid urls, do nothing
+      if (photoUrls.length === 0) {
+        toast({
+          title: "Warning",
+          description: "No valid photos to add",
+          variant: "destructive"
+        });
+        return;
+      }
       
-      const updatedDesignPreferences: Record<string, unknown> = {
-        ...designPreferences,
-        beforePhotos: updatedBeforePhotos
-      };
+      // Update the designPreferences object with the uploaded photos
+      const updatedPrefs = { ...designPreferences };
       
-      const { error } = await supabase.from('projects').update({
-        design_preferences: updatedDesignPreferences as unknown as Json
-      }).eq('id', projectId);
+      // Make sure the beforePhotos structure exists
+      if (!updatedPrefs.beforePhotos) {
+        updatedPrefs.beforePhotos = {};
+      }
+      
+      // Add the uploaded photos to this area
+      updatedPrefs.beforePhotos[area] = [
+        ...(updatedPrefs.beforePhotos[area] || []),
+        ...photoUrls
+      ];
+      
+      // Remove duplicates
+      updatedPrefs.beforePhotos[area] = [...new Set(updatedPrefs.beforePhotos[area])];
+      
+      // Update the project in Supabase
+      const { error } = await supabase
+        .from('projects')
+        .update({ design_preferences: updatedPrefs })
+        .eq('id', projectId);
       
       if (error) throw error;
       
       toast({
         title: "Success",
-        description: `Uploaded photos added to ${area}`
+        description: `Photos added to ${area}`
       });
-    } catch (error: any) {
-      console.error('Error updating before photos:', error);
+      
+      return updatedPrefs;
+      
+    } catch (error) {
+      console.error('Error uploading before photos:', error);
       toast({
         title: "Error",
-        description: "Failed to save uploaded photos. Please try again.",
+        description: "Failed to upload photos",
         variant: "destructive"
       });
+    } finally {
+      setIsSaving(false);
     }
   }, [projectId]);
 
-  // Handle project files
-  const handleAddProjectFiles = useCallback(async (area: string, selectedFiles: string[], designPreferences: DesignPreferences) => {
+  // Add project files (designs, renderings, etc)
+  const handleAddProjectFiles = useCallback(async (
+    area: string,
+    files: string[],
+    designPreferences: any
+  ) => {
+    if (!projectId) {
+      toast({
+        title: "Error",
+        description: "Project ID is required to add files",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsSaving(true);
+    
     try {
-      if (!projectId) return;
-      
-      const existingAssets = [...(designPreferences.designAssets || [])];
-      
-      // Get the room ID for this area
-      const areaKey = area.toLowerCase().replace(/\s+/g, '_');
-      
-      const newAssets = selectedFiles.map(url => {
-        const fileName = url.split('/').pop() || 'File';
+      // Create sample file metadata for each URL
+      const newFiles = files.map(url => {
+        const filename = url.split('/').pop() || 'file';
+        const extension = filename.split('.').pop()?.toLowerCase();
+        
+        let type = 'jpg';
+        if (extension === 'pdf') type = 'pdf';
+        else if (extension === 'xls' || extension === 'xlsx') type = 'xls';
+        
         return {
-          name: fileName,
-          url: url,
-          tags: [area], // Add the room area as a default tag
-          roomId: areaKey // Associate asset with specific room ID
+          name: filename,
+          size: '2MB', // Default size
+          type,
+          url,
+          tags: [area], // Tag with current area by default
+          roomId: area
         };
       });
       
-      const updatedAssets = [...existingAssets, ...newAssets];
+      // Update the designPreferences object with the new files
+      const updatedPrefs = { ...designPreferences };
       
-      const updatedDesignPreferences: Record<string, unknown> = {
-        ...designPreferences,
-        hasDesigns: true,
-        designAssets: updatedAssets
-      };
+      // Make sure the designAssets array exists
+      if (!updatedPrefs.designAssets) {
+        updatedPrefs.designAssets = [];
+      }
       
+      // Add the new files
+      updatedPrefs.designAssets = [
+        ...updatedPrefs.designAssets,
+        ...newFiles
+      ];
+      
+      console.log("Saving design assets:", updatedPrefs.designAssets);
+      
+      // Update the project in Supabase
       const { error } = await supabase
         .from('projects')
-        .update({
-          design_preferences: updatedDesignPreferences as unknown as Json
-        })
+        .update({ design_preferences: updatedPrefs })
         .eq('id', projectId);
-        
+      
       if (error) throw error;
       
       toast({
         title: "Success",
-        description: `${newAssets.length} project file(s) added to ${area} designs`
+        description: `Files added to ${area}`
       });
       
-    } catch (error: any) {
+      return updatedPrefs;
+      
+    } catch (error) {
       console.error('Error adding project files:', error);
       toast({
         title: "Error",
-        description: "Failed to add project files. Please try again.",
+        description: "Failed to add files",
         variant: "destructive"
       });
+    } finally {
+      setIsSaving(false);
     }
   }, [projectId]);
-
-  const handleRemoveDesignAsset = useCallback(async (assetIndex: number, designPreferences: DesignPreferences) => {
+  
+  // Remove a design asset
+  const handleRemoveDesignAsset = useCallback(async (
+    index: number,
+    designPreferences: any
+  ) => {
+    if (!projectId) {
+      toast({
+        title: "Error",
+        description: "Project ID is required to remove asset",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsSaving(true);
+    
     try {
-      if (!projectId) return;
+      // Update the designPreferences object by removing the file at index
+      const updatedPrefs = { ...designPreferences };
       
-      const existingAssets = [...(designPreferences.designAssets || [])];
-      
-      if (assetIndex >= 0 && assetIndex < existingAssets.length) {
-        existingAssets.splice(assetIndex, 1);
+      if (!updatedPrefs.designAssets || index >= updatedPrefs.designAssets.length) {
+        throw new Error("Asset not found");
       }
       
-      const updatedDesignPreferences: Record<string, unknown> = {
-        ...designPreferences,
-        designAssets: existingAssets
-      };
+      // Remove the asset at the specified index
+      updatedPrefs.designAssets.splice(index, 1);
       
+      // Update the project in Supabase
       const { error } = await supabase
         .from('projects')
-        .update({
-          design_preferences: updatedDesignPreferences as unknown as Json
-        })
+        .update({ design_preferences: updatedPrefs })
         .eq('id', projectId);
-        
+      
       if (error) throw error;
       
       toast({
         title: "Success",
-        description: "Design asset removed successfully"
+        description: "Asset removed successfully"
       });
       
-    } catch (error: any) {
+      return updatedPrefs;
+      
+    } catch (error) {
       console.error('Error removing design asset:', error);
       toast({
         title: "Error",
-        description: "Failed to remove design asset. Please try again.",
+        description: "Failed to remove asset",
         variant: "destructive"
       });
+    } finally {
+      setIsSaving(false);
     }
   }, [projectId]);
-
-  // Add a new function to handle updating tags for a design asset
-  const handleUpdateAssetTags = useCallback(async (assetIndex: number, tags: string[], designPreferences: DesignPreferences) => {
+  
+  // Update asset tags
+  const handleUpdateAssetTags = useCallback(async (
+    index: number,
+    tags: string[],
+    designPreferences: any
+  ) => {
+    if (!projectId) {
+      toast({
+        title: "Error",
+        description: "Project ID is required to update tags",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsSaving(true);
+    
     try {
-      if (!projectId) return;
+      console.log("Updating tags for index", index, "with tags:", tags);
       
-      const existingAssets = [...(designPreferences.designAssets || [])];
+      // Update the designPreferences object by updating tags for the file at index
+      const updatedPrefs = { ...designPreferences };
       
-      if (assetIndex >= 0 && assetIndex < existingAssets.length) {
-        existingAssets[assetIndex] = {
-          ...existingAssets[assetIndex],
-          tags
-        };
+      if (!updatedPrefs.designAssets || index >= updatedPrefs.designAssets.length) {
+        throw new Error("Asset not found");
       }
       
-      const updatedDesignPreferences: Record<string, unknown> = {
-        ...designPreferences,
-        designAssets: existingAssets
+      // Update the tags for the specified asset
+      updatedPrefs.designAssets[index] = {
+        ...updatedPrefs.designAssets[index],
+        tags: tags
       };
       
+      console.log("Updated design assets:", updatedPrefs.designAssets);
+      
+      // Update the project in Supabase
       const { error } = await supabase
         .from('projects')
-        .update({
-          design_preferences: updatedDesignPreferences as unknown as Json
-        })
+        .update({ design_preferences: updatedPrefs })
         .eq('id', projectId);
-        
+      
       if (error) throw error;
       
       toast({
@@ -239,150 +383,154 @@ export const useDesignActions = (projectId?: string) => {
         description: "Tags updated successfully"
       });
       
-    } catch (error: any) {
+      return updatedPrefs;
+      
+    } catch (error) {
       console.error('Error updating asset tags:', error);
       toast({
         title: "Error",
-        description: "Failed to update tags. Please try again.",
+        description: "Failed to update tags",
         variant: "destructive"
       });
+    } finally {
+      setIsSaving(false);
     }
   }, [projectId]);
-
-  // Handle Pinterest boards and inspiration
-  const handleAddPinterestBoards = useCallback(async (boards: PinterestBoard[], roomName: string, roomId?: string) => {
+  
+  // Add Pinterest boards
+  const handleAddPinterestBoards = useCallback(async (
+    boards: any[],
+    designPreferences: any
+  ) => {
+    if (!projectId) {
+      toast({
+        title: "Error",
+        description: "Project ID is required to add Pinterest boards",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsSaving(true);
+    
     try {
-      if (!roomId) {
-        throw new Error("Room ID is required to add Pinterest boards");
-      }
-      console.log(`Attempting to add ${boards.length} Pinterest boards for ${roomName}`);
-
-      // Get existing boards from the database
-      const {
-        data: currentData,
-        error: fetchError
-      } = await supabase.from('room_design_preferences').select('pinterest_boards').eq('room_id', roomId).maybeSingle();
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        console.error('Error fetching existing Pinterest boards:', fetchError);
-        throw fetchError;
-      }
-
-      // Important: We need to merge the new boards with existing ones
-      let existingBoards: PinterestBoard[] = [];
-      if (currentData?.pinterest_boards) {
-        existingBoards = currentData.pinterest_boards as unknown as PinterestBoard[];
-        console.log(`Found ${existingBoards.length} existing Pinterest boards`);
-      }
-
-      // Create a Set of existing board IDs to avoid duplicates
-      const existingBoardIds = new Set(existingBoards.map(board => board.id));
-      console.log('Existing board IDs:', Array.from(existingBoardIds));
-
-      // Only add boards that aren't already in the database
-      const uniqueNewBoards = boards.filter(board => !existingBoardIds.has(board.id));
-      console.log(`${uniqueNewBoards.length} new unique Pinterest boards to add`);
-
-      // Log IDs of new boards being added
-      uniqueNewBoards.forEach(board => console.log('Adding new board ID:', board.id));
-
-      // Combine existing and new unique boards
-      const combinedBoards = [...existingBoards, ...uniqueNewBoards];
-      console.log(`Total of ${combinedBoards.length} Pinterest boards after merging`);
-
-      // Convert PinterestBoard[] to a format compatible with Supabase's Json type
-      const boardsForStorage = combinedBoards.map(board => ({
-        id: board.id,
-        name: board.name,
-        url: board.url,
-        imageUrl: board.imageUrl,
-        pins: board.pins ? board.pins.map(pin => ({
-          id: pin.id,
-          imageUrl: pin.imageUrl,
-          description: pin.description
-        })) : undefined
-      })) as unknown as Json;
-
-      // Check if we need to create or update
-      let response;
-      if (!currentData) {
-        console.log('Creating new room_design_preferences record');
-        // Create new record if it doesn't exist
-        response = await supabase.from('room_design_preferences').insert({
-          room_id: roomId,
-          pinterest_boards: boardsForStorage,
-          inspiration_images: [],
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-      } else {
-        console.log('Updating existing room_design_preferences record');
-        // Update existing record
-        response = await supabase.from('room_design_preferences').update({
-          pinterest_boards: boardsForStorage,
-          updated_at: new Date().toISOString()
-        }).eq('room_id', roomId);
-      }
-      if (response.error) {
-        console.error('Error saving Pinterest boards to database:', response.error);
-        throw response.error;
-      }
-
-      // Only show toast for successful additions
-      if (uniqueNewBoards.length > 0) {
-        toast({
-          title: "Success",
-          description: `Added ${uniqueNewBoards.length} new Pinterest board${uniqueNewBoards.length > 1 ? 's' : ''} for ${roomName}`
-        });
-      } else {
-        toast({
-          title: "Information",
-          description: "No new Pinterest boards were added (all boards already exist)",
-          variant: "default"
-        });
+      // Update the designPreferences object with the Pinterest boards
+      const updatedPrefs = { ...designPreferences };
+      
+      // Make sure the pinterestBoards array exists
+      if (!updatedPrefs.pinterestBoards) {
+        updatedPrefs.pinterestBoards = [];
       }
       
-      return combinedBoards;
-    } catch (error: any) {
+      // Add the new boards
+      updatedPrefs.pinterestBoards = [
+        ...updatedPrefs.pinterestBoards,
+        ...boards
+      ];
+      
+      // Update the project in Supabase
+      const { error } = await supabase
+        .from('projects')
+        .update({ design_preferences: updatedPrefs })
+        .eq('id', projectId);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Pinterest boards added successfully"
+      });
+      
+      return updatedPrefs;
+      
+    } catch (error) {
       console.error('Error adding Pinterest boards:', error);
       toast({
         title: "Error",
         description: "Failed to add Pinterest boards",
         variant: "destructive"
       });
-      return null;
+    } finally {
+      setIsSaving(false);
     }
-  }, []);
+  }, [projectId]);
 
-  const handleAddInspirationImages = useCallback(async (images: string[], roomId?: string) => {
+  // Add inspiration images
+  const handleAddInspirationImages = useCallback(async (
+    images: FileWithPreview[],
+    designPreferences: any
+  ) => {
+    if (!projectId) {
+      toast({
+        title: "Error",
+        description: "Project ID is required to add inspiration images",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsSaving(true);
+    
     try {
-      if (!roomId) {
-        throw new Error("Room ID is required to add inspiration images");
+      // Get urls from uploaded images
+      const imageUrls = images
+        .filter(p => p.status === 'complete' && p.url)
+        .map(p => p.url) as string[];
+      
+      // If no valid urls, do nothing
+      if (imageUrls.length === 0) {
+        toast({
+          title: "Warning",
+          description: "No valid images to add",
+          variant: "destructive"
+        });
+        return;
       }
-      const {
-        error
-      } = await supabase.from('room_design_preferences').update({
-        inspiration_images: images,
-        updated_at: new Date().toISOString()
-      }).eq('room_id', roomId);
+      
+      // Update the designPreferences object with the inspiration images
+      const updatedPrefs = { ...designPreferences };
+      
+      // Make sure the inspirationImages array exists
+      if (!updatedPrefs.inspirationImages) {
+        updatedPrefs.inspirationImages = [];
+      }
+      
+      // Add the new images
+      updatedPrefs.inspirationImages = [
+        ...updatedPrefs.inspirationImages,
+        ...imageUrls
+      ];
+      
+      // Update the project in Supabase
+      const { error } = await supabase
+        .from('projects')
+        .update({ design_preferences: updatedPrefs })
+        .eq('id', projectId);
+      
       if (error) throw error;
       
       toast({
         title: "Success",
-        description: `Added ${images.length} inspiration images`
+        description: "Inspiration images added successfully"
       });
-      return images;
-    } catch (error: any) {
+      
+      return updatedPrefs;
+      
+    } catch (error) {
       console.error('Error adding inspiration images:', error);
       toast({
         title: "Error",
         description: "Failed to add inspiration images",
         variant: "destructive"
       });
-      return null;
+    } finally {
+      setIsSaving(false);
     }
-  }, []);
-
+  }, [projectId]);
+  
   return {
+    isLoading,
+    isSaving,
     handleSaveMeasurements,
     handleSelectBeforePhotos,
     handleUploadBeforePhotos,
