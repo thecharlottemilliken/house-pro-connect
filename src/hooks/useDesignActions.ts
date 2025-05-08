@@ -120,7 +120,12 @@ export const useDesignActions = (projectId?: string) => {
     try {
       if (!projectId) return;
       
-      const existingAssets = [...(designPreferences.designAssets || [])];
+      // Update type definition here to include tags
+      const existingAssets = [...(designPreferences.designAssets || [])].map(asset => ({
+        name: asset.name,
+        url: asset.url,
+        tags: asset.tags || []
+      }));
       
       const newAssets = selectedFiles.map(url => {
         const fileName = url.split('/').pop() || 'File';
@@ -167,7 +172,12 @@ export const useDesignActions = (projectId?: string) => {
     try {
       if (!projectId) return;
       
-      const existingAssets = [...(designPreferences.designAssets || [])];
+      // Update existing assets with tags support
+      const existingAssets = [...(designPreferences.designAssets || [])].map(asset => ({
+        name: asset.name,
+        url: asset.url,
+        tags: asset.tags || []
+      }));
       
       if (assetIndex >= 0 && assetIndex < existingAssets.length) {
         existingAssets.splice(assetIndex, 1);
@@ -206,7 +216,12 @@ export const useDesignActions = (projectId?: string) => {
     try {
       if (!projectId) return;
       
-      const existingAssets = [...(designPreferences.designAssets || [])];
+      // Update existing assets with tags support
+      const existingAssets = [...(designPreferences.designAssets || [])].map(asset => ({
+        name: asset.name,
+        url: asset.url,
+        tags: asset.tags || []
+      }));
       
       if (assetIndex >= 0 && assetIndex < existingAssets.length) {
         existingAssets[assetIndex] = {

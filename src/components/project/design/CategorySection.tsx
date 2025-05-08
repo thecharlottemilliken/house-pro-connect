@@ -65,9 +65,13 @@ const CategorySection = ({ title, files = [], onUpload, onDelete, propertyPhotos
           {files.map((file, index) => (
             <FileListItem
               key={index}
-              {...file}
+              name={file.name}
+              url={file.url || ''}
+              size={file.size}
+              type={file.type}
               onDownload={() => console.log('Download:', file.name)}
               onView={() => console.log('View:', file.name)}
+              onRemove={() => onDelete()} // Adding the missing onRemove prop
               onDelete={onDelete}
             />
           ))}
