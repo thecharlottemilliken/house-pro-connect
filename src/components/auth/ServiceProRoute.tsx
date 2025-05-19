@@ -1,6 +1,7 @@
 
-import { Navigate } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import ServiceProNavbar from "@/components/service-pro/ServiceProNavbar";
 
 interface ServiceProRouteProps {
   children: React.ReactNode;

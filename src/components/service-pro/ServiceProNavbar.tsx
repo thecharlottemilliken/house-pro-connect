@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom"; 
+import { Link, useLocation } from "react-router-dom"; 
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Settings, User } from "lucide-react";
@@ -8,6 +8,7 @@ import { Settings, User } from "lucide-react";
 const ServiceProNavbar = () => {
   const { user } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
   
   const navLinks = [
     { name: "DASHBOARD", href: "/service-pro-dashboard" },
@@ -18,6 +19,10 @@ const ServiceProNavbar = () => {
     { name: "MESSAGES", href: "/service-pro-messages" },
     { name: "ACCOUNTING", href: "/accounting" },
   ];
+
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
 
   return (
     <header className="bg-orange-600 text-white">
@@ -36,7 +41,9 @@ const ServiceProNavbar = () => {
               <Link
                 key={link.name}
                 to={link.href}
-                className="text-sm font-medium text-white hover:text-gray-200"
+                className={`text-sm font-medium text-white hover:text-gray-200 ${
+                  isActive(link.href) ? "border-b-2 border-white pb-1" : ""
+                }`}
               >
                 {link.name}
               </Link>
@@ -97,7 +104,9 @@ const ServiceProNavbar = () => {
                 <Link
                   key={link.name}
                   to={link.href}
-                  className="text-sm font-medium text-white hover:text-gray-200 px-3 py-2"
+                  className={`text-sm font-medium text-white hover:text-gray-200 px-3 py-2 ${
+                    isActive(link.href) ? "bg-orange-700" : ""
+                  }`}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {link.name}
