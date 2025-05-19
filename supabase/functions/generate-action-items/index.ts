@@ -70,12 +70,22 @@ serve(async (req: Request) => {
       .eq('project_id', projectId)
       .maybeSingle();
       
+    if (sowError) {
+      console.error("Error getting SOW data:", sowError);
+      // Continue anyway, absence of SOW is handled below
+    }
+    
     // Find coaches
-    const { data: coaches } = await supabase
+    const { data: coaches, error: coachError } = await supabase
       .from('profiles')
       .select('id')
       .eq('role', 'coach');
       
+    if (coachError) {
+      console.error("Error getting coaches:", coachError);
+      // Continue anyway, absence of coaches is handled below
+    }
+    
     const coachIds = coaches ? coaches.map(coach => coach.id) : [];
     
     // Check if there's a coaching session scheduled for this project
@@ -88,17 +98,29 @@ serve(async (req: Request) => {
     
     if (eventError) {
       console.error("Error checking for coaching sessions:", eventError);
+      // Continue anyway, we'll handle the null case
     }
     
     const hasCoachingSession = !!coachingSessionEvents;
     console.log("Has coaching session:", hasCoachingSession, coachingSessionEvents);
     
     // Delete existing action items
-    await supabase
+    const { error: deleteError } = await supabase
       .from('project_action_items')
       .delete()
       .eq('project_id', projectId)
       .eq('completed', false);
+      
+    if (deleteError) {
+      console.error("Error deleting existing action items:", deleteError);
+      return new Response(
+        JSON.stringify({ error: "Failed to clear existing action items", details: deleteError }),
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500 
+        }
+      );
+    }
     
     const actionItems = [];
     

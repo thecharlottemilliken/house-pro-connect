@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import ServiceProNavbar from "@/components/service-pro/ServiceProNavbar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -28,8 +27,12 @@ const ServiceProDashboard = () => {
   const { user, profile } = useAuth();
   const [profileComplete, setProfileComplete] = useState(false);
   
-  // Use a non-recursive approach to initialize state
-  const [profileItems, setProfileItems] = useState<ProfileItem[]>(initialProfileItems);
+  // Initialize state with a predefined array
+  const [profileItems, setProfileItems] = useState<ProfileItem[]>([
+    { id: 1, text: "Add Your License Information", completed: false, route: "/service-pro-profile?section=licenses" },
+    { id: 2, text: "Add Your Bio", completed: false, route: "/service-pro-profile?section=basic" },
+    { id: 3, text: "List Your Properties", completed: false, route: "/your-properties" }
+  ]);
   
   useEffect(() => {
     const checkProfileCompletion = async () => {
