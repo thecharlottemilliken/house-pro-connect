@@ -51,8 +51,10 @@ const MeasuringWizard = ({ area, initialMeasurements, onComplete }: MeasuringWiz
       height: data.height ? parseFloat(data.height) : undefined,
     };
     
-    // Ensure unit is preserved
+    // Ensure unit is preserved and defaulted to 'ft' if missing
     processedData.unit = data.unit || 'ft';
+    
+    console.log("MeasuringWizard - Submitting measurements:", processedData);
     
     // Call completion handler with properly formatted data
     onComplete(processedData);

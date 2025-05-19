@@ -28,7 +28,8 @@ const RoomPropertyInfo: React.FC<RoomPropertyInfoProps> = ({ area, location, mea
   const formatDimensions = (): string => {
     if (!measurements) return "";
     
-    const { length, width, height, unit } = measurements;
+    // Ensure unit exists, default to ft if not provided
+    const { length, width, height, unit = 'ft' } = measurements;
     const parts = [];
     
     if (length) parts.push(`${length}`);
@@ -41,6 +42,11 @@ const RoomPropertyInfo: React.FC<RoomPropertyInfoProps> = ({ area, location, mea
 
   const dimensions = formatDimensions();
   const squareFootage = calculateSquareFootage();
+
+  // Added console logging to debug measurements data
+  console.log("RoomPropertyInfo - Measurements data:", measurements);
+  console.log("RoomPropertyInfo - Dimensions:", dimensions);
+  console.log("RoomPropertyInfo - Square Footage:", squareFootage);
 
   return (
     <div className="space-y-4 mb-8">

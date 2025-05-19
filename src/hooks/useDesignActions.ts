@@ -26,16 +26,24 @@ export const useDesignActions = (projectId?: string) => {
     if (!projectId) return null;
     
     try {
-      // Normalize the area name for consistency in key naming
-      const normalizedArea = area.replace(/\s+/g, '_').toLowerCase();
+      console.log("Saving measurements for area:", area, measurements);
       
+      // Create a standardized copy of the measurements to ensure unit is always present
+      const standardizedMeasurements = {
+        ...measurements,
+        unit: measurements.unit || 'ft'
+      };
+      
+      // Update the designPreferences object with the standardized measurements
       const updatedDesignPreferences = { 
         ...designPreferences,
         roomMeasurements: {
           ...designPreferences.roomMeasurements || {},
-          [area]: measurements // Use original area name as the key for better display
+          [area]: standardizedMeasurements // Use original area name for consistent key naming
         }
       };
+      
+      console.log("Updated design preferences:", updatedDesignPreferences);
       
       const { data, error } = await supabase
         .from('projects')
@@ -44,7 +52,10 @@ export const useDesignActions = (projectId?: string) => {
         })
         .eq('id', projectId);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error saving measurements:", error);
+        throw error;
+      }
       
       console.log("Measurements saved successfully for area:", area);
       return updatedDesignPreferences;

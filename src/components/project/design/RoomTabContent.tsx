@@ -76,6 +76,7 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
   
   // Update local state when measurements change
   useEffect(() => {
+    console.log("RoomTabContent - Measurements updated from props:", measurements);
     setMeasurementsState(measurements);
   }, [measurements]);
 
@@ -116,14 +117,19 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
     console.log("Room preferences:", roomPreferences);
   }, [area.area, roomDesignAssets, designAssets, roomId, roomPreferences]);
   
-  // Enhanced check for measurements presence
+  // Enhanced check for measurements presence that considers all possible measurement properties
   const hasMeasurements = Boolean(
     measurements && 
     (measurements.length || measurements.width || measurements.height || measurements.additionalNotes)
   );
+  
+  console.log("RoomTabContent - hasMeasurements check result:", hasMeasurements);
+  console.log("RoomTabContent - measurementsState:", measurementsState);
 
   // Wrap onSaveMeasurements to update local state
   const handleSaveMeasurements = (newMeasurements: any) => {
+    console.log("RoomTabContent - Saving measurements:", newMeasurements);
+    
     // Call the original handler
     onSaveMeasurements(newMeasurements);
     

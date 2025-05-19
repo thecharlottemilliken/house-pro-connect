@@ -17,6 +17,11 @@ export function RoomMeasurementsSection({ measurements, selectedRoom }: RoomMeas
     return null;
   }
 
+  // Guard against undefined measurements object
+  if (!measurements.unit) {
+    measurements = { ...measurements, unit: 'ft' };
+  }
+
   const { length, width, height, unit, additionalNotes } = measurements;
 
   // Calculate square footage when both length and width are available
