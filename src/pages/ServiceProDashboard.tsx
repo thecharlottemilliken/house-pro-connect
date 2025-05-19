@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import ServiceProNavbar from "@/components/service-pro/ServiceProNavbar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { ArrowRight, Check, Plus } from "lucide-react";
 
+// Define a clear interface for the profile items
 interface ProfileItem {
   id: number;
   text: string;
@@ -19,6 +19,7 @@ interface ProfileItem {
 const ServiceProDashboard = () => {
   const { user, profile } = useAuth();
   const [profileComplete, setProfileComplete] = useState(false);
+  // Initialize with explicit type annotation
   const [profileItems, setProfileItems] = useState<ProfileItem[]>([
     { id: 1, text: "Add Your License Information", completed: false, route: "/service-pro-profile?section=licenses" },
     { id: 2, text: "Add Your Bio", completed: false, route: "/service-pro-profile?section=basic" },
@@ -50,14 +51,29 @@ const ServiceProDashboard = () => {
           .select('*', { count: 'exact', head: true })
           .eq('owner_id', user.id);
         
-        // Create a new array instead of modifying the previous state directly
-        const updatedItems: ProfileItem[] = [
-          { ...profileItems[0], completed: licensesCount > 0 },
-          { ...profileItems[1], completed: !!(data?.about_text && data?.about_text.length > 0) },
-          { ...profileItems[2], completed: propertiesCount > 0 }
+        // Create a completely new array instead of referencing the previous state
+        const newItems: ProfileItem[] = [
+          { 
+            id: 1, 
+            text: "Add Your License Information", 
+            completed: licensesCount > 0,
+            route: "/service-pro-profile?section=licenses" 
+          },
+          { 
+            id: 2, 
+            text: "Add Your Bio", 
+            completed: !!(data?.about_text && data?.about_text.length > 0),
+            route: "/service-pro-profile?section=basic" 
+          },
+          { 
+            id: 3, 
+            text: "List Your Properties", 
+            completed: propertiesCount > 0,
+            route: "/your-properties" 
+          }
         ];
         
-        setProfileItems(updatedItems);
+        setProfileItems(newItems);
         
       } catch (error) {
         console.error("Error checking profile completion:", error);
