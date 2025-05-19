@@ -1,13 +1,15 @@
 
 import React from 'react';
 import { FileListItem } from './FileListItem';
+import { RoomAssetWithType } from '../hooks/useRoomAssets';
 
 interface AssetTypeSectionProps {
   title: string;
-  assets: any[];
+  assets: RoomAssetWithType[];
+  onPreview?: (url: string) => void; // Make this prop optional
 }
 
-export function AssetTypeSection({ title, assets }: AssetTypeSectionProps) {
+export function AssetTypeSection({ title, assets, onPreview }: AssetTypeSectionProps) {
   if (assets.length === 0) return null;
   
   return (
@@ -21,6 +23,7 @@ export function AssetTypeSection({ title, assets }: AssetTypeSectionProps) {
           <FileListItem
             key={`${asset.type}-${asset.roomName}-${index}`}
             asset={asset}
+            onPreview={onPreview}
           />
         ))}
       </div>

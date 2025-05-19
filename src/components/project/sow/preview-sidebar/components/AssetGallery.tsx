@@ -2,19 +2,27 @@
 import React from 'react';
 import { AssetTypeSection } from './AssetTypeSection';
 import { LoadingSkeleton } from './LoadingSkeleton';
+import { RoomAssetWithType } from '../hooks/useRoomAssets';
 
 interface AssetGalleryProps {
-  filteredAssets: any[];
+  filteredAssets: RoomAssetWithType[];
   assetGroups: {
-    design: any[];
-    'before-photo': any[];
-    inspiration: any[];
+    design: RoomAssetWithType[];
+    'before-photo': RoomAssetWithType[];
+    inspiration: RoomAssetWithType[];
   };
   isLoading: boolean;
   selectedRoom: string;
+  onPreview?: (url: string) => void; // Make this prop optional
 }
 
-export function AssetGallery({ filteredAssets, assetGroups, isLoading, selectedRoom }: AssetGalleryProps) {
+export function AssetGallery({ 
+  filteredAssets, 
+  assetGroups, 
+  isLoading, 
+  selectedRoom,
+  onPreview 
+}: AssetGalleryProps) {
   if (isLoading) {
     return <LoadingSkeleton />;
   }
@@ -31,9 +39,21 @@ export function AssetGallery({ filteredAssets, assetGroups, isLoading, selectedR
 
   return (
     <div>
-      <AssetTypeSection title="Design Assets" assets={assetGroups.design} />
-      <AssetTypeSection title="Before Photos" assets={assetGroups['before-photo']} />
-      <AssetTypeSection title="Inspiration" assets={assetGroups.inspiration} />
+      <AssetTypeSection 
+        title="Design Assets" 
+        assets={assetGroups.design} 
+        onPreview={onPreview}
+      />
+      <AssetTypeSection 
+        title="Before Photos" 
+        assets={assetGroups['before-photo']} 
+        onPreview={onPreview}
+      />
+      <AssetTypeSection 
+        title="Inspiration" 
+        assets={assetGroups.inspiration} 
+        onPreview={onPreview}
+      />
     </div>
   );
 }

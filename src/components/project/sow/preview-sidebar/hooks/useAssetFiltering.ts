@@ -29,16 +29,20 @@ export function useAssetFiltering(
 
   // Group assets by type for display
   const assetGroups = useMemo(() => {
+    // Initialize the groups with empty arrays to ensure they always exist
     const groups: {
-      [key: string]: RoomAssetWithType[];
+      design: RoomAssetWithType[];
+      'before-photo': RoomAssetWithType[];
+      inspiration: RoomAssetWithType[];
     } = {
       design: [],
       'before-photo': [],
       inspiration: []
     };
 
+    // Populate the groups with filtered assets
     filteredAssets.forEach(asset => {
-      if (groups[asset.type]) {
+      if (asset.type === 'design' || asset.type === 'before-photo' || asset.type === 'inspiration') {
         groups[asset.type].push(asset);
       }
     });

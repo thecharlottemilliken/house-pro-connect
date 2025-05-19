@@ -1,21 +1,20 @@
 
-import React, { useContext } from 'react';
+import React from 'react';
 import { FileImage, Download, Eye, Tag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { PreviewContext } from '../contexts/PreviewContext';
+import { RoomAssetWithType } from '../hooks/useRoomAssets';
 
 interface FileListItemProps {
-  asset: {
-    name: string;
-    roomName: string;
-    url: string;
-    type: 'design' | 'before-photo' | 'inspiration';
-    tags?: string[];
-  };
+  asset: RoomAssetWithType;
+  onPreview?: (url: string) => void; // Make this prop optional
 }
 
-export function FileListItem({ asset }: FileListItemProps) {
-  const { handlePreview } = useContext(PreviewContext);
+export function FileListItem({ asset, onPreview }: FileListItemProps) {
+  const handlePreview = () => {
+    if (onPreview) {
+      onPreview(asset.url);
+    }
+  };
   
   return (
     <div className="flex flex-col gap-1 py-4 border-b border-gray-100 last:border-0">
@@ -41,7 +40,7 @@ export function FileListItem({ asset }: FileListItemProps) {
             <Download className="w-4 h-4" />
           </a>
           <button
-            onClick={() => handlePreview(asset.url)}
+            onClick={handlePreview}
             className="p-1.5 text-gray-500 hover:text-gray-700 transition-colors"
           >
             <Eye className="w-4 h-4" />

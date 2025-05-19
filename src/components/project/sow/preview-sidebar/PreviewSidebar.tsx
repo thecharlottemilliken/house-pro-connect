@@ -7,12 +7,13 @@ import { useRoomAssets } from './hooks/useRoomAssets';
 import { useRoomOptions } from './hooks/useRoomOptions';
 import { useAssetFiltering } from './hooks/useAssetFiltering';
 
-interface PreviewSidebarProps {
+export interface PreviewSidebarProps {
   projectData: any;
   propertyDetails: any;
+  onPreview?: (url: string) => void; // Make this prop optional
 }
 
-export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarProps) {
+export function PreviewSidebar({ projectData, propertyDetails, onPreview }: PreviewSidebarProps) {
   const [selectedRoom, setSelectedRoom] = useState<string>("all");
   
   // Custom hooks for data management
@@ -42,6 +43,7 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
           assetGroups={assetGroups}
           isLoading={isLoading}
           selectedRoom={selectedRoom}
+          onPreview={onPreview} // Pass the onPreview function down
         />
       </div>
     </div>
