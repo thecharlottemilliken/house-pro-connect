@@ -51,8 +51,7 @@ export const useSOWNotifications = () => {
               
             const coachName = coachData?.name || 'Your coach';
             
-            toast.info({
-              title: 'SOW Ready for Review',
+            toast('SOW Ready for Review', {
               description: `${coachName} has submitted an SOW for you to review for project "${projectData.title}".`
             });
           }
@@ -68,8 +67,7 @@ export const useSOWNotifications = () => {
               
             const ownerName = ownerData?.name || 'The project owner';
             
-            toast.success({
-              title: 'SOW Approved',
+            toast('SOW Approved', {
               description: `${ownerName} has approved the SOW for project "${projectData.title}".`
             });
           }
@@ -85,8 +83,7 @@ export const useSOWNotifications = () => {
               
             const ownerName = ownerData?.name || 'The project owner';
             
-            toast.warning({
-              title: 'SOW Needs Revision',
+            toast('SOW Needs Revision', {
               description: `${ownerName} has requested changes to the SOW for project "${projectData.title}".`
             });
           }
