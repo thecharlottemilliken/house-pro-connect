@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -60,7 +61,7 @@ export const MeetupScheduleWidget = () => {
       if (
         processedProjects.has(project.id) || 
         project.hasCoachingSession ||
-        !managementPrefs?.wantProjectCoach === "yes" || 
+        !managementPrefs?.wantProjectCoach || // Fixed the comparison here - removed === "yes"
         !managementPrefs?.timeSlots || 
         !managementPrefs.timeSlots.length
       ) {

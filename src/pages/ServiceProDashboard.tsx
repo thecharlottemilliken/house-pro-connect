@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { ArrowRight, Check, Plus } from "lucide-react";
 
-// Move interface definition outside the component to prevent recursive type inference
+// Define a simpler interface without recursive type references
 interface ProfileItem {
   id: number;
   text: string;
