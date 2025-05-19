@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { Plus, Square, Ruler, Bookmark, MoveRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { WorkAreaTable } from "./WorkAreaTable";
