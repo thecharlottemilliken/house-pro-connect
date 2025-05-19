@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { RoomAssetWithType } from '../hooks/useRoomAssets';
 import { AssetTypeSection } from './AssetTypeSection';
@@ -84,9 +83,9 @@ export function AssetGallery({
           {assetGroups["before-photo"].map((asset, index) => (
             <div key={`before-${index}`} className="mb-2">
               <FileListItem
-                name={asset.name}
-                fileName={asset.url}
-                onViewClick={() => onPreview && onPreview(asset.url)}
+                asset={asset}
+                onPreview={onPreview}
+                tagsMetadata={tagsMetadata}
               />
               {renderTags(asset)}
             </div>
@@ -99,9 +98,9 @@ export function AssetGallery({
           {assetGroups.design.map((asset, index) => (
             <div key={`design-${index}`} className="mb-2">
               <FileListItem
-                name={asset.name}
-                fileName={asset.url}
-                onViewClick={() => onPreview && onPreview(asset.url)}
+                asset={asset}
+                onPreview={onPreview}
+                tagsMetadata={tagsMetadata}
               />
               {renderTags(asset)}
             </div>
