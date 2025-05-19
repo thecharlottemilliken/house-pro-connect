@@ -104,6 +104,20 @@ const ActionItemsWidget = ({
     }
   };
 
+  // Get button text based on action item title
+  const getButtonText = (item: ActionItem) => {
+    if (item.title === "Create Statement of Work (SOW)") {
+      return "Create SOW";
+    }
+    if (item.title === "Update SOW with Revisions") {
+      return "Update SOW";
+    }
+    if (item.title === "Review Statement of Work") {
+      return "Review SOW";
+    }
+    return "Take Action";
+  };
+
   // Filter action items based on user role and deduplicate by title
   const filteredActionItems = actionItems
     .filter(item => !item.for_role || item.for_role === userRole)
@@ -159,7 +173,7 @@ const ActionItemsWidget = ({
                         className="text-sm"
                         onClick={() => handleActionClick(item)}
                       >
-                        {item.action_type === 'sow' ? (item.title.includes('Create') ? 'Create SOW' : 'Continue SOW') : "Take Action"} 
+                        {getButtonText(item)}
                         <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
                       </Button>
                     </div>

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -8,11 +9,12 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, AlertCircle } from "lucide-react";
 import { useProjectData } from "@/hooks/useProjectData";
 import { useSOWData } from "@/hooks/useSOWData";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { PreviewSidebar } from "./PreviewSidebar";
 import { WorkAreaForm } from "./WorkAreaForm";
 import { LaborRequirementsForm } from "./LaborRequirementsForm";
@@ -38,6 +40,7 @@ export function SOWWizard() {
   const [currentStep, setCurrentStep] = React.useState(0);
   
   const isLoading = projectLoading || sowLoading;
+  const isPendingRevision = sowData?.status === 'pending revision';
 
   // Save work areas
   const handleWorkAreasSubmit = async (areas: any[]) => {
@@ -108,6 +111,22 @@ export function SOWWizard() {
 
   const progress = ((currentStep + 1) / steps.length) * 100;
 
+  const renderRevisionFeedbackAlert = () => {
+    if (isPendingRevision && sowData?.feedback) {
+      return (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Revision Requested</AlertTitle>
+          <AlertDescription className="mt-2">
+            <p className="font-medium mb-1">The resident has requested the following changes:</p>
+            <p className="text-sm">{sowData.feedback}</p>
+          </AlertDescription>
+        </Alert>
+      );
+    }
+    return null;
+  };
+
   const renderStepContent = () => {
     if (!sowData) return null;
     
@@ -152,6 +171,7 @@ export function SOWWizard() {
             materialItems={sowData.material_items || []}
             bidConfiguration={sowData.bid_configuration}
             projectId={projectId || ''}
+            isRevision={isPendingRevision}
             onSave={(confirmed) => {
               if (confirmed) {
                 navigate(`/project-dashboard/${projectId}`);
@@ -176,10 +196,14 @@ export function SOWWizard() {
         <div className="overflow-auto h-full">
           <div className="px-6 py-6">
             <div className="max-w-6xl mx-auto">
+              {renderRevisionFeedbackAlert()}
+              
               <div className="mb-8">
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h2 className="text-2xl font-semibold text-gray-900">Create Statement of Work</h2>
+                    <h2 className="text-2xl font-semibold text-gray-900">
+                      {isPendingRevision ? 'Update Statement of Work' : 'Create Statement of Work'}
+                    </h2>
                     <p className="text-gray-500 mt-1">Step {currentStep + 1} of {steps.length}</p>
                   </div>
                   <Badge variant="secondary" className="text-sm">

@@ -1,11 +1,21 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from 'react-router-dom';
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
-import { useActionItemsGenerator } from '@/hooks/useActionItemsGenerator';
+import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useProjectData } from "@/hooks/useProjectData";
+import { useActionItemsGenerator } from "@/hooks/useActionItemsGenerator";
 
 interface SOWReviewDialogProps {
   open: boolean;
@@ -15,92 +25,166 @@ interface SOWReviewDialogProps {
   onActionComplete?: () => void;
 }
 
-const SOWReviewDialog: React.FC<SOWReviewDialogProps> = ({ 
+const SOWReviewDialog = ({ 
   open, 
-  onOpenChange, 
-  projectId, 
+  onOpenChange,
+  projectId,
   sowId,
-  onActionComplete 
-}) => {
-  const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
+  onActionComplete
+}: SOWReviewDialogProps) => {
+  const [activeTab, setActiveTab] = useState("review");
+  const [feedback, setFeedback] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { generateActionItems } = useActionItemsGenerator();
-
-  const handleReviewNow = () => {
-    navigate(`/project-sow/${projectId}/review`);
-    onOpenChange(false);
-  };
-
-  const handleReviewLater = () => {
-    onOpenChange(false);
-  };
-
-  const markActionItemAsComplete = async () => {
-    setIsLoading(true);
+  const { projectData } = useProjectData(projectId);
+  
+  const handleApprove = async () => {
+    setIsSubmitting(true);
     try {
-      // Find the SOW review action item for this project
-      const { data: actionItems } = await supabase
-        .from('project_action_items')
-        .select('id')
-        .eq('project_id', projectId)
-        .eq('title', 'Review Statement of Work')
-        .maybeSingle();
-
-      if (actionItems?.id) {
-        // Mark it as completed
-        await supabase
-          .rpc('update_action_item_completion', { 
-            item_id: actionItems.id, 
-            is_completed: true 
-          });
-      }
+      const { error } = await supabase
+        .from('statement_of_work')
+        .update({ 
+          status: 'approved',
+          feedback: null
+        })
+        .eq('id', sowId);
+        
+      if (error) throw error;
       
-      // Regenerate action items to update status
+      toast.success("SOW has been approved successfully");
+      
+      // Generate action items to update the project state
       await generateActionItems(projectId);
       
       if (onActionComplete) {
         onActionComplete();
       }
+      
+      onOpenChange(false);
     } catch (error) {
-      console.error('Error updating action item:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update action item status",
-        variant: "destructive"
-      });
+      console.error("Error approving SOW:", error);
+      toast.error("Failed to approve SOW");
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
-
+  
+  const handleRequestRevisions = async () => {
+    if (!feedback.trim()) {
+      toast.error("Please provide feedback for the revision request");
+      return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('statement_of_work')
+        .update({ 
+          status: 'pending revision',
+          feedback: feedback
+        })
+        .eq('id', sowId);
+        
+      if (error) throw error;
+      
+      toast.success("Revision request has been sent successfully");
+      
+      // Generate action items to update the project state
+      await generateActionItems(projectId);
+      
+      if (onActionComplete) {
+        onActionComplete();
+      }
+      
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error requesting revisions:", error);
+      toast.error("Failed to request revisions");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Statement of Work Ready for Review</DialogTitle>
+          <DialogTitle>
+            Review Statement of Work
+          </DialogTitle>
           <DialogDescription>
-            Your project's Statement of Work (SOW) is ready for your review. 
-            This document outlines the scope of work, materials, and estimated costs for your project.
+            Review the Statement of Work and either approve it or request revisions.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col sm:flex-row gap-3 justify-end mt-4">
-          <Button 
-            variant="outline" 
-            onClick={handleReviewLater}
-            disabled={isLoading}
-          >
-            Review Later
-          </Button>
-          <Button 
-            onClick={() => {
-              handleReviewNow();
-              markActionItemAsComplete();
-            }}
-            disabled={isLoading}
-          >
-            Review Now
-          </Button>
-        </div>
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid grid-cols-2 mb-4">
+            <TabsTrigger value="review">Review & Approve</TabsTrigger>
+            <TabsTrigger value="revisions">Request Revisions</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="review" className="space-y-4">
+            <div className="text-sm">
+              <p>By approving this Statement of Work, you confirm that:</p>
+              <ul className="list-disc pl-5 space-y-1 mt-2">
+                <li>The scope of work accurately reflects your project needs</li>
+                <li>The materials and labor specifications are acceptable</li>
+                <li>You're ready to move forward with this project scope</li>
+              </ul>
+            </div>
+            
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleApprove}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Approving..." : "Approve SOW"}
+              </Button>
+            </DialogFooter>
+          </TabsContent>
+          
+          <TabsContent value="revisions" className="space-y-4">
+            <div className="space-y-4">
+              <Label htmlFor="feedback">
+                Please provide detailed feedback on what changes are needed:
+              </Label>
+              <Textarea
+                id="feedback"
+                placeholder="Example: Please adjust the bathroom tile specifications and add details about electrical work in the kitchen..."
+                rows={5}
+                value={feedback}
+                onChange={(e) => setFeedback(e.target.value)}
+              />
+              <p className="text-xs text-gray-500">
+                Your feedback will be sent to the project coach who will update the SOW accordingly.
+              </p>
+            </div>
+            
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleRequestRevisions}
+                disabled={isSubmitting || !feedback.trim()}
+                variant="secondary"
+              >
+                {isSubmitting ? "Requesting..." : "Request Revisions"}
+              </Button>
+            </DialogFooter>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

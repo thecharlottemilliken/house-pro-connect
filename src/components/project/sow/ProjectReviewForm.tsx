@@ -23,6 +23,7 @@ interface ProjectReviewFormProps {
     projectDescription: string;
   };
   projectId: string;
+  isRevision?: boolean;
   onSave: (confirmed: boolean) => void;
 }
 
@@ -32,6 +33,7 @@ export function ProjectReviewForm({
   materialItems,
   bidConfiguration,
   projectId,
+  isRevision = false,
   onSave
 }: ProjectReviewFormProps) {
   const [confirmed, setConfirmed] = useState(false);
@@ -62,7 +64,8 @@ export function ProjectReviewForm({
             labor_items: laborItems,
             material_items: materialItems,
             bid_configuration: bidConfiguration,
-            status: 'ready for review' // Changed from 'pending' to 'ready for review'
+            status: 'ready for review', // This status is used for both initial submission and after revision
+            feedback: null // Clear any previous feedback when resubmitting
           })
           .eq('id', existingSOW.id);
           
@@ -77,7 +80,7 @@ export function ProjectReviewForm({
             labor_items: laborItems,
             material_items: materialItems,
             bid_configuration: bidConfiguration,
-            status: 'ready for review' // Changed from 'pending' to 'ready for review'
+            status: 'ready for review'
           }]);
           
         if (error) throw error;
@@ -88,7 +91,9 @@ export function ProjectReviewForm({
       
       toast({
         title: "Success",
-        description: "Statement of Work has been saved and submitted for review",
+        description: isRevision 
+          ? "Revised Statement of Work has been submitted for review"
+          : "Statement of Work has been saved and submitted for review",
       });
       
       onSave(true);
@@ -296,7 +301,10 @@ export function ProjectReviewForm({
           onClick={handleSaveSOW} 
           disabled={!confirmed || isSaving}
         >
-          {isSaving ? "Saving..." : "Submit SOW"}
+          {isSaving ? 
+            "Saving..." : 
+            isRevision ? "Submit Revised SOW" : "Submit SOW"
+          }
         </Button>
       </div>
     </div>

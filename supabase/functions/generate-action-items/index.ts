@@ -90,7 +90,7 @@ serve(async (req) => {
     // Check SOW status to determine which action items to create
     const { data: sowData } = await supabase
       .from('statement_of_work')
-      .select('id, status')
+      .select('id, status, feedback')
       .eq('project_id', projectId)
       .single();
 
@@ -121,6 +121,24 @@ serve(async (req) => {
         action_type: "navigate",
         action_data: { route: `/project-sow/${projectId}?review=true` },
         for_role: "resident", // Only for project owners
+        completed: false
+      });
+    }
+    
+    // Check if revisions have been requested
+    if (sowData && sowData.status === 'pending revision' && 
+        !existingTitles.has("Update SOW with Revisions")) {
+      actionItems.push({
+        project_id: projectId,
+        title: "Update SOW with Revisions",
+        description: sowData.feedback 
+          ? `Resident requested changes: ${sowData.feedback.substring(0, 100)}${sowData.feedback.length > 100 ? '...' : ''}`
+          : "The resident has requested revisions to the Statement of Work.",
+        priority: "high",
+        icon_name: "file-pen",
+        action_type: "navigate",
+        action_data: { route: `/project-sow/${projectId}` },
+        for_role: "coach", // Only for coaches
         completed: false
       });
     }
@@ -236,6 +254,28 @@ serve(async (req) => {
           .in('id', reviewSowItems.map(item => item.id));
         
         console.log(`Removed ${reviewSowItems.length} stale "Review SOW" action items`);
+      }
+    }
+    
+    // Remove "Update SOW with Revisions" if SOW is no longer in pending revision state
+    if (sowData && sowData.status !== 'pending revision') {
+      // Find any existing revision action items to delete
+      const { data: revisionItems } = await supabase
+        .from('project_action_items')
+        .select('id')
+        .eq('project_id', projectId)
+        .eq('title', 'Update SOW with Revisions')
+        .eq('for_role', 'coach')
+        .eq('completed', false);
+      
+      if (revisionItems && revisionItems.length > 0) {
+        // Delete these items as they're now stale
+        await supabase
+          .from('project_action_items')
+          .delete()
+          .in('id', revisionItems.map(item => item.id));
+        
+        console.log(`Removed ${revisionItems.length} stale "Update SOW with Revisions" action items`);
       }
     }
     
