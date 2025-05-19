@@ -11,7 +11,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useProfileRole } from '@/profile/ProfileRole';
 import LoadingState from '@/components/coach/LoadingState';
 import DeleteAccountDialog from '@/components/account/DeleteAccountDialog';
-import ServiceProNavbar from '@/components/service-pro/ServiceProNavbar';
 
 const Profile = () => {
   const navigate = useNavigate();

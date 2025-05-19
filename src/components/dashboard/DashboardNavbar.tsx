@@ -1,4 +1,3 @@
-
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,25 +15,17 @@ const DashboardNavbar = () => {
   } = useAuth();
   const isMobile = useIsMobile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isServicePro, setIsServicePro] = useState(false);
-  
-  useEffect(() => {
-    // Check if user is a service pro
-    if (profile?.role === 'service_pro' || profile?.role === 'service-pro') {
-      setIsServicePro(true);
-      // Redirect service pros to their dashboard
-      navigate('/service-pro-dashboard');
-    }
-  }, [profile?.role, navigate]);
-  
-  // If user is a service pro, don't render this navbar
-  if (isServicePro) {
-    return null;
-  }
   
   const toggleMobileMenu = () => {
     setMobileMenuOpen(prev => !prev);
   };
+  
+  // Check if user is a service pro and redirect if needed
+  useEffect(() => {
+    if (profile?.role === 'service_pro' || profile?.role === 'service-pro') {
+      navigate('/service-pro-dashboard');
+    }
+  }, [profile?.role, navigate]);
   
   const currentPath = window.location.pathname;
   const isProjectsActive = currentPath === '/projects' || currentPath.includes('/project-');

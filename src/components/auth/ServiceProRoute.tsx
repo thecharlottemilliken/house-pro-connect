@@ -1,6 +1,7 @@
 
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import ServiceProNavbar from "@/components/service-pro/ServiceProNavbar";
 
 interface ServiceProRouteProps {
   children: React.ReactNode;
@@ -24,14 +25,18 @@ const ServiceProRoute = ({ children }: ServiceProRouteProps) => {
   }
 
   // If authenticated but not a service pro, redirect to main dashboard
-  // Check for both 'service_pro' and 'service-pro' variations
+  // Check for both 'service-pro' and 'service_pro' variations
   if (profile?.role !== 'service_pro' && profile?.role !== 'service-pro') {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // If authenticated and a service pro, render the children
-  // Note: ServiceProNavbar is now included in all service pro pages directly
-  return <>{children}</>;
+  // If authenticated and a service pro, render the ServiceProNavbar and children
+  return (
+    <>
+      <ServiceProNavbar />
+      {children}
+    </>
+  );
 };
 
 export default ServiceProRoute;
