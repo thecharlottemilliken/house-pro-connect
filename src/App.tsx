@@ -1,6 +1,6 @@
 
 import React from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes, Outlet } from "react-router-dom";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -66,7 +66,7 @@ function App() {
               <Route path="/signup" element={<SignUp />} />
               
               {/* Protected Routes */}
-              <Route element={<ProtectedRoute />}>
+              <Route element={<ProtectedRoute><Outlet /></ProtectedRoute>}>
                 <Route path="/dashboard" element={<ResidentDashboard />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/notifications" element={<Notifications />} />
@@ -99,12 +99,12 @@ function App() {
               </Route>
               
               {/* Coach only routes */}
-              <Route element={<CoachRoute />}>
+              <Route element={<CoachRoute><Outlet /></CoachRoute>}>
                 <Route path="/coach-dashboard" element={<CoachDashboard />} />
               </Route>
               
               {/* Service Pro only routes */}
-              <Route element={<ServiceProRoute />}>
+              <Route element={<ServiceProRoute><Outlet /></ServiceProRoute>}>
                 <Route path="/service-pro-dashboard" element={<ServiceProDashboard />} />
                 <Route path="/service-pro-profile" element={<ServiceProProfile />} />
                 <Route path="/service-pro-profile/edit" element={<ServiceProProfileEdit />} />
