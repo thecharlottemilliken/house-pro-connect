@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -263,6 +262,7 @@ export function SOWWizard({ isRevision = false }: SOWWizardProps) {
             bidConfiguration={sowData.bid_configuration}
             projectId={projectId || ''}
             isRevision={isPendingRevision}
+            // Update the onSave prop to match the updated interface
             onSave={(confirmed) => {
               if (confirmed) {
                 if (isPendingRevision) {

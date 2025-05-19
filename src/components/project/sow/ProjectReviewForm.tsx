@@ -15,7 +15,7 @@ interface ProjectReviewFormProps {
     projectDescription: string;
   };
   projectId: string;
-  onSave: () => void;
+  onSave: (confirmed?: boolean) => void;  // Updated prop type to accept an optional parameter
   isRevision?: boolean;
   changes?: any;
 }
