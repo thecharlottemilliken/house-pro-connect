@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { ArrowRight, Check, Plus } from "lucide-react";
 
-// Define a clear interface for the profile items
+// Move interface definition outside the component to prevent recursive type inference
 interface ProfileItem {
   id: number;
   text: string;
@@ -17,18 +17,19 @@ interface ProfileItem {
   route: string;
 }
 
+// Define initial items outside component
+const initialProfileItems: ProfileItem[] = [
+  { id: 1, text: "Add Your License Information", completed: false, route: "/service-pro-profile?section=licenses" },
+  { id: 2, text: "Add Your Bio", completed: false, route: "/service-pro-profile?section=basic" },
+  { id: 3, text: "List Your Properties", completed: false, route: "/your-properties" }
+];
+
 const ServiceProDashboard = () => {
   const { user, profile } = useAuth();
   const [profileComplete, setProfileComplete] = useState(false);
   
-  // Fixed initialization with explicit type annotation and initial items
-  const initialProfileItems: ProfileItem[] = [
-    { id: 1, text: "Add Your License Information", completed: false, route: "/service-pro-profile?section=licenses" },
-    { id: 2, text: "Add Your Bio", completed: false, route: "/service-pro-profile?section=basic" },
-    { id: 3, text: "List Your Properties", completed: false, route: "/your-properties" }
-  ];
-  
-  const [profileItems, setProfileItems] = useState<ProfileItem[]>(initialProfileItems);
+  // Use the external initialProfileItems to set the initial state
+  const [profileItems, setProfileItems] = useState<ProfileItem[]>([...initialProfileItems]);
   
   useEffect(() => {
     const checkProfileCompletion = async () => {
@@ -55,8 +56,8 @@ const ServiceProDashboard = () => {
           .select('*', { count: 'exact', head: true })
           .eq('owner_id', user.id);
         
-        // Create a completely new array instead of referencing the previous state
-        const newItems: ProfileItem[] = [
+        // Create a completely new array without referencing the previous state
+        const updatedItems = [
           { 
             id: 1, 
             text: "Add Your License Information", 
@@ -75,9 +76,13 @@ const ServiceProDashboard = () => {
             completed: propertiesCount > 0,
             route: "/your-properties" 
           }
-        ];
+        ] as ProfileItem[];
         
-        setProfileItems(newItems);
+        setProfileItems(updatedItems);
+        
+        // Calculate profile completion separately
+        const completedItems = updatedItems.filter(item => item.completed).length;
+        setProfileComplete(completedItems === updatedItems.length);
         
       } catch (error) {
         console.error("Error checking profile completion:", error);
@@ -98,7 +103,7 @@ const ServiceProDashboard = () => {
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Welcome,</h1>
-          <p className="text-2xl text-gray-800 mt-1">{profile?.full_name || user?.user_metadata?.full_name || 'Service Pro'}</p>
+          <p className="text-2xl text-gray-800 mt-1">{profile?.full_name || profile?.name || user?.user_metadata?.full_name || 'Service Pro'}</p>
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
