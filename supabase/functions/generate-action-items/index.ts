@@ -79,14 +79,19 @@ serve(async (req: Request) => {
     const coachIds = coaches ? coaches.map(coach => coach.id) : [];
     
     // Check if there's a coaching session scheduled for this project
-    const { data: coachingSessionEvents } = await supabase
+    const { data: coachingSessionEvents, error: eventError } = await supabase
       .from('project_events')
       .select('*')
       .eq('project_id', projectId)
       .eq('event_type', 'coaching_session')
       .maybeSingle();
     
+    if (eventError) {
+      console.error("Error checking for coaching sessions:", eventError);
+    }
+    
     const hasCoachingSession = !!coachingSessionEvents;
+    console.log("Has coaching session:", hasCoachingSession, coachingSessionEvents);
     
     // Delete existing action items
     await supabase
@@ -98,9 +103,9 @@ serve(async (req: Request) => {
     const actionItems = [];
     
     // SOW actions for coaches - only if a coaching session has been scheduled
-    if (coachIds.length > 0) {
-      // Check if coaching session exists AND no SOW exists or it's in draft
-      if (hasCoachingSession && (!sowData || sowData.status === "draft")) {
+    if (coachIds.length > 0 && hasCoachingSession) {
+      // Check if no SOW exists or it's in draft
+      if (!sowData || sowData.status === "draft") {
         // If no SOW exists, create action to create one
         if (!sowData) {
           actionItems.push({
@@ -198,6 +203,7 @@ serve(async (req: Request) => {
       );
     }
   } catch (error) {
+    console.error("Error generating action items:", error);
     return new Response(
       JSON.stringify({ error: "Server error", details: error.message }),
       { 

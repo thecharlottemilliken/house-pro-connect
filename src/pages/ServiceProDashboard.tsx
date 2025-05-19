@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { ArrowRight, Check, Plus } from "lucide-react";
 
-// Define a simpler interface without recursive type references
+// Define interface for profile items
 interface ProfileItem {
   id: number;
   text: string;
@@ -17,7 +17,7 @@ interface ProfileItem {
   route: string;
 }
 
-// Define initial items outside component
+// Define initial items outside component to avoid recursive type references
 const initialProfileItems: ProfileItem[] = [
   { id: 1, text: "Add Your License Information", completed: false, route: "/service-pro-profile?section=licenses" },
   { id: 2, text: "Add Your Bio", completed: false, route: "/service-pro-profile?section=basic" },
@@ -28,8 +28,8 @@ const ServiceProDashboard = () => {
   const { user, profile } = useAuth();
   const [profileComplete, setProfileComplete] = useState(false);
   
-  // Use the external initialProfileItems to set the initial state
-  const [profileItems, setProfileItems] = useState<ProfileItem[]>([...initialProfileItems]);
+  // Use a non-recursive approach to initialize state
+  const [profileItems, setProfileItems] = useState<ProfileItem[]>(initialProfileItems);
   
   useEffect(() => {
     const checkProfileCompletion = async () => {
@@ -56,7 +56,7 @@ const ServiceProDashboard = () => {
           .select('*', { count: 'exact', head: true })
           .eq('owner_id', user.id);
         
-        // Create a completely new array without referencing the previous state
+        // Create a completely new array without modifying the original state directly
         const updatedItems = [
           { 
             id: 1, 
@@ -76,11 +76,11 @@ const ServiceProDashboard = () => {
             completed: propertiesCount > 0,
             route: "/your-properties" 
           }
-        ] as ProfileItem[];
+        ];
         
         setProfileItems(updatedItems);
         
-        // Calculate profile completion separately
+        // Calculate profile completion
         const completedItems = updatedItems.filter(item => item.completed).length;
         setProfileComplete(completedItems === updatedItems.length);
         

@@ -4,10 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
-// Define the SUPABASE URL and KEY constants from the client file
-const SUPABASE_URL = "https://gluggyghzalabvlvwqqk.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdsdWdneWdoemFsYWJ2bHZ3cXFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1NjIwNzQsImV4cCI6MjA1OTEzODA3NH0._EgQrKqGcedVgtHlDr3kCR7x6yzD8eaQ0ZvuQ0c7m08";
-
 // Define the ActionItem interface explicitly to avoid type issues
 export interface ActionItem {
   id: string;
@@ -44,11 +40,11 @@ export const useProjectActionItems = (projectId: string) => {
         
         // Use REST API directly to avoid TypeScript issues
         const response = await fetch(
-          `${SUPABASE_URL}/rest/v1/project_action_items?project_id=eq.${projectId}&completed=eq.false&order=created_at.desc`,
+          `https://gluggyghzalabvlvwqqk.supabase.co/rest/v1/project_action_items?project_id=eq.${projectId}&completed=eq.false&order=created_at.desc`,
           {
             headers: {
-              'apikey': SUPABASE_KEY,
-              'Authorization': `Bearer ${SUPABASE_KEY}`,
+              'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdsdWdneWdoemFsYWJ2bHZ3cXFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1NjIwNzQsImV4cCI6MjA1OTEzODA3NH0._EgQrKqGcedVgtHlDr3kCR7x6yzD8eaQ0ZvuQ0c7m08',
+              'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdsdWdneWdoemFsYWJ2bHZ3cXFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1NjIwNzQsImV4cCI6MjA1OTEzODA3NH0._EgQrKqGcedVgtHlDr3kCR7x6yzD8eaQ0ZvuQ0c7m08`,
               'Content-Type': 'application/json'
             }
           }
@@ -87,12 +83,12 @@ export const useProjectActionItems = (projectId: string) => {
     try {
       // Use REST API directly to avoid TypeScript issues
       const response = await fetch(
-        `${SUPABASE_URL}/rest/v1/project_action_items?id=eq.${itemId}`,
+        `https://gluggyghzalabvlvwqqk.supabase.co/rest/v1/project_action_items?id=eq.${itemId}`,
         {
           method: 'PATCH',
           headers: {
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdsdWdneWdoemFsYWJ2bHZ3cXFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1NjIwNzQsImV4cCI6MjA1OTEzODA3NH0._EgQrKqGcedVgtHlDr3kCR7x6yzD8eaQ0ZvuQ0c7m08',
+            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdsdWdneWdoemFsYWJ2bHZ3cXFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1NjIwNzQsImV4cCI6MjA1OTEzODA3NH0._EgQrKqGcedVgtHlDr3kCR7x6yzD8eaQ0ZvuQ0c7m08`,
             'Content-Type': 'application/json',
             'Prefer': 'return=minimal'
           },
