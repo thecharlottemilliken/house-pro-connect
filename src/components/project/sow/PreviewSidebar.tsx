@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { FileImage, Download, Eye, Loader, Info, Building, MapPin, Settings, Tag } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -15,7 +16,6 @@ export interface SOWData {
   status: string;
   created_at?: string;
   updated_at?: string;
-  project_assets?: any; // For storing organized project assets by room
 }
 
 function parseJsonField(field: any, defaultValue: any) {
@@ -60,7 +60,6 @@ export const useSOWData = (projectId: string | undefined) => {
             labor_items: parseJsonField(data.labor_items, []),
             material_items: parseJsonField(data.material_items, []),
             bid_configuration: parseJsonField(data.bid_configuration, { bidDuration: '7', projectDescription: '' }),
-            project_assets: parseJsonField(data.project_assets, {}),
           });
         } else {
           // Create an empty SOW record if none exists
@@ -73,8 +72,7 @@ export const useSOWData = (projectId: string | undefined) => {
               bidDuration: '7',
               projectDescription: ''
             },
-            status: 'draft',
-            project_assets: {}
+            status: 'draft'
           });
         }
       } catch (err: any) {
@@ -124,7 +122,6 @@ export const useSOWData = (projectId: string | undefined) => {
             labor_items: parseJsonField(data.labor_items, []),
             material_items: parseJsonField(data.material_items, []),
             bid_configuration: parseJsonField(data.bid_configuration, { bidDuration: '7', projectDescription: '' }),
-            project_assets: parseJsonField(data.project_assets, {}),
           });
         }
       }
@@ -143,16 +140,10 @@ export const useSOWData = (projectId: string | undefined) => {
     }
   };
 
-  // New function to save project assets organized by room
-  const saveProjectAssets = async (roomAssets: any): Promise<boolean> => {
-    return saveSOWField('project_assets', roomAssets);
-  };
-
   return { 
     sowData, 
     isLoading, 
     error,
-    saveSOWField,
-    saveProjectAssets
+    saveSOWField
   };
 };
