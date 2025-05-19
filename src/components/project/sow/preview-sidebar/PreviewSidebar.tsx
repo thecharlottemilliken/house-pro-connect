@@ -4,6 +4,7 @@ import { ProjectInfoHeader } from './components/ProjectInfoHeader';
 import { RoomSelector } from './components/RoomSelector';
 import { AssetGallery } from './components/AssetGallery';
 import { InspirationSection } from './components/InspirationSection';
+import { RoomMeasurementsSection } from './components/RoomMeasurementsSection';
 import { useRoomAssets } from './hooks/useRoomAssets';
 import { useRoomOptions } from './hooks/useRoomOptions';
 import { useAssetFiltering } from './hooks/useAssetFiltering';
@@ -22,6 +23,18 @@ export function PreviewSidebar({ projectData, propertyDetails, onPreview }: Prev
   const { roomOptions } = useRoomOptions(projectData, propertyDetails, allAssets);
   const { filteredAssets, assetGroups, inspirationAssets } = useAssetFiltering(allAssets, selectedRoom);
 
+  // Get room measurements for the selected room
+  const getRoomMeasurements = () => {
+    if (selectedRoom === "all" || !projectData?.design_preferences?.roomMeasurements) {
+      return undefined;
+    }
+    
+    // Find measurements for the current room
+    return projectData.design_preferences.roomMeasurements[selectedRoom];
+  };
+
+  const roomMeasurements = getRoomMeasurements();
+
   return (
     <div className="h-full bg-background border-r flex flex-col">
       <ProjectInfoHeader 
@@ -38,7 +51,13 @@ export function PreviewSidebar({ projectData, propertyDetails, onPreview }: Prev
         />
       </div>
       
-      {/* Add Inspiration Section below room selector */}
+      {/* Add Room Measurements Section below room selector */}
+      <RoomMeasurementsSection 
+        measurements={roomMeasurements}
+        selectedRoom={selectedRoom}
+      />
+      
+      {/* Inspiration Section */}
       <InspirationSection 
         inspirationAssets={inspirationAssets} 
         onPreview={onPreview}
