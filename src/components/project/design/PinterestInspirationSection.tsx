@@ -1,12 +1,12 @@
 
 import React, { useState } from 'react';
-import { PinterestConnector } from './PinterestConnector';
-import { PinterestBoardCard } from './PinterestBoardCard';
+import PinterestConnector from './PinterestConnector';
+import PinterestBoardCard from './PinterestBoardCard';
 import { Button } from '@/components/ui/button';
 import { Plus, ArrowUp } from 'lucide-react';
 import InspirationImagesGrid from './InspirationImagesGrid';
 import UploadInspirationModal from './UploadInspirationModal';
-import { PinterestPinsGrid } from './PinterestPinsGrid';
+import PinterestPinsGrid from './PinterestPinsGrid';
 
 interface PinterestInspirationSectionProps {
   inspirationImages: string[];
@@ -87,6 +87,11 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
                   isExpanded={expandedBoard === board.id}
                   onToggleExpand={() => {
                     setExpandedBoard(expandedBoard === board.id ? null : board.id);
+                  }}
+                  onOpenBoard={(url) => window.open(url, '_blank')}
+                  onRequestDelete={(board) => {
+                    const updatedBoards = pinterestBoards.filter(b => b.id !== board.id);
+                    onAddPinterestBoards(updatedBoards, currentRoom, roomId);
                   }}
                 />
                 
