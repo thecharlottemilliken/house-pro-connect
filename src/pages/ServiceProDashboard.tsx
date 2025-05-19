@@ -9,10 +9,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { ArrowRight, Check, Plus } from "lucide-react";
 
+interface ProfileItem {
+  id: number;
+  text: string;
+  completed: boolean;
+  route: string;
+}
+
 const ServiceProDashboard = () => {
   const { user, profile } = useAuth();
   const [profileComplete, setProfileComplete] = useState(false);
-  const [profileItems, setProfileItems] = useState([
+  const [profileItems, setProfileItems] = useState<ProfileItem[]>([
     { id: 1, text: "Add Your License Information", completed: false, route: "/service-pro-profile?section=licenses" },
     { id: 2, text: "Add Your Bio", completed: false, route: "/service-pro-profile?section=basic" },
     { id: 3, text: "List Your Properties", completed: false, route: "/your-properties" }
@@ -45,7 +52,7 @@ const ServiceProDashboard = () => {
         
         setProfileItems(prev => [
           { ...prev[0], completed: licensesCount > 0 },
-          { ...prev[1], completed: !!(data?.bio && data?.bio.length > 0) },
+          { ...prev[1], completed: !!(data?.about_text && data?.about_text.length > 0) },
           { ...prev[2], completed: propertiesCount > 0 }
         ]);
         
@@ -94,7 +101,7 @@ const ServiceProDashboard = () => {
                         {item.completed ? (
                           <Check className="h-5 w-5 text-green-500 mr-1" />
                         ) : (
-                          <span className="uppercase">Add {item.id === 1 ? "informatino" : item.id === 2 ? "bio" : "properties"}</span>
+                          <span className="uppercase">Add {item.id === 1 ? "information" : item.id === 2 ? "bio" : "properties"}</span>
                         )}
                         {!item.completed && <ArrowRight className="h-4 w-4 ml-1" />}
                       </Button>
