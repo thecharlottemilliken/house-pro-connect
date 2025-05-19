@@ -107,19 +107,19 @@ const RoomDetailsSection: React.FC<RoomDetailsSectionProps> = ({
         />
       </div>
       
-      {/* Column 2-3: Measurements Banner/Card and Photos */}
+      {/* Column 2-3: Measurements Card and Photos */}
       <div className="lg:col-span-2 space-y-6">
-        {/* Use measurementsExist from our enhanced check */}
-        {!measurementsExist ? (
-          <MeasurementsBanner 
-            area={area}
-            onMeasureRoom={onMeasureRoom}
-          />
-        ) : (
+        {/* Only show measurements card if measurements exist, otherwise show nothing */}
+        {measurementsExist ? (
           <RoomMeasurementsCard 
             area={area}
             measurements={measurements}
             onSaveMeasurements={onSaveMeasurements}
+          />
+        ) : (
+          <MeasurementsBanner 
+            area={area}
+            onMeasureRoom={onMeasureRoom}
           />
         )}
         
