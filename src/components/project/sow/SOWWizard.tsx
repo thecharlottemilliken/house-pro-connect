@@ -102,6 +102,37 @@ export function SOWWizard({ isRevision = false }: SOWWizardProps) {
     fetchOriginalSOW();
   }, [projectId, isPendingRevision, sowData]);
 
+  // Convert complex change objects to simple boolean maps for components
+  const convertWorkAreaChangesToBooleanMap = () => {
+    const result: { [key: string]: boolean } = {};
+    if (changes && changes.workAreas) {
+      Object.keys(changes.workAreas).forEach(id => {
+        result[id] = hasWorkAreaChanges(changes, id);
+      });
+    }
+    return result;
+  };
+
+  const convertLaborItemChangesToBooleanMap = () => {
+    const result: { [key: string]: boolean } = {};
+    if (changes && changes.laborItems) {
+      Object.keys(changes.laborItems).forEach(id => {
+        result[id] = hasLaborItemChanges(changes, id);
+      });
+    }
+    return result;
+  };
+
+  const convertMaterialItemChangesToBooleanMap = () => {
+    const result: { [key: string]: boolean } = {};
+    if (changes && changes.materialItems) {
+      Object.keys(changes.materialItems).forEach(id => {
+        result[id] = hasMaterialItemChanges(changes, id);
+      });
+    }
+    return result;
+  };
+
   // Save work areas
   const handleWorkAreasSubmit = async (areas: any[]) => {
     console.log("Saving work areas:", areas);
@@ -221,6 +252,11 @@ export function SOWWizard({ isRevision = false }: SOWWizardProps) {
   const renderStepContent = () => {
     if (!sowData) return null;
     
+    // Use converted boolean maps for changes
+    const workAreaChanges = convertWorkAreaChangesToBooleanMap();
+    const laborItemChanges = convertLaborItemChangesToBooleanMap();
+    const materialItemChanges = convertMaterialItemChangesToBooleanMap();
+    
     // Ensure all form components receive properly typed props
     switch (currentStep) {
       case 0:
@@ -231,7 +267,7 @@ export function SOWWizard({ isRevision = false }: SOWWizardProps) {
             projectData={projectData}
             propertyDetails={propertyDetails}
             isRevision={isPendingRevision}
-            changedWorkAreas={changes.workAreas}
+            changedWorkAreas={workAreaChanges}
           />
         );
       case 1:
@@ -241,7 +277,7 @@ export function SOWWizard({ isRevision = false }: SOWWizardProps) {
             onSave={handleLaborItemsSubmit}
             laborItems={sowData.labor_items || []}
             isRevision={isPendingRevision}
-            changedLaborItems={changes.laborItems}
+            changedLaborItems={laborItemChanges}
           />
         );
       case 2:
@@ -251,7 +287,7 @@ export function SOWWizard({ isRevision = false }: SOWWizardProps) {
             onSave={handleMaterialItemsSubmit}
             materialItems={sowData.material_items || []}
             isRevision={isPendingRevision}
-            changedMaterialItems={changes.materialItems}
+            changedMaterialItems={materialItemChanges}
           />
         );
       case 3:
