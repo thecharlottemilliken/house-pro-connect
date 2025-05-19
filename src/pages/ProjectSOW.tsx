@@ -12,6 +12,7 @@ import SOWReviewDialog from "@/components/project/sow/SOWReviewDialog";
 import { useSOWNotifications } from "@/hooks/useSOWNotifications";
 import { useActionItemsGenerator } from "@/hooks/useActionItemsGenerator";
 import { trackChanges, initializeChangeTracker, parseJsonField } from "@/components/project/sow/utils/revisionUtils";
+import { toast } from "sonner";
 
 const ProjectSOW = () => {
   const location = useLocation();
@@ -84,6 +85,7 @@ const ProjectSOW = () => {
         }
       } catch (error) {
         console.error("Error fetching SOW data:", error);
+        toast.error("Failed to fetch Statement of Work data");
       } finally {
         setIsLoading(false);
       }
@@ -93,12 +95,18 @@ const ProjectSOW = () => {
   }, [params.projectId, profile, isRevised]);
 
   // Only show review dialog when explicitly requested via the review param
-  // and only after data is loaded
+  // and only after data is loaded and the component has mounted
   useEffect(() => {
-    if (!isLoading && sowData && isReviewMode && (sowData.status === "ready for review" || sowData.status === "pending")) {
-      // We only want to show the dialog if the user explicitly requested to review
-      // and we have now verified that the SOW is in a reviewable status
-      setShowReviewDialog(true);
+    if (!isLoading && sowData && isReviewMode) {
+      // We manually control when to show the dialog instead of automatically showing it
+      if (sowData.status === "ready for review" || sowData.status === "pending") {
+        // Small delay to ensure proper state updates
+        const timer = setTimeout(() => {
+          setShowReviewDialog(true);
+        }, 100);
+        
+        return () => clearTimeout(timer);
+      }
     }
   }, [isReviewMode, isLoading, sowData]);
 
@@ -137,10 +145,12 @@ const ProjectSOW = () => {
           } catch (error) {
             console.error("Error generating action items:", error);
             // Continue even if action item generation fails
+            toast.error("Failed to generate action items");
           }
         }
       } catch (error) {
         console.error("Error fetching updated SOW data:", error);
+        toast.error("Failed to refresh Statement of Work data");
       }
     };
     

@@ -198,6 +198,11 @@ export function MaterialItemAccordion({
     
     switch (materialType) {
       case "Cabinets":
+        // Ensure cabinets is always an array
+        const cabinetsArray = Array.isArray(specifications.cabinets) 
+          ? specifications.cabinets 
+          : (specifications.cabinets ? [specifications.cabinets] : []);
+          
         return (
           <div className="space-y-6 mt-4 p-4 bg-gray-50 rounded-md">
             <h4 className="font-medium mb-4">Cabinet Specifications</h4>
@@ -212,13 +217,13 @@ export function MaterialItemAccordion({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {Array.isArray(specifications.cabinets) && specifications.cabinets.map((cabinet: CabinetSpecification, index: number) => (
+                {cabinetsArray.map((cabinet: CabinetSpecification, index: number) => (
                   <TableRow key={cabinet.id || index}>
                     <TableCell>
                       <Input
                         value={cabinet.type || ''}
                         onChange={(e) => {
-                          const updatedCabinets = [...(specifications.cabinets || [])];
+                          const updatedCabinets = [...cabinetsArray];
                           updatedCabinets[index] = { ...cabinet, type: e.target.value };
                           onUpdateSpecifications({ ...specifications, cabinets: updatedCabinets });
                         }}
@@ -230,7 +235,7 @@ export function MaterialItemAccordion({
                         type="number"
                         value={cabinet.doors || 0}
                         onChange={(e) => {
-                          const updatedCabinets = [...(specifications.cabinets || [])];
+                          const updatedCabinets = [...cabinetsArray];
                           updatedCabinets[index] = { ...cabinet, doors: parseInt(e.target.value) || 0 };
                           onUpdateSpecifications({ ...specifications, cabinets: updatedCabinets });
                         }}
@@ -242,7 +247,7 @@ export function MaterialItemAccordion({
                         type="number"
                         value={cabinet.drawers || 0}
                         onChange={(e) => {
-                          const updatedCabinets = [...(specifications.cabinets || [])];
+                          const updatedCabinets = [...cabinetsArray];
                           updatedCabinets[index] = { ...cabinet, drawers: parseInt(e.target.value) || 0 };
                           onUpdateSpecifications({ ...specifications, cabinets: updatedCabinets });
                         }}
@@ -253,7 +258,7 @@ export function MaterialItemAccordion({
                       <Input
                         value={cabinet.size || ''}
                         onChange={(e) => {
-                          const updatedCabinets = [...(specifications.cabinets || [])];
+                          const updatedCabinets = [...cabinetsArray];
                           updatedCabinets[index] = { ...cabinet, size: e.target.value };
                           onUpdateSpecifications({ ...specifications, cabinets: updatedCabinets });
                         }}
@@ -265,7 +270,7 @@ export function MaterialItemAccordion({
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          const updatedCabinets = specifications.cabinets?.filter((_, i) => i !== index);
+                          const updatedCabinets = cabinetsArray.filter((_, i) => i !== index);
                           onUpdateSpecifications({ ...specifications, cabinets: updatedCabinets });
                         }}
                       >
@@ -290,7 +295,7 @@ export function MaterialItemAccordion({
                 };
                 onUpdateSpecifications({
                   ...specifications,
-                  cabinets: [...(Array.isArray(specifications.cabinets) ? specifications.cabinets : []), newCabinet]
+                  cabinets: [...cabinetsArray, newCabinet]
                 });
               }}
             >

@@ -8,7 +8,10 @@ export const useActionItemsGenerator = () => {
   const [error, setError] = useState<Error | null>(null);
 
   const generateActionItems = async (projectId: string): Promise<boolean> => {
-    if (!projectId) return false;
+    if (!projectId) {
+      console.error("Cannot generate action items: No project ID provided");
+      return false;
+    }
     
     setIsGenerating(true);
     setError(null);
@@ -21,9 +24,8 @@ export const useActionItemsGenerator = () => {
       
       if (error) {
         console.error("Edge function error:", error);
-        // Don't throw to prevent breaking UI flows
         setError(error);
-        // Silently fail - this is a background process that shouldn't break the UI
+        toast.error("Failed to generate action items");
         return false;
       }
       
@@ -32,7 +34,7 @@ export const useActionItemsGenerator = () => {
     } catch (err: any) {
       console.error("Error generating action items:", err);
       setError(err);
-      // Silently fail - this is a background process that shouldn't break the UI
+      toast.error("Error while generating action items");
       return false;
     } finally {
       setIsGenerating(false);
