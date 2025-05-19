@@ -1,4 +1,3 @@
-
 import { useParams, useLocation, useSearchParams, useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -120,25 +119,21 @@ const ProjectSOW = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white flex">
-      {/* Remove the PreviewSidebar from here as it's already included in SOWWizard */}
-      
-      <div className="flex-1 flex flex-col">
-        <header className="h-14 border-b flex items-center px-0 bg-white">
-          <Button variant="ghost" size="sm" className="gap-2" onClick={() => window.history.back()}>
-            <ChevronLeft className="h-4 w-4" />
-            Back to Project
-          </Button>
-          <div className="flex-1 flex justify-center">
-            <h1 className="text-sm font-medium">{projectTitle} - Statement of Work</h1>
-          </div>
-          <div className="w-[72px]" />
-        </header>
+    <div className="min-h-screen bg-white flex flex-col">
+      <header className="h-14 border-b flex items-center px-0 bg-white">
+        <Button variant="ghost" size="sm" className="gap-2" onClick={() => window.history.back()}>
+          <ChevronLeft className="h-4 w-4" />
+          Back to Project
+        </Button>
+        <div className="flex-1 flex justify-center">
+          <h1 className="text-sm font-medium">{projectTitle} - Statement of Work</h1>
+        </div>
+        <div className="w-[72px]" />
+      </header>
 
-        <main className="px-0 py-0 flex-1 overflow-auto">
-          {isViewMode || isReviewMode ? renderSOWView() : <SOWWizard />}
-        </main>
-      </div>
+      <main className="flex-1 overflow-hidden">
+        {isViewMode || isReviewMode ? renderSOWView() : <SOWWizard />}
+      </main>
       
       {sowData && (
         <SOWReviewDialog 

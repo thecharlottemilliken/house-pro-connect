@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { FileImage, Download, Eye, Loader, Info, Building, MapPin, Settings, Tag } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -287,7 +286,7 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
     console.error("Error loading image:", previewUrl);
   };
 
-  // Filter assets based on the selected room
+  // Filter assets based on the selected room - updated for better filtering
   const getFilteredAssets = () => {
     if (selectedRoom === "all") {
       return allAssets;
@@ -484,7 +483,7 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
 
   return (
     <>
-      <div className="w-[320px] border-r bg-background h-[calc(100vh-56px)] flex flex-col">
+      <div className="h-full bg-background border-r flex flex-col">
         <div className="p-0 border-b">
           <ProjectInfo />
           

@@ -21,6 +21,7 @@ import { MaterialRequirementsForm } from "./MaterialRequirementsForm";
 import { BidConfigurationForm } from "./BidConfigurationForm";
 import { ProjectReviewForm } from "./ProjectReviewForm";
 import { toast } from "@/hooks/use-toast";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 
 const steps = [
   { id: 'work-areas', title: 'Work Areas', description: 'Define specific areas requiring work' },
@@ -163,39 +164,45 @@ export function SOWWizard() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-56px)]">
-      <PreviewSidebar projectData={projectData} propertyDetails={propertyDetails} />
+    <ResizablePanelGroup direction="horizontal" className="h-[calc(100vh-56px)]">
+      <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
+        <PreviewSidebar projectData={projectData} propertyDetails={propertyDetails} />
+      </ResizablePanel>
       
-      <div className="flex-1 overflow-auto">
-        <div className="px-6 py-6">
-          <div className="max-w-6xl mx-auto">
-            <div className="mb-8">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-2xl font-semibold text-gray-900">Create Statement of Work</h2>
-                  <p className="text-gray-500 mt-1">Step {currentStep + 1} of {steps.length}</p>
+      <ResizableHandle withHandle />
+      
+      <ResizablePanel defaultSize={75} minSize={60}>
+        <div className="overflow-auto h-full">
+          <div className="px-6 py-6">
+            <div className="max-w-6xl mx-auto">
+              <div className="mb-8">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className="text-2xl font-semibold text-gray-900">Create Statement of Work</h2>
+                    <p className="text-gray-500 mt-1">Step {currentStep + 1} of {steps.length}</p>
+                  </div>
+                  <Badge variant="secondary" className="text-sm">
+                    {Math.round(progress)}% Complete
+                  </Badge>
                 </div>
-                <Badge variant="secondary" className="text-sm">
-                  {Math.round(progress)}% Complete
-                </Badge>
+                <Progress value={progress} className="h-2" />
               </div>
-              <Progress value={progress} className="h-2" />
-            </div>
 
-            <Card className="w-full">
-              <CardHeader>
-                <CardTitle>{steps[currentStep].title}</CardTitle>
-                <CardDescription>{steps[currentStep].description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="min-h-[400px]">
-                  {renderStepContent()}
-                </div>
-              </CardContent>
-            </Card>
+              <Card className="w-full">
+                <CardHeader>
+                  <CardTitle>{steps[currentStep].title}</CardTitle>
+                  <CardDescription>{steps[currentStep].description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="min-h-[400px]">
+                    {renderStepContent()}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      </ResizablePanel>
+    </ResizablePanelGroup>
   );
 }
