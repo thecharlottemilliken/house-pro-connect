@@ -27,8 +27,10 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
   const navigate = useNavigate();
   const { generateActionItems, isGenerating } = useActionItemsGenerator();
 
-  // Fetch SOW data
+  // Fetch SOW data and set up real-time subscription
   useEffect(() => {
+    if (!projectId) return;
+    
     const fetchSOW = async () => {
       setIsLoading(true);
       try {
@@ -37,7 +39,9 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
           .select("id, status, feedback")
           .eq("project_id", projectId)
           .maybeSingle();
+          
         if (error) throw error;
+        
         if (data && typeof data === "object") {
           setSowData(data);
           
@@ -46,15 +50,39 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
         } else {
           setSowData(null);
         }
-      } catch {
+      } catch (err) {
+        console.error("Error fetching SOW data:", err);
         setSowData(null);
       } finally {
         setIsLoading(false);
       }
     };
-    if (projectId) {
-      fetchSOW();
-    }
+    
+    fetchSOW();
+    
+    // Set up real-time subscription for SOW changes
+    const channel = supabase
+      .channel('sow_changes')
+      .on('postgres_changes', 
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'statement_of_work',
+          filter: `project_id=eq.${projectId}`
+        }, 
+        (payload) => {
+          const updatedSow = payload.new as SOWData;
+          setSowData(updatedSow);
+          
+          // Regenerate action items when SOW status changes
+          generateActionItems(projectId);
+        }
+      )
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [projectId, generateActionItems]);
 
   // Callback to refresh SOW after action
@@ -66,7 +94,9 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
         .select("id, status, feedback")
         .eq("project_id", projectId)
         .maybeSingle();
+        
       if (error) throw error;
+      
       if (data && typeof data === "object") {
         setSowData(data);
         
@@ -75,7 +105,8 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
       } else {
         setSowData(null);
       }
-    } catch {
+    } catch (err) {
+      console.error("Error refreshing SOW data:", err);
       setSowData(null);
     } finally {
       setIsLoading(false);
@@ -85,8 +116,7 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
   // Conditional task card content
   let taskContent: React.ReactNode = null;
 
-  // Owner sees Review SOW task if status is pending OR ready for review
-  // The key fix: Don't show if approved or pending revision
+  // Owner sees Review SOW task if status is ready for review
   if (isOwner && sowData?.status === "ready for review") {
     taskContent = (
       <div className="bg-[#fff8eb] p-5 rounded-md mb-4">
@@ -168,7 +198,7 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
     );
   }
 
-  // SOW Approved task for owner (new)
+  // SOW Approved task for owner
   if (isOwner && sowData?.status === "approved") {
     taskContent = (
       <div className="bg-green-50 border-l-4 border-green-400 p-5 rounded-md mb-4">

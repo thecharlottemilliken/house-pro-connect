@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { useLocation, useParams, Navigate, useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
@@ -13,6 +14,7 @@ import { useProjectAccess } from "@/hooks/useProjectAccess";
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useActionItemsGenerator } from "@/hooks/useActionItemsGenerator";
+import { useSOWNotifications } from "@/hooks/useSOWNotifications"; // Import the new hook
 
 // Import our components
 import ProjectProgressCard from "@/components/project/ProjectProgressCard";
@@ -47,12 +49,15 @@ const ProjectDashboard = () => {
   const isLoading = isAccessLoading || isProjectLoading;
   const { generateActionItems } = useActionItemsGenerator();
   
+  // Enable SOW notifications
+  useSOWNotifications();
+  
   // Generate action items when dashboard loads
   useEffect(() => {
     if (!isLoading && projectData) {
       generateActionItems(projectId);
     }
-  }, [projectId, isLoading, projectData]);
+  }, [projectId, isLoading, projectData, generateActionItems]);
   
   React.useEffect(() => {
     if (error) {

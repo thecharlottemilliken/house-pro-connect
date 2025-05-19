@@ -58,7 +58,12 @@ const SOWReviewDialog = ({
       toast.success("SOW has been approved successfully");
       
       // Generate action items to update the project state - important to remove the review task
-      await generateActionItems(projectId);
+      const actionItemsGenerated = await generateActionItems(projectId);
+      
+      if (!actionItemsGenerated) {
+        console.error("Failed to generate action items after SOW approval");
+        toast.error("Action items may not be up to date. Please refresh the dashboard.");
+      }
       
       if (onActionComplete) {
         onActionComplete();
@@ -94,7 +99,12 @@ const SOWReviewDialog = ({
       toast.success("Revision request has been sent successfully");
       
       // Generate action items to update the project state - important to remove the review task
-      await generateActionItems(projectId);
+      const actionItemsGenerated = await generateActionItems(projectId);
+      
+      if (!actionItemsGenerated) {
+        console.error("Failed to generate action items after revision request");
+        toast.error("Action items may not be up to date. Please refresh the dashboard.");
+      }
       
       if (onActionComplete) {
         onActionComplete();

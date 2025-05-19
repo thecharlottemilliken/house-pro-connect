@@ -2,7 +2,7 @@
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from './use-toast';
+import { toast } from "sonner";
 
 // This hook listens for SOW status changes and creates notifications
 export const useSOWNotifications = () => {

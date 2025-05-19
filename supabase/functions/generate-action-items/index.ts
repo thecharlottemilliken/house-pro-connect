@@ -132,6 +132,7 @@ async function generateActionItems(supabase, projectId: string, userId: string) 
     
     // FIRST, CLEAN UP EXISTING SOW-RELATED ACTION ITEMS
     // This ensures we don't have stale tasks related to previous states
+    // Important: Remove this task by title rather than based on current data
     const taskTitlesToClean = [
       'Create Statement of Work (SOW)',
       'Finish completing the SOW',
@@ -141,6 +142,7 @@ async function generateActionItems(supabase, projectId: string, userId: string) 
     ];
     
     try {
+      // Delete action items by title
       for (const title of taskTitlesToClean) {
         const { error: deleteError } = await supabase
           .from('project_action_items')
@@ -209,7 +211,6 @@ async function generateActionItems(supabase, projectId: string, userId: string) 
       }
       
       // If SOW is approved, no SOW-related tasks are added
-      // This is the key part that fixes the issue - we no longer show SOW tasks when approved
     } else {
       // If SOW doesn't exist yet, create action for coach to create it
       actionItems.push({
@@ -295,8 +296,8 @@ async function generateActionItems(supabase, projectId: string, userId: string) 
     const createdItems = [];
     for (const item of actionItems) {
       try {
-        // Skip items that don't match the user's role if specified
-        if (item.for_role && item.for_role !== userRole) {
+        // Filter items that match the user's role
+        if (item.for_role && item.for_role !== userRole && userRole !== "coach") {
           continue;
         }
         
