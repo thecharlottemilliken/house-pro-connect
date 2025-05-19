@@ -12,10 +12,18 @@ const InspirationImagesGrid: React.FC<InspirationImagesGridProps> = ({
   images,
   onDeleteImage
 }) => {
+  if (!images || images.length === 0) {
+    return (
+      <div className="text-center py-4 text-gray-500">
+        No inspiration images added yet.
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
       {images.map((img, idx) => (
-        <div key={idx} className="group relative aspect-square rounded-lg overflow-hidden border border-gray-200">
+        <div key={`${img}-${idx}`} className="group relative aspect-square rounded-lg overflow-hidden border border-gray-200">
           <img 
             src={img} 
             alt={`Inspiration ${idx + 1}`} 

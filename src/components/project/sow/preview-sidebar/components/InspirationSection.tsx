@@ -23,7 +23,7 @@ export function InspirationSection({ inspirationAssets, onPreview }: Inspiration
       <div className="grid grid-cols-3 gap-2">
         {inspirationAssets.map((asset, index) => (
           <div 
-            key={`inspiration-${asset.roomName}-${index}`}
+            key={`inspiration-${asset.roomName}-${index}-${asset.url.substring(0, 10)}`}
             className="aspect-square rounded-md overflow-hidden border border-gray-200 cursor-pointer"
             onClick={() => onPreview && onPreview(asset.url)}
           >

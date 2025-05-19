@@ -1,4 +1,3 @@
-
 import { useParams, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -92,6 +91,8 @@ const ProjectDesign = () => {
 
   // Helper function to convert string URLs to FileWithPreview objects
   const convertUrlsToFileObjects = (urls: string[]): FileWithPreview[] => {
+    if (!urls || !Array.isArray(urls)) return [];
+    
     return urls.map(url => ({
       id: url,
       name: url.split('/').pop() || 'file',
@@ -162,7 +163,7 @@ const ProjectDesign = () => {
                   onAddProjectFiles={(area, files) => handleAddProjectFiles(area, files, designPreferences)}
                   onRemoveDesignAsset={(index) => handleRemoveDesignAsset(index, designPreferences)}
                   onUpdateAssetTags={enhancedUpdateAssetTags}
-                  onAddInspirationImages={(images) => handleAddInspirationImages(convertUrlsToFileObjects(images), designPreferences)}
+                  onAddInspirationImages={(images) => handleAddInspirationImages(images, designPreferences)}
                   onAddPinterestBoards={handleAddPinterestBoards}
                 />
               </div>

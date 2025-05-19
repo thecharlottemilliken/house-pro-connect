@@ -482,7 +482,7 @@ export const useDesignActions = (projectId: string | undefined) => {
 
   // Add inspiration images
   const handleAddInspirationImages = useCallback(async (
-    images: FileWithPreview[],
+    images: FileWithPreview[] | string[],
     designPreferences: any
   ) => {
     if (!projectId) {
@@ -497,10 +497,18 @@ export const useDesignActions = (projectId: string | undefined) => {
     setIsSaving(true);
     
     try {
-      // Get urls from uploaded images
-      const imageUrls = images
-        .filter(p => p.status === 'complete' && p.url)
-        .map(p => p.url) as string[];
+      // Determine if we have FileWithPreview objects or string URLs
+      let imageUrls: string[] = [];
+      
+      if (images.length > 0 && typeof images[0] === 'string') {
+        // We have an array of string URLs
+        imageUrls = images as string[];
+      } else {
+        // We have FileWithPreview objects
+        imageUrls = (images as FileWithPreview[])
+          .filter(p => p.status === 'complete' && p.url)
+          .map(p => p.url) as string[];
+      }
       
       console.log("Inspiration image URLs to be saved:", imageUrls);
       
