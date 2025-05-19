@@ -25,7 +25,7 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
   const { profile } = useAuth();
   const userRole = profile?.role;
   const navigate = useNavigate();
-  const { generateActionItems } = useActionItemsGenerator();
+  const { generateActionItems, isGenerating } = useActionItemsGenerator();
 
   // Fetch SOW data
   useEffect(() => {
@@ -86,7 +86,8 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
   let taskContent: React.ReactNode = null;
 
   // Owner sees Review SOW task if status is pending OR ready for review
-  if (isOwner && (sowData?.status === "pending" || sowData?.status === "ready for review")) {
+  // The key fix: Don't show if approved or pending revision
+  if (isOwner && sowData?.status === "ready for review") {
     taskContent = (
       <div className="bg-[#fff8eb] p-5 rounded-md mb-4">
         <h3 className="font-medium text-lg mb-2">Review SOW</h3>
@@ -167,6 +168,27 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
     );
   }
 
+  // SOW Approved task for owner (new)
+  if (isOwner && sowData?.status === "approved") {
+    taskContent = (
+      <div className="bg-green-50 border-l-4 border-green-400 p-5 rounded-md mb-4">
+        <h3 className="font-medium text-lg mb-2">SOW Approved</h3>
+        <p className="text-gray-700 mb-3">
+          You've approved the Statement of Work. The project can now proceed to the next phase.
+        </p>
+        <div className="flex justify-end">
+          <Button
+            className="bg-green-600 hover:bg-green-700 font-medium flex items-center gap-1"
+            size="sm"
+            onClick={() => navigate(`/project-sow/${projectId}?view=true`)}
+          >
+            VIEW SOW <ArrowRight className="ml-1 h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   // Default milestone approval placeholder task (can flesh out in future)
   const milestoneTask = (
     <div className="bg-[#e9f2f6] p-5 rounded-md">
@@ -193,11 +215,18 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
         <Button variant="link" className="text-[#0f3a4d] p-0 font-medium">See All</Button>
       </CardHeader>
       <CardContent className="px-6 pb-6">
-        {isLoading ? (
+        {isLoading || isGenerating ? (
           <div className="text-gray-400">Loading tasks...</div>
         ) : (
           <>
             {taskContent}
+            {!taskContent && sowData?.status === "approved" ? (
+              <div className="bg-green-50 p-5 rounded-md mb-4 text-center">
+                <p className="text-gray-700">
+                  SOW has been approved. The project is ready for the next phase!
+                </p>
+              </div>
+            ) : null}
             {milestoneTask}
           </>
         )}

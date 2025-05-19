@@ -130,9 +130,36 @@ async function generateActionItems(supabase, projectId: string, userId: string) 
     // Find project owner ID
     const ownerId = projectData.user_id
     
+    // FIRST, CLEAN UP EXISTING SOW-RELATED ACTION ITEMS
+    // This ensures we don't have stale tasks related to previous states
+    const taskTitlesToClean = [
+      'Create Statement of Work (SOW)',
+      'Finish completing the SOW',
+      'Review Statement of Work',
+      'Review Revised Statement of Work',
+      'Update SOW with Revisions'
+    ];
+    
+    try {
+      for (const title of taskTitlesToClean) {
+        const { error: deleteError } = await supabase
+          .from('project_action_items')
+          .delete()
+          .eq('project_id', projectId)
+          .eq('title', title);
+          
+        if (deleteError) {
+          console.error(`Error deleting task "${title}":`, deleteError);
+        }
+      }
+    } catch (err) {
+      console.error("Error during cleanup:", err);
+      // Continue despite cleanup errors
+    }
+    
     // Define SOW-related action items based on SOW state
     if (sowData) {
-      // If SOW is in "draft" or doesn't exist, create action for coach to create it
+      // If SOW is in "draft" state, create action for coach to complete it
       if (sowData.status === 'draft') {
         actionItems.push({
           project_id: projectId,
@@ -143,7 +170,7 @@ async function generateActionItems(supabase, projectId: string, userId: string) 
           action_type: 'sow',
           action_data: { route: `/project-sow/${projectId}` },
           for_role: 'coach'
-        })
+        });
       }
       
       // If SOW is ready for review, create action for owner to review it
@@ -164,7 +191,7 @@ async function generateActionItems(supabase, projectId: string, userId: string) 
             route: `/project-sow/${projectId}?review=true${isRevision ? '&revised=true' : ''}` 
           },
           for_role: 'resident'
-        })
+        });
       }
       
       // If SOW needs revisions, create action for coach
@@ -178,8 +205,11 @@ async function generateActionItems(supabase, projectId: string, userId: string) 
           action_type: 'sow',
           action_data: { route: `/project-sow/${projectId}` },
           for_role: 'coach'
-        })
+        });
       }
+      
+      // If SOW is approved, no SOW-related tasks are added
+      // This is the key part that fixes the issue - we no longer show SOW tasks when approved
     } else {
       // If SOW doesn't exist yet, create action for coach to create it
       actionItems.push({
@@ -191,7 +221,7 @@ async function generateActionItems(supabase, projectId: string, userId: string) 
         action_type: 'sow',
         action_data: { route: `/project-sow/${projectId}` },
         for_role: 'coach'
-      })
+      });
     }
 
     // Design-related actions
@@ -261,22 +291,7 @@ async function generateActionItems(supabase, projectId: string, userId: string) 
       action_data: { route: `/project-design/${projectId}` }
     });
     
-    // First, clear out any existing action items for this project
-    // BUT only delete the ones that we're about to re-insert to prevent permission issues
-    for (const item of actionItems) {
-      const { error: deleteError } = await supabase
-        .from('project_action_items')
-        .delete()
-        .eq('project_id', projectId)
-        .eq('title', item.title)
-        .eq('action_type', item.action_type);
-        
-      if (deleteError) {
-        console.error("Error deleting action items:", deleteError);
-      }
-    }
-    
-    // Then, insert the new action items one by one to better handle permissions
+    // Insert the new action items one by one to better handle permissions
     const createdItems = [];
     for (const item of actionItems) {
       try {

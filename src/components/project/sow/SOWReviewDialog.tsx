@@ -39,7 +39,7 @@ const SOWReviewDialog = ({
   const [activeTab, setActiveTab] = useState("review");
   const [feedback, setFeedback] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { generateActionItems } = useActionItemsGenerator();
+  const { generateActionItems, isGenerating } = useActionItemsGenerator();
   const { projectData } = useProjectData(projectId);
   
   const handleApprove = async () => {
@@ -57,7 +57,7 @@ const SOWReviewDialog = ({
       
       toast.success("SOW has been approved successfully");
       
-      // Generate action items to update the project state
+      // Generate action items to update the project state - important to remove the review task
       await generateActionItems(projectId);
       
       if (onActionComplete) {
@@ -93,7 +93,7 @@ const SOWReviewDialog = ({
       
       toast.success("Revision request has been sent successfully");
       
-      // Generate action items to update the project state
+      // Generate action items to update the project state - important to remove the review task
       await generateActionItems(projectId);
       
       if (onActionComplete) {
@@ -159,9 +159,9 @@ const SOWReviewDialog = ({
               </Button>
               <Button 
                 onClick={handleApprove}
-                disabled={isSubmitting}
+                disabled={isSubmitting || isGenerating}
               >
-                {isSubmitting ? (
+                {isSubmitting || isGenerating ? (
                   <>
                     <RotateCw className="mr-2 h-4 w-4 animate-spin" />
                     Approving...
@@ -198,10 +198,10 @@ const SOWReviewDialog = ({
               </Button>
               <Button 
                 onClick={handleRequestRevisions}
-                disabled={isSubmitting || !feedback.trim()}
+                disabled={isSubmitting || !feedback.trim() || isGenerating}
                 variant="secondary"
               >
-                {isSubmitting ? (
+                {isSubmitting || isGenerating ? (
                   <>
                     <RotateCw className="mr-2 h-4 w-4 animate-spin" />
                     Requesting...
