@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -619,7 +620,11 @@ export const useDesignActions = (projectId: string | undefined) => {
       // Combine existing and new images
       let allImages: string[] = [];
       if (roomPrefs && roomPrefs.inspiration_images) {
-        allImages = [...roomPrefs.inspiration_images, ...imageUrls];
+        // Fix: Ensure inspiration_images is treated as an array
+        const existingImages = Array.isArray(roomPrefs.inspiration_images) 
+          ? roomPrefs.inspiration_images 
+          : [];
+        allImages = [...existingImages, ...imageUrls];
       } else {
         allImages = imageUrls;
       }
@@ -688,10 +693,19 @@ export const useDesignActions = (projectId: string | undefined) => {
       // Combine existing and new boards
       let allBoards: any[] = [];
       if (roomPrefs && roomPrefs.pinterest_boards) {
+        // Fix: Ensure pinterest_boards is treated as an array
+        const existingBoards = Array.isArray(roomPrefs.pinterest_boards) 
+          ? roomPrefs.pinterest_boards 
+          : [];
+          
         // Filter out any boards that already exist (by ID)
-        const existingBoardIds = roomPrefs.pinterest_boards.map((b: any) => b.id);
-        const newBoards = boards.filter(board => !existingBoardIds.includes(board.id));
-        allBoards = [...roomPrefs.pinterest_boards, ...newBoards];
+        if (existingBoards.length > 0) {
+          const existingBoardIds = existingBoards.map((b: any) => b.id);
+          const newBoards = boards.filter(board => !existingBoardIds.includes(board.id));
+          allBoards = [...existingBoards, ...newBoards];
+        } else {
+          allBoards = boards;
+        }
       } else {
         allBoards = boards;
       }
