@@ -23,17 +23,54 @@ export function PreviewSidebar({ projectData, propertyDetails, onPreview }: Prev
   const { roomOptions } = useRoomOptions(projectData, propertyDetails, allAssets);
   const { filteredAssets, assetGroups, inspirationAssets } = useAssetFiltering(allAssets, selectedRoom);
 
-  // Get room measurements for the selected room
+  // Get room measurements for the selected room with improved key normalization
   const getRoomMeasurements = () => {
     if (selectedRoom === "all" || !projectData?.design_preferences?.roomMeasurements) {
       return undefined;
     }
     
-    // Find measurements for the current room
-    return projectData.design_preferences.roomMeasurements[selectedRoom];
+    // Debug the available measurements
+    console.log("Available measurements keys:", 
+      Object.keys(projectData.design_preferences.roomMeasurements || {}));
+    
+    const roomMeasurements = projectData.design_preferences.roomMeasurements;
+    
+    // Try different key formats to find measurements
+    const normalizedRoomKey = selectedRoom.toLowerCase().replace(/\s+/g, '_');
+    const camelCaseKey = selectedRoom.replace(/\s+(.)/g, (_, c) => c.toUpperCase());
+    const titleCaseKey = selectedRoom.split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+    
+    // Try different formats to find the measurements
+    const possibleKeys = [
+      selectedRoom,
+      normalizedRoomKey,
+      camelCaseKey,
+      titleCaseKey,
+      selectedRoom.toLowerCase(),
+      selectedRoom.toUpperCase()
+    ];
+    
+    console.log("Looking for measurements with keys:", possibleKeys);
+    
+    // Find the first key that has measurements
+    for (const key of possibleKeys) {
+      if (roomMeasurements[key]) {
+        console.log("Found measurements with key:", key, roomMeasurements[key]);
+        return roomMeasurements[key];
+      }
+    }
+    
+    console.log("No measurements found for room:", selectedRoom);
+    return undefined;
   };
 
   const roomMeasurements = getRoomMeasurements();
+  
+  // Debug the measurements we found
+  console.log("Selected room:", selectedRoom);
+  console.log("Room measurements for display:", roomMeasurements);
 
   return (
     <div className="h-full bg-background border-r flex flex-col">
@@ -51,7 +88,7 @@ export function PreviewSidebar({ projectData, propertyDetails, onPreview }: Prev
         />
       </div>
       
-      {/* Add Room Measurements Section below room selector */}
+      {/* Room Measurements Section with enhanced debugging */}
       <RoomMeasurementsSection 
         measurements={roomMeasurements}
         selectedRoom={selectedRoom}

@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Ruler, Maximize2 } from 'lucide-react';
 
 interface RoomMeasurementsProps {
   measurements?: {
@@ -15,24 +16,23 @@ interface RoomMeasurementsProps {
 export function RoomMeasurementsSection({ measurements, selectedRoom }: RoomMeasurementsProps) {
   // Debug the incoming measurements with more detail
   console.log(`RoomMeasurementsSection for ${selectedRoom}:`, measurements);
-  if (measurements) {
-    console.log(`Measurements values - length: ${measurements.length} (${typeof measurements.length}), width: ${measurements.width} (${typeof measurements.width}), height: ${measurements.height} (${typeof measurements.height})`);
-  }
-
+  
+  // Skip rendering for 'all' rooms view or if no measurements
   if (!measurements || selectedRoom === 'all') {
     console.log(`RoomMeasurementsSection: No measurements or 'all' room selected`);
     return null;
   }
 
   // Ensure measurements has the expected structure with explicit number type checking
-  const validMeasurements = measurements && (
+  const hasDimensions = 
     (typeof measurements.length === 'number' && measurements.length > 0) || 
     (typeof measurements.width === 'number' && measurements.width > 0) || 
-    (typeof measurements.height === 'number' && measurements.height > 0) || 
-    measurements.additionalNotes
-  );
-
-  if (!validMeasurements) {
+    (typeof measurements.height === 'number' && measurements.height > 0);
+  
+  const hasNotes = Boolean(measurements.additionalNotes && measurements.additionalNotes.trim());
+  
+  // Only show section if we have dimensions or notes
+  if (!hasDimensions && !hasNotes) {
     console.log(`RoomMeasurementsSection: No valid measurements for ${selectedRoom}`);
     return null;
   }
@@ -57,34 +57,43 @@ export function RoomMeasurementsSection({ measurements, selectedRoom }: RoomMeas
   };
 
   return (
-    <div className="px-4 py-3 border-t border-gray-100">
-      <h3 className="text-sm font-medium mb-2">Room Measurements</h3>
-      <div className="grid grid-cols-3 gap-2 text-xs mb-2">
-        <div className="bg-gray-50 p-2 rounded">
-          <span className="text-gray-500 block">Length</span>
-          <span className="font-medium">{formatMeasurement(length)}</span>
-        </div>
-        <div className="bg-gray-50 p-2 rounded">
-          <span className="text-gray-500 block">Width</span>
-          <span className="font-medium">{formatMeasurement(width)}</span>
-        </div>
-        <div className="bg-gray-50 p-2 rounded">
-          <span className="text-gray-500 block">Height</span>
-          <span className="font-medium">{formatMeasurement(height)}</span>
-        </div>
+    <div className="px-4 py-3 border-t border-b border-gray-100 bg-gray-50">
+      <div className="flex items-center gap-2 mb-2">
+        <Ruler className="h-4 w-4 text-gray-500" />
+        <h3 className="text-sm font-medium">Room Measurements</h3>
       </div>
       
-      {squareFootage && (
-        <div className="bg-gray-50 p-2 rounded text-xs mb-2">
-          <span className="text-gray-500 block">Area</span>
-          <span className="font-medium">{squareFootage}</span>
+      {hasDimensions && (
+        <div className="grid grid-cols-3 gap-2 text-xs mb-2">
+          <div className="bg-white p-2 rounded shadow-sm border border-gray-100">
+            <span className="text-gray-500 block">Length</span>
+            <span className="font-medium">{formatMeasurement(length)}</span>
+          </div>
+          <div className="bg-white p-2 rounded shadow-sm border border-gray-100">
+            <span className="text-gray-500 block">Width</span>
+            <span className="font-medium">{formatMeasurement(width)}</span>
+          </div>
+          <div className="bg-white p-2 rounded shadow-sm border border-gray-100">
+            <span className="text-gray-500 block">Height</span>
+            <span className="font-medium">{formatMeasurement(height)}</span>
+          </div>
         </div>
       )}
       
-      {additionalNotes && (
-        <div className="text-xs">
-          <span className="text-gray-500 font-medium">Notes: </span>
-          <span>{additionalNotes}</span>
+      {squareFootage && (
+        <div className="flex items-center gap-2 bg-white p-2 rounded text-xs mb-2 shadow-sm border border-gray-100">
+          <Maximize2 className="h-3 w-3 text-gray-500" />
+          <div>
+            <span className="text-gray-500 block">Area</span>
+            <span className="font-medium">{squareFootage}</span>
+          </div>
+        </div>
+      )}
+      
+      {hasNotes && (
+        <div className="bg-white p-2 rounded text-xs shadow-sm border border-gray-100">
+          <span className="text-gray-500 font-medium block mb-1">Notes: </span>
+          <span className="text-gray-700">{additionalNotes}</span>
         </div>
       )}
     </div>
