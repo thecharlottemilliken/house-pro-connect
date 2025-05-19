@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useActionItemsGenerator } from '@/hooks/useActionItemsGenerator';
 
 interface SOWReviewDialogProps {
   open: boolean;
@@ -23,6 +24,7 @@ const SOWReviewDialog: React.FC<SOWReviewDialogProps> = ({
 }) => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const { generateActionItems } = useActionItemsGenerator();
 
   const handleReviewNow = () => {
     navigate(`/project-sow/${projectId}/review`);
@@ -52,6 +54,9 @@ const SOWReviewDialog: React.FC<SOWReviewDialogProps> = ({
             is_completed: true 
           });
       }
+      
+      // Regenerate action items to update status
+      await generateActionItems(projectId);
       
       if (onActionComplete) {
         onActionComplete();

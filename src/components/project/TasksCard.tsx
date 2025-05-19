@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useActionItemsGenerator } from "@/hooks/useActionItemsGenerator";
 
 interface TasksCardProps {
   projectId: string;
@@ -24,6 +25,7 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
   const { profile } = useAuth();
   const userRole = profile?.role;
   const navigate = useNavigate();
+  const { generateActionItems } = useActionItemsGenerator();
 
   // Fetch SOW data
   useEffect(() => {
@@ -38,6 +40,9 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
         if (error) throw error;
         if (data && typeof data === "object") {
           setSowData(data);
+          
+          // Ensure action items are current when SOW status changes
+          await generateActionItems(projectId);
         } else {
           setSowData(null);
         }
@@ -50,7 +55,7 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
     if (projectId) {
       fetchSOW();
     }
-  }, [projectId]);
+  }, [projectId, generateActionItems]);
 
   // Callback to refresh SOW after action
   const refreshSOW = async () => {
@@ -64,6 +69,9 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
       if (error) throw error;
       if (data && typeof data === "object") {
         setSowData(data);
+        
+        // Regenerate action items
+        await generateActionItems(projectId);
       } else {
         setSowData(null);
       }
@@ -77,8 +85,8 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
   // Conditional task card content
   let taskContent: React.ReactNode = null;
 
-  // Owner sees Review SOW task if status is pending
-  if (isOwner && sowData?.status === "pending") {
+  // Owner sees Review SOW task if status is pending OR ready for review
+  if (isOwner && (sowData?.status === "pending" || sowData?.status === "ready for review")) {
     taskContent = (
       <div className="bg-[#fff8eb] p-5 rounded-md mb-4">
         <h3 className="font-medium text-lg mb-2">Review SOW</h3>
@@ -90,7 +98,6 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
             className="bg-orange-500 hover:bg-orange-600 font-medium flex items-center gap-1"
             size="sm"
             onClick={() =>
-              // NOTE: update route to /project-sow/:projectId/review
               navigate(`/project-sow/${projectId}/review`)
             }
           >
@@ -173,6 +180,6 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
       </CardContent>
     </Card>
   );
-};
+}
 
 export default TasksCard;

@@ -8,6 +8,7 @@ import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { ProjectReviewForm } from "./ProjectReviewForm";
+import { useActionItemsGenerator } from "@/hooks/useActionItemsGenerator";
 
 type SOWData = {
   id: string;
@@ -29,6 +30,7 @@ const SOWReviewPage = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const navigate = useNavigate();
   const { profile } = useAuth();
+  const { generateActionItems } = useActionItemsGenerator();
 
   // Only owners can access this page
   useEffect(() => {
@@ -72,6 +74,12 @@ const SOWReviewPage = () => {
       .from("statement_of_work")
       .update({ status: "approved", feedback: null })
       .eq("id", sowData.id);
+      
+    if (!error) {
+      // Generate action items to update project status
+      await generateActionItems(projectId || "");
+    }
+      
     setActionLoading(false);
     if (error) {
       toast({ title: "Error", description: "Failed to approve SOW.", variant: "destructive" });
@@ -96,6 +104,12 @@ const SOWReviewPage = () => {
       .from("statement_of_work")
       .update({ status: "pending revision", feedback })
       .eq("id", sowData.id);
+      
+    if (!error) {
+      // Generate action items to update project status
+      await generateActionItems(projectId || "");
+    }
+      
     setActionLoading(false);
     if (error) {
       toast({ title: "Error", description: "Failed to request SOW revisions.", variant: "destructive" });
@@ -146,10 +160,10 @@ const SOWReviewPage = () => {
         <h2 className="text-2xl font-semibold text-gray-900 mb-6">Review & Approve SOW</h2>
         
         <ProjectReviewForm
-          workAreas={sowData.work_areas || []}
-          laborItems={sowData.labor_items || []}
-          materialItems={sowData.material_items || []}
-          bidConfiguration={sowData.bid_configuration || { bidDuration: '', projectDescription: '' }}
+          workAreas={sowData?.work_areas || []}
+          laborItems={sowData?.labor_items || []}
+          materialItems={sowData?.material_items || []}
+          bidConfiguration={sowData?.bid_configuration || { bidDuration: '', projectDescription: '' }}
           projectId={projectId || ""}
           onSave={() => {}}
         />

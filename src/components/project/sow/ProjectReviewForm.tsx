@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -11,6 +12,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useActionItemsGenerator } from "@/hooks/useActionItemsGenerator";
 
 interface ProjectReviewFormProps {
   workAreas: any[];
@@ -34,6 +36,7 @@ export function ProjectReviewForm({
 }: ProjectReviewFormProps) {
   const [confirmed, setConfirmed] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const { generateActionItems } = useActionItemsGenerator();
 
   const handleSaveSOW = async () => {
     if (!confirmed) return;
@@ -59,7 +62,7 @@ export function ProjectReviewForm({
             labor_items: laborItems,
             material_items: materialItems,
             bid_configuration: bidConfiguration,
-            status: 'pending'
+            status: 'ready for review' // Changed from 'pending' to 'ready for review'
           })
           .eq('id', existingSOW.id);
           
@@ -74,11 +77,14 @@ export function ProjectReviewForm({
             labor_items: laborItems,
             material_items: materialItems,
             bid_configuration: bidConfiguration,
-            status: 'pending'
+            status: 'ready for review' // Changed from 'pending' to 'ready for review'
           }]);
           
         if (error) throw error;
       }
+      
+      // Generate action items to ensure the SOW review item appears
+      await generateActionItems(projectId);
       
       toast({
         title: "Success",

@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import SOWReviewDialog from "@/components/project/sow/SOWReviewDialog";
 import { useSOWNotifications } from "@/hooks/useSOWNotifications";
+import { useActionItemsGenerator } from "@/hooks/useActionItemsGenerator";
 
 const ProjectSOW = () => {
   const location = useLocation();
@@ -31,6 +32,7 @@ const ProjectSOW = () => {
   const [showReviewDialog, setShowReviewDialog] = useState(false);
 
   const { profile } = useAuth();
+  const { generateActionItems } = useActionItemsGenerator();
 
   // Fetch SOW data from statement_of_work table
   useEffect(() => {
@@ -47,9 +49,14 @@ const ProjectSOW = () => {
         if (error) throw error;
         setSOWData(data);
         
-        // If in review mode and status is "ready for review", show review dialog
-        if (isReviewMode && data?.status === "ready for review") {
+        // If in review mode and status is "ready for review" or "pending", show review dialog
+        if (isReviewMode && (data?.status === "ready for review" || data?.status === "pending")) {
           setShowReviewDialog(true);
+          
+          // Ensure action items are generated for this project
+          if (params.projectId) {
+            await generateActionItems(params.projectId);
+          }
         }
       } catch (error) {
         console.error("Error fetching SOW data:", error);
@@ -59,7 +66,7 @@ const ProjectSOW = () => {
     };
 
     fetchSOWData();
-  }, [params.projectId, profile, isReviewMode]);
+  }, [params.projectId, profile, isReviewMode, generateActionItems]);
 
   const projectTitle = projectData?.title || "Unknown Project";
   
@@ -77,6 +84,11 @@ const ProjectSOW = () => {
 
         if (error) throw error;
         setSOWData(data);
+        
+        // Regenerate action items after review
+        if (params.projectId) {
+          await generateActionItems(params.projectId);
+        }
       } catch (error) {
         console.error("Error fetching updated SOW data:", error);
       }
