@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { FileImage, Download, Eye, Loader, Info, Building, MapPin, Settings, Tag } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -11,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 interface PreviewSidebarProps {
   projectData: any;
@@ -43,6 +45,7 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
   const beforePhotos = designPreferences.beforePhotos || {};
   const blueprintUrl = propertyDetails?.blueprint_url;
   const inspirationImages = designPreferences.inspirationImages || [];
+  const renovationAreas = projectData?.renovation_areas || [];
 
   // Normalize room name for consistent formatting
   const normalizeRoomName = (name: string): string => {
@@ -60,12 +63,30 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
   const findBestMatchingRoom = (roomName: string, dbRooms: Room[]): Room | null => {
     if (!roomName) return null;
     
+    console.log(`Finding best match for room: ${roomName} among`, dbRooms.map(r => r.name));
+    
+    // Normalize for comparison
+    const normalizedName = roomName.toLowerCase().trim();
+    
     // Try exact match first (case insensitive)
-    const normalizedName = normalizeRoomName(roomName).toLowerCase();
     const exactMatch = dbRooms.find(r => r.name.toLowerCase() === normalizedName);
-    if (exactMatch) return exactMatch;
+    if (exactMatch) {
+      console.log(`Found exact match for ${roomName}: ${exactMatch.name}`);
+      return exactMatch;
+    }
+    
+    // Try partial match (if room name is contained within db room name or vice versa)
+    const partialMatch = dbRooms.find(r => 
+      r.name.toLowerCase().includes(normalizedName) || 
+      normalizedName.includes(r.name.toLowerCase())
+    );
+    
+    if (partialMatch) {
+      console.log(`Found partial match for ${roomName}: ${partialMatch.name}`);
+      return partialMatch;
+    }
 
-    // No match found
+    console.log(`No match found for ${roomName}`);
     return null;
   };
 
@@ -79,6 +100,8 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
 
       setIsLoading(true);
       try {
+        console.log("Renovation areas from project:", renovationAreas);
+        
         // Fetch rooms
         const { data: roomsData, error: roomsError } = await supabase
           .from('property_rooms')
@@ -103,6 +126,7 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
           name: normalizeRoomName(room.name)
         }));
         
+        console.log("Normalized rooms from database:", normalizedRooms);
         setRooms(normalizedRooms);
 
         // Fetch all room assets
@@ -117,6 +141,8 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
           setIsLoading(false);
           return;
         }
+
+        console.log("Design preferences fetched:", designPrefs);
 
         // Process all assets with their types
         let allRoomAssets: RoomAssetWithType[] = [];
@@ -172,7 +198,7 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
             // Find matching room in database or use "Other" category
             const normalizedRoomName = normalizeRoomName(room);
             const matchingRoom = findBestMatchingRoom(normalizedRoomName, normalizedRooms);
-            const finalRoomName = matchingRoom?.name || "Other";
+            const finalRoomName = matchingRoom?.name || normalizedRoomName || "Other";
             
             const beforePhotoAssets = photos.map((url, index) => ({
               roomName: finalRoomName,
@@ -219,7 +245,7 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
             if (!roomName && asset.tags && asset.tags.length > 0) {
               // Look for tags that might contain room names
               const roomTag = asset.tags.find((tag: string) => 
-                normalizedRooms.some(room => tag === room.name)
+                normalizedRooms.some(room => tag.toLowerCase() === room.name.toLowerCase())
               );
               if (roomTag) {
                 roomName = roomTag;
@@ -252,7 +278,7 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
           });
         }
 
-        console.log("All room assets:", allRoomAssets);
+        console.log("All room assets (before filtering):", allRoomAssets);
         setAllAssets(allRoomAssets);
       } catch (error) {
         console.error("Error in fetchRoomData:", error);
@@ -262,7 +288,7 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
     };
 
     fetchRoomData();
-  }, [propertyDetails?.id, beforePhotos, inspirationImages, blueprintUrl, designPreferences]);
+  }, [propertyDetails?.id, beforePhotos, inspirationImages, blueprintUrl, designPreferences, renovationAreas]);
 
   // Helper to get tags for an asset URL from design preferences
   const getTagsForAsset = (url: string): string[] => {
@@ -286,22 +312,34 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
     console.error("Error loading image:", previewUrl);
   };
 
-  // Filter assets based on the selected room - updated for better filtering
+  // Improved filter assets based on the selected room - updated for more flexible matching
   const getFilteredAssets = () => {
     if (selectedRoom === "all") {
       return allAssets;
     }
     
     const selectedRoomLower = selectedRoom.toLowerCase();
-    console.log("Filtering for room:", selectedRoomLower);
+    console.log(`Filtering for room: ${selectedRoomLower} among ${allAssets.length} assets`);
     
     const filtered = allAssets.filter(asset => {
       const roomNameMatch = asset.roomName.toLowerCase() === selectedRoomLower;
       const roomIdMatch = asset.roomId && asset.roomId.toLowerCase() === selectedRoomLower;
-      return roomNameMatch || roomIdMatch;
+      const tagMatch = asset.tags && asset.tags.some(tag => tag.toLowerCase() === selectedRoomLower);
+      
+      // More flexible matching to include partial matches
+      const partialRoomNameMatch = asset.roomName.toLowerCase().includes(selectedRoomLower) || 
+                                 selectedRoomLower.includes(asset.roomName.toLowerCase());
+
+      const isMatch = roomNameMatch || roomIdMatch || tagMatch || partialRoomNameMatch;
+      
+      if (isMatch) {
+        console.log(`Match found for ${selectedRoomLower}: Asset with room ${asset.roomName} (${asset.name})`);
+      }
+      
+      return isMatch;
     });
     
-    console.log("Filtered assets:", filtered);
+    console.log(`Filtered assets: ${filtered.length} items`, filtered);
     return filtered;
   };
 
@@ -324,22 +362,37 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
     return groups;
   };
 
-  // Get the list of unique room names - ONLY from the database rooms
+  // Get the list of unique room names from renovation areas and existing rooms
   const roomOptions = React.useMemo(() => {
-    // Only use rooms from the database
-    const dbRoomNames = rooms.map(room => room.name);
-
-    // Add 'General' and 'Property' if they have assets
-    const hasGeneralAssets = allAssets.some(asset => asset.roomName === 'General');
-    const hasPropertyAssets = allAssets.some(asset => asset.roomName === 'Property');
+    // Start with renovation areas
+    const renovationRooms = renovationAreas
+      .map((area: any) => normalizeRoomName(area.area))
+      .filter(Boolean);
     
-    const uniqueRooms = new Set<string>(dbRoomNames);
-    if (hasGeneralAssets) uniqueRooms.add('General');
-    if (hasPropertyAssets) uniqueRooms.add('Property');
+    console.log("Room options from renovation areas:", renovationRooms);
     
-    // Sort rooms alphabetically
-    return Array.from(uniqueRooms).sort();
-  }, [rooms, allAssets]);
+    // Extract unique room names from assets
+    const assetRoomNames = [...new Set(allAssets.map(asset => asset.roomName))];
+    console.log("Room options from assets:", assetRoomNames);
+    
+    // Always include Property if blueprint exists
+    const specialRooms = blueprintUrl ? ['Property'] : [];
+    
+    // Combine all unique room names
+    const uniqueRooms = new Set([
+      ...renovationRooms,
+      ...assetRoomNames,
+      ...specialRooms
+    ]);
+    
+    // Sort alphabetically and filter out empty/undefined values
+    const sortedRooms = Array.from(uniqueRooms)
+      .filter(Boolean)
+      .sort();
+    
+    console.log("Final room options:", sortedRooms);
+    return sortedRooms;
+  }, [renovationAreas, allAssets, blueprintUrl]);
 
   // Component to display a file list item with tags
   const FileListItem = ({ asset }: { asset: RoomAssetWithType }) => (
@@ -418,7 +471,7 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
   const assetGroups = groupAssetsByType(filteredAssets);
 
   const LoadingSkeleton = () => (
-    <div className="space-y-4">
+    <div className="space-y-4 px-4">
       {[1, 2, 3].map(i => (
         <div key={i} className="flex items-center justify-between py-4 border-b border-gray-100 last:border-0">
           <div className="flex items-center gap-3">
@@ -452,7 +505,7 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
           <Building className="w-5 h-5 text-gray-500 mt-0.5" />
           <div>
             <h3 className="text-sm font-medium text-gray-900">Property</h3>
-            <p className="text-sm text-gray-500">{propertyDetails?.property_name}</p>
+            <p className="text-sm text-gray-500">{propertyDetails?.property_name || 'No property name'}</p>
           </div>
         </div>
 
@@ -460,7 +513,7 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
           <MapPin className="w-5 h-5 text-gray-500 mt-0.5" />
           <div>
             <h3 className="text-sm font-medium text-gray-900">Location</h3>
-            <p className="text-sm text-gray-500">{propertyDetails?.address}</p>
+            <p className="text-sm text-gray-500">{propertyDetails?.address || 'No address'}</p>
           </div>
         </div>
 
@@ -469,11 +522,15 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
           <div>
             <h3 className="text-sm font-medium text-gray-900">Renovation Areas</h3>
             <div className="text-sm text-gray-500">
-              {projectData?.renovation_areas?.map((area: any, index: number) => (
-                <span key={index} className="inline-block mr-2 mb-1">
-                  {area.area}{index < (projectData?.renovation_areas?.length - 1) ? ',' : ''}
-                </span>
-              ))}
+              {renovationAreas.length > 0 ? (
+                renovationAreas.map((area: any, index: number) => (
+                  <span key={index} className="inline-block mr-2 mb-1">
+                    {area.area}{index < (renovationAreas.length - 1) ? ',' : ''}
+                  </span>
+                ))
+              ) : (
+                <span>No renovation areas defined</span>
+              )}
             </div>
           </div>
         </div>
@@ -489,14 +546,23 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
           
           <h2 className="text-lg font-semibold mb-4 mt-6 px-4">Project Assets</h2>
           <div className="px-4">
-            <Select value={selectedRoom} onValueChange={(value) => setSelectedRoom(value)}>
+            <Select 
+              value={selectedRoom} 
+              onValueChange={(value) => {
+                console.log(`Room selected: ${value}`);
+                setSelectedRoom(value);
+              }}
+            >
               <SelectTrigger className="w-full bg-white">
                 <SelectValue placeholder="Select room" />
               </SelectTrigger>
               <SelectContent className="bg-white">
                 <SelectItem value="all">All Rooms</SelectItem>
                 {roomOptions.map((room) => (
-                  <SelectItem key={room} value={room.toLowerCase()}>
+                  <SelectItem 
+                    key={room} 
+                    value={room.toLowerCase()}
+                  >
                     {room}
                   </SelectItem>
                 ))}
