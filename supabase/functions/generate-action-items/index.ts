@@ -52,14 +52,25 @@ serve(async (req) => {
       })
     }
 
+    // Get user info for permission checks
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: 'User not authenticated' }), { 
+        status: 401, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      })
+    }
+    
     // Generate action items based on project state and SOW status
-    const actionItems = await generateActionItems(supabaseClient, projectId)
+    const actionItems = await generateActionItems(supabaseClient, projectId, user.id)
     
     return new Response(
       JSON.stringify({ success: true, actionItems }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
+    console.error("Error generating action items:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
@@ -70,14 +81,14 @@ serve(async (req) => {
   }
 })
 
-async function generateActionItems(supabase, projectId: string) {
+async function generateActionItems(supabase, projectId: string, userId: string) {
   try {
     // First, fetch project data and SOW status
     const { data: projectData, error: projectError } = await supabase
       .from('projects')
       .select('title, user_id')
       .eq('id', projectId)
-      .single()
+      .maybeSingle()
     
     if (projectError) throw projectError
     
@@ -88,6 +99,17 @@ async function generateActionItems(supabase, projectId: string) {
       .eq('project_id', projectId)
     
     if (teamError) throw teamError
+    
+    // Get user role from profiles table
+    const { data: userProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .maybeSingle();
+      
+    if (profileError) throw profileError;
+    
+    const userRole = userProfile?.role || '';
     
     // Get SOW data
     const { data: sowData, error: sowError } = await supabase
@@ -114,10 +136,10 @@ async function generateActionItems(supabase, projectId: string) {
       if (sowData.status === 'draft') {
         actionItems.push({
           project_id: projectId,
-          title: 'Create Statement of Work (SOW)',
-          description: 'Define the scope of work, materials, and labor requirements',
+          title: 'Finish completing the SOW',
+          description: 'Complete the Statement of Work for this project',
           priority: 'high',
-          icon_name: 'file-plus',
+          icon_name: 'file-pen',
           action_type: 'sow',
           action_data: { route: `/project-sow/${projectId}` },
           for_role: 'coach'
@@ -131,16 +153,17 @@ async function generateActionItems(supabase, projectId: string) {
         
         actionItems.push({
           project_id: projectId,
-          title: isRevision ? 'Review Revised SOW' : 'Review Statement of Work',
+          title: isRevision ? 'Review Revised Statement of Work' : 'Review Statement of Work',
           description: isRevision 
             ? 'The revised Statement of Work is ready for your review'
             : 'Review the scope of work before proceeding',
           priority: 'high',
-          icon_name: 'file-text',
-          action_type: 'sow',
+          icon_name: 'clipboard-check',
+          action_type: 'navigate',
           action_data: { 
             route: `/project-sow/${projectId}?review=true${isRevision ? '&revised=true' : ''}` 
-          }
+          },
+          for_role: 'resident'
         })
       }
       
@@ -162,7 +185,7 @@ async function generateActionItems(supabase, projectId: string) {
       actionItems.push({
         project_id: projectId,
         title: 'Create Statement of Work (SOW)',
-        description: 'Define the scope of work, materials, and labor requirements',
+        description: 'Draft a Statement of Work for this project',
         priority: 'high',
         icon_name: 'file-plus',
         action_type: 'sow',
@@ -170,30 +193,119 @@ async function generateActionItems(supabase, projectId: string) {
         for_role: 'coach'
       })
     }
+
+    // Design-related actions
+    // Fetch project to check design data
+    const { data: project, error: projectDataError } = await supabase
+      .from('projects')
+      .select('design_preferences')
+      .eq('id', projectId)
+      .single();
     
-    // First, clear out any existing action items for this project
-    const { error: deleteError } = await supabase
-      .from('project_action_items')
-      .delete()
-      .eq('project_id', projectId)
-      
-    if (deleteError) throw deleteError
+    if (projectDataError) throw projectDataError;
     
-    // Then, insert the new action items
-    if (actionItems.length > 0) {
-      const { data, error } = await supabase
-        .from('project_action_items')
-        .insert(actionItems)
-        .select()
+    const designPrefs = project.design_preferences || {};
+    
+    // If before photos are missing
+    const hasBeforePhotos = designPrefs.beforePhotos && 
+      Object.keys(designPrefs.beforePhotos || {}).length > 0;
       
-      if (error) throw error
-      
-      return data
+    if (!hasBeforePhotos) {
+      actionItems.push({
+        project_id: projectId,
+        title: 'Upload Before Photos',
+        description: 'Add photos of your current space',
+        priority: 'medium',
+        icon_name: 'camera',
+        action_type: 'navigate',
+        action_data: { route: `/project-design/${projectId}` },
+        for_role: 'owner'
+      });
     }
     
-    return []
+    // If room measurements are missing
+    const hasRoomMeasurements = designPrefs.roomMeasurements && 
+      Object.keys(designPrefs.roomMeasurements || {}).length > 0;
+      
+    if (!hasRoomMeasurements) {
+      actionItems.push({
+        project_id: projectId,
+        title: 'Add Room Measurements',
+        description: 'Provide accurate measurements for design planning',
+        priority: 'medium',
+        icon_name: 'ruler',
+        action_type: 'navigate',
+        action_data: { route: `/project-design/${projectId}` },
+        for_role: 'owner'
+      });
+    }
+    
+    // Additional standard action items
+    actionItems.push({
+      project_id: projectId,
+      title: 'Upload Room Blueprints',
+      description: 'Upload your floor plans to help designers visualize the space.',
+      priority: 'medium',
+      icon_name: 'file-text',
+      action_type: 'navigate',
+      action_data: { route: `/project-design/${projectId}` }
+    });
+    
+    actionItems.push({
+      project_id: projectId,
+      title: 'Add Design Inspirations',
+      description: 'Share design ideas or Pinterest boards that inspire your vision.',
+      priority: 'low',
+      icon_name: 'pen-box',
+      action_type: 'navigate',
+      action_data: { route: `/project-design/${projectId}` }
+    });
+    
+    // First, clear out any existing action items for this project
+    // BUT only delete the ones that we're about to re-insert to prevent permission issues
+    for (const item of actionItems) {
+      const { error: deleteError } = await supabase
+        .from('project_action_items')
+        .delete()
+        .eq('project_id', projectId)
+        .eq('title', item.title)
+        .eq('action_type', item.action_type);
+        
+      if (deleteError) {
+        console.error("Error deleting action items:", deleteError);
+      }
+    }
+    
+    // Then, insert the new action items one by one to better handle permissions
+    const createdItems = [];
+    for (const item of actionItems) {
+      try {
+        // Skip items that don't match the user's role if specified
+        if (item.for_role && item.for_role !== userRole) {
+          continue;
+        }
+        
+        const { data, error } = await supabase
+          .from('project_action_items')
+          .insert(item)
+          .select();
+        
+        if (error) {
+          console.error("Error inserting action item:", error);
+          continue;
+        }
+        
+        if (data) {
+          createdItems.push(data[0]);
+        }
+      } catch (err) {
+        console.error("Error with action item:", err);
+      }
+    }
+    
+    return createdItems;
   } catch (error) {
-    console.error('Error generating action items:', error)
-    throw error
+    console.error('Error generating action items:', error);
+    throw error;
   }
 }

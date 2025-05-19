@@ -19,15 +19,18 @@ export const useActionItemsGenerator = () => {
         body: { projectId }
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Edge function error:", error);
+        // Don't throw to prevent breaking UI flows
+        setError(error);
+        return false;
+      }
       
       console.log("Action items generated:", data);
-      toast.success("Action items generated successfully");
       return true;
     } catch (err: any) {
       console.error("Error generating action items:", err);
       setError(err);
-      toast.error("Failed to generate action items");
       return false;
     } finally {
       setIsGenerating(false);

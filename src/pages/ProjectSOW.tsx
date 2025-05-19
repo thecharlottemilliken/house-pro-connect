@@ -81,16 +81,6 @@ const ProjectSOW = () => {
               setChanges(changesDetected);
             }
           }
-          
-          // If in review mode and status is "ready for review" or "pending", show review dialog
-          if (isReviewMode && (data.status === "ready for review" || data.status === "pending")) {
-            setShowReviewDialog(true);
-            
-            // Ensure action items are generated for this project
-            if (params.projectId) {
-              await generateActionItems(params.projectId);
-            }
-          }
         }
       } catch (error) {
         console.error("Error fetching SOW data:", error);
@@ -100,7 +90,15 @@ const ProjectSOW = () => {
     };
 
     fetchSOWData();
-  }, [params.projectId, profile, isReviewMode, generateActionItems, searchParams, isRevised]);
+  }, [params.projectId, profile, isRevised]);
+
+  // Only show review dialog when explicitly requested via the review param
+  // and only after data is loaded
+  useEffect(() => {
+    if (!isLoading && sowData && isReviewMode && (sowData.status === "ready for review" || sowData.status === "pending")) {
+      setShowReviewDialog(true);
+    }
+  }, [isReviewMode, isLoading, sowData]);
 
   const projectTitle = projectData?.title || "Unknown Project";
   
@@ -132,7 +130,12 @@ const ProjectSOW = () => {
         
         // Regenerate action items after review
         if (params.projectId) {
-          await generateActionItems(params.projectId);
+          try {
+            await generateActionItems(params.projectId);
+          } catch (error) {
+            console.error("Error generating action items:", error);
+            // Continue even if action item generation fails
+          }
         }
       } catch (error) {
         console.error("Error fetching updated SOW data:", error);
