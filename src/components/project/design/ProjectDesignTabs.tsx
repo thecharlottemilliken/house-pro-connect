@@ -52,6 +52,11 @@ const ProjectDesignTabs: React.FC<ProjectDesignTabsProps> = ({
   onAddInspirationImages,
   onAddPinterestBoards
 }) => {
+  // Helper function to normalize area names for consistent key formatting
+  const normalizeAreaName = (area: string): string => {
+    return area.toLowerCase().replace(/\s+/g, '_');
+  };
+
   if (renovationAreas.length === 0) {
     return (
       <div className="p-8 text-center bg-gray-50 rounded-lg">
@@ -75,9 +80,25 @@ const ProjectDesignTabs: React.FC<ProjectDesignTabsProps> = ({
       </TabsList>
 
       {renovationAreas.map(area => {
-        const areaKey = area.area.toLowerCase().replace(/\s+/g, '_');
+        const areaKey = normalizeAreaName(area.area);
+        console.log(`ProjectDesignTabs - Looking for measurements with normalized area key: "${areaKey}"`);
+        
+        // Debug measurements object
+        console.log("ProjectDesignTabs - Available roomMeasurements:", 
+          designPreferences.roomMeasurements ? 
+          Object.keys(designPreferences.roomMeasurements) : 
+          "No measurements found");
+        
         const beforePhotos = designPreferences.beforePhotos?.[areaKey] || [];
         const measurements = designPreferences.roomMeasurements?.[areaKey];
+        
+        // Debug measurements for this area
+        if (measurements) {
+          console.log(`ProjectDesignTabs - Found measurements for ${area.area}:`, JSON.stringify(measurements, null, 2));
+        } else {
+          console.log(`ProjectDesignTabs - No measurements found for ${area.area} with key ${areaKey}`);
+        }
+        
         const roomId = getRoomIdByName(area.area);
         const roomPrefs = roomId ? roomPreferences[roomId] : null;
         

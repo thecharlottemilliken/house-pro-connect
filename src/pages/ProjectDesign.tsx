@@ -10,6 +10,11 @@ import { useDesignActions } from "@/hooks/useDesignActions";
 import ProjectDesignTabs from "@/components/project/design/ProjectDesignTabs";
 import { FileWithPreview } from "@/components/ui/file-upload";
 
+// Helper function to normalize area names for consistent key formatting
+const normalizeAreaName = (area: string): string => {
+  return area.toLowerCase().replace(/\s+/g, '_');
+};
+
 const ProjectDesign = () => {
   const location = useLocation();
   const params = useParams();
@@ -137,8 +142,9 @@ const ProjectDesign = () => {
 
   // Added logging to track data flow
   useEffect(() => {
-    if (projectData?.design_preferences?.designAssets) {
-      console.log("Project design assets:", projectData.design_preferences.designAssets);
+    if (projectData?.design_preferences?.roomMeasurements) {
+      console.log("Project room measurements:", projectData.design_preferences.roomMeasurements);
+      console.log("Available measurement keys:", Object.keys(projectData.design_preferences.roomMeasurements));
     }
   }, [projectData, refreshTrigger]);
 

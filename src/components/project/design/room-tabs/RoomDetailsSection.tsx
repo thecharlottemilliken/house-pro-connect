@@ -64,6 +64,7 @@ const RoomDetailsSection: React.FC<RoomDetailsSectionProps> = ({
   );
   
   // Extended debugging
+  console.log('RoomDetailsSection - area:', area);
   console.log('RoomDetailsSection - measurements object:', JSON.stringify(measurements, null, 2));
   console.log('RoomDetailsSection - measurementsExist result:', measurementsExist);
   console.log('RoomDetailsSection - hasMeasurements prop:', hasMeasurements);

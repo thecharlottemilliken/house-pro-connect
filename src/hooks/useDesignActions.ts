@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,6 +16,11 @@ const convertUrlsToFileObjects = (urls: string[]): FileWithPreview[] => {
     tags: [],
     status: 'complete'
   }));
+};
+
+// Helper function to normalize area names for consistent key formatting
+const normalizeAreaName = (area: string): string => {
+  return area.toLowerCase().replace(/\s+/g, '_');
 };
 
 export const useDesignActions = (projectId?: string) => {
@@ -45,12 +51,17 @@ export const useDesignActions = (projectId?: string) => {
         unit: normalizedMeasurements.unit || 'ft'
       };
       
+      // Normalize the area name for consistent key formatting
+      const normalizedAreaName = normalizeAreaName(area);
+      
+      console.log(`Using normalized area name for roomMeasurements key: "${normalizedAreaName}"`);
+      
       // Update the designPreferences object with the standardized measurements
       const updatedDesignPreferences = { 
         ...designPreferences,
         roomMeasurements: {
           ...designPreferences.roomMeasurements || {},
-          [area]: standardizedMeasurements // Use original area name for consistent key naming
+          [normalizedAreaName]: standardizedMeasurements // Use normalized area name for consistent key naming
         }
       };
       
@@ -69,10 +80,20 @@ export const useDesignActions = (projectId?: string) => {
         throw error;
       }
       
+      toast({
+        title: "Success",
+        description: "Room measurements saved successfully"
+      });
+      
       console.log("Measurements saved successfully for area:", area);
       return updatedDesignPreferences;
     } catch (error) {
       console.error("Error saving measurements:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save measurements",
+        variant: "destructive"
+      });
       return null;
     }
   };

@@ -13,19 +13,22 @@ interface RoomMeasurementsProps {
 }
 
 export function RoomMeasurementsSection({ measurements, selectedRoom }: RoomMeasurementsProps) {
-  // Debug the incoming measurements
-  console.log(`RoomMeasurementsSection for ${selectedRoom}:`, JSON.stringify(measurements, null, 2));
+  // Debug the incoming measurements with more detail
+  console.log(`RoomMeasurementsSection for ${selectedRoom}:`, measurements);
+  if (measurements) {
+    console.log(`Measurements values - length: ${measurements.length} (${typeof measurements.length}), width: ${measurements.width} (${typeof measurements.width}), height: ${measurements.height} (${typeof measurements.height})`);
+  }
 
   if (!measurements || selectedRoom === 'all') {
     console.log(`RoomMeasurementsSection: No measurements or 'all' room selected`);
     return null;
   }
 
-  // Ensure measurements has the expected structure
+  // Ensure measurements has the expected structure with explicit number type checking
   const validMeasurements = measurements && (
-    typeof measurements.length === 'number' || 
-    typeof measurements.width === 'number' || 
-    typeof measurements.height === 'number' || 
+    (typeof measurements.length === 'number' && measurements.length > 0) || 
+    (typeof measurements.width === 'number' && measurements.width > 0) || 
+    (typeof measurements.height === 'number' && measurements.height > 0) || 
     measurements.additionalNotes
   );
 
