@@ -81,7 +81,7 @@ const TagsDialogContent: React.FC<TagsDialogContentProps> = ({
         
         <div className="flex flex-wrap gap-2 pt-2">
           {tags.map((tag, i) => (
-            <Badge key={i} variant="secondary" className="px-2 py-1 text-sm">
+            <Badge key={`tag-${i}-${tag}`} variant="secondary" className="px-2 py-1 text-sm">
               {tag}
               <button 
                 type="button" 

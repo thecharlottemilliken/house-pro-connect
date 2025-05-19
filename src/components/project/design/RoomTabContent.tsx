@@ -74,22 +74,34 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
   const handleAddDesignPlans = () => console.log("Add design plans clicked");
   const [showMeasuringDialog, setShowMeasuringDialog] = useState(false);
   
-  // Filter design assets for the current room with improved logic
-  const roomDesignAssets = designAssets.filter(asset => {
-    // Match by roomId (exact match)
-    if (asset.roomId && roomId && asset.roomId === roomId) {
-      return true;
+  // Filter design assets for the current room with improved logic to prevent duplicates
+  const roomDesignAssets = React.useMemo(() => {
+    // Create a Set to track unique asset URLs (as a way to identify unique assets)
+    const uniqueAssetUrls = new Set<string>();
+    const filteredAssets = [];
+    
+    for (const asset of designAssets) {
+      // Skip if we've already included this asset (based on URL)
+      if (uniqueAssetUrls.has(asset.url)) {
+        continue;
+      }
+      
+      // Check if the asset belongs to this room
+      const belongsToRoom = 
+        // Exact match by roomId
+        (asset.roomId && roomId && asset.roomId === roomId) || 
+        // Match by tag if area name is in the tags
+        (asset.tags && 
+          asset.tags.some(tag => tag.toLowerCase() === area.area.toLowerCase()));
+      
+      if (belongsToRoom) {
+        uniqueAssetUrls.add(asset.url);
+        filteredAssets.push(asset);
+      }
     }
     
-    // Match by tag if area name is in the tags
-    if (asset.tags && asset.tags.some(tag => 
-      tag.toLowerCase() === area.area.toLowerCase())) {
-      return true;
-    }
-    
-    // For assets with no room association, exclude them
-    return false;
-  });
+    return filteredAssets;
+  }, [designAssets, roomId, area.area]);
 
   // Added debugging to verify the filtered assets
   useEffect(() => {
