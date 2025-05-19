@@ -1,3 +1,4 @@
+
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import {
@@ -43,12 +44,13 @@ import { ProtectedRoute, CoachRoute, ServiceProRoute } from "@/components/auth";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { QueryClient, QueryClientProvider } from "react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import ServiceProProfile from "@/pages/ServiceProProfile";
 import ServiceProProfileEdit from "@/pages/ServiceProProfileEdit";
 
 const queryClient = new QueryClient();
-  
+
+function App() {
   return (
     <Router>
       <QueryClientProvider client={queryClient}>
