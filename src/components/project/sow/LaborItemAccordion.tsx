@@ -8,9 +8,10 @@ import { ArrowRightFromLine } from "lucide-react";
 
 interface LaborItemAccordionProps {
   category: string;
-  itemCount: number;
-  isOpen: boolean;
-  onToggle: () => void;
+  itemCount?: number;
+  isOpen?: boolean;
+  onToggle?: () => void;
+  laborType: string; // Added the missing prop
   workAreas: any[];
   selectedRooms: Array<{ 
     name: string;
