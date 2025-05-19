@@ -1,13 +1,10 @@
 
 import React from 'react';
-import {
-  Table,
-  TableBody,
-} from "@/components/ui/table";
-import { Card } from "@/components/ui/card";
+import { Copy, Edit, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { WorkAreaTableHeader } from "./components/WorkAreaTableHeader";
 import { WorkAreaTableRow } from "./components/WorkAreaTableRow";
-import { EmptyWorkAreaState } from "./components/EmptyWorkAreaState";
+import { WorkAreaRevisionProps } from './components/RevisionAwareFormProps';
 
 interface WorkArea {
   name: string;
@@ -23,15 +20,13 @@ interface WorkArea {
     name: string;
     notes: string;
   }>;
-  type?: 'interior' | 'exterior';
 }
 
-interface WorkAreaTableProps {
+interface WorkAreaTableProps extends WorkAreaRevisionProps {
   workAreas: WorkArea[];
   onEdit: (area: WorkArea, index: number) => void;
   onDuplicate: (area: WorkArea) => void;
   onDelete: (index: number) => void;
-  onAddNew?: () => void;
 }
 
 export function WorkAreaTable({ 
@@ -39,31 +34,52 @@ export function WorkAreaTable({
   onEdit, 
   onDuplicate, 
   onDelete,
-  onAddNew
+  isRevision = false,
+  changedWorkAreas = {}
 }: WorkAreaTableProps) {
   return (
-    <Card className="border rounded-md shadow-sm overflow-hidden">
-      <div className="overflow-x-auto">
-        <Table>
-          <WorkAreaTableHeader />
-          <TableBody>
-            {workAreas.length > 0 ? (
-              workAreas.map((area, index) => (
-                <WorkAreaTableRow
-                  key={index}
-                  area={area}
-                  index={index}
-                  onEdit={onEdit}
-                  onDuplicate={onDuplicate}
-                  onDelete={onDelete}
-                />
-              ))
-            ) : (
-              <EmptyWorkAreaState colSpan={5} onAddNew={onAddNew} />
-            )}
-          </TableBody>
-        </Table>
-      </div>
-    </Card>
+    <div className="border rounded-md">
+      <table className="w-full">
+        <WorkAreaTableHeader />
+        <tbody>
+          {workAreas.map((area, index) => {
+            const isChanged = isRevision && changedWorkAreas[index.toString()] === true;
+            
+            return (
+              <WorkAreaTableRow
+                key={`${area.name}-${index}`}
+                area={area}
+                isHighlighted={isChanged}
+                actions={
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onEdit(area, index)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onDuplicate(area)}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onDelete(index)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                }
+              />
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   );
 }

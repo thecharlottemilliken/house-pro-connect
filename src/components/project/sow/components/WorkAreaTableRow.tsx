@@ -1,9 +1,5 @@
 
 import React from 'react';
-import { TableRow, TableCell } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Copy, Pencil, Trash } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 
 interface WorkArea {
   name: string;
@@ -19,84 +15,48 @@ interface WorkArea {
     name: string;
     notes: string;
   }>;
-  type?: 'interior' | 'exterior';
 }
 
 interface WorkAreaTableRowProps {
   area: WorkArea;
-  index: number;
-  onEdit: (area: WorkArea, index: number) => void;
-  onDuplicate: (area: WorkArea) => void;
-  onDelete: (index: number) => void;
+  actions: React.ReactNode;
+  isHighlighted?: boolean;
 }
 
-export function WorkAreaTableRow({ 
-  area, 
-  index, 
-  onEdit, 
-  onDuplicate, 
-  onDelete 
-}: WorkAreaTableRowProps) {
+export function WorkAreaTableRow({ area, actions, isHighlighted = false }: WorkAreaTableRowProps) {
+  const highlightClass = isHighlighted ? 'bg-yellow-50' : '';
+  
   return (
-    <TableRow className="hover:bg-muted/30">
-      <TableCell className="w-[80px]">
-        <div className="flex gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-            onClick={() => onDuplicate(area)}
-          >
-            <Copy className="h-4 w-4" />
-            <span className="sr-only">Duplicate</span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-            onClick={() => onEdit(area, index)}
-          >
-            <Pencil className="h-4 w-4" />
-            <span className="sr-only">Edit</span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-destructive/70 hover:text-destructive"
-            onClick={() => onDelete(index)}
-          >
-            <Trash className="h-4 w-4" />
-            <span className="sr-only">Delete</span>
-          </Button>
+    <tr className={`border-t ${highlightClass}`}>
+      <td className="px-4 py-3">{area.name}</td>
+      <td className="px-4 py-3">
+        <div className="text-xs">
+          <span className="font-medium">L:</span> {area.measurements?.length || '-'}
+          {' | '}
+          <span className="font-medium">W:</span> {area.measurements?.width || '-'}
+          {' | '}
+          <span className="font-medium">H:</span> {area.measurements?.height || '-'}
         </div>
-      </TableCell>
-      <TableCell>
-        <div className="font-medium">{area.name}</div>
-        {area.type && (
-          <Badge variant="outline" className="mt-1 text-xs capitalize">
-            {area.type}
-          </Badge>
-        )}
-      </TableCell>
-      <TableCell className="text-muted-foreground">
-        {area.measurements.totalSqft} SQFT
-      </TableCell>
-      <TableCell className="text-muted-foreground">
-        {area.measurements.width}″ × {area.measurements.length}″ × {area.measurements.height}″
-      </TableCell>
-      <TableCell>
-        {area.additionalAreas.length > 0 ? (
-          <div className="flex flex-wrap gap-1">
-            {area.additionalAreas.map((affected, i) => (
-              <Badge key={i} variant="secondary" className="text-xs">
-                {affected.name}
-              </Badge>
-            ))}
+        <div className="text-xs mt-1">
+          <span className="font-medium">SqFt:</span> {area.measurements?.totalSqft || '-'}
+        </div>
+      </td>
+      <td className="px-4 py-3">
+        <div className="text-sm line-clamp-2">{area.notes || '-'}</div>
+      </td>
+      <td className="px-4 py-3">
+        {area.affectsOtherAreas && (
+          <div className="text-sm">
+            <p className="font-medium text-xs mb-1">Affected Areas:</p>
+            <ul className="text-xs list-disc pl-4">
+              {area.additionalAreas.map((additionalArea, i) => (
+                <li key={i}>{additionalArea.name}</li>
+              ))}
+            </ul>
           </div>
-        ) : (
-          <span className="text-muted-foreground text-sm italic">None</span>
         )}
-      </TableCell>
-    </TableRow>
+      </td>
+      <td className="px-4 py-3 text-right">{actions}</td>
+    </tr>
   );
 }

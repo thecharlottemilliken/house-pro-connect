@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { ChevronDown, ChevronUp } from "lucide-react";
@@ -6,49 +5,66 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { LaborItemAccordion } from './LaborItemAccordion';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
+import { LaborItemRevisionProps } from './components/RevisionAwareFormProps';
 
 interface LaborItem {
   category: string;
-  task: string;
+  type: string;
   rooms: Array<{
     name: string;
     notes: string;
+    affectedAreas?: Array<{
+      name: string;
+      notes: string;
+    }>;
   }>;
 }
 
-interface Props {
+interface Props extends LaborItemRevisionProps {
   workAreas: any[];
   onSave: (items: LaborItem[]) => void;
   laborItems?: LaborItem[];
   initialData?: LaborItem[];
 }
 
-const specialtyCategories = {
-  interior: [
+const laborCategories = {
+  general: [
+    {
+      name: "Carpentry",
+      items: ["Framing", "Trim Work", "Cabinet Installation"]
+    },
     {
       name: "Electrical",
-      items: ["Install new outlets", "Upgrade electrical panel", "Install lighting fixtures"]
+      items: ["Wiring", "Lighting", "Panel Upgrades"]
     },
     {
-      name: "Building",
-      items: ["Wall construction", "Flooring installation", "Cabinet installation"]
+      name: "Plumbing",
+      items: ["Pipefitting", "Fixture Installation", "Drainage"]
     }
   ],
-  exterior: [
+  specialized: [
     {
-      name: "Roofing",
-      items: ["Roof repair", "Gutter installation", "Skylight installation"]
+      name: "HVAC",
+      items: ["Ductwork", "Unit Installation", "Maintenance"]
     },
     {
-      name: "Siding",
-      items: ["Siding replacement", "Trim work", "External insulation"]
+      name: "Painting",
+      items: ["Interior Painting", "Exterior Painting", "Wallpapering"]
     }
   ]
 };
 
-export function LaborRequirementsForm({ workAreas, onSave, laborItems = [], initialData = [] }: Props) {
-  const [selectedCategory, setSelectedCategory] = useState<string>("Building");
+export function LaborRequirementsForm({ 
+  workAreas, 
+  onSave, 
+  laborItems = [], 
+  initialData = [],
+  isRevision = false,
+  changedLaborItems = {}
+}: Props) {
+  const [selectedCategory, setSelectedCategory] = useState<string>("Carpentry");
   const [selectedItems, setSelectedItems] = useState<LaborItem[]>([]);
   const [openCategory, setOpenCategory] = useState<string | null>(null);
 
@@ -61,35 +77,35 @@ export function LaborRequirementsForm({ workAreas, onSave, laborItems = [], init
   }, [initialData, laborItems]);
 
   const getItemsByCategory = (category: string) => {
-    return [...specialtyCategories.interior, ...specialtyCategories.exterior]
+    return [...laborCategories.general, ...laborCategories.specialized]
       .find(c => c.name === category)?.items || [];
   };
 
-  const handleCheckItem = (category: string, task: string) => {
+  const handleCheckItem = (category: string, type: string) => {
     const exists = selectedItems.some(
-      item => item.category === category && item.task === task
+      item => item.category === category && item.type === type
     );
 
     if (exists) {
       setSelectedItems(selectedItems.filter(
-        item => !(item.category === category && item.task === task)
+        item => !(item.category === category && item.type === type)
       ));
     } else {
-      setSelectedItems([...selectedItems, { category, task, rooms: [] }]);
+      setSelectedItems([...selectedItems, { 
+        category, 
+        type, 
+        rooms: []
+      }]);
     }
   };
 
-  const handleUpdateRooms = (itemIndex: number, rooms: Array<{ name: string; notes: string }>) => {
-    const updatedItems = [...selectedItems];
-    updatedItems[itemIndex] = {
-      ...updatedItems[itemIndex],
-      rooms
-    };
-    setSelectedItems(updatedItems);
-  };
-
   const handleSave = () => {
+    console.log("Saving labor items:", selectedItems);
     onSave(selectedItems);
+    toast({
+      title: "Labor requirements saved",
+      description: "Your labor selections have been saved successfully."
+    });
   };
 
   return (
@@ -101,7 +117,7 @@ export function LaborRequirementsForm({ workAreas, onSave, laborItems = [], init
               <SelectValue>{selectedCategory}</SelectValue>
             </SelectTrigger>
             <SelectContent>
-              {[...new Set([...specialtyCategories.interior, ...specialtyCategories.exterior].map(c => c.name))].map(category => (
+              {[...new Set([...laborCategories.general, ...laborCategories.specialized].map(c => c.name))].map(category => (
                 <SelectItem key={category} value={category}>
                   {category}
                 </SelectItem>
@@ -115,23 +131,23 @@ export function LaborRequirementsForm({ workAreas, onSave, laborItems = [], init
                 <Checkbox
                   id={item}
                   checked={selectedItems.some(
-                    si => si.category === selectedCategory && si.task === item
+                    si => si.category === selectedCategory && si.type === item
                   )}
                   onCheckedChange={() => handleCheckItem(selectedCategory, item)}
                 />
-                <label
+                <Label
                   htmlFor={item}
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
                   {item}
-                </label>
+                </Label>
               </div>
             ))}
           </div>
         </div>
 
         <div className="flex-1">
-          <h2 className="text-2xl font-semibold mb-6">Select Items from the checklist</h2>
+          <h2 className="text-2xl font-semibold mb-6">Select Skills from the checklist</h2>
           
           {Object.entries(
             selectedItems.reduce((acc, item) => {
@@ -141,7 +157,7 @@ export function LaborRequirementsForm({ workAreas, onSave, laborItems = [], init
               acc[item.category].push(item);
               return acc;
             }, {} as Record<string, LaborItem[]>)
-          ).map(([category, items], categoryIndex) => (
+          ).map(([category, items]) => (
             <Card key={category} className="mb-4">
               <div 
                 className="p-6 cursor-pointer flex items-center justify-between"
@@ -149,7 +165,7 @@ export function LaborRequirementsForm({ workAreas, onSave, laborItems = [], init
               >
                 <div>
                   <h3 className="text-xl font-medium">{category}</h3>
-                  <p className="text-gray-500">{items.length} Labor Items</p>
+                  <p className="text-gray-500">{items.length} Labor Skills</p>
                 </div>
                 {openCategory === category ? (
                   <ChevronUp className="h-6 w-6 text-gray-400" />
@@ -158,23 +174,37 @@ export function LaborRequirementsForm({ workAreas, onSave, laborItems = [], init
                 )}
               </div>
               
-              {openCategory === category && items.map((item, itemIndex) => (
-                <LaborItemAccordion
-                  key={`${item.category}-${item.task}-${itemIndex}`}
-                  category={item.category}
-                  itemCount={1}
-                  isOpen={true}
-                  onToggle={() => {}}
-                  workAreas={workAreas}
-                  selectedRooms={item.rooms}
-                  onUpdateRooms={(rooms) => {
-                    const globalIndex = selectedItems.findIndex(
-                      si => si.category === item.category && si.task === item.task
-                    );
-                    handleUpdateRooms(globalIndex, rooms);
-                  }}
-                />
-              ))}
+              {openCategory === category && items.map((item, itemIndex) => {
+                const itemKey = `${item.category}-${item.type}`;
+                const isHighlighted = isRevision && changedLaborItems[itemKey] === true;
+                
+                return (
+                  <div 
+                    key={`${item.category}-${item.type}-${itemIndex}`} 
+                    className={`border-t ${isHighlighted ? 'bg-yellow-50' : ''}`}
+                  >
+                    <div className="px-6 py-4 bg-gray-50">
+                      <h4 className="text-lg font-medium text-gray-700">
+                        {item.type} in {category}
+                      </h4>
+                    </div>
+                    <LaborItemAccordion
+                      category={item.category}
+                      laborType={item.type}
+                      workAreas={workAreas}
+                      selectedRooms={item.rooms}
+                      onUpdateRooms={(rooms) => {
+                        const updatedItems = [...selectedItems];
+                        const index = updatedItems.findIndex(
+                          i => i.category === item.category && i.type === item.type
+                        );
+                        updatedItems[index] = { ...updatedItems[index], rooms };
+                        setSelectedItems(updatedItems);
+                      }}
+                    />
+                  </div>
+                );
+              })}
             </Card>
           ))}
         </div>

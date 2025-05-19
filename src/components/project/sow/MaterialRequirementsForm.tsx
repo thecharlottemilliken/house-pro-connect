@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { ChevronDown, ChevronUp } from "lucide-react";
@@ -8,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
+import { MaterialItemRevisionProps } from './components/RevisionAwareFormProps';
 
 interface MaterialItem {
   category: string;
@@ -28,7 +28,7 @@ interface MaterialItem {
   };
 }
 
-interface Props {
+interface Props extends MaterialItemRevisionProps {
   workAreas: any[];
   onSave: (items: MaterialItem[]) => void;
   materialItems?: MaterialItem[];
@@ -58,7 +58,14 @@ const materialCategories = {
   ]
 };
 
-export function MaterialRequirementsForm({ workAreas, onSave, materialItems = [], initialData = [] }: Props) {
+export function MaterialRequirementsForm({ 
+  workAreas, 
+  onSave, 
+  materialItems = [], 
+  initialData = [],
+  isRevision = false,
+  changedMaterialItems = {}
+}: Props) {
   const [selectedCategory, setSelectedCategory] = useState<string>("Finishes");
   const [selectedItems, setSelectedItems] = useState<MaterialItem[]>([]);
   const [openCategory, setOpenCategory] = useState<string | null>(null);
@@ -170,41 +177,49 @@ export function MaterialRequirementsForm({ workAreas, onSave, materialItems = []
                 )}
               </div>
               
-              {openCategory === category && items.map((item, itemIndex) => (
-                <div key={`${item.category}-${item.type}-${itemIndex}`} className="border-t">
-                  <div className="px-6 py-4 bg-gray-50">
-                    <h4 className="text-lg font-medium text-gray-700">
-                      {item.type} in {category}
-                    </h4>
+              {openCategory === category && items.map((item, itemIndex) => {
+                const itemKey = `${item.category}-${item.type}`;
+                const isHighlighted = isRevision && changedMaterialItems[itemKey] === true;
+                
+                return (
+                  <div 
+                    key={`${item.category}-${item.type}-${itemIndex}`} 
+                    className={`border-t ${isHighlighted ? 'bg-yellow-50' : ''}`}
+                  >
+                    <div className="px-6 py-4 bg-gray-50">
+                      <h4 className="text-lg font-medium text-gray-700">
+                        {item.type} in {category}
+                      </h4>
+                    </div>
+                    <MaterialItemAccordion
+                      category={item.category}
+                      materialType={item.type}
+                      workAreas={workAreas}
+                      selectedRooms={item.rooms}
+                      onUpdateRooms={(rooms) => {
+                        const updatedItems = [...selectedItems];
+                        const index = updatedItems.findIndex(
+                          i => i.category === item.category && i.type === item.type
+                        );
+                        updatedItems[index] = { ...updatedItems[index], rooms };
+                        setSelectedItems(updatedItems);
+                      }}
+                      onUpdateSpecifications={(specs) => {
+                        console.log("Updating specifications for", item.type, ":", specs);
+                        const updatedItems = [...selectedItems];
+                        const index = updatedItems.findIndex(
+                          i => i.category === item.category && i.type === item.type
+                        );
+                        updatedItems[index] = { 
+                          ...updatedItems[index], 
+                          specifications: specs 
+                        };
+                        setSelectedItems(updatedItems);
+                      }}
+                    />
                   </div>
-                  <MaterialItemAccordion
-                    category={item.category}
-                    materialType={item.type}
-                    workAreas={workAreas}
-                    selectedRooms={item.rooms}
-                    onUpdateRooms={(rooms) => {
-                      const updatedItems = [...selectedItems];
-                      const index = updatedItems.findIndex(
-                        i => i.category === item.category && i.type === item.type
-                      );
-                      updatedItems[index] = { ...updatedItems[index], rooms };
-                      setSelectedItems(updatedItems);
-                    }}
-                    onUpdateSpecifications={(specs) => {
-                      console.log("Updating specifications for", item.type, ":", specs);
-                      const updatedItems = [...selectedItems];
-                      const index = updatedItems.findIndex(
-                        i => i.category === item.category && i.type === item.type
-                      );
-                      updatedItems[index] = { 
-                        ...updatedItems[index], 
-                        specifications: specs 
-                      };
-                      setSelectedItems(updatedItems);
-                    }}
-                  />
-                </div>
-              ))}
+                );
+              })}
             </Card>
           ))}
         </div>

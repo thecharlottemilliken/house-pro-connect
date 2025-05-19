@@ -19,19 +19,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { BidConfigRevisionProps } from './components/RevisionAwareFormProps';
 
 export interface BidConfiguration {
   bidDuration: string;
   projectDescription: string;
 }
 
-interface BidConfigurationFormProps {
+interface BidConfigurationFormProps extends BidConfigRevisionProps {
   onSave: (data: BidConfiguration) => void;
   bidConfiguration?: BidConfiguration;
   initialData?: BidConfiguration;
 }
 
-export function BidConfigurationForm({ onSave, bidConfiguration, initialData }: BidConfigurationFormProps) {
+export function BidConfigurationForm({ 
+  onSave, 
+  bidConfiguration, 
+  initialData,
+  isRevision = false,
+  hasChanges = false
+}: BidConfigurationFormProps) {
   // Use bidConfiguration or initialData if provided, otherwise use default values
   const defaultValues = bidConfiguration || initialData || {
     bidDuration: '7',
@@ -56,9 +63,11 @@ export function BidConfigurationForm({ onSave, bidConfiguration, initialData }: 
     onSave(data);
   };
 
+  const highlightClass = isRevision && hasChanges ? "p-4 bg-yellow-50 rounded-md border border-yellow-200" : "";
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className={`space-y-6 ${isRevision ? highlightClass : ""}`}>
         <div className="space-y-4">
           <FormField
             control={form.control}

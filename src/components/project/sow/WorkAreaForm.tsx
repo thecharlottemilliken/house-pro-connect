@@ -1,3 +1,6 @@
+<think>
+
+</think>
 
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
@@ -8,6 +11,7 @@ import { useRoomDesign } from "@/hooks/useRoomDesign";
 import { WorkAreaFormTabs } from "./components/WorkAreaFormTabs";
 import { WorkAreaFormDialog } from "./components/WorkAreaFormDialog";
 import { convertMeasurements } from "./utils/measurementUtils";
+import { WorkAreaRevisionProps } from './components/RevisionAwareFormProps';
 
 interface WorkArea {
   name: string;
@@ -26,7 +30,7 @@ interface WorkArea {
   sourceRoomId?: string;
 }
 
-interface WorkAreaFormProps {
+interface WorkAreaFormProps extends WorkAreaRevisionProps {
   onSave: (areas: WorkArea[]) => void;
   workAreas?: WorkArea[];
   initialData?: WorkArea[];
@@ -34,7 +38,15 @@ interface WorkAreaFormProps {
   propertyDetails?: any;
 }
 
-export function WorkAreaForm({ onSave, workAreas = [], initialData = [], projectData, propertyDetails }: WorkAreaFormProps) {
+export function WorkAreaForm({ 
+  onSave, 
+  workAreas = [], 
+  initialData = [], 
+  projectData, 
+  propertyDetails,
+  isRevision = false,
+  changedWorkAreas = {}
+}: WorkAreaFormProps) {
   const [activeTab, setActiveTab] = useState("interior");
   const [workAreasState, setWorkAreasState] = useState<WorkArea[]>([]);
   const [currentArea, setCurrentArea] = useState<WorkArea>({
@@ -204,6 +216,8 @@ export function WorkAreaForm({ onSave, workAreas = [], initialData = [], project
           onEdit={handleEdit}
           onDuplicate={handleDuplicate}
           onDelete={handleDelete}
+          isRevision={isRevision}
+          changedWorkAreas={changedWorkAreas}
         />
       ) : null}
 
