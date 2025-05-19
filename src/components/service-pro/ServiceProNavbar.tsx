@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom"; 
+import { Link } from "react-router-dom"; 
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Settings, User } from "lucide-react";
@@ -8,7 +8,6 @@ import { Settings, User } from "lucide-react";
 const ServiceProNavbar = () => {
   const { user } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const location = useLocation();
   
   const navLinks = [
     { name: "DASHBOARD", href: "/service-pro-dashboard" },
@@ -37,9 +36,7 @@ const ServiceProNavbar = () => {
               <Link
                 key={link.name}
                 to={link.href}
-                className={`text-sm font-medium text-white hover:text-gray-200 ${
-                  location.pathname === link.href ? "underline" : ""
-                }`}
+                className="text-sm font-medium text-white hover:text-gray-200"
               >
                 {link.name}
               </Link>
@@ -100,9 +97,7 @@ const ServiceProNavbar = () => {
                 <Link
                   key={link.name}
                   to={link.href}
-                  className={`text-sm font-medium text-white hover:text-gray-200 px-3 py-2 ${
-                    location.pathname === link.href ? "bg-orange-700" : ""
-                  }`}
+                  className="text-sm font-medium text-white hover:text-gray-200 px-3 py-2"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {link.name}
