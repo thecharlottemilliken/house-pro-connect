@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -39,6 +38,7 @@ import ServiceProMessages from "./pages/ServiceProMessages";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import CoachRoute from "./components/auth/CoachRoute";
 import ServiceProRoute from "./components/auth/ServiceProRoute";
+import ServiceProNavbar from "./components/service-pro/ServiceProNavbar";
 import ProjectSOW from "./pages/ProjectSOW";
 import SOWReviewPage from "@/components/project/sow/SOWReviewPage";
 import Jobs from "./pages/Jobs";
@@ -47,6 +47,16 @@ import Properties from "./pages/Properties";
 import PropertyDetails from "./pages/PropertyDetails";
 import Notifications from "./pages/Notifications";
 import ProjectCalendar from "./pages/ProjectCalendar";
+
+// Wrapper component to ensure ServiceProNavbar is shown for service pros
+const ServiceProWrapper = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <>
+      <ServiceProNavbar />
+      {children}
+    </>
+  );
+};
 
 function App() {
   return (
@@ -69,34 +79,46 @@ function App() {
             </TooltipProvider>
           </CoachRoute>
         } />
+        
+        {/* Service Pro Routes - All service pro routes use the ServiceProWrapper */}
         <Route path="/service-pro-dashboard" element={
           <ServiceProRoute>
             <TooltipProvider>
-              <ServiceProDashboard />
+              <ServiceProWrapper>
+                <ServiceProDashboard />
+              </ServiceProWrapper>
             </TooltipProvider>
           </ServiceProRoute>
         } />
         <Route path="/service-pro-profile" element={
           <ServiceProRoute>
             <TooltipProvider>
-              <ServiceProProfile />
+              <ServiceProWrapper>
+                <ServiceProProfile />
+              </ServiceProWrapper>
             </TooltipProvider>
           </ServiceProRoute>
         } />
         <Route path="/service-pro-jobs" element={
           <ServiceProRoute>
             <TooltipProvider>
-              <ServiceProJobs />
+              <ServiceProWrapper>
+                <ServiceProJobs />
+              </ServiceProWrapper>
             </TooltipProvider>
           </ServiceProRoute>
         } />
         <Route path="/service-pro-messages" element={
           <ServiceProRoute>
             <TooltipProvider>
-              <ServiceProMessages />
+              <ServiceProWrapper>
+                <ServiceProMessages />
+              </ServiceProWrapper>
             </TooltipProvider>
           </ServiceProRoute>
         } />
+        
+        {/* Make sure other routes that service pros might access also use the ServiceProWrapper */}
         <Route path="/profile" element={
           <ProtectedRoute>
             <TooltipProvider>
@@ -104,6 +126,45 @@ function App() {
             </TooltipProvider>
           </ProtectedRoute>
         } />
+        <Route path="/projects" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <Projects />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/your-projects" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <Projects />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/your-properties" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <Properties />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/real-estate" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <Properties />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        <Route path="/accounting" element={
+          <ProtectedRoute>
+            <TooltipProvider>
+              <NotFound />
+            </TooltipProvider>
+          </ProtectedRoute>
+        } />
+        
+        {/* Keep existing code for other routes */}
+        
+        {/* Rest of the routes */}
         <Route path="/create-project" element={
           <ProtectedRoute>
             <TooltipProvider>
@@ -111,6 +172,7 @@ function App() {
             </TooltipProvider>
           </ProtectedRoute>
         } />
+        
         <Route path="/renovation-areas" element={
           <ProtectedRoute>
             <TooltipProvider>
@@ -244,20 +306,6 @@ function App() {
             </TooltipProvider>
           </ProtectedRoute>
         } />
-        <Route path="/projects" element={
-          <ProtectedRoute>
-            <TooltipProvider>
-              <Projects />
-            </TooltipProvider>
-          </ProtectedRoute>
-        } />
-        <Route path="/add-property" element={
-          <ProtectedRoute>
-            <TooltipProvider>
-              <AddProperty />
-            </TooltipProvider>
-          </ProtectedRoute>
-        } />
         <Route path="/project-sow/:projectId" element={
           <ProtectedRoute>
             <TooltipProvider>
@@ -287,7 +335,6 @@ function App() {
           </ProtectedRoute>
         } />
         <Route path="/properties" element={<Properties />} />
-        <Route path="/your-properties" element={<Properties />} />
         <Route path="/property/:id" element={<PropertyDetails />} />
         <Route path="/notifications" element={
           <ProtectedRoute>

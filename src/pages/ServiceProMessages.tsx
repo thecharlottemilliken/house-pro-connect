@@ -1,11 +1,9 @@
 
-import ServiceProNavbar from "@/components/service-pro/ServiceProNavbar";
+import { useEffect } from "react";
 
 const ServiceProMessages = () => {
   return (
     <div className="min-h-screen bg-gray-50">
-      <ServiceProNavbar />
-      
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Messages</h1>

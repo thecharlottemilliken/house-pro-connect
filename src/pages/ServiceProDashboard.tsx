@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import ServiceProNavbar from "@/components/service-pro/ServiceProNavbar";
 import ProfileCompletionCard from "@/components/service-pro/ProfileCompletionCard";

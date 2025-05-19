@@ -1,11 +1,9 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Star, FileText, Briefcase, Shield } from "lucide-react";
-import ServiceProNavbar from "@/components/service-pro/ServiceProNavbar";
 import { useAuth } from "@/contexts/AuthContext";
 import { Separator } from "@/components/ui/separator";
 import LicensesForm from "@/components/service-pro/LicensesForm";
@@ -30,8 +28,6 @@ const ServiceProProfile = () => {
   
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <ServiceProNavbar />
-      
       <main className="flex-grow px-6 py-6 max-w-7xl mx-auto w-full">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           {/* Left Column - Profile Information */}
