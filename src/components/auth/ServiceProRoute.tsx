@@ -24,7 +24,8 @@ const ServiceProRoute = ({ children }: ServiceProRouteProps) => {
   }
 
   // If authenticated but not a service pro, redirect to main dashboard
-  if (profile?.role !== 'service-pro') {
+  // Check for both 'service-pro' and 'service_pro' variations
+  if (profile?.role !== 'service_pro' && profile?.role !== 'service-pro') {
     return <Navigate to="/dashboard" replace />;
   }
 
