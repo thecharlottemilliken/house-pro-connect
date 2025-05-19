@@ -42,10 +42,14 @@ const DesignAssetsSection: React.FC<DesignAssetsProps> = ({
 
   const handleSaveTags = (tags: string[]) => {
     if (onUpdateAssetTags && selectedAssetIndex >= 0) {
+      console.log("Saving tags for asset:", selectedAssetIndex, tags);
       onUpdateAssetTags(selectedAssetIndex, tags);
       setTagDialogOpen(false);
     }
   };
+
+  // Added debug console.log to verify component rendering with updated assets
+  console.log("DesignAssetsSection rendering with assets:", designAssets);
 
   return (
     <div className="pt-4 border-t border-gray-200">
@@ -81,7 +85,9 @@ const DesignAssetsSection: React.FC<DesignAssetsProps> = ({
       {/* Tags Management Dialog */}
       <Dialog open={tagDialogOpen} onOpenChange={setTagDialogOpen}>
         <TagsDialogContent 
-          tags={designAssets[selectedAssetIndex]?.tags || []}
+          tags={selectedAssetIndex >= 0 && selectedAssetIndex < designAssets.length
+            ? designAssets[selectedAssetIndex]?.tags || []
+            : []}
           onSave={handleSaveTags}
           onCancel={() => setTagDialogOpen(false)}
         />

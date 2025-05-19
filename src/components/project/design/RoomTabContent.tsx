@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DesignPreferences, RenovationArea } from "@/hooks/useProjectData";
 import EmptyDesignState from "./EmptyDesignState";
 import PinterestInspirationSection from "./PinterestInspirationSection";
@@ -90,6 +90,12 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
     // For assets with no room association, exclude them
     return false;
   });
+
+  // Added debugging to verify the filtered assets
+  useEffect(() => {
+    console.log("Room design assets for", area.area, ":", roomDesignAssets);
+    console.log("All design assets:", designAssets);
+  }, [area.area, roomDesignAssets, designAssets]);
   
   // Check if measurements exist
   const hasMeasurements = measurements && 
@@ -132,6 +138,8 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
               asset.name === assetToUpdate.name && 
               asset.url === assetToUpdate.url
             );
+            
+            console.log("Updating tags for asset", assetToUpdate, "at global index", originalIndex);
             
             if (originalIndex !== -1) {
               onUpdateAssetTags(originalIndex, tags);

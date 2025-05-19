@@ -350,7 +350,7 @@ export const useDesignActions = (projectId: string | undefined) => {
     }
   }, [projectId]);
   
-  // Update asset tags
+  // Update asset tags - Fixed function
   const handleUpdateAssetTags = useCallback(async (
     index: number,
     tags: string[],
@@ -362,7 +362,7 @@ export const useDesignActions = (projectId: string | undefined) => {
         description: "Project ID is required to update tags",
         variant: "destructive"
       });
-      return;
+      return null;
     }
     
     setIsSaving(true);
@@ -384,36 +384,23 @@ export const useDesignActions = (projectId: string | undefined) => {
       };
       
       console.log("Updated design preferences:", updatedPrefs);
+      console.log("New tags for asset:", updatedPrefs.designAssets[index].tags);
       
-      // First try using the edge function for bypassing RLS issues
-      const { data: updateData, error: updateError } = await supabase.functions.invoke(
-        'handle-project-update',
-        {
-          method: 'POST',
-          body: { 
-            projectId,
-            userId: (await supabase.auth.getUser()).data.user?.id,
-            designPreferences: updatedPrefs
-          }
-        }
-      );
-
-      if (updateError) {
-        console.error('Error updating via edge function:', updateError);
-        
-        // Fall back to direct update
-        const { error } = await supabase
-          .from('projects')
-          .update({
-            design_preferences: updatedPrefs
-          })
-          .eq('id', projectId);
-
-        if (error) {
-          console.error('Error updating project directly:', error);
-          throw error;
-        }
+      // First try using direct update since we've fixed permissions
+      const { data, error } = await supabase
+        .from('projects')
+        .update({
+          design_preferences: updatedPrefs
+        })
+        .eq('id', projectId)
+        .select();
+      
+      if (error) {
+        console.error('Error updating project directly:', error);
+        throw error;
       }
+      
+      console.log("Update response:", data);
       
       toast({
         title: "Success",

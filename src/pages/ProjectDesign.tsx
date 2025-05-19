@@ -3,11 +3,9 @@ import { useParams, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useProjectData } from "@/hooks/useProjectData";
-import { Button } from "@/components/ui/button";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import ProjectSidebar from "@/components/project/ProjectSidebar";
-import RecommendedContent from "@/components/dashboard/RecommendedContent";
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { useRoomDesign } from "@/hooks/useRoomDesign";
 import { useDesignActions } from "@/hooks/useDesignActions";
 import ProjectDesignTabs from "@/components/project/design/ProjectDesignTabs";
@@ -33,6 +31,9 @@ const ProjectDesign = () => {
     setupRooms,
     getRoomIdByName
   } = useRoomDesign(propertyDetails?.id);
+
+  // Added state to track UI updates after tag changes
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   
   const {
     handleSaveMeasurements,
@@ -50,6 +51,20 @@ const ProjectDesign = () => {
   const handleAddRenderings = useCallback(() => console.log("Add renderings clicked"), []);
   const handleAddDrawings = useCallback(() => console.log("Add drawings clicked"), []);
   const handleAddBlueprints = useCallback(() => console.log("Add blueprints clicked"), []);
+
+  // Enhanced tag update handler to trigger UI refresh
+  const enhancedUpdateAssetTags = useCallback(async (index: number, tags: string[]) => {
+    console.log("ProjectDesign: Updating tags for asset at index", index, "with tags", tags);
+    const updatedPrefs = await handleUpdateAssetTags(index, tags, projectData?.design_preferences || {});
+    if (updatedPrefs) {
+      // Force a UI refresh after successful tag update
+      setRefreshTrigger(prev => prev + 1);
+      // Force a re-render by updating projectData in some way (this would ideally be done with a proper state management solution)
+      if (projectData) {
+        console.log("Tags updated successfully, triggering UI refresh");
+      }
+    }
+  }, [handleUpdateAssetTags, projectData]);
 
   // Set default tab based on renovation areas
   useEffect(() => {
@@ -89,6 +104,13 @@ const ProjectDesign = () => {
     }));
   };
 
+  // Added logging to track data flow
+  useEffect(() => {
+    if (projectData?.design_preferences?.designAssets) {
+      console.log("Project design assets:", projectData.design_preferences.designAssets);
+    }
+  }, [projectData, refreshTrigger]);
+
   if (isLoading || !projectData) {
     return <div className="min-h-screen flex flex-col bg-white">
         <DashboardNavbar />
@@ -120,6 +142,7 @@ const ProjectDesign = () => {
                 <h2 className="text-lg font-medium mb-3">Select a room</h2>
                 
                 <ProjectDesignTabs 
+                  key={`design-tabs-${refreshTrigger}`} // Force re-render on tag updates
                   defaultTab={defaultTab}
                   renovationAreas={renovationAreas}
                   designPreferences={designPreferences}
@@ -138,7 +161,7 @@ const ProjectDesign = () => {
                   onUploadBeforePhotos={(area, photos) => handleUploadBeforePhotos(area, convertUrlsToFileObjects(photos), designPreferences)}
                   onAddProjectFiles={(area, files) => handleAddProjectFiles(area, files, designPreferences)}
                   onRemoveDesignAsset={(index) => handleRemoveDesignAsset(index, designPreferences)}
-                  onUpdateAssetTags={(index, tags) => handleUpdateAssetTags(index, tags, designPreferences)}
+                  onUpdateAssetTags={enhancedUpdateAssetTags}
                   onAddInspirationImages={(images) => handleAddInspirationImages(convertUrlsToFileObjects(images), designPreferences)}
                   onAddPinterestBoards={handleAddPinterestBoards}
                 />
