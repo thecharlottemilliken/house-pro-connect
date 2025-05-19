@@ -215,3 +215,7 @@ CREATE TRIGGER sow_status_change_trigger
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_sow_status_change();
 */
+
+// NOTE: The above trigger function has been successfully deployed to the database on 2025-05-19.
+// It handles both notifications and action items when SOW status changes.
+
