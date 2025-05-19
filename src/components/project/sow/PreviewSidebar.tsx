@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { FileImage, Download, Eye, Loader, Info, Building, MapPin, Settings, Tag } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -46,12 +45,27 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
 
   // Normalize room name for consistent formatting
   const normalizeRoomName = (name: string): string => {
+    if (!name) return 'Unknown';
+    
     // Convert to title case and trim any extra spaces
     const formattedName = name.trim()
       .split('_').join(' ') // Replace underscores with spaces
       .replace(/\b\w/g, l => l.toUpperCase()); // Capitalize first letter of each word
     
     return formattedName;
+  };
+
+  // Find the best matching room in the database
+  const findBestMatchingRoom = (roomName: string, dbRooms: Room[]): Room | null => {
+    if (!roomName) return null;
+    
+    // Try exact match first (case insensitive)
+    const normalizedName = normalizeRoomName(roomName).toLowerCase();
+    const exactMatch = dbRooms.find(r => r.name.toLowerCase() === normalizedName);
+    if (exactMatch) return exactMatch;
+
+    // No match found
+    return null;
   };
 
   // Load all room and asset data
@@ -148,20 +162,13 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
           }
         });
 
-        // Get room names from database for mapping
-        const dbRoomNames = normalizedRooms.map(room => room.name.toLowerCase());
-        
         // Process before photos from design preferences
         Object.entries(beforePhotos || {}).forEach(([room, photos]) => {
           if (Array.isArray(photos)) {
-            // Normalize the room name from beforePhotos
+            // Find matching room in database or use "Other" category
             const normalizedRoomName = normalizeRoomName(room);
-            
-            // Use the database room name if it exists (case insensitive match)
-            const matchingDbRoom = normalizedRooms.find(
-              dbRoom => dbRoom.name.toLowerCase() === normalizedRoomName.toLowerCase()
-            );
-            const finalRoomName = matchingDbRoom?.name || normalizedRoomName;
+            const matchingRoom = findBestMatchingRoom(normalizedRoomName, normalizedRooms);
+            const finalRoomName = matchingRoom?.name || "Other";
             
             const beforePhotoAssets = photos.map((url, index) => ({
               roomName: finalRoomName,
@@ -260,26 +267,20 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
     return groups;
   };
 
-  // Get the list of unique room names
+  // Get the list of unique room names - ONLY from the database rooms
   const roomOptions = React.useMemo(() => {
-    const uniqueRooms = new Set<string>();
+    // Only use rooms from the database
+    const dbRoomNames = rooms.map(room => room.name);
+
+    // Add 'General' and 'Property' if they have assets
+    const hasGeneralAssets = allAssets.some(asset => asset.roomName === 'General');
+    const hasPropertyAssets = allAssets.some(asset => asset.roomName === 'Property');
     
-    // Add rooms from database with normalized names
-    rooms.forEach(room => uniqueRooms.add(room.name));
+    const uniqueRooms = new Set<string>(dbRoomNames);
+    if (hasGeneralAssets) uniqueRooms.add('General');
+    if (hasPropertyAssets) uniqueRooms.add('Property');
     
-    // Only add room names from assets if they don't exist in the database
-    allAssets.forEach(asset => {
-      const normalizedAssetRoom = normalizeRoomName(asset.roomName);
-      // Check if this room name is new (not in database)
-      const exists = Array.from(uniqueRooms).some(
-        room => room.toLowerCase() === normalizedAssetRoom.toLowerCase()
-      );
-      
-      if (!exists) {
-        uniqueRooms.add(normalizedAssetRoom);
-      }
-    });
-    
+    // Sort rooms alphabetically
     return Array.from(uniqueRooms).sort();
   }, [rooms, allAssets]);
 
