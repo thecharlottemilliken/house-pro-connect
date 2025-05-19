@@ -1,18 +1,23 @@
 
 import { SOWData } from '@/hooks/useSOWData';
 
-// Define the structure for tracked changes
+// Define the structure for tracked changes - more detailed with status field
 export interface ChangeTracker {
   workAreas: {
-    [key: string]: boolean; // Key is work area id, value is whether it changed
+    [key: string]: { status: 'added' | 'modified' | 'unchanged', details?: any };
   };
   laborItems: {
-    [key: string]: boolean; // Key is labor item id, value is whether it changed
+    [key: string]: { status: 'added' | 'modified' | 'unchanged', details?: any };
   };
   materialItems: {
-    [key: string]: boolean; // Key is material item id, value is whether it changed
+    [key: string]: { status: 'added' | 'modified' | 'unchanged', details?: any };
   };
-  bidConfiguration: boolean;
+  bidConfiguration: { 
+    status: 'modified' | 'unchanged';
+    fields?: {
+      [key: string]: { status: 'added' | 'modified' | 'unchanged', oldValue?: any, newValue?: any }
+    }
+  };
   isRevision: boolean;
 }
 
@@ -21,7 +26,7 @@ export const initializeChangeTracker = (): ChangeTracker => ({
   workAreas: {},
   laborItems: {},
   materialItems: {},
-  bidConfiguration: false,
+  bidConfiguration: { status: 'unchanged' },
   isRevision: false,
 });
 
@@ -48,6 +53,32 @@ export const objectsAreDifferent = (obj1: any, obj2: any): boolean => {
   return false;
 };
 
+// Find specific differences between objects
+export const findDifferences = (obj1: any, obj2: any): { [key: string]: { status: 'added' | 'modified', oldValue?: any, newValue: any } } => {
+  const differences: { [key: string]: { status: 'added' | 'modified', oldValue?: any, newValue: any } } = {};
+  
+  // Check for changed or added fields in obj2
+  Object.keys(obj2).forEach(key => {
+    // If key doesn't exist in obj1, it's a new addition
+    if (!(key in obj1)) {
+      differences[key] = { status: 'added', newValue: obj2[key] };
+    }
+    // If values are different, it's a modification
+    else if (typeof obj2[key] !== 'object' && obj1[key] !== obj2[key]) {
+      differences[key] = { status: 'modified', oldValue: obj1[key], newValue: obj2[key] };
+    }
+    // For objects, recursively check
+    else if (typeof obj2[key] === 'object' && obj2[key] !== null && typeof obj1[key] === 'object' && obj1[key] !== null) {
+      const nestedDiffs = findDifferences(obj1[key], obj2[key]);
+      if (Object.keys(nestedDiffs).length > 0) {
+        differences[key] = { status: 'modified', oldValue: obj1[key], newValue: obj2[key] };
+      }
+    }
+  });
+  
+  return differences;
+};
+
 // Parse JSON fields for proper comparison
 export const parseJsonField = (field: any, defaultValue: any) => {
   if (!field) {
@@ -70,7 +101,7 @@ export const trackChanges = (previousData: SOWData | null, currentData: SOWData 
   }
   
   // Check if this is a revision based on previous status
-  changes.isRevision = (previousData.status === 'pending revision');
+  changes.isRevision = true;
   
   // Compare work areas
   const currentWorkAreas = Array.isArray(currentData.work_areas) ? currentData.work_areas : [];
@@ -82,7 +113,16 @@ export const trackChanges = (previousData: SOWData | null, currentData: SOWData 
       (area.id && area.id === id) || (!area.id && index === previousWorkAreas.indexOf(area))
     );
     
-    changes.workAreas[id] = !previousWorkArea || objectsAreDifferent(previousWorkArea, workArea);
+    if (!previousWorkArea) {
+      changes.workAreas[id] = { status: 'added', details: workArea };
+    } else if (objectsAreDifferent(previousWorkArea, workArea)) {
+      changes.workAreas[id] = { 
+        status: 'modified', 
+        details: findDifferences(previousWorkArea, workArea)
+      };
+    } else {
+      changes.workAreas[id] = { status: 'unchanged' };
+    }
   });
   
   // Compare labor items
@@ -95,7 +135,16 @@ export const trackChanges = (previousData: SOWData | null, currentData: SOWData 
       (item.id && item.id === id) || (!item.id && index === previousLaborItems.indexOf(item))
     );
     
-    changes.laborItems[id] = !previousLaborItem || objectsAreDifferent(previousLaborItem, laborItem);
+    if (!previousLaborItem) {
+      changes.laborItems[id] = { status: 'added', details: laborItem };
+    } else if (objectsAreDifferent(previousLaborItem, laborItem)) {
+      changes.laborItems[id] = { 
+        status: 'modified', 
+        details: findDifferences(previousLaborItem, laborItem)
+      };
+    } else {
+      changes.laborItems[id] = { status: 'unchanged' };
+    }
   });
   
   // Compare material items
@@ -108,14 +157,39 @@ export const trackChanges = (previousData: SOWData | null, currentData: SOWData 
       (item.id && item.id === id) || (!item.id && index === previousMaterialItems.indexOf(item))
     );
     
-    changes.materialItems[id] = !previousMaterialItem || objectsAreDifferent(previousMaterialItem, materialItem);
+    if (!previousMaterialItem) {
+      changes.materialItems[id] = { status: 'added', details: materialItem };
+    } else if (objectsAreDifferent(previousMaterialItem, materialItem)) {
+      changes.materialItems[id] = { 
+        status: 'modified', 
+        details: findDifferences(previousMaterialItem, materialItem)
+      };
+    } else {
+      changes.materialItems[id] = { status: 'unchanged' };
+    }
   });
   
   // Compare bid configuration
-  changes.bidConfiguration = objectsAreDifferent(
-    previousData.bid_configuration || {},
-    currentData.bid_configuration || {}
-  );
+  const prevBidConfig = previousData.bid_configuration || {};
+  const currentBidConfig = currentData.bid_configuration || {};
+  
+  if (objectsAreDifferent(prevBidConfig, currentBidConfig)) {
+    changes.bidConfiguration = {
+      status: 'modified',
+      fields: {}
+    };
+    
+    // Find which specific fields changed
+    Object.keys(currentBidConfig).forEach(key => {
+      if (!(key in prevBidConfig) || prevBidConfig[key] !== currentBidConfig[key]) {
+        changes.bidConfiguration.fields![key] = {
+          status: key in prevBidConfig ? 'modified' : 'added',
+          oldValue: key in prevBidConfig ? prevBidConfig[key] : undefined,
+          newValue: currentBidConfig[key]
+        };
+      }
+    });
+  }
   
   return changes;
 };

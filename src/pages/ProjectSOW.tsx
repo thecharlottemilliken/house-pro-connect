@@ -71,15 +71,35 @@ const ProjectSOW = () => {
           if ((data.status === "ready for review" && isRevised) || data.status === "pending revision") {
             setIsRevision(true);
             
-            // For revisions, fetch previous version to track changes 
-            // Since we don't have an actual version history, we're using the current 
-            // version but will highlight areas mentioned in the feedback
-            setOriginalSowData(parsedData);
-            
-            // Set change tracker based on feedback
-            if (data.feedback) {
-              const changesDetected = trackChanges(null, parsedData);
-              setChanges(changesDetected);
+            // For revisions, fetch original version to compare changes
+            if (data.status === "pending revision") {
+              try {
+                const { data: historyData } = await supabase
+                  .from('statement_of_work')
+                  .select('*')
+                  .eq('project_id', params.projectId)
+                  .order('updated_at', { ascending: false })
+                  .limit(2);
+                
+                if (historyData && historyData.length > 1) {
+                  const originalData = historyData[1];
+                  const parsedOriginalData = {
+                    ...originalData,
+                    work_areas: parseJsonField(originalData.work_areas, []),
+                    labor_items: parseJsonField(originalData.labor_items, []),
+                    material_items: parseJsonField(originalData.material_items, []),
+                    bid_configuration: parseJsonField(originalData.bid_configuration, { bidDuration: '', projectDescription: '' }),
+                  };
+                  
+                  setOriginalSowData(parsedOriginalData);
+                  
+                  // Track changes between the original and current version
+                  const changesDetected = trackChanges(parsedOriginalData, parsedData);
+                  setChanges(changesDetected);
+                }
+              } catch (error) {
+                console.error("Failed to fetch revision history:", error);
+              }
             }
           }
         }
@@ -94,22 +114,9 @@ const ProjectSOW = () => {
     fetchSOWData();
   }, [params.projectId, profile, isRevised]);
 
-  // Only show review dialog when explicitly requested via the review param
-  // and only after data is loaded and the component has mounted
-  useEffect(() => {
-    if (!isLoading && sowData && isReviewMode) {
-      // We manually control when to show the dialog instead of automatically showing it
-      if (sowData.status === "ready for review" || sowData.status === "pending") {
-        // Small delay to ensure proper state updates
-        const timer = setTimeout(() => {
-          setShowReviewDialog(true);
-        }, 100);
-        
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [isReviewMode, isLoading, sowData]);
-
+  // IMPORTANT: Remove the automatic display of the review dialog
+  // Now it will only show when the user explicitly clicks to open it
+  
   const projectTitle = projectData?.title || "Unknown Project";
   
   const handleReviewComplete = () => {
@@ -188,9 +195,17 @@ const ProjectSOW = () => {
 
     return (
       <div className="max-w-6xl mx-auto px-6 py-6">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-6">
-          {isRevision ? "Revised Statement of Work" : "Statement of Work"}
-        </h2>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-semibold text-gray-900">
+            {isRevision ? "Revised Statement of Work" : "Statement of Work"}
+          </h2>
+          
+          {isReviewMode && sowData?.status === 'ready for review' && (
+            <Button onClick={() => setShowReviewDialog(true)}>
+              Review & Approve
+            </Button>
+          )}
+        </div>
 
         <ProjectReviewForm
           workAreas={safeWorkAreas}
@@ -198,7 +213,7 @@ const ProjectSOW = () => {
           materialItems={safeMaterialItems}
           bidConfiguration={safeBidConfig}
           projectId={params.projectId || ''}
-          onSave={() => { }}
+          onSave={() => {}}
           isRevision={isRevision}
           changes={changes}
         />
