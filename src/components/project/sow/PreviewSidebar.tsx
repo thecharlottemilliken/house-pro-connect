@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { FileImage, Download, Eye, Loader, Info, Building, MapPin, Settings, Tag } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -43,6 +44,16 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
   const blueprintUrl = propertyDetails?.blueprint_url;
   const inspirationImages = designPreferences.inspirationImages || [];
 
+  // Normalize room name for consistent formatting
+  const normalizeRoomName = (name: string): string => {
+    // Convert to title case and trim any extra spaces
+    const formattedName = name.trim()
+      .split('_').join(' ') // Replace underscores with spaces
+      .replace(/\b\w/g, l => l.toUpperCase()); // Capitalize first letter of each word
+    
+    return formattedName;
+  };
+
   // Load all room and asset data
   useEffect(() => {
     const fetchRoomData = async () => {
@@ -71,7 +82,13 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
           return;
         }
 
-        setRooms(roomsData);
+        // Normalize room names for consistent display
+        const normalizedRooms = roomsData.map(room => ({
+          ...room,
+          name: normalizeRoomName(room.name)
+        }));
+        
+        setRooms(normalizedRooms);
 
         // Fetch all room assets
         const roomIds = roomsData.map(room => room.id);
@@ -91,7 +108,7 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
 
         // Process room-specific assets
         designPrefs?.forEach(pref => {
-          const room = roomsData.find(r => r.id === pref.room_id);
+          const room = normalizedRooms.find(r => r.id === pref.room_id);
           const roomName = room?.name || 'Unknown Room';
 
           // Add renderings as design assets
@@ -131,11 +148,23 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
           }
         });
 
+        // Get room names from database for mapping
+        const dbRoomNames = normalizedRooms.map(room => room.name.toLowerCase());
+        
         // Process before photos from design preferences
         Object.entries(beforePhotos || {}).forEach(([room, photos]) => {
           if (Array.isArray(photos)) {
+            // Normalize the room name from beforePhotos
+            const normalizedRoomName = normalizeRoomName(room);
+            
+            // Use the database room name if it exists (case insensitive match)
+            const matchingDbRoom = normalizedRooms.find(
+              dbRoom => dbRoom.name.toLowerCase() === normalizedRoomName.toLowerCase()
+            );
+            const finalRoomName = matchingDbRoom?.name || normalizedRoomName;
+            
             const beforePhotoAssets = photos.map((url, index) => ({
-              roomName: room,
+              roomName: finalRoomName,
               name: `Before Photo ${index + 1}`,
               url,
               type: 'before-photo' as const,
@@ -235,11 +264,21 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
   const roomOptions = React.useMemo(() => {
     const uniqueRooms = new Set<string>();
     
-    // Add rooms from database
+    // Add rooms from database with normalized names
     rooms.forEach(room => uniqueRooms.add(room.name));
     
-    // Add rooms from assets
-    allAssets.forEach(asset => uniqueRooms.add(asset.roomName));
+    // Only add room names from assets if they don't exist in the database
+    allAssets.forEach(asset => {
+      const normalizedAssetRoom = normalizeRoomName(asset.roomName);
+      // Check if this room name is new (not in database)
+      const exists = Array.from(uniqueRooms).some(
+        room => room.toLowerCase() === normalizedAssetRoom.toLowerCase()
+      );
+      
+      if (!exists) {
+        uniqueRooms.add(normalizedAssetRoom);
+      }
+    });
     
     return Array.from(uniqueRooms).sort();
   }, [rooms, allAssets]);
