@@ -168,10 +168,10 @@ export function useRoomAssets(projectData: any, propertyDetails: any) {
           }
         });
 
-        // Process global inspiration images
+        // Process global inspiration images - Changed from 'General' to 'Uncategorized'
         if (Array.isArray(inspirationImages)) {
           const globalInspirations = inspirationImages.map((url, index) => ({
-            roomName: 'General',
+            roomName: 'Uncategorized',
             roomId: 'general',
             name: `Inspiration ${index + 1}`,
             url,
@@ -184,7 +184,7 @@ export function useRoomAssets(projectData: any, propertyDetails: any) {
         // Process design assets from design_preferences
         if (designPreferences.designAssets && Array.isArray(designPreferences.designAssets)) {
           const designAssets = designPreferences.designAssets.map((asset: any) => {
-            let roomName = asset.roomId || 'General';
+            let roomName = asset.roomId || 'Uncategorized'; // Changed from 'General' to 'Uncategorized'
             
             // If we have room ID, get proper name from database rooms
             if (asset.roomId) {
