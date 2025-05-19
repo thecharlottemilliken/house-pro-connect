@@ -98,7 +98,7 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
             className="bg-orange-500 hover:bg-orange-600 font-medium flex items-center gap-1"
             size="sm"
             onClick={() =>
-              navigate(`/project-sow/${projectId}/review`)
+              navigate(`/project-sow/${projectId}?review=true`)
             }
           >
             REVIEW SOW <ArrowRight className="ml-1 h-4 w-4" />
@@ -134,9 +134,33 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
           <Button
             className="bg-orange-500 hover:bg-orange-600 font-medium flex items-center gap-1"
             size="sm"
-            onClick={() => window.location.href = `/project-sow/${projectId}`}
+            onClick={() => navigate(`/project-sow/${projectId}`)}
           >
             REVIEW & EDIT SOW <ArrowRight className="ml-1 h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Coach sees Create SOW task if no SOW exists or it's in draft state
+  if (
+    userRole === "coach" &&
+    (!sowData || sowData.status === "draft")
+  ) {
+    taskContent = (
+      <div className="bg-blue-50 border-l-4 border-blue-400 p-5 rounded-md mb-4">
+        <h3 className="font-medium text-lg mb-2">Create Statement of Work</h3>
+        <p className="text-gray-700 mb-3">
+          This project needs a Statement of Work (SOW) to outline scope, materials, and costs.
+        </p>
+        <div className="flex justify-end">
+          <Button
+            className="bg-blue-600 hover:bg-blue-700 font-medium flex items-center gap-1"
+            size="sm"
+            onClick={() => navigate(`/project-sow/${projectId}`)}
+          >
+            CREATE SOW <ArrowRight className="ml-1 h-4 w-4" />
           </Button>
         </div>
       </div>

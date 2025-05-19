@@ -87,8 +87,15 @@ serve(async (req) => {
     let actionItems = [];
     const existingTitles = new Set(existingItems?.map(item => item.title) || []);
     
-    // SOW creation action item
-    if (!existingTitles.has("Create Statement of Work (SOW)")) {
+    // Check SOW status to determine which action items to create
+    const { data: sowData } = await supabase
+      .from('statement_of_work')
+      .select('id, status')
+      .eq('project_id', projectId)
+      .single();
+
+    // SOW creation action item for coaches - only if SOW doesn't exist or is in draft state
+    if ((!sowData || sowData.status === 'draft') && !existingTitles.has("Create Statement of Work (SOW)")) {
       actionItems.push({
         project_id: projectId,
         title: "Create Statement of Work (SOW)",
@@ -103,13 +110,8 @@ serve(async (req) => {
     }
     
     // Check if there's an SOW ready for review and create action item for project owner
-    const { data: sowData } = await supabase
-      .from('statement_of_work')
-      .select('id, status')
-      .eq('project_id', projectId)
-      .single();
-      
-    if (sowData && sowData.status === 'ready for review' && !existingTitles.has("Review Statement of Work")) {
+    if (sowData && (sowData.status === 'ready for review' || sowData.status === 'pending') && 
+        !existingTitles.has("Review Statement of Work")) {
       actionItems.push({
         project_id: projectId,
         title: "Review Statement of Work",
@@ -190,6 +192,51 @@ serve(async (req) => {
         action_data: { route: `/project-design/${projectId}` },
         completed: false
       });
+    }
+    
+    // Clean up stale SOW action items if status has changed
+    // Remove "Create SOW" action item if SOW is now ready for review or approved
+    if (sowData && (sowData.status === 'ready for review' || sowData.status === 'approved' || sowData.status === 'pending')) {
+      // Find any existing "Create Statement of Work (SOW)" action items to delete
+      const { data: createSowItems } = await supabase
+        .from('project_action_items')
+        .select('id')
+        .eq('project_id', projectId)
+        .eq('title', 'Create Statement of Work (SOW)')
+        .eq('for_role', 'coach')
+        .eq('completed', false);
+      
+      if (createSowItems && createSowItems.length > 0) {
+        // Delete these items as they're now stale
+        await supabase
+          .from('project_action_items')
+          .delete()
+          .in('id', createSowItems.map(item => item.id));
+        
+        console.log(`Removed ${createSowItems.length} stale "Create SOW" action items`);
+      }
+    }
+    
+    // Remove "Review SOW" action item if SOW is now approved or not in review state
+    if (sowData && sowData.status !== 'ready for review' && sowData.status !== 'pending') {
+      // Find any existing "Review Statement of Work" action items to delete
+      const { data: reviewSowItems } = await supabase
+        .from('project_action_items')
+        .select('id')
+        .eq('project_id', projectId)
+        .eq('title', 'Review Statement of Work')
+        .eq('for_role', 'resident')
+        .eq('completed', false);
+      
+      if (reviewSowItems && reviewSowItems.length > 0) {
+        // Delete these items as they're now stale
+        await supabase
+          .from('project_action_items')
+          .delete()
+          .in('id', reviewSowItems.map(item => item.id));
+        
+        console.log(`Removed ${reviewSowItems.length} stale "Review SOW" action items`);
+      }
     }
     
     // Filter out any action items that already exist to prevent duplicates

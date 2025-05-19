@@ -55,8 +55,8 @@ export const useProjectActionItems = (projectId: string) => {
         
         // Filter items based on user role
         let filteredItems = typedData || [];
-        if (userRole && userRole !== 'coach') {
-          // Non-coach users only see items for their role or null role
+        if (userRole) {
+          // Filter items to show only those for the user's role or those without a specific role
           filteredItems = filteredItems.filter(item => 
             !item.for_role || item.for_role === userRole
           );

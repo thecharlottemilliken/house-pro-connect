@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { ProjectData } from "@/hooks/useProjectData";
 import { useNavigate } from "react-router-dom";
 import { useProjectActionItems, ActionItem } from "@/hooks/useProjectActionItems";
 import { useActionItemsGenerator } from "@/hooks/useActionItemsGenerator";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ActionItemsWidgetProps {
   projectId: string;
@@ -26,6 +28,8 @@ const ActionItemsWidget = ({
   const navigate = useNavigate();
   const { actionItems, isLoading, markActionItemComplete } = useProjectActionItems(projectId);
   const { generateActionItems, isGenerating } = useActionItemsGenerator();
+  const { profile } = useAuth();
+  const userRole = profile?.role || '';
 
   // Generate action items when the component mounts, but only once
   useEffect(() => {
@@ -84,6 +88,8 @@ const ActionItemsWidget = ({
         return <PenBox className="h-5 w-5" />;
       case 'file-text':
         return <FileText className="h-5 w-5" />;
+      case 'clipboard-check':
+        return <FileText className="h-5 w-5" />;
       default:
         return <ListTodo className="h-5 w-5" />;
     }
@@ -98,14 +104,16 @@ const ActionItemsWidget = ({
     }
   };
 
-  // Deduplicate action items by title to avoid showing multiple SOW tasks
-  const uniqueActionItems = actionItems.reduce((acc, current) => {
-    const isDuplicate = acc.some(item => item.title === current.title);
-    if (!isDuplicate) {
-      acc.push(current);
-    }
-    return acc;
-  }, [] as ActionItem[]);
+  // Filter action items based on user role and deduplicate by title
+  const filteredActionItems = actionItems
+    .filter(item => !item.for_role || item.for_role === userRole)
+    .reduce((acc, current) => {
+      const isDuplicate = acc.some(item => item.title === current.title);
+      if (!isDuplicate) {
+        acc.push(current);
+      }
+      return acc;
+    }, [] as ActionItem[]);
 
   return (
     <Card className={cn("overflow-hidden", className)}>
@@ -114,7 +122,7 @@ const ActionItemsWidget = ({
           <h3 className="text-lg font-semibold">Action Items</h3>
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-gray-500">
-              {uniqueActionItems.filter(item => item.completed).length}/{uniqueActionItems.length} Complete
+              {filteredActionItems.filter(item => item.completed).length}/{filteredActionItems.length} Complete
             </span>
             <Button 
               variant="ghost" 
@@ -136,7 +144,7 @@ const ActionItemsWidget = ({
             </div>
           ) : (
             <>
-              {uniqueActionItems.map((item) => (
+              {filteredActionItems.map((item) => (
                 <div key={item.id} className="p-4 hover:bg-gray-50">
                   <div className="flex gap-3">
                     <div className={cn("p-2 rounded-lg flex-shrink-0", getPriorityColor(item.priority))}>
@@ -159,7 +167,7 @@ const ActionItemsWidget = ({
                 </div>
               ))}
               
-              {uniqueActionItems.length === 0 && !isLoading && !isGenerating && (
+              {filteredActionItems.length === 0 && !isLoading && !isGenerating && (
                 <div className="p-8 text-center">
                   <div className="bg-green-100 h-12 w-12 rounded-full flex items-center justify-center mx-auto mb-3">
                     <Check className="h-6 w-6 text-green-600" />
