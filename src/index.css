@@ -95,6 +95,18 @@
   .mobile-touch-target {
     @apply min-h-[44px] min-w-[44px];
   }
+
+  /* Custom scrolling for specialty tabs */
+  .specialties-scroll {
+    @apply pb-2 scrollbar-none;
+    -webkit-overflow-scrolling: touch; 
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+  }
+
+  .specialties-scroll::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* Fix for mobile overflows */

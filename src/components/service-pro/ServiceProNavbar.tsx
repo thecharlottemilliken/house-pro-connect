@@ -1,5 +1,5 @@
 
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { LogOut, Menu, X, Bell } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 const ServiceProNavbar = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const isMobile = useIsMobile();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -25,6 +26,8 @@ const ServiceProNavbar = () => {
     { name: "Jobs", href: "/service-pro-jobs" },
     { name: "Messages", href: "/service-pro-messages" },
   ];
+
+  const isActive = (path: string) => location.pathname === path;
 
   return (
     <nav className="bg-orange-600 text-white shadow-md w-full z-10">
@@ -43,7 +46,11 @@ const ServiceProNavbar = () => {
                 <Link
                   key={item.name}
                   to={item.href}
-                  className="hover:bg-orange-700 text-white px-3 py-2 rounded-md text-sm font-medium"
+                  className={`px-3 py-2 rounded-md text-sm font-medium ${
+                    isActive(item.href)
+                      ? "bg-orange-700 text-white"
+                      : "hover:bg-orange-700 text-white"
+                  }`}
                 >
                   {item.name}
                 </Link>
@@ -90,7 +97,11 @@ const ServiceProNavbar = () => {
                       <Link
                         key={item.name}
                         to={item.href}
-                        className="hover:bg-orange-700 px-3 py-2 rounded-md text-base font-medium"
+                        className={`px-3 py-2 rounded-md text-base font-medium ${
+                          isActive(item.href) 
+                            ? "bg-orange-700" 
+                            : "hover:bg-orange-700"
+                        }`}
                         onClick={() => setIsMenuOpen(false)}
                       >
                         {item.name}
