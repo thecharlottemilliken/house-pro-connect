@@ -1,9 +1,8 @@
-
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Menu, Settings, User, X, BellDot } from "lucide-react";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useIsMobile } from "@/hooks/use-mobile";
 import NotificationsPopover from '../notifications/NotificationsPopover';
 
@@ -20,6 +19,13 @@ const DashboardNavbar = () => {
   const toggleMobileMenu = () => {
     setMobileMenuOpen(prev => !prev);
   };
+  
+  // Check if user is a service pro and redirect if needed
+  useEffect(() => {
+    if (profile?.role === 'service_pro' || profile?.role === 'service-pro') {
+      navigate('/service-pro-dashboard');
+    }
+  }, [profile?.role, navigate]);
   
   const currentPath = window.location.pathname;
   const isProjectsActive = currentPath === '/projects' || currentPath.includes('/project-');
