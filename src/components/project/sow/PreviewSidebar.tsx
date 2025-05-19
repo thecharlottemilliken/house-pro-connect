@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { FileImage, Download, Eye, Loader, Info, Building, MapPin, Settings, Tag } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -23,6 +24,7 @@ interface RoomAssetWithType {
   url: string;
   type: 'design' | 'before-photo' | 'inspiration';
   tags?: string[];
+  roomId?: string;
 }
 
 interface Room {
@@ -129,6 +131,7 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
           if (pref.renderings && Array.isArray(pref.renderings)) {
             const renderings = pref.renderings.map(url => ({
               roomName,
+              roomId: room?.id,
               name: `Rendering - ${url.split('/').pop()?.split('?')[0] || 'Unnamed'}`,
               url,
               type: 'design' as const,
@@ -141,6 +144,7 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
           if (pref.drawings && Array.isArray(pref.drawings)) {
             const drawings = pref.drawings.map(url => ({
               roomName,
+              roomId: room?.id,
               name: `Drawing - ${url.split('/').pop()?.split('?')[0] || 'Unnamed'}`,
               url,
               type: 'design' as const,
@@ -153,6 +157,7 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
           if (pref.inspiration_images && Array.isArray(pref.inspiration_images)) {
             const inspirations = pref.inspiration_images.map((url, index) => ({
               roomName,
+              roomId: room?.id,
               name: `Inspiration ${index + 1}`,
               url,
               type: 'inspiration' as const,
@@ -172,6 +177,7 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
             
             const beforePhotoAssets = photos.map((url, index) => ({
               roomName: finalRoomName,
+              roomId: matchingRoom?.id || room.toLowerCase(), // Use original room key as fallback
               name: `Before Photo ${index + 1}`,
               url,
               type: 'before-photo' as const,
@@ -185,6 +191,7 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
         if (Array.isArray(inspirationImages)) {
           const globalInspirations = inspirationImages.map((url, index) => ({
             roomName: 'General',
+            roomId: 'general',
             name: `Inspiration ${index + 1}`,
             url,
             type: 'inspiration' as const,
@@ -193,10 +200,52 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
           allRoomAssets = [...allRoomAssets, ...globalInspirations];
         }
 
+        // Process design assets from design_preferences
+        if (designPreferences.designAssets && Array.isArray(designPreferences.designAssets)) {
+          const designAssets = designPreferences.designAssets.map((asset: any) => {
+            let roomName = asset.roomId || 'General';
+            
+            // If we have room ID, get proper name from database rooms
+            if (asset.roomId) {
+              const matchingRoom = normalizedRooms.find(r => 
+                r.id.toLowerCase() === asset.roomId.toLowerCase() ||
+                r.name.toLowerCase() === asset.roomId.toLowerCase()
+              );
+              if (matchingRoom) {
+                roomName = matchingRoom.name;
+              }
+            }
+            
+            // If we have tags with room names, try to extract the room name
+            if (!roomName && asset.tags && asset.tags.length > 0) {
+              // Look for tags that might contain room names
+              const roomTag = asset.tags.find((tag: string) => 
+                normalizedRooms.some(room => tag === room.name)
+              );
+              if (roomTag) {
+                roomName = roomTag;
+              }
+            }
+            
+            return {
+              roomName: normalizeRoomName(roomName),
+              roomId: asset.roomId, // Keep the original roomId for filtering
+              name: asset.name || `Asset ${asset.url.split('/').pop()}`,
+              url: asset.url,
+              type: 'design' as const,
+              tags: asset.tags || []
+            };
+          });
+          
+          console.log("Design assets from preferences:", designAssets);
+          allRoomAssets = [...allRoomAssets, ...designAssets];
+        }
+
         // Add blueprint as a design asset if available
         if (blueprintUrl) {
           allRoomAssets.push({
             roomName: 'Property',
+            roomId: 'property',
             name: 'Blueprint',
             url: blueprintUrl,
             type: 'design',
@@ -204,6 +253,7 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
           });
         }
 
+        console.log("All room assets:", allRoomAssets);
         setAllAssets(allRoomAssets);
       } catch (error) {
         console.error("Error in fetchRoomData:", error);
@@ -213,7 +263,7 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
     };
 
     fetchRoomData();
-  }, [propertyDetails?.id, beforePhotos, inspirationImages, blueprintUrl]);
+  }, [propertyDetails?.id, beforePhotos, inspirationImages, blueprintUrl, designPreferences]);
 
   // Helper to get tags for an asset URL from design preferences
   const getTagsForAsset = (url: string): string[] => {
@@ -243,9 +293,17 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
       return allAssets;
     }
     
-    return allAssets.filter(asset => 
-      asset.roomName.toLowerCase() === selectedRoom.toLowerCase()
-    );
+    const selectedRoomLower = selectedRoom.toLowerCase();
+    console.log("Filtering for room:", selectedRoomLower);
+    
+    const filtered = allAssets.filter(asset => {
+      const roomNameMatch = asset.roomName.toLowerCase() === selectedRoomLower;
+      const roomIdMatch = asset.roomId && asset.roomId.toLowerCase() === selectedRoomLower;
+      return roomNameMatch || roomIdMatch;
+    });
+    
+    console.log("Filtered assets:", filtered);
+    return filtered;
   };
 
   // Group assets by type for display
