@@ -96,16 +96,21 @@
     @apply min-h-[44px] min-w-[44px];
   }
 
+  /* Define the scrollbar-none utility class */
+  .scrollbar-none {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+  
+  .scrollbar-none::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+
   /* Custom scrolling for specialty tabs */
   .specialties-scroll {
     @apply pb-2 scrollbar-none;
     -webkit-overflow-scrolling: touch; 
     scroll-behavior: smooth;
-    scrollbar-width: none;
-  }
-
-  .specialties-scroll::-webkit-scrollbar {
-    display: none;
   }
 }
 
