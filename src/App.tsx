@@ -32,8 +32,13 @@ import SignIn from "./pages/SignIn";
 import LandingPage from "./pages/LandingPage";
 import Profile from "./pages/Profile";
 import CoachDashboard from "./pages/CoachDashboard";
+import ServiceProDashboard from "./pages/ServiceProDashboard";
+import ServiceProProfile from "./pages/ServiceProProfile";
+import ServiceProJobs from "./pages/ServiceProJobs";
+import ServiceProMessages from "./pages/ServiceProMessages";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import CoachRoute from "./components/auth/CoachRoute";
+import ServiceProRoute from "./components/auth/ServiceProRoute";
 import ProjectSOW from "./pages/ProjectSOW";
 import SOWReviewPage from "@/components/project/sow/SOWReviewPage";
 import Jobs from "./pages/Jobs";
@@ -63,6 +68,34 @@ function App() {
               <CoachDashboard />
             </TooltipProvider>
           </CoachRoute>
+        } />
+        <Route path="/service-pro-dashboard" element={
+          <ServiceProRoute>
+            <TooltipProvider>
+              <ServiceProDashboard />
+            </TooltipProvider>
+          </ServiceProRoute>
+        } />
+        <Route path="/service-pro-profile" element={
+          <ServiceProRoute>
+            <TooltipProvider>
+              <ServiceProProfile />
+            </TooltipProvider>
+          </ServiceProRoute>
+        } />
+        <Route path="/service-pro-jobs" element={
+          <ServiceProRoute>
+            <TooltipProvider>
+              <ServiceProJobs />
+            </TooltipProvider>
+          </ServiceProRoute>
+        } />
+        <Route path="/service-pro-messages" element={
+          <ServiceProRoute>
+            <TooltipProvider>
+              <ServiceProMessages />
+            </TooltipProvider>
+          </ServiceProRoute>
         } />
         <Route path="/profile" element={
           <ProtectedRoute>

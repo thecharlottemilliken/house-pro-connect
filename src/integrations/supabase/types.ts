@@ -475,6 +475,248 @@ export type Database = {
           },
         ]
       }
+      service_pro_insurance: {
+        Row: {
+          coverage_amount: number | null
+          created_at: string | null
+          document_url: string | null
+          expiry_date: string | null
+          id: string
+          insurance_type: string
+          policy_number: string | null
+          pro_id: string
+          provider: string
+          updated_at: string | null
+          verification_status: string | null
+        }
+        Insert: {
+          coverage_amount?: number | null
+          created_at?: string | null
+          document_url?: string | null
+          expiry_date?: string | null
+          id?: string
+          insurance_type: string
+          policy_number?: string | null
+          pro_id: string
+          provider: string
+          updated_at?: string | null
+          verification_status?: string | null
+        }
+        Update: {
+          coverage_amount?: number | null
+          created_at?: string | null
+          document_url?: string | null
+          expiry_date?: string | null
+          id?: string
+          insurance_type?: string
+          policy_number?: string | null
+          pro_id?: string
+          provider?: string
+          updated_at?: string | null
+          verification_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_pro_insurance_pro_id_fkey"
+            columns: ["pro_id"]
+            isOneToOne: false
+            referencedRelation: "service_pro_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_pro_licenses: {
+        Row: {
+          created_at: string | null
+          document_url: string | null
+          expiry_date: string | null
+          id: string
+          issue_date: string | null
+          issuing_authority: string | null
+          license_number: string
+          license_type: string
+          pro_id: string
+          updated_at: string | null
+          verification_status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          document_url?: string | null
+          expiry_date?: string | null
+          id?: string
+          issue_date?: string | null
+          issuing_authority?: string | null
+          license_number: string
+          license_type: string
+          pro_id: string
+          updated_at?: string | null
+          verification_status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          document_url?: string | null
+          expiry_date?: string | null
+          id?: string
+          issue_date?: string | null
+          issuing_authority?: string | null
+          license_number?: string
+          license_type?: string
+          pro_id?: string
+          updated_at?: string | null
+          verification_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_pro_licenses_pro_id_fkey"
+            columns: ["pro_id"]
+            isOneToOne: false
+            referencedRelation: "service_pro_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_pro_portfolio: {
+        Row: {
+          budget: number | null
+          client_name: string | null
+          completion_date: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          images: string[] | null
+          location: string | null
+          pro_id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          budget?: number | null
+          client_name?: string | null
+          completion_date?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          images?: string[] | null
+          location?: string | null
+          pro_id: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          budget?: number | null
+          client_name?: string | null
+          completion_date?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          images?: string[] | null
+          location?: string | null
+          pro_id?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_pro_portfolio_pro_id_fkey"
+            columns: ["pro_id"]
+            isOneToOne: false
+            referencedRelation: "service_pro_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_pro_profiles: {
+        Row: {
+          about_text: string | null
+          company_name: string | null
+          created_at: string | null
+          id: string
+          is_profile_complete: boolean | null
+          location_city: string | null
+          location_state: string | null
+          location_zip: string | null
+          photo_url: string | null
+          service_details: string | null
+          service_radius: number | null
+          services_offered: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          about_text?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          id: string
+          is_profile_complete?: boolean | null
+          location_city?: string | null
+          location_state?: string | null
+          location_zip?: string | null
+          photo_url?: string | null
+          service_details?: string | null
+          service_radius?: number | null
+          services_offered?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          about_text?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          id?: string
+          is_profile_complete?: boolean | null
+          location_city?: string | null
+          location_state?: string | null
+          location_zip?: string | null
+          photo_url?: string | null
+          service_details?: string | null
+          service_radius?: number | null
+          services_offered?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      service_pro_team: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          photo_url: string | null
+          pro_id: string
+          role: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          photo_url?: string | null
+          pro_id: string
+          role: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          photo_url?: string | null
+          pro_id?: string
+          role?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_pro_team_pro_id_fkey"
+            columns: ["pro_id"]
+            isOneToOne: false
+            referencedRelation: "service_pro_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       statement_of_work: {
         Row: {
           bid_configuration: Json | null
@@ -655,6 +897,10 @@ export type Database = {
       }
       is_property_owner: {
         Args: { p_property_id: string }
+        Returns: boolean
+      }
+      is_service_pro: {
+        Args: Record<PropertyKey, never>
         Returns: boolean
       }
       is_team_member: {
