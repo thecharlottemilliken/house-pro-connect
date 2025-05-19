@@ -107,7 +107,9 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
   useEffect(() => {
     console.log("Room design assets for", area.area, ":", roomDesignAssets);
     console.log("All design assets:", designAssets);
-  }, [area.area, roomDesignAssets, designAssets]);
+    console.log("Room ID:", roomId);
+    console.log("Room preferences:", roomPreferences);
+  }, [area.area, roomDesignAssets, designAssets, roomId, roomPreferences]);
   
   // Check if measurements exist
   const hasMeasurements = measurements && 
@@ -186,8 +188,14 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
           <PinterestInspirationSection 
             inspirationImages={roomPreferences?.inspirationImages || []}
             pinterestBoards={roomPreferences?.pinterestBoards || []}
-            onAddInspiration={onAddInspirationImages}
-            onAddPinterestBoards={onAddPinterestBoards}
+            onAddInspiration={(images, roomId) => {
+              console.log("RoomTabContent onAddInspiration called with roomId:", roomId || "undefined");
+              onAddInspirationImages(images, roomId);
+            }}
+            onAddPinterestBoards={(boards, roomName, roomId) => {
+              console.log("RoomTabContent onAddPinterestBoards called with roomId:", roomId || "undefined");
+              onAddPinterestBoards(boards, roomName, roomId);
+            }}
             currentRoom={area.area}
             roomId={roomId}
           />

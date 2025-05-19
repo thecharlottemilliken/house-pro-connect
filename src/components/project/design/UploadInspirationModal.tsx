@@ -31,6 +31,7 @@ const UploadInspirationModal: React.FC<UploadInspirationModalProps> = ({
     setIsUploading(true);
     
     try {
+      console.log("UploadInspirationModal: Processing", files.length, "files");
       // For blob URLs, we need to convert them to actual files and upload to Supabase
       const validUrls: string[] = [];
       
@@ -47,13 +48,21 @@ const UploadInspirationModal: React.FC<UploadInspirationModalProps> = ({
         // For blob URLs, fetch the file and upload to Supabase
         if (fileUrl.startsWith('blob:')) {
           try {
+            console.log("Processing blob URL:", fileUrl);
             // Fetch the file data from the blob URL
             const response = await fetch(fileUrl);
+            if (!response.ok) {
+              console.error("Failed to fetch blob:", response);
+              continue;
+            }
+            
             const blob = await response.blob();
             
             // Create a File object from the blob
             const fileName = `inspiration-${Date.now()}.${blob.type.split('/')[1] || 'jpg'}`;
             const file = new File([blob], fileName, { type: blob.type });
+            
+            console.log("Created file from blob:", file.name, file.type, file.size);
             
             // Upload to Supabase
             const { url, error } = await uploadFile(file);
@@ -69,6 +78,7 @@ const UploadInspirationModal: React.FC<UploadInspirationModalProps> = ({
             }
             
             if (url) {
+              console.log("Successfully uploaded file, got URL:", url);
               validUrls.push(url);
             }
           } catch (error) {
@@ -77,6 +87,8 @@ const UploadInspirationModal: React.FC<UploadInspirationModalProps> = ({
         }
       }
 
+      console.log("Final valid URLs to add:", validUrls);
+      
       // If we have valid URLs, pass them to the parent component
       if (validUrls.length > 0) {
         onUploadComplete(validUrls);

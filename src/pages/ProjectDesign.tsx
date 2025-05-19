@@ -1,3 +1,4 @@
+
 import { useParams, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -42,7 +43,9 @@ const ProjectDesign = () => {
     handleRemoveDesignAsset,
     handleUpdateAssetTags,
     handleAddPinterestBoards,
-    handleAddInspirationImages
+    handleAddInspirationImages,
+    handleAddRoomInspirationImages,
+    handleAddRoomPinterestBoards
   } = useDesignActions(projectData?.id);
 
   // Event handlers
@@ -163,8 +166,26 @@ const ProjectDesign = () => {
                   onAddProjectFiles={(area, files) => handleAddProjectFiles(area, files, designPreferences)}
                   onRemoveDesignAsset={(index) => handleRemoveDesignAsset(index, designPreferences)}
                   onUpdateAssetTags={enhancedUpdateAssetTags}
-                  onAddInspirationImages={(images) => handleAddInspirationImages(images, designPreferences)}
-                  onAddPinterestBoards={handleAddPinterestBoards}
+                  onAddInspirationImages={(images, roomId) => {
+                    console.log("Adding inspiration images with roomId:", roomId);
+                    if (roomId) {
+                      // Use the room-specific function if roomId is provided
+                      return handleAddRoomInspirationImages(images, roomId);
+                    } else {
+                      // Fallback to project-level if no roomId
+                      return handleAddInspirationImages(images, designPreferences);
+                    }
+                  }}
+                  onAddPinterestBoards={(boards, roomName, roomId) => {
+                    console.log("Adding Pinterest boards with roomId:", roomId);
+                    if (roomId) {
+                      // Use the room-specific function if roomId is provided
+                      return handleAddRoomPinterestBoards(boards, roomName, roomId);
+                    } else {
+                      // Fallback to project-level
+                      return handleAddPinterestBoards(boards, designPreferences);
+                    }
+                  }}
                 />
               </div>
             </div>

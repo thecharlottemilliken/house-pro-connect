@@ -58,11 +58,16 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     // Start the upload process
     setIsUploading(true);
     try {
-      // Generate temporary blob URLs for the files
-      const blobUrls = Array.from(files).map(
-        (file) => URL.createObjectURL(file)
-      );
+      console.log("FileUpload: Processing", files.length, "files");
       
+      // Generate temporary blob URLs for the files
+      const blobUrls = Array.from(files).map(file => {
+        const blobUrl = URL.createObjectURL(file);
+        console.log(`Created blob URL for ${file.name}:`, blobUrl);
+        return blobUrl;
+      });
+      
+      // Pass blob URLs up to parent component
       onUploadComplete(blobUrls);
       e.target.value = ""; // Reset input
       

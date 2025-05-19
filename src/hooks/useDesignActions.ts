@@ -563,6 +563,166 @@ export const useDesignActions = (projectId: string | undefined) => {
     }
   }, [projectId]);
   
+  // NEW FUNCTION: Add inspiration images to room level
+  const handleAddRoomInspirationImages = useCallback(async (
+    images: FileWithPreview[] | string[],
+    roomId?: string
+  ) => {
+    if (!roomId) {
+      toast({
+        title: "Error",
+        description: "Room ID is required to add inspiration images",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsSaving(true);
+    
+    try {
+      // Determine if we have FileWithPreview objects or string URLs
+      let imageUrls: string[] = [];
+      
+      if (images.length > 0 && typeof images[0] === 'string') {
+        // We have an array of string URLs
+        imageUrls = images as string[];
+      } else {
+        // We have FileWithPreview objects
+        imageUrls = (images as FileWithPreview[])
+          .filter(p => p.status === 'complete' && p.url)
+          .map(p => p.url) as string[];
+      }
+      
+      console.log("Room inspiration image URLs to be saved:", imageUrls, "for room:", roomId);
+      
+      // If no valid urls, do nothing
+      if (imageUrls.length === 0) {
+        toast({
+          title: "Warning",
+          description: "No valid images to add",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // First get the existing inspiration images for this room
+      const { data: roomPrefs, error: fetchError } = await supabase
+        .from('room_design_preferences')
+        .select('inspiration_images')
+        .eq('room_id', roomId)
+        .single();
+      
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
+      }
+      
+      // Combine existing and new images
+      let allImages: string[] = [];
+      if (roomPrefs && roomPrefs.inspiration_images) {
+        allImages = [...roomPrefs.inspiration_images, ...imageUrls];
+      } else {
+        allImages = imageUrls;
+      }
+      
+      // Remove duplicates
+      allImages = [...new Set(allImages)];
+      
+      // Update the room design preferences in Supabase
+      const { error: updateError } = await supabase
+        .from('room_design_preferences')
+        .update({ inspiration_images: allImages })
+        .eq('room_id', roomId);
+      
+      if (updateError) throw updateError;
+      
+      toast({
+        title: "Success",
+        description: "Inspiration images added to room successfully"
+      });
+      
+      return allImages;
+      
+    } catch (error) {
+      console.error('Error adding room inspiration images:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add inspiration images to room",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  }, []);
+  
+  // NEW FUNCTION: Add Pinterest boards to room level
+  const handleAddRoomPinterestBoards = useCallback(async (
+    boards: any[],
+    roomName: string,
+    roomId?: string
+  ) => {
+    if (!roomId) {
+      toast({
+        title: "Error",
+        description: "Room ID is required to add Pinterest boards",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsSaving(true);
+    
+    try {
+      console.log("Adding Pinterest boards to room:", roomName, "with ID:", roomId);
+      
+      // First get the existing Pinterest boards for this room
+      const { data: roomPrefs, error: fetchError } = await supabase
+        .from('room_design_preferences')
+        .select('pinterest_boards')
+        .eq('room_id', roomId)
+        .single();
+      
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
+      }
+      
+      // Combine existing and new boards
+      let allBoards: any[] = [];
+      if (roomPrefs && roomPrefs.pinterest_boards) {
+        // Filter out any boards that already exist (by ID)
+        const existingBoardIds = roomPrefs.pinterest_boards.map((b: any) => b.id);
+        const newBoards = boards.filter(board => !existingBoardIds.includes(board.id));
+        allBoards = [...roomPrefs.pinterest_boards, ...newBoards];
+      } else {
+        allBoards = boards;
+      }
+      
+      // Update the room design preferences in Supabase
+      const { error: updateError } = await supabase
+        .from('room_design_preferences')
+        .update({ pinterest_boards: allBoards })
+        .eq('room_id', roomId);
+      
+      if (updateError) throw updateError;
+      
+      toast({
+        title: "Success",
+        description: "Pinterest boards added to room successfully"
+      });
+      
+      return allBoards;
+      
+    } catch (error) {
+      console.error('Error adding Pinterest boards to room:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add Pinterest boards to room",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  }, []);
+  
   return {
     isLoading,
     isSaving,
@@ -573,6 +733,8 @@ export const useDesignActions = (projectId: string | undefined) => {
     handleRemoveDesignAsset,
     handleUpdateAssetTags,
     handleAddPinterestBoards,
-    handleAddInspirationImages
+    handleAddInspirationImages,
+    handleAddRoomInspirationImages,
+    handleAddRoomPinterestBoards
   };
 };
