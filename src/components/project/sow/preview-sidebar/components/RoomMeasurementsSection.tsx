@@ -19,6 +19,16 @@ export function RoomMeasurementsSection({ measurements, selectedRoom }: RoomMeas
 
   const { length, width, height, unit, additionalNotes } = measurements;
 
+  // Calculate square footage when both length and width are available
+  const calculateArea = () => {
+    if (length && width) {
+      return `${(length * width).toFixed(1)} sq ${unit}`;
+    }
+    return null;
+  };
+
+  const squareFootage = calculateArea();
+
   // Function to render measurement with unit
   const formatMeasurement = (value?: number) => {
     if (value === undefined) return 'N/A';
@@ -42,6 +52,14 @@ export function RoomMeasurementsSection({ measurements, selectedRoom }: RoomMeas
           <span className="font-medium">{formatMeasurement(height)}</span>
         </div>
       </div>
+      
+      {squareFootage && (
+        <div className="bg-gray-50 p-2 rounded text-xs mb-2">
+          <span className="text-gray-500 block">Area</span>
+          <span className="font-medium">{squareFootage}</span>
+        </div>
+      )}
+      
       {additionalNotes && (
         <div className="text-xs">
           <span className="text-gray-500 font-medium">Notes: </span>

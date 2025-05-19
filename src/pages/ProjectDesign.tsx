@@ -1,4 +1,3 @@
-
 import { useParams, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -67,6 +66,16 @@ const ProjectDesign = () => {
       }
     }
   }, [handleUpdateAssetTags, projectData]);
+
+  // Enhanced measurements save handler with immediate state update
+  const enhancedSaveMeasurements = useCallback(async (area: string, measurements: any) => {
+    console.log("ProjectDesign: Saving measurements for area", area, measurements);
+    const updatedPrefs = await handleSaveMeasurements(area, measurements, projectData?.design_preferences || {});
+    if (updatedPrefs) {
+      // Force a UI refresh after successful measurements update
+      setRefreshTrigger(prev => prev + 1);
+    }
+  }, [handleSaveMeasurements, projectData]);
 
   // Set default tab based on renovation areas
   useEffect(() => {
@@ -146,7 +155,7 @@ const ProjectDesign = () => {
                 <h2 className="text-lg font-medium mb-3">Select a room</h2>
                 
                 <ProjectDesignTabs 
-                  key={`design-tabs-${refreshTrigger}`} // Force re-render on tag updates
+                  key={`design-tabs-${refreshTrigger}`} // Force re-render on measurements updates
                   defaultTab={defaultTab}
                   renovationAreas={renovationAreas}
                   designPreferences={designPreferences}
@@ -160,7 +169,7 @@ const ProjectDesign = () => {
                   onAddRenderings={handleAddRenderings}
                   onAddDrawings={handleAddDrawings}
                   onAddBlueprints={handleAddBlueprints}
-                  onSaveMeasurements={(area, measurements) => handleSaveMeasurements(area, measurements, designPreferences)}
+                  onSaveMeasurements={enhancedSaveMeasurements}
                   onSelectBeforePhotos={(area, photos) => handleSelectBeforePhotos(area, photos, designPreferences)}
                   onUploadBeforePhotos={(area, photos) => handleUploadBeforePhotos(area, convertUrlsToFileObjects(photos), designPreferences)}
                   onAddProjectFiles={(area, files) => handleAddProjectFiles(area, files, designPreferences)}

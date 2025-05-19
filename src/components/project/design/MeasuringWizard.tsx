@@ -43,13 +43,18 @@ const MeasuringWizard = ({ area, initialMeasurements, onComplete }: MeasuringWiz
   };
 
   const onSubmit = (data: any) => {
-    // Convert string values to numbers
+    // Convert string values to numbers for numerical fields
     const processedData = {
       ...data,
       length: data.length ? parseFloat(data.length) : undefined,
       width: data.width ? parseFloat(data.width) : undefined,
       height: data.height ? parseFloat(data.height) : undefined,
     };
+    
+    // Ensure unit is preserved
+    processedData.unit = data.unit || 'ft';
+    
+    // Call completion handler with properly formatted data
     onComplete(processedData);
   };
 

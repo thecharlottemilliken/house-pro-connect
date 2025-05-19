@@ -18,46 +18,63 @@ const RoomPropertyInfo: React.FC<RoomPropertyInfoProps> = ({ area, location, mea
   // Calculate square footage based on measurements
   const calculateSquareFootage = (): string => {
     if (measurements?.length && measurements?.width) {
-      return `${measurements.length * measurements.width} SQFT`;
+      const area = measurements.length * measurements.width;
+      return `${area.toFixed(1)} ${measurements.unit === 'ft' ? 'SQFT' : 'm²'}`;
     }
     return ""; // Return blank when no measurements
   };
 
-  // Format measurements based on the available data
-  const formatMeasurements = (): string => {
-    if (measurements?.length && measurements?.width && measurements?.height) {
-      return `${measurements.length}x${measurements.width}x${measurements.height}"`;
-    }
-    return ""; // Return blank when no measurements
+  // Format dimensions based on the available data
+  const formatDimensions = (): string => {
+    if (!measurements) return "";
+    
+    const { length, width, height, unit } = measurements;
+    const parts = [];
+    
+    if (length) parts.push(`${length}`);
+    if (width) parts.push(`${width}`);
+    if (height) parts.push(`${height}`);
+    
+    if (parts.length === 0) return "";
+    return `${parts.join(' × ')} ${unit}`;
   };
+
+  const dimensions = formatDimensions();
+  const squareFootage = calculateSquareFootage();
 
   return (
     <div className="space-y-4 mb-8">
-      <div className="flex items-center gap-3 text-gray-700">
-        <span className="text-base font-medium">Square Feet:</span>
-        <div className="flex items-center">
-          <SquareDot className="h-4 w-4 mr-1 text-gray-500" />
-          <span className="text-sm">
-            {calculateSquareFootage() ? (
-              <>
-                <span className="text-gray-500">est</span> {calculateSquareFootage()}
-              </>
-            ) : (
-              <span className="text-gray-400">Not available</span>
-            )}
-          </span>
+      {squareFootage && (
+        <div className="flex items-center gap-3 text-gray-700">
+          <span className="text-base font-medium">Square Feet:</span>
+          <div className="flex items-center">
+            <SquareDot className="h-4 w-4 mr-1 text-gray-500" />
+            <span className="text-sm">
+              <span className="text-gray-500">est</span> {squareFootage}
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className="flex items-center gap-3 text-gray-700">
-        <span className="text-base font-medium">Measurements:</span>
-        <div className="flex items-center">
-          <Ruler className="h-4 w-4 mr-1 text-gray-500" />
-          <span className="text-sm">
-            {formatMeasurements() || <span className="text-gray-400">Not available</span>}
-          </span>
+      {dimensions && (
+        <div className="flex items-center gap-3 text-gray-700">
+          <span className="text-base font-medium">Dimensions:</span>
+          <div className="flex items-center">
+            <Ruler className="h-4 w-4 mr-1 text-gray-500" />
+            <span className="text-sm">{dimensions}</span>
+          </div>
         </div>
-      </div>
+      )}
+
+      {!dimensions && (
+        <div className="flex items-center gap-3 text-gray-700">
+          <span className="text-base font-medium">Dimensions:</span>
+          <div className="flex items-center">
+            <Ruler className="h-4 w-4 mr-1 text-gray-500" />
+            <span className="text-sm text-gray-400">Not available</span>
+          </div>
+        </div>
+      )}
 
       {location && (
         <div className="flex items-center gap-3 text-gray-700">

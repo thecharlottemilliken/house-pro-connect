@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,63 +17,42 @@ const convertUrlsToFileObjects = (urls: string[]): FileWithPreview[] => {
   }));
 };
 
-export const useDesignActions = (projectId: string | undefined) => {
+export const useDesignActions = (projectId?: string) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   
   // Save room measurements
-  const handleSaveMeasurements = useCallback(async (
-    area: string,
-    measurements: Record<string, any>,
-    designPreferences: any
-  ) => {
-    if (!projectId) {
-      toast({
-        title: "Error",
-        description: "Project ID is required to save measurements",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setIsSaving(true);
+  const handleSaveMeasurements = async (area: string, measurements: any, designPreferences: any) => {
+    if (!projectId) return null;
     
     try {
-      // Update the designPreferences object with the new measurements
-      const updatedPrefs = { ...designPreferences };
+      // Normalize the area name for consistency in key naming
+      const normalizedArea = area.replace(/\s+/g, '_').toLowerCase();
       
-      // Make sure the measurements structure exists
-      if (!updatedPrefs.roomMeasurements) {
-        updatedPrefs.roomMeasurements = {};
-      }
+      const updatedDesignPreferences = { 
+        ...designPreferences,
+        roomMeasurements: {
+          ...designPreferences.roomMeasurements || {},
+          [area]: measurements // Use original area name as the key for better display
+        }
+      };
       
-      // Update or add the measurements for this area
-      updatedPrefs.roomMeasurements[area] = measurements;
-      
-      // Update the project in Supabase
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('projects')
-        .update({ design_preferences: updatedPrefs })
+        .update({ 
+          design_preferences: updatedDesignPreferences 
+        })
         .eq('id', projectId);
       
       if (error) throw error;
       
-      toast({
-        title: "Success",
-        description: "Room measurements saved successfully"
-      });
-      
+      console.log("Measurements saved successfully for area:", area);
+      return updatedDesignPreferences;
     } catch (error) {
-      console.error('Error saving measurements:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save measurements",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSaving(false);
+      console.error("Error saving measurements:", error);
+      return null;
     }
-  }, [projectId]);
+  };
   
   // Select before photos from property photos
   const handleSelectBeforePhotos = useCallback(async (
@@ -216,7 +194,7 @@ export const useDesignActions = (projectId: string | undefined) => {
       setIsSaving(false);
     }
   }, [projectId]);
-
+  
   // Add project files (designs, renderings, etc)
   const handleAddProjectFiles = useCallback(async (
     area: string,

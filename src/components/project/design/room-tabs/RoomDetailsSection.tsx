@@ -53,6 +53,12 @@ const RoomDetailsSection: React.FC<RoomDetailsSectionProps> = ({
   beforePhotos,
   propertyPhotos
 }) => {
+  // Enhanced check for measurements presence
+  const measurementsExist = Boolean(
+    measurements && 
+    (measurements.length || measurements.width || measurements.height || measurements.additionalNotes)
+  );
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Column 1: Room Details Card */}
@@ -80,8 +86,8 @@ const RoomDetailsSection: React.FC<RoomDetailsSectionProps> = ({
       
       {/* Column 2-3: Measurements Banner/Card and Photos */}
       <div className="lg:col-span-2 space-y-6">
-        {/* Show Measurements Banner or Measurements Card */}
-        {!hasMeasurements ? (
+        {/* Show Measurements Banner or Measurements Card based on measurementsExist rather than hasMeasurements prop */}
+        {!measurementsExist ? (
           <MeasurementsBanner 
             area={area}
             onMeasureRoom={onMeasureRoom}

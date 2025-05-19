@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { DesignPreferences, RenovationArea } from "@/hooks/useProjectData";
 import EmptyDesignState from "./EmptyDesignState";
@@ -73,8 +72,14 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
 }) => {
   const handleAddDesignPlans = () => console.log("Add design plans clicked");
   const [showMeasuringDialog, setShowMeasuringDialog] = useState(false);
+  const [measurementsState, setMeasurementsState] = useState(measurements);
   
-  // Filter design assets for the current room with improved logic to prevent duplicates
+  // Update local state when measurements change
+  useEffect(() => {
+    setMeasurementsState(measurements);
+  }, [measurements]);
+
+  // Filter design assets for the current room
   const roomDesignAssets = React.useMemo(() => {
     // Create a Set to track unique asset URLs (as a way to identify unique assets)
     const uniqueAssetUrls = new Set<string>();
@@ -111,9 +116,20 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
     console.log("Room preferences:", roomPreferences);
   }, [area.area, roomDesignAssets, designAssets, roomId, roomPreferences]);
   
-  // Check if measurements exist
-  const hasMeasurements = measurements && 
-    (measurements.length || measurements.width || measurements.height || measurements.additionalNotes);
+  // Enhanced check for measurements presence
+  const hasMeasurements = Boolean(
+    measurements && 
+    (measurements.length || measurements.width || measurements.height || measurements.additionalNotes)
+  );
+
+  // Wrap onSaveMeasurements to update local state
+  const handleSaveMeasurements = (newMeasurements: any) => {
+    // Call the original handler
+    onSaveMeasurements(newMeasurements);
+    
+    // Update local state immediately for UI responsiveness
+    setMeasurementsState(newMeasurements);
+  };
 
   return (
     <div className="w-full space-y-8">
@@ -124,12 +140,12 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
           location={area.location}
           designers={designers}
           designAssets={roomDesignAssets}
-          measurements={measurements}
+          measurements={measurementsState}
           roomId={roomId}
           projectId={projectId}
-          hasMeasurements={!!hasMeasurements}
+          hasMeasurements={hasMeasurements}
           onAddDesigner={onAddDesigner}
-          onSaveMeasurements={onSaveMeasurements}
+          onSaveMeasurements={handleSaveMeasurements}
           onSelectBeforePhotos={onSelectBeforePhotos}
           onUploadBeforePhotos={onUploadBeforePhotos}
           onAddProjectFiles={onAddProjectFiles}
@@ -152,8 +168,6 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
               asset.name === assetToUpdate.name && 
               asset.url === assetToUpdate.url
             );
-            
-            console.log("Updating tags for asset", assetToUpdate, "at global index", originalIndex);
             
             if (originalIndex !== -1) {
               onUpdateAssetTags(originalIndex, tags);
@@ -178,8 +192,11 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
         open={showMeasuringDialog}
         onOpenChange={setShowMeasuringDialog}
         area={area.area}
-        measurements={measurements}
-        onSaveMeasurements={onSaveMeasurements}
+        measurements={measurementsState}
+        onSaveMeasurements={(newMeasurements) => {
+          handleSaveMeasurements(newMeasurements);
+          setShowMeasuringDialog(false);
+        }}
       />
       
       {/* Pinterest Inspiration Section - Full width */}
