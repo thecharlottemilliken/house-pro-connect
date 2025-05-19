@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { ProjectInfoHeader } from './components/ProjectInfoHeader';
 import { RoomSelector } from './components/RoomSelector';
 import { AssetGallery } from './components/AssetGallery';
+import { InspirationSection } from './components/InspirationSection';
 import { useRoomAssets } from './hooks/useRoomAssets';
 import { useRoomOptions } from './hooks/useRoomOptions';
 import { useAssetFiltering } from './hooks/useAssetFiltering';
@@ -10,7 +11,7 @@ import { useAssetFiltering } from './hooks/useAssetFiltering';
 export interface PreviewSidebarProps {
   projectData: any;
   propertyDetails: any;
-  onPreview?: (url: string) => void; // Make this prop optional
+  onPreview?: (url: string) => void;
 }
 
 export function PreviewSidebar({ projectData, propertyDetails, onPreview }: PreviewSidebarProps) {
@@ -19,7 +20,7 @@ export function PreviewSidebar({ projectData, propertyDetails, onPreview }: Prev
   // Custom hooks for data management
   const { allAssets, isLoading } = useRoomAssets(projectData, propertyDetails);
   const { roomOptions } = useRoomOptions(projectData, propertyDetails, allAssets);
-  const { filteredAssets, assetGroups } = useAssetFiltering(allAssets, selectedRoom);
+  const { filteredAssets, assetGroups, inspirationAssets } = useAssetFiltering(allAssets, selectedRoom);
 
   return (
     <div className="h-full bg-background border-r flex flex-col">
@@ -37,13 +38,19 @@ export function PreviewSidebar({ projectData, propertyDetails, onPreview }: Prev
         />
       </div>
       
+      {/* Add Inspiration Section below room selector */}
+      <InspirationSection 
+        inspirationAssets={inspirationAssets} 
+        onPreview={onPreview}
+      />
+      
       <div className="flex-1 overflow-auto">
         <AssetGallery
           filteredAssets={filteredAssets}
           assetGroups={assetGroups}
           isLoading={isLoading}
           selectedRoom={selectedRoom}
-          onPreview={onPreview} // Pass the onPreview function down
+          onPreview={onPreview}
         />
       </div>
     </div>
