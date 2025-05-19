@@ -66,7 +66,6 @@ export const useSOWNotifications = () => {
             console.log("Showing SOW ready for review toast to resident");
             
             toast({
-              title: 'SOW Ready for Review',
               description: `${coachName} has submitted an SOW for you to review for project "${projectData.title}".`
             });
           }
@@ -85,7 +84,6 @@ export const useSOWNotifications = () => {
             console.log("Showing SOW approved toast to coach");
             
             toast({
-              title: 'SOW Approved',
               description: `${ownerName} has approved the SOW for project "${projectData.title}".`
             });
           }
@@ -104,7 +102,6 @@ export const useSOWNotifications = () => {
             console.log("Showing SOW needs revision toast to coach");
             
             toast({
-              title: 'SOW Needs Revision',
               description: `${ownerName} has requested changes to the SOW for project "${projectData.title}".`
             });
           }
