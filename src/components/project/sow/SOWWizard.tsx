@@ -23,7 +23,7 @@ import { BidConfigurationForm } from "./BidConfigurationForm";
 import { ProjectReviewForm } from "./ProjectReviewForm";
 import { toast } from "@/hooks/use-toast";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
-import { trackChanges, initializeChangeTracker, ChangeTracker } from "./utils/revisionUtils";
+import { trackChanges, initializeChangeTracker, ChangeTracker, parseJsonField } from "./utils/revisionUtils";
 import { supabase } from "@/integrations/supabase/client";
 
 const steps = [
@@ -44,7 +44,7 @@ export function SOWWizard({ isRevision = false }: SOWWizardProps) {
   const { projectData, propertyDetails, isLoading: projectLoading } = useProjectData(projectId);
   const { sowData, isLoading: sowLoading, saveSOWField } = useSOWData(projectId);
   const [currentStep, setCurrentStep] = useState(0);
-  const [originalSowData, setOriginalSowData] = useState(null);
+  const [originalSowData, setOriginalSowData] = useState<any>(null);
   const [changes, setChanges] = useState<ChangeTracker>(initializeChangeTracker());
   
   const isLoading = projectLoading || sowLoading;
@@ -67,12 +67,23 @@ export function SOWWizard({ isRevision = false }: SOWWizardProps) {
           
         if (error) throw error;
         
-        setOriginalSowData(data);
-        
-        // Track changes between versions
-        if (data && sowData) {
-          const changesDetected = trackChanges(data, sowData);
-          setChanges(changesDetected);
+        if (data) {
+          // Parse JSON fields
+          const parsedData = {
+            ...data,
+            work_areas: parseJsonField(data.work_areas, []),
+            labor_items: parseJsonField(data.labor_items, []),
+            material_items: parseJsonField(data.material_items, []),
+            bid_configuration: parseJsonField(data.bid_configuration, { bidDuration: '', projectDescription: '' }),
+          };
+          
+          setOriginalSowData(parsedData);
+          
+          // Track changes between versions
+          if (sowData) {
+            const changesDetected = trackChanges(parsedData, sowData);
+            setChanges(changesDetected);
+          }
         }
       } catch (error) {
         console.error("Error fetching original SOW data:", error);
@@ -201,6 +212,7 @@ export function SOWWizard({ isRevision = false }: SOWWizardProps) {
   const renderStepContent = () => {
     if (!sowData) return null;
     
+    // Ensure all form components receive properly typed props
     switch (currentStep) {
       case 0:
         return (
@@ -209,8 +221,8 @@ export function SOWWizard({ isRevision = false }: SOWWizardProps) {
             workAreas={sowData.work_areas || []}
             projectData={projectData}
             propertyDetails={propertyDetails}
-            changedWorkAreas={changes.workAreas}
             isRevision={isPendingRevision}
+            changedWorkAreas={changes.workAreas}
           />
         );
       case 1:
@@ -219,8 +231,8 @@ export function SOWWizard({ isRevision = false }: SOWWizardProps) {
             workAreas={sowData.work_areas || []} 
             onSave={handleLaborItemsSubmit}
             laborItems={sowData.labor_items || []}
-            changedLaborItems={changes.laborItems}
             isRevision={isPendingRevision}
+            changedLaborItems={changes.laborItems}
           />
         );
       case 2:
@@ -229,8 +241,8 @@ export function SOWWizard({ isRevision = false }: SOWWizardProps) {
             workAreas={sowData.work_areas || []}
             onSave={handleMaterialItemsSubmit}
             materialItems={sowData.material_items || []}
-            changedMaterialItems={changes.materialItems}
             isRevision={isPendingRevision}
+            changedMaterialItems={changes.materialItems}
           />
         );
       case 3:
@@ -238,8 +250,8 @@ export function SOWWizard({ isRevision = false }: SOWWizardProps) {
           <BidConfigurationForm
             onSave={handleBidConfigSubmit}
             bidConfiguration={sowData.bid_configuration}
-            hasChanges={changes.bidConfiguration}
             isRevision={isPendingRevision}
+            hasChanges={changes.bidConfiguration}
           />
         );
       case 4:

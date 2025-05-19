@@ -1,3 +1,4 @@
+
 import { NotificationTemplate } from "@/types/notifications";
 
 export const notificationTemplates: Record<string, NotificationTemplate> = {

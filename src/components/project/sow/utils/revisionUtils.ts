@@ -48,6 +48,19 @@ export const objectsAreDifferent = (obj1: any, obj2: any): boolean => {
   return false;
 };
 
+// Parse JSON fields for proper comparison
+export const parseJsonField = (field: any, defaultValue: any) => {
+  if (!field) {
+    return defaultValue;
+  }
+  try {
+    return typeof field === 'string' ? JSON.parse(field) : field;
+  } catch (e) {
+    console.warn('Failed to parse JSON field:', e);
+    return defaultValue;
+  }
+};
+
 // Track changes between previous and current SOW data
 export const trackChanges = (previousData: SOWData | null, currentData: SOWData | null): ChangeTracker => {
   const changes = initializeChangeTracker();
@@ -60,30 +73,39 @@ export const trackChanges = (previousData: SOWData | null, currentData: SOWData 
   changes.isRevision = (previousData.status === 'pending revision');
   
   // Compare work areas
-  (currentData.work_areas || []).forEach((workArea: any, index: number) => {
+  const currentWorkAreas = Array.isArray(currentData.work_areas) ? currentData.work_areas : [];
+  const previousWorkAreas = Array.isArray(previousData.work_areas) ? previousData.work_areas : [];
+  
+  currentWorkAreas.forEach((workArea: any, index: number) => {
     const id = workArea.id || `index-${index}`;
-    const previousWorkArea = (previousData.work_areas || []).find((area: any) => 
-      (area.id && area.id === id) || (!area.id && index === (previousData.work_areas || []).indexOf(area))
+    const previousWorkArea = previousWorkAreas.find((area: any) => 
+      (area.id && area.id === id) || (!area.id && index === previousWorkAreas.indexOf(area))
     );
     
     changes.workAreas[id] = !previousWorkArea || objectsAreDifferent(previousWorkArea, workArea);
   });
   
   // Compare labor items
-  (currentData.labor_items || []).forEach((laborItem: any, index: number) => {
+  const currentLaborItems = Array.isArray(currentData.labor_items) ? currentData.labor_items : [];
+  const previousLaborItems = Array.isArray(previousData.labor_items) ? previousData.labor_items : [];
+  
+  currentLaborItems.forEach((laborItem: any, index: number) => {
     const id = laborItem.id || `index-${index}`;
-    const previousLaborItem = (previousData.labor_items || []).find((item: any) => 
-      (item.id && item.id === id) || (!item.id && index === (previousData.labor_items || []).indexOf(item))
+    const previousLaborItem = previousLaborItems.find((item: any) => 
+      (item.id && item.id === id) || (!item.id && index === previousLaborItems.indexOf(item))
     );
     
     changes.laborItems[id] = !previousLaborItem || objectsAreDifferent(previousLaborItem, laborItem);
   });
   
   // Compare material items
-  (currentData.material_items || []).forEach((materialItem: any, index: number) => {
+  const currentMaterialItems = Array.isArray(currentData.material_items) ? currentData.material_items : [];
+  const previousMaterialItems = Array.isArray(previousData.material_items) ? previousData.material_items : [];
+  
+  currentMaterialItems.forEach((materialItem: any, index: number) => {
     const id = materialItem.id || `index-${index}`;
-    const previousMaterialItem = (previousData.material_items || []).find((item: any) => 
-      (item.id && item.id === id) || (!item.id && index === (previousData.material_items || []).indexOf(item))
+    const previousMaterialItem = previousMaterialItems.find((item: any) => 
+      (item.id && item.id === id) || (!item.id && index === previousMaterialItems.indexOf(item))
     );
     
     changes.materialItems[id] = !previousMaterialItem || objectsAreDifferent(previousMaterialItem, materialItem);

@@ -17,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useProjectData } from "@/hooks/useProjectData";
 import { useActionItemsGenerator } from "@/hooks/useActionItemsGenerator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { InfoCircledIcon, ReloadIcon } from "@radix-ui/react-icons";
+import { InfoIcon, RotateCw } from "lucide-react";
 
 interface SOWReviewDialogProps {
   open: boolean;
@@ -125,7 +125,7 @@ const SOWReviewDialog = ({
         
         {isRevision && (
           <Alert className="bg-blue-50 border-blue-200 text-blue-800">
-            <InfoCircledIcon className="h-4 w-4" />
+            <InfoIcon className="h-4 w-4" />
             <AlertTitle>Revised Document</AlertTitle>
             <AlertDescription>
               This is a revised version of the Statement of Work. Areas that have been modified based on your feedback are highlighted.
@@ -163,7 +163,7 @@ const SOWReviewDialog = ({
               >
                 {isSubmitting ? (
                   <>
-                    <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
+                    <RotateCw className="mr-2 h-4 w-4 animate-spin" />
                     Approving...
                   </>
                 ) : "Approve SOW"}
@@ -203,7 +203,7 @@ const SOWReviewDialog = ({
               >
                 {isSubmitting ? (
                   <>
-                    <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
+                    <RotateCw className="mr-2 h-4 w-4 animate-spin" />
                     Requesting...
                   </>
                 ) : "Request Revisions"}

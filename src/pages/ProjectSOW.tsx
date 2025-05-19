@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import SOWReviewDialog from "@/components/project/sow/SOWReviewDialog";
 import { useSOWNotifications } from "@/hooks/useSOWNotifications";
 import { useActionItemsGenerator } from "@/hooks/useActionItemsGenerator";
+import { trackChanges, initializeChangeTracker, parseJsonField } from "@/components/project/sow/utils/revisionUtils";
 
 const ProjectSOW = () => {
   const location = useLocation();
@@ -18,6 +19,7 @@ const ProjectSOW = () => {
   const [searchParams] = useSearchParams();
   const isViewMode = searchParams.get("view") === "true";
   const isReviewMode = searchParams.get("review") === "true";
+  const isRevised = searchParams.get("revised") === "true";
   const navigate = useNavigate();
 
   // Initialize SOW notifications
@@ -29,9 +31,11 @@ const ProjectSOW = () => {
   );
 
   const [sowData, setSOWData] = useState<any>(null);
+  const [originalSowData, setOriginalSowData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
   const [isRevision, setIsRevision] = useState(false);
+  const [changes, setChanges] = useState(initializeChangeTracker());
 
   const { profile } = useAuth();
   const { generateActionItems } = useActionItemsGenerator();
@@ -49,20 +53,43 @@ const ProjectSOW = () => {
           .maybeSingle();
 
         if (error) throw error;
-        setSOWData(data);
         
-        // Check if this is a revision based on the status
-        if (data?.status === "ready for review" && searchParams.get("revised") === "true") {
-          setIsRevision(true);
-        }
-        
-        // If in review mode and status is "ready for review" or "pending", show review dialog
-        if (isReviewMode && (data?.status === "ready for review" || data?.status === "pending")) {
-          setShowReviewDialog(true);
+        if (data) {
+          // Parse JSON fields
+          const parsedData = {
+            ...data,
+            work_areas: parseJsonField(data.work_areas, []),
+            labor_items: parseJsonField(data.labor_items, []),
+            material_items: parseJsonField(data.material_items, []),
+            bid_configuration: parseJsonField(data.bid_configuration, { bidDuration: '', projectDescription: '' }),
+          };
           
-          // Ensure action items are generated for this project
-          if (params.projectId) {
-            await generateActionItems(params.projectId);
+          setSOWData(parsedData);
+          
+          // Check if this is a revision based on the status and URL param
+          if ((data.status === "ready for review" && isRevised) || data.status === "pending revision") {
+            setIsRevision(true);
+            
+            // For revisions, fetch previous version to track changes 
+            // Since we don't have an actual version history, we're using the current 
+            // version but will highlight areas mentioned in the feedback
+            setOriginalSowData(parsedData);
+            
+            // Set change tracker based on feedback
+            if (data.feedback) {
+              const changesDetected = trackChanges(null, parsedData);
+              setChanges(changesDetected);
+            }
+          }
+          
+          // If in review mode and status is "ready for review" or "pending", show review dialog
+          if (isReviewMode && (data.status === "ready for review" || data.status === "pending")) {
+            setShowReviewDialog(true);
+            
+            // Ensure action items are generated for this project
+            if (params.projectId) {
+              await generateActionItems(params.projectId);
+            }
           }
         }
       } catch (error) {
@@ -73,7 +100,7 @@ const ProjectSOW = () => {
     };
 
     fetchSOWData();
-  }, [params.projectId, profile, isReviewMode, generateActionItems, searchParams]);
+  }, [params.projectId, profile, isReviewMode, generateActionItems, searchParams, isRevised]);
 
   const projectTitle = projectData?.title || "Unknown Project";
   
@@ -90,7 +117,18 @@ const ProjectSOW = () => {
           .maybeSingle();
 
         if (error) throw error;
-        setSOWData(data);
+        
+        if (data) {
+          const parsedData = {
+            ...data,
+            work_areas: parseJsonField(data.work_areas, []),
+            labor_items: parseJsonField(data.labor_items, []),
+            material_items: parseJsonField(data.material_items, []),
+            bid_configuration: parseJsonField(data.bid_configuration, { bidDuration: '', projectDescription: '' }),
+          };
+          
+          setSOWData(parsedData);
+        }
         
         // Regenerate action items after review
         if (params.projectId) {
@@ -138,7 +176,8 @@ const ProjectSOW = () => {
           bidConfiguration={sowData.bid_configuration || { bidDuration: '', projectDescription: '' }}
           projectId={params.projectId || ''}
           onSave={() => { }}
-          isRevised={isRevision}
+          isRevision={isRevision}
+          changes={changes}
         />
       </div>
     );
