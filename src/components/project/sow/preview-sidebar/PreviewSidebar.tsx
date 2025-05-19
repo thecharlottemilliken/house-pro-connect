@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { ProjectInfoHeader } from './components/ProjectInfoHeader';
 import { RoomSelector } from './components/RoomSelector';
 import { AssetGallery } from './components/AssetGallery';
-import { InspirationSection } from './components/InspirationSection';
 import { RoomMeasurementsSection } from './components/RoomMeasurementsSection';
 import { useRoomAssets } from './hooks/useRoomAssets';
 import { useRoomOptions } from './hooks/useRoomOptions';
@@ -21,7 +20,7 @@ export function PreviewSidebar({ projectData, propertyDetails, onPreview }: Prev
   // Custom hooks for data management
   const { allAssets, isLoading } = useRoomAssets(projectData, propertyDetails);
   const { roomOptions } = useRoomOptions(projectData, propertyDetails, allAssets);
-  const { filteredAssets, assetGroups, inspirationAssets } = useAssetFiltering(allAssets, selectedRoom);
+  const { filteredAssets, assetGroups } = useAssetFiltering(allAssets, selectedRoom);
 
   // Get room measurements for the selected room with improved key normalization
   const getRoomMeasurements = () => {
@@ -92,12 +91,6 @@ export function PreviewSidebar({ projectData, propertyDetails, onPreview }: Prev
       <RoomMeasurementsSection 
         measurements={roomMeasurements}
         selectedRoom={selectedRoom}
-      />
-      
-      {/* Inspiration Section */}
-      <InspirationSection 
-        inspirationAssets={inspirationAssets} 
-        onPreview={onPreview}
       />
       
       <div className="flex-1 overflow-auto">

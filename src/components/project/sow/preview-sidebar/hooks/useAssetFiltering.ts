@@ -27,11 +27,6 @@ export function useAssetFiltering(
     });
   }, [allAssets, selectedRoom]);
 
-  // Get inspiration assets for the current room selection
-  const inspirationAssets = useMemo(() => {
-    return filteredAssets.filter(asset => asset.type === 'inspiration');
-  }, [filteredAssets]);
-
   // Group assets by type for display
   const assetGroups = useMemo(() => {
     // Initialize the groups with empty arrays to ensure they always exist
@@ -57,7 +52,6 @@ export function useAssetFiltering(
 
   return {
     filteredAssets,
-    assetGroups,
-    inspirationAssets
+    assetGroups
   };
 }

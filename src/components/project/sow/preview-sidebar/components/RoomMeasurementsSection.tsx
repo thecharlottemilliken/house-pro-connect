@@ -15,7 +15,7 @@ interface RoomMeasurementsProps {
 }
 
 export function RoomMeasurementsSection({ measurements, selectedRoom }: RoomMeasurementsProps) {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   
   // Debug the incoming measurements with more detail
   console.log(`RoomMeasurementsSection for ${selectedRoom}:`, measurements);

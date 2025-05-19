@@ -12,7 +12,7 @@ interface AssetTypeSectionProps {
 }
 
 export function AssetTypeSection({ title, assets, onPreview }: AssetTypeSectionProps) {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   
   if (assets.length === 0) return null;
   
