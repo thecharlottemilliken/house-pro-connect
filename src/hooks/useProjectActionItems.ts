@@ -40,6 +40,7 @@ export const useProjectActionItems = (projectId: string) => {
       
       try {
         const userRole = profile?.role || '';
+        console.log(`Fetching action items for user with role: ${userRole}`);
         
         // Use REST API directly to avoid TypeScript issues
         const response = await fetch(
@@ -56,6 +57,7 @@ export const useProjectActionItems = (projectId: string) => {
         if (!response.ok) throw new Error('Failed to fetch action items');
         
         const rawData = await response.json();
+        console.log("All action items before filtering:", rawData);
         
         // Cast the raw data to our ActionItem interface
         const typedData = rawData as ActionItem[];
@@ -68,6 +70,7 @@ export const useProjectActionItems = (projectId: string) => {
           );
         }
         
+        console.log(`Filtered ${typedData.length} action items to ${filteredItems.length} for role ${userRole}`);
         setActionItems(filteredItems);
       } catch (err: any) {
         console.error("Error fetching action items:", err);

@@ -78,6 +78,16 @@ serve(async (req: Request) => {
       
     const coachIds = coaches ? coaches.map(coach => coach.id) : [];
     
+    // Check if there's a coaching session scheduled for this project
+    const { data: coachingSessionEvents } = await supabase
+      .from('project_events')
+      .select('*')
+      .eq('project_id', projectId)
+      .eq('event_type', 'coaching_session')
+      .maybeSingle();
+    
+    const hasCoachingSession = !!coachingSessionEvents;
+    
     // Delete existing action items
     await supabase
       .from('project_action_items')
@@ -87,32 +97,35 @@ serve(async (req: Request) => {
     
     const actionItems = [];
     
-    // SOW actions for coaches
+    // SOW actions for coaches - only if a coaching session has been scheduled
     if (coachIds.length > 0) {
-      if (!sowData) {
-        // No SOW exists, create action
-        actionItems.push({
-          project_id: projectId,
-          title: "Create Statement of Work",
-          description: "Draft a Statement of Work for this project",
-          priority: "high",
-          icon_name: "file-plus",
-          action_type: "sow",
-          action_data: { route: `/project-sow/${projectId}` },
-          for_role: "coach"
-        });
-      } else if (sowData.status === "draft") {
-        // SOW in draft, create action to finish it
-        actionItems.push({
-          project_id: projectId,
-          title: "Finish completing the SOW",
-          description: "Complete the Statement of Work for this project",
-          priority: "high",
-          icon_name: "file-pen",
-          action_type: "sow",
-          action_data: { route: `/project-sow/${projectId}` },
-          for_role: "coach"
-        });
+      // Check if coaching session exists AND no SOW exists or it's in draft
+      if (hasCoachingSession && (!sowData || sowData.status === "draft")) {
+        // If no SOW exists, create action to create one
+        if (!sowData) {
+          actionItems.push({
+            project_id: projectId,
+            title: "Create Statement of Work",
+            description: "Draft a Statement of Work for this project",
+            priority: "high",
+            icon_name: "file-plus",
+            action_type: "sow",
+            action_data: { route: `/project-sow/${projectId}` },
+            for_role: "coach"
+          });
+        } else if (sowData.status === "draft") {
+          // SOW in draft, create action to finish it
+          actionItems.push({
+            project_id: projectId,
+            title: "Finish completing the SOW",
+            description: "Complete the Statement of Work for this project",
+            priority: "high",
+            icon_name: "file-pen",
+            action_type: "sow",
+            action_data: { route: `/project-sow/${projectId}` },
+            for_role: "coach"
+          });
+        }
       }
     }
     

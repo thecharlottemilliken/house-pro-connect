@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { parseTimeSlotToDate, GenericTimeSlot } from "@/utils/timeSlotFormatters";
+import { useActionItemsGenerator } from "@/hooks/useActionItemsGenerator";
 
 interface MeetupTime {
   id: number;
@@ -48,6 +48,7 @@ export const MeetupScheduleWidget = () => {
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<MeetupTime | null>(null);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [processedProjects, setProcessedProjects] = useState<Set<string>>(new Set());
+  const { generateActionItems } = useActionItemsGenerator();
   
   // Filter projects that have meetup times and haven't been scheduled yet
   const projectsWithMeetups = projects
@@ -201,6 +202,15 @@ export const MeetupScheduleWidget = () => {
       } catch (calendarError) {
         console.error("Error adding calendar event:", calendarError);
         toast.warning("Meeting scheduled, but calendar event creation failed.");
+      }
+      
+      // Generate action items after successful meeting scheduling to create SOW task for coach
+      try {
+        await generateActionItems(selectedProject.id);
+        console.log("Generated action items after scheduling meeting");
+      } catch (actionItemError) {
+        console.error("Error generating action items:", actionItemError);
+        // Continue with the rest of the flow even if action item generation fails
       }
       
       // Mark this project as processed to remove it from the list without forcing a full refresh
