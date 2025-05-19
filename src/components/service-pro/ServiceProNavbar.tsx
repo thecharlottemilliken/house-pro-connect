@@ -1,14 +1,22 @@
 
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom"; 
+import { Link, useLocation, useNavigate } from "react-router-dom"; 
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Settings, User } from "lucide-react";
+import { Settings, User, LogOut } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const ServiceProNavbar = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   
   const navLinks = [
     { name: "DASHBOARD", href: "/service-pro-dashboard" },
@@ -22,6 +30,11 @@ const ServiceProNavbar = () => {
 
   const isActive = (path: string) => {
     return location.pathname === path;
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
   };
 
   return (
@@ -52,11 +65,34 @@ const ServiceProNavbar = () => {
           
           {/* User profile and settings */}
           <div className="flex items-center">
-            <Link to="/service-pro-profile">
-              <Button variant="ghost" size="icon" className="text-white">
-                <User className="h-5 w-5" />
-              </Button>
-            </Link>
+            {/* Profile dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-white">
+                  <User className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56 bg-white" align="end">
+                <DropdownMenuItem asChild>
+                  <Link to="/service-pro-profile" className="flex items-center">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/settings" className="flex items-center">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="text-red-600 cursor-pointer">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Button variant="ghost" size="icon" className="text-white">
               <Settings className="h-5 w-5" />
             </Button>
@@ -112,6 +148,33 @@ const ServiceProNavbar = () => {
                   {link.name}
                 </Link>
               ))}
+              
+              {/* Add profile and logout options to mobile menu */}
+              <div className="border-t border-white/20 mt-2 pt-2">
+                <Link
+                  to="/service-pro-profile"
+                  className="flex items-center text-sm font-medium text-white hover:text-gray-200 px-3 py-2"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <User className="h-4 w-4 mr-2" /> Profile
+                </Link>
+                <Link
+                  to="/settings"
+                  className="flex items-center text-sm font-medium text-white hover:text-gray-200 px-3 py-2"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Settings className="h-4 w-4 mr-2" /> Settings
+                </Link>
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    handleSignOut();
+                  }}
+                  className="flex items-center w-full text-left text-sm font-medium text-white hover:text-gray-200 px-3 py-2"
+                >
+                  <LogOut className="h-4 w-4 mr-2" /> Log out
+                </button>
+              </div>
             </div>
           </div>
         )}
