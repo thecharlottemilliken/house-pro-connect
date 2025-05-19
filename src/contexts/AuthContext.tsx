@@ -158,6 +158,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch (profileError) {
           console.error("Error checking/creating profile:", profileError);
         }
+        
+        // For service_pro accounts, make sure to create entry in service_pro_profiles table
+        if (userData.role === 'service_pro' && data?.user) {
+          try {
+            console.log("Creating service_pro_profile for user:", data.user.id);
+            
+            const { error: serviceProError } = await supabase
+              .from('service_pro_profiles')
+              .insert({
+                id: data.user.id
+              });
+              
+            if (serviceProError) {
+              console.error("Error creating service pro profile:", serviceProError);
+            } else {
+              console.log("Service pro profile created successfully");
+            }
+          } catch (serviceProError) {
+            console.error("Error creating service pro profile:", serviceProError);
+          }
+        }
       }
       
       // For coaching accounts, explicitly call the set-claims function after signup
@@ -199,8 +220,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { data, error: null };
       }
       
-      // Sign in succeeded, navigate to dashboard
-      navigate('/dashboard');
+      // Sign in succeeded, navigate to appropriate dashboard based on role
+      if (userData.role === 'service_pro') {
+        navigate('/service-pro-dashboard');
+      } else {
+        navigate('/dashboard');
+      }
+      
       return { data, error: null };
     } catch (error: any) {
       console.error("Unexpected error during signup:", error);
