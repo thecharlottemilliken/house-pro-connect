@@ -29,6 +29,7 @@ serve(async (req) => {
     // Create Supabase client
     const authorizationHeader = req.headers.get('Authorization')
     if (!authorizationHeader) {
+      console.error("Missing Authorization header")
       return new Response(JSON.stringify({ error: 'Missing Authorization header' }), { 
         status: 401, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -46,6 +47,7 @@ serve(async (req) => {
     const { projectId } = await req.json()
     
     if (!projectId) {
+      console.error("Project ID is required")
       return new Response(JSON.stringify({ error: 'Project ID is required' }), { 
         status: 400, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -56,11 +58,15 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
     
     if (userError || !user) {
+      console.error("Authentication error:", userError)
       return new Response(JSON.stringify({ error: 'User not authenticated' }), { 
         status: 401, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       })
     }
+    
+    // Log successful auth
+    console.log(`Generating action items for project ${projectId} by user ${user.id}`)
     
     // Generate action items based on project state and SOW status
     const actionItems = await generateActionItems(supabaseClient, projectId, user.id)
@@ -83,6 +89,8 @@ serve(async (req) => {
 
 async function generateActionItems(supabase, projectId: string, userId: string) {
   try {
+    console.log(`Starting action items generation for project ${projectId}`)
+    
     // First, fetch project data and SOW status
     const { data: projectData, error: projectError } = await supabase
       .from('projects')
@@ -90,7 +98,12 @@ async function generateActionItems(supabase, projectId: string, userId: string) 
       .eq('id', projectId)
       .maybeSingle()
     
-    if (projectError) throw projectError
+    if (projectError) {
+      console.error("Error fetching project data:", projectError)
+      throw projectError
+    }
+    
+    console.log("Project data fetched:", projectData)
     
     // Get team members
     const { data: teamMembers, error: teamError } = await supabase
@@ -98,7 +111,12 @@ async function generateActionItems(supabase, projectId: string, userId: string) 
       .select('user_id, role')
       .eq('project_id', projectId)
     
-    if (teamError) throw teamError
+    if (teamError) {
+      console.error("Error fetching team members:", teamError)
+      throw teamError
+    }
+    
+    console.log(`Team members found: ${teamMembers?.length || 0}`)
     
     // Get user role from profiles table
     const { data: userProfile, error: profileError } = await supabase
@@ -107,9 +125,13 @@ async function generateActionItems(supabase, projectId: string, userId: string) 
       .eq('id', userId)
       .maybeSingle();
       
-    if (profileError) throw profileError;
+    if (profileError) {
+      console.error("Error fetching user profile:", profileError)
+      throw profileError;
+    }
     
     const userRole = userProfile?.role || '';
+    console.log(`User role: ${userRole}`)
     
     // Get SOW data
     const { data: sowData, error: sowError } = await supabase
@@ -118,17 +140,22 @@ async function generateActionItems(supabase, projectId: string, userId: string) 
       .eq('project_id', projectId)
       .maybeSingle()
     
-    if (sowError) throw sowError
+    if (sowError) {
+      console.error("Error fetching SOW data:", sowError)
+      throw sowError
+    }
+    
+    console.log("SOW data:", sowData ? `Status: ${sowData.status}` : "No SOW found")
     
     // Create action items array
     const actionItems: ActionItem[] = []
     
     // Find coach team member(s)
-    const coaches = teamMembers.filter(member => member.role === 'coach')
+    const coaches = teamMembers?.filter(member => member.role === 'coach') || []
     const coachIds = coaches.map(coach => coach.user_id)
     
     // Find project owner ID
-    const ownerId = projectData.user_id
+    const ownerId = projectData?.user_id
     
     // FIRST, CLEAN UP EXISTING SOW-RELATED ACTION ITEMS
     // This ensures we don't have stale tasks related to previous states
@@ -142,6 +169,7 @@ async function generateActionItems(supabase, projectId: string, userId: string) 
     ];
     
     try {
+      console.log("Cleaning up previous SOW action items")
       // Delete action items by title
       for (const title of taskTitlesToClean) {
         const { error: deleteError } = await supabase
@@ -161,6 +189,8 @@ async function generateActionItems(supabase, projectId: string, userId: string) 
     
     // Define SOW-related action items based on SOW state
     if (sowData) {
+      console.log(`Generating actions for SOW with status: ${sowData.status}`)
+      
       // If SOW is in "draft" state, create action for coach to complete it
       if (sowData.status === 'draft') {
         actionItems.push({
@@ -180,6 +210,8 @@ async function generateActionItems(supabase, projectId: string, userId: string) 
         // Check if this is a revision (previous feedback exists)
         const isRevision = sowData.feedback !== null;
         
+        console.log(`SOW ready for review, isRevision: ${isRevision}`)
+        
         actionItems.push({
           project_id: projectId,
           title: isRevision ? 'Review Revised Statement of Work' : 'Review Statement of Work',
@@ -198,6 +230,8 @@ async function generateActionItems(supabase, projectId: string, userId: string) 
       
       // If SOW needs revisions, create action for coach
       if (sowData.status === 'pending revision') {
+        console.log("SOW needs revision, creating action item for coach")
+        
         actionItems.push({
           project_id: projectId,
           title: 'Update SOW with Revisions',
@@ -211,8 +245,13 @@ async function generateActionItems(supabase, projectId: string, userId: string) 
       }
       
       // If SOW is approved, no SOW-related tasks are added
+      if (sowData.status === 'approved') {
+        console.log("SOW is approved, no SOW-related tasks needed")
+      }
     } else {
       // If SOW doesn't exist yet, create action for coach to create it
+      console.log("No SOW found, creating action item for coach to create one")
+      
       actionItems.push({
         project_id: projectId,
         title: 'Create Statement of Work (SOW)',
@@ -233,7 +272,10 @@ async function generateActionItems(supabase, projectId: string, userId: string) 
       .eq('id', projectId)
       .single();
     
-    if (projectDataError) throw projectDataError;
+    if (projectDataError) {
+      console.error("Error fetching project design preferences:", projectDataError)
+      throw projectDataError;
+    }
     
     const designPrefs = project.design_preferences || {};
     
@@ -292,14 +334,19 @@ async function generateActionItems(supabase, projectId: string, userId: string) 
       action_data: { route: `/project-design/${projectId}` }
     });
     
+    console.log(`Created ${actionItems.length} action items to insert`)
+    
     // Insert the new action items one by one to better handle permissions
     const createdItems = [];
     for (const item of actionItems) {
       try {
         // Filter items that match the user's role
         if (item.for_role && item.for_role !== userRole && userRole !== "coach") {
+          console.log(`Skipping action item "${item.title}" - role mismatch (item: ${item.for_role}, user: ${userRole})`)
           continue;
         }
+        
+        console.log(`Inserting action item: ${item.title}`)
         
         const { data, error } = await supabase
           .from('project_action_items')
@@ -319,6 +366,7 @@ async function generateActionItems(supabase, projectId: string, userId: string) 
       }
     }
     
+    console.log(`Successfully inserted ${createdItems.length} action items`)
     return createdItems;
   } catch (error) {
     console.error('Error generating action items:', error);

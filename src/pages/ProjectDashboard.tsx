@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { useLocation, useParams, Navigate, useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
@@ -46,17 +47,40 @@ const ProjectDashboard = () => {
   } = useProjectData(projectId, location.state);
   
   const isLoading = isAccessLoading || isProjectLoading;
-  const { generateActionItems, hasErrored } = useActionItemsGenerator();
+  const { generateActionItems, hasErrored, resetErrorState } = useActionItemsGenerator();
   
   // Enable SOW notifications
   useSOWNotifications();
   
+  // Track if initial action items loading has been attempted
+  const [initialActionItemsAttempted, setInitialActionItemsAttempted] = React.useState(false);
+  
   // Generate action items when dashboard loads - but don't retry if there was an error
   useEffect(() => {
-    if (!isLoading && projectData && !hasErrored) {
-      generateActionItems(projectId);
+    if (!isLoading && projectData && !initialActionItemsAttempted) {
+      console.log("Initial action items generation on dashboard load");
+      generateActionItems(projectId)
+        .then(success => {
+          if (!success) {
+            console.log("Initial action items generation failed");
+          }
+        })
+        .catch(err => {
+          console.error("Error during initial action items generation:", err);
+        })
+        .finally(() => {
+          setInitialActionItemsAttempted(true);
+        });
     }
-  }, [projectId, isLoading, projectData, generateActionItems, hasErrored]);
+  }, [projectId, isLoading, projectData, generateActionItems, initialActionItemsAttempted]);
+  
+  // Reset error state if component is unmounted and remounted
+  useEffect(() => {
+    return () => {
+      // Reset error state when component unmounts to allow fresh attempt on next mount
+      resetErrorState();
+    };
+  }, [resetErrorState]);
   
   React.useEffect(() => {
     if (error) {

@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, AlertCircle, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,7 +25,8 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
   const { profile } = useAuth();
   const userRole = profile?.role;
   const navigate = useNavigate();
-  const { generateActionItems, isGenerating } = useActionItemsGenerator();
+  const { generateActionItems, isGenerating, hasErrored, resetErrorState } = useActionItemsGenerator();
+  const [loadError, setLoadError] = useState<Error | null>(null);
 
   // Fetch SOW data and set up real-time subscription
   useEffect(() => {
@@ -33,7 +34,11 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
     
     const fetchSOW = async () => {
       setIsLoading(true);
+      setLoadError(null);
+      
       try {
+        console.log("Fetching SOW data for project:", projectId);
+        
         const { data, error } = await supabase
           .from("statement_of_work")
           .select("id, status, feedback")
@@ -46,13 +51,16 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
           setSowData(data);
           
           // Ensure action items are current when SOW status changes
-          await generateActionItems(projectId);
+          if (!hasErrored) {
+            await generateActionItems(projectId);
+          }
         } else {
           setSowData(null);
         }
       } catch (err) {
         console.error("Error fetching SOW data:", err);
         setSowData(null);
+        setLoadError(err instanceof Error ? err : new Error('Unknown error fetching SOW'));
       } finally {
         setIsLoading(false);
       }
@@ -71,11 +79,15 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
           filter: `project_id=eq.${projectId}`
         }, 
         (payload) => {
+          console.log("SOW change detected:", payload);
+          
           const updatedSow = payload.new as SOWData;
           setSowData(updatedSow);
           
-          // Regenerate action items when SOW status changes
-          generateActionItems(projectId);
+          // Regenerate action items when SOW status changes, but only if we haven't had errors
+          if (!hasErrored) {
+            generateActionItems(projectId);
+          }
         }
       )
       .subscribe();
@@ -83,11 +95,16 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [projectId, generateActionItems]);
+  }, [projectId, generateActionItems, hasErrored]);
 
   // Callback to refresh SOW after action
-  const refreshSOW = async () => {
+  const handleRefresh = async () => {
+    if (isLoading || isGenerating) return;
+    
     setIsLoading(true);
+    setLoadError(null);
+    resetErrorState();
+    
     try {
       const { data, error } = await supabase
         .from("statement_of_work")
@@ -108,6 +125,7 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
     } catch (err) {
       console.error("Error refreshing SOW data:", err);
       setSowData(null);
+      setLoadError(err instanceof Error ? err : new Error('Unknown error refreshing SOW'));
     } finally {
       setIsLoading(false);
     }
@@ -116,8 +134,34 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
   // Conditional task card content
   let taskContent: React.ReactNode = null;
 
+  // Show error state if needed
+  if (loadError || hasErrored) {
+    taskContent = (
+      <div className="bg-red-50 border-l-4 border-red-400 p-5 rounded-md mb-4">
+        <div className="flex items-center mb-3">
+          <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
+          <h3 className="font-medium text-lg text-red-700">Error Loading Tasks</h3>
+        </div>
+        <p className="text-red-600 mb-3">
+          {loadError?.message || "Unable to load task information"}
+        </p>
+        <div className="flex justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isLoading || isGenerating}
+            className="flex items-center"
+          >
+            <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+            {isLoading || isGenerating ? "Refreshing..." : "Try Again"}
+          </Button>
+        </div>
+      </div>
+    );
+  }
   // Owner sees Review SOW task if status is ready for review
-  if (isOwner && sowData?.status === "ready for review") {
+  else if (isOwner && sowData?.status === "ready for review") {
     taskContent = (
       <div className="bg-[#fff8eb] p-5 rounded-md mb-4">
         <h3 className="font-medium text-lg mb-2">Review SOW</h3>
@@ -145,7 +189,7 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
   }
 
   // Coach sees revision task if SOW status is "pending revision"
-  if (
+  else if (
     userRole === "coach" &&
     sowData?.status === "pending revision"
   ) {
@@ -175,7 +219,7 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
   }
 
   // Coach sees Create SOW task if no SOW exists or it's in draft state
-  if (
+  else if (
     userRole === "coach" &&
     (!sowData || sowData.status === "draft")
   ) {
@@ -199,7 +243,7 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
   }
 
   // SOW Approved task for owner
-  if (isOwner && sowData?.status === "approved") {
+  else if (isOwner && sowData?.status === "approved") {
     taskContent = (
       <div className="bg-green-50 border-l-4 border-green-400 p-5 rounded-md mb-4">
         <h3 className="font-medium text-lg mb-2">SOW Approved</h3>
@@ -242,11 +286,25 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
     <Card className="overflow-hidden rounded-lg shadow-[0_2px_10px_rgba(0,0,0,0.08)] border-0">
       <CardHeader className="flex flex-row items-center justify-between pb-3 pt-6 px-6">
         <h2 className="text-2xl font-semibold">Your Tasks</h2>
-        <Button variant="link" className="text-[#0f3a4d] p-0 font-medium">See All</Button>
+        <Button 
+          variant="link" 
+          className="text-[#0f3a4d] p-0 font-medium"
+          onClick={handleRefresh}
+          disabled={isLoading || isGenerating}
+        >
+          {isLoading || isGenerating ? (
+            <RefreshCw className="mr-1 h-3.5 w-3.5 animate-spin" />
+          ) : (
+            "Refresh"
+          )}
+        </Button>
       </CardHeader>
       <CardContent className="px-6 pb-6">
         {isLoading || isGenerating ? (
-          <div className="text-gray-400">Loading tasks...</div>
+          <div className="text-center py-6">
+            <div className="animate-spin h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-3"></div>
+            <p className="text-gray-500">{isLoading ? "Loading tasks..." : "Refreshing tasks..."}</p>
+          </div>
         ) : (
           <>
             {taskContent}
