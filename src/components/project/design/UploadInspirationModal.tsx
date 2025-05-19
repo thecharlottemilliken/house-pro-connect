@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import {
   Dialog,
   DialogContent,
@@ -23,28 +23,6 @@ const UploadInspirationModal: React.FC<UploadInspirationModalProps> = ({
   onUploadComplete,
   roomName,
 }) => {
-  const [isUploading, setIsUploading] = useState(false);
-
-  const handleUploadComplete = (urls: string[]) => {
-    console.log("Upload complete in modal, urls:", urls);
-    
-    // Filter out any blob URLs which won't persist
-    const validUrls = urls.filter(url => 
-      url.startsWith('http') || url.startsWith('https'));
-      
-    if (validUrls.length === 0) {
-      toast({
-        title: "Error",
-        description: "No valid image URLs were uploaded",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    onUploadComplete(validUrls);
-    onClose();
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
@@ -59,7 +37,7 @@ const UploadInspirationModal: React.FC<UploadInspirationModalProps> = ({
           <FileUpload
             accept="image/*"
             multiple={true}
-            onUploadComplete={handleUploadComplete}
+            onUploadComplete={onUploadComplete}
             label="Drop your inspiration images here"
             description="Upload images in JPG, PNG format"
           />

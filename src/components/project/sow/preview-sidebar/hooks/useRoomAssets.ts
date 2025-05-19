@@ -52,14 +52,6 @@ export function useRoomAssets(projectData: any, propertyDetails: any) {
     return asset?.tags || [];
   };
 
-  // Helper to convert a room to standardized tag format
-  const getRoomAsTags = (roomName: string, roomId?: string): string[] => {
-    if (!roomName) return [];
-    
-    const normalizedName = roomName.toLowerCase().trim().replace(/\s+/g, '-');
-    return [`room:${normalizedName}`];
-  };
-
   // Load all room and asset data
   useEffect(() => {
     const fetchRoomData = async () => {
@@ -100,7 +92,7 @@ export function useRoomAssets(projectData: any, propertyDetails: any) {
         const roomIds = normalizedRooms.map(room => room.id);
         const { data: designPrefs, error: prefsError } = await supabase
           .from('room_design_preferences')
-          .select('room_id, renderings, drawings, inspiration_images, design_assets, tags_metadata')
+          .select('room_id, renderings, drawings, inspiration_images')
           .in('room_id', roomIds);
 
         if (prefsError) {
@@ -116,27 +108,6 @@ export function useRoomAssets(projectData: any, propertyDetails: any) {
         designPrefs?.forEach(pref => {
           const room = normalizedRooms.find(r => r.id === pref.room_id);
           const roomName = room?.name || 'Unknown Room';
-          const roomTags = getRoomAsTags(roomName, room?.id);
-
-          // If the room has design_assets, process them first using the new unified system
-          if (pref.design_assets && Array.isArray(pref.design_assets) && pref.design_assets.length > 0) {
-            pref.design_assets.forEach((asset: any) => {
-              // Determine the asset type from the tags, defaulting to 'design'
-              const typeTag = asset.tags?.find((tag: string) => tag.startsWith('type:'));
-              const type = typeTag 
-                ? typeTag.replace('type:', '') as 'design' | 'before-photo' | 'inspiration'
-                : 'design';
-              
-              allRoomAssets.push({
-                roomName,
-                roomId: room?.id,
-                name: asset.name || `Asset - ${asset.url.split('/').pop()?.split('?')[0] || 'Unnamed'}`,
-                url: asset.url,
-                type,
-                tags: [...(asset.tags || []), ...roomTags]
-              });
-            });
-          }
 
           // Add renderings as design assets
           if (pref.renderings && Array.isArray(pref.renderings)) {
@@ -146,7 +117,7 @@ export function useRoomAssets(projectData: any, propertyDetails: any) {
               name: `Rendering - ${url.split('/').pop()?.split('?')[0] || 'Unnamed'}`,
               url,
               type: 'design' as const,
-              tags: [...getTagsForAsset(url, designPreferences), 'type:design', ...roomTags]
+              tags: getTagsForAsset(url, designPreferences)
             }));
             allRoomAssets = [...allRoomAssets, ...renderings];
           }
@@ -159,7 +130,7 @@ export function useRoomAssets(projectData: any, propertyDetails: any) {
               name: `Drawing - ${url.split('/').pop()?.split('?')[0] || 'Unnamed'}`,
               url,
               type: 'design' as const,
-              tags: [...getTagsForAsset(url, designPreferences), 'type:design', ...roomTags]
+              tags: getTagsForAsset(url, designPreferences)
             }));
             allRoomAssets = [...allRoomAssets, ...drawings];
           }
@@ -172,7 +143,7 @@ export function useRoomAssets(projectData: any, propertyDetails: any) {
               name: `Inspiration ${index + 1}`,
               url,
               type: 'inspiration' as const,
-              tags: [...getTagsForAsset(url, designPreferences), 'type:inspiration', ...roomTags]
+              tags: getTagsForAsset(url, designPreferences)
             }));
             allRoomAssets = [...allRoomAssets, ...inspirations];
           }
@@ -184,7 +155,6 @@ export function useRoomAssets(projectData: any, propertyDetails: any) {
             const normalizedRoomName = normalizeRoomName(room);
             const matchingRoom = findBestMatchingRoom(normalizedRoomName, normalizedRooms);
             const finalRoomName = matchingRoom?.name || normalizedRoomName || "Other";
-            const roomTags = getRoomAsTags(finalRoomName, matchingRoom?.id);
             
             const beforePhotoAssets = (photos as string[]).map((url, index) => ({
               roomName: finalRoomName,
@@ -192,7 +162,7 @@ export function useRoomAssets(projectData: any, propertyDetails: any) {
               name: `Before Photo ${index + 1}`,
               url,
               type: 'before-photo' as const,
-              tags: [...getTagsForAsset(url, designPreferences), 'type:before-photo', ...roomTags]
+              tags: getTagsForAsset(url, designPreferences)
             }));
             allRoomAssets = [...allRoomAssets, ...beforePhotoAssets];
           }
@@ -206,7 +176,7 @@ export function useRoomAssets(projectData: any, propertyDetails: any) {
             name: `Inspiration ${index + 1}`,
             url,
             type: 'inspiration' as const,
-            tags: [...getTagsForAsset(url, designPreferences), 'type:inspiration']
+            tags: getTagsForAsset(url, designPreferences)
           }));
           allRoomAssets = [...allRoomAssets, ...globalInspirations];
         }
@@ -226,22 +196,11 @@ export function useRoomAssets(projectData: any, propertyDetails: any) {
             }
             
             // If we have tags with room names, try to extract the room name
-            const roomTag = asset.tags?.find((tag: string) => tag.startsWith('room:'));
-            if (roomTag) {
-              const roomSlug = roomTag.split(':')[1];
-              const matchingRoom = normalizedRooms.find(r => 
-                r.name.toLowerCase().replace(/\s+/g, '-') === roomSlug
+            if (!roomName && asset.tags && asset.tags.length > 0) {
+              const roomTag = asset.tags.find((tag: string) => 
+                normalizedRooms.some(room => tag.toLowerCase() === room.name.toLowerCase())
               );
-              if (matchingRoom) roomName = matchingRoom.name;
-            }
-            
-            // Determine asset type from tags
-            let assetType: 'design' | 'before-photo' | 'inspiration' = 'design';
-            const typeTag = asset.tags?.find((tag: string) => tag.startsWith('type:'));
-            if (typeTag) {
-              const tagType = typeTag.split(':')[1];
-              if (tagType === 'inspiration') assetType = 'inspiration';
-              if (tagType === 'before-photo') assetType = 'before-photo';
+              if (roomTag) roomName = roomTag;
             }
             
             return {
@@ -249,7 +208,7 @@ export function useRoomAssets(projectData: any, propertyDetails: any) {
               roomId: asset.roomId,
               name: asset.name || `Asset ${asset.url.split('/').pop()}`,
               url: asset.url,
-              type: assetType,
+              type: 'design' as const,
               tags: asset.tags || []
             };
           });
@@ -265,7 +224,7 @@ export function useRoomAssets(projectData: any, propertyDetails: any) {
             name: 'Blueprint',
             url: blueprintUrl,
             type: 'design',
-            tags: [...getTagsForAsset(blueprintUrl, designPreferences), 'type:blueprint']
+            tags: getTagsForAsset(blueprintUrl, designPreferences)
           });
         }
 
