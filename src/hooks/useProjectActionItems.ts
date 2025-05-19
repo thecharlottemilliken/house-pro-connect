@@ -38,21 +38,16 @@ export const useProjectActionItems = (projectId: string) => {
         const userRole = profile?.role || '';
         console.log(`Fetching action items for user with role: ${userRole}`);
         
-        // Use REST API directly to avoid TypeScript issues
-        const response = await fetch(
-          `https://gluggyghzalabvlvwqqk.supabase.co/rest/v1/project_action_items?project_id=eq.${projectId}&completed=eq.false&order=created_at.desc`,
-          {
-            headers: {
-              'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdsdWdneWdoemFsYWJ2bHZ3cXFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1NjIwNzQsImV4cCI6MjA1OTEzODA3NH0._EgQrKqGcedVgtHlDr3kCR7x6yzD8eaQ0ZvuQ0c7m08',
-              'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdsdWdneWdoemFsYWJ2bHZ3cXFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1NjIwNzQsImV4cCI6MjA1OTEzODA3NH0._EgQrKqGcedVgtHlDr3kCR7x6yzD8eaQ0ZvuQ0c7m08`,
-              'Content-Type': 'application/json'
-            }
-          }
-        );
+        // Fetch using the supabase client
+        const { data: rawData, error: fetchError } = await supabase
+          .from('project_action_items')
+          .select('*')
+          .eq('project_id', projectId)
+          .eq('completed', false)
+          .order('created_at', { ascending: false });
         
-        if (!response.ok) throw new Error('Failed to fetch action items');
+        if (fetchError) throw fetchError;
         
-        const rawData = await response.json();
         console.log("All action items before filtering:", rawData);
         
         // Cast the raw data to our ActionItem interface
@@ -82,25 +77,14 @@ export const useProjectActionItems = (projectId: string) => {
   
   const markActionItemComplete = async (itemId: string) => {
     try {
-      // Use REST API directly to avoid TypeScript issues
-      const response = await fetch(
-        `https://gluggyghzalabvlvwqqk.supabase.co/rest/v1/project_action_items?id=eq.${itemId}`,
-        {
-          method: 'PATCH',
-          headers: {
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdsdWdneWdoemFsYWJ2bHZ3cXFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1NjIwNzQsImV4cCI6MjA1OTEzODA3NH0._EgQrKqGcedVgtHlDr3kCR7x6yzD8eaQ0ZvuQ0c7m08',
-            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdsdWdneWdoemFsYWJ2bHZ3cXFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1NjIwNzQsImV4cCI6MjA1OTEzODA3NH0._EgQrKqGcedVgtHlDr3kCR7x6yzD8eaQ0ZvuQ0c7m08`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=minimal'
-          },
-          body: JSON.stringify({
-            completed: true,
-            completion_date: new Date().toISOString()
-          })
-        }
-      );
+      // Use the RPC function we created
+      const { data, error } = await supabase
+        .rpc('update_action_item_completion', { 
+          item_id: itemId, 
+          is_completed: true 
+        });
       
-      if (!response.ok) throw new Error('Failed to update action item');
+      if (error) throw error;
         
       // Update local state
       setActionItems(prev => prev.filter(item => item.id !== itemId));

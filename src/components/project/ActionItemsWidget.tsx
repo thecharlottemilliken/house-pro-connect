@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Check, FileText, Camera, Ruler, ListTodo, PenBox, FilePen, FilePlus } from "lucide-react";
@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { ProjectData } from "@/hooks/useProjectData";
 import { useNavigate } from "react-router-dom";
 import { useProjectActionItems, ActionItem } from "@/hooks/useProjectActionItems";
+import { useActionItemsGenerator } from "@/hooks/useActionItemsGenerator";
 
 interface ActionItemsWidgetProps {
   projectId: string;
@@ -25,6 +26,16 @@ const ActionItemsWidget = ({
 }: ActionItemsWidgetProps) => {
   const navigate = useNavigate();
   const { actionItems, isLoading, markActionItemComplete } = useProjectActionItems(projectId);
+  const { generateActionItems, isGenerating } = useActionItemsGenerator();
+
+  // Generate action items when the component mounts
+  useEffect(() => {
+    if (projectId) {
+      generateActionItems(projectId).catch(err => 
+        console.error("Failed to generate action items:", err)
+      );
+    }
+  }, [projectId]);
 
   // Handle action click
   const handleActionClick = (item: ActionItem) => {
@@ -105,7 +116,7 @@ const ActionItemsWidget = ({
       </CardHeader>
       <CardContent className="p-0">
         <div className="divide-y">
-          {isLoading ? (
+          {(isLoading || isGenerating) ? (
             <div className="p-4 text-center">
               <div className="animate-spin h-6 w-6 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-2"></div>
               <p className="text-gray-600 text-sm">Loading action items...</p>
@@ -135,7 +146,7 @@ const ActionItemsWidget = ({
                 </div>
               ))}
               
-              {actionItems.length === 0 && !isLoading && (
+              {actionItems.length === 0 && !isLoading && !isGenerating && (
                 <div className="p-8 text-center">
                   <div className="bg-green-100 h-12 w-12 rounded-full flex items-center justify-center mx-auto mb-3">
                     <Check className="h-6 w-6 text-green-600" />

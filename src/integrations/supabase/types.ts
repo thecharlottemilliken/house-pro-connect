@@ -130,6 +130,62 @@ export type Database = {
         }
         Relationships: []
       }
+      project_action_items: {
+        Row: {
+          action_data: Json | null
+          action_type: string
+          completed: boolean
+          completion_date: string | null
+          created_at: string
+          description: string | null
+          for_role: string | null
+          icon_name: string | null
+          id: string
+          priority: string
+          project_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          action_data?: Json | null
+          action_type: string
+          completed?: boolean
+          completion_date?: string | null
+          created_at?: string
+          description?: string | null
+          for_role?: string | null
+          icon_name?: string | null
+          id?: string
+          priority?: string
+          project_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          action_data?: Json | null
+          action_type?: string
+          completed?: boolean
+          completion_date?: string | null
+          created_at?: string
+          description?: string | null
+          for_role?: string | null
+          icon_name?: string | null
+          id?: string
+          priority?: string
+          project_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_action_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_events: {
         Row: {
           created_at: string
@@ -918,6 +974,24 @@ export type Database = {
       set_coach_claim: {
         Args: { uid: string }
         Returns: undefined
+      }
+      update_action_item_completion: {
+        Args: { item_id: string; is_completed: boolean }
+        Returns: {
+          id: string
+          project_id: string
+          title: string
+          description: string
+          priority: string
+          icon_name: string
+          action_type: string
+          action_data: Json
+          completed: boolean
+          completion_date: string
+          created_at: string
+          updated_at: string
+          for_role: string
+        }[]
       }
     }
     Enums: {

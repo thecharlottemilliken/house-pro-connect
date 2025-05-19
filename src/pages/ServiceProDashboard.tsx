@@ -16,8 +16,8 @@ interface ProfileItem {
   route: string;
 }
 
-// Define initial items outside component to avoid recursive type references
-const initialProfileItems: ProfileItem[] = [
+// Define initial items as a constant to avoid recursive type references
+const initialProfileItems = [
   { id: 1, text: "Add Your License Information", completed: false, route: "/service-pro-profile?section=licenses" },
   { id: 2, text: "Add Your Bio", completed: false, route: "/service-pro-profile?section=basic" },
   { id: 3, text: "List Your Properties", completed: false, route: "/your-properties" }
@@ -27,12 +27,8 @@ const ServiceProDashboard = () => {
   const { user, profile } = useAuth();
   const [profileComplete, setProfileComplete] = useState(false);
   
-  // Initialize state with a predefined array
-  const [profileItems, setProfileItems] = useState<ProfileItem[]>([
-    { id: 1, text: "Add Your License Information", completed: false, route: "/service-pro-profile?section=licenses" },
-    { id: 2, text: "Add Your Bio", completed: false, route: "/service-pro-profile?section=basic" },
-    { id: 3, text: "List Your Properties", completed: false, route: "/your-properties" }
-  ]);
+  // Initialize state with the predefined constant array
+  const [profileItems, setProfileItems] = useState<ProfileItem[]>(initialProfileItems);
   
   useEffect(() => {
     const checkProfileCompletion = async () => {
