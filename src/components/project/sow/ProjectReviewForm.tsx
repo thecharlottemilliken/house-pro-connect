@@ -1,11 +1,11 @@
-import React from 'react';
-import { Button } from "@/components/ui/button";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { ClipboardEdit } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { ChangeTracker } from './utils/revisionUtils';
 
-// Update the interface to include the new props
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+
 interface ProjectReviewFormProps {
   workAreas: any[];
   laborItems: any[];
@@ -15,253 +15,334 @@ interface ProjectReviewFormProps {
     projectDescription: string;
   };
   projectId: string;
+  onSave: () => void;
   isRevision?: boolean;
-  isRevised?: boolean;
-  onSave: (confirmed: boolean) => void;
-  changes?: ChangeTracker;
+  changes?: any;
 }
 
-export const ProjectReviewForm = ({
-  workAreas,
-  laborItems,
-  materialItems,
+interface ChangeTracked {
+  old?: any;
+  new?: any;
+  status: string;
+}
+
+export function ProjectReviewForm({
+  workAreas = [],
+  laborItems = [],
+  materialItems = [],
   bidConfiguration,
   projectId,
-  isRevision = false,
-  isRevised = false,
   onSave,
-  changes
-}: ProjectReviewFormProps) => {
-  const handleSubmit = async () => {
-    onSave(true);
-  };
+  isRevision = false,
+  changes = null
+}: ProjectReviewFormProps) {
+  const navigate = useNavigate();
+  const [feedback, setFeedback] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleCancel = () => {
-    onSave(false);
-  };
+  const hasChanges = changes && Object.values(changes).some((change: any) => change.status !== "unchanged");
 
-  // Helper to check if an item was changed
-  const wasChanged = (id: string, itemType: 'workAreas' | 'laborItems' | 'materialItems'): boolean => {
-    if (!changes) return false;
-    return !!changes[itemType]?.[id];
-  };
-
-  // Render each section with change highlighting
-  const renderWorkAreas = () => {
-    return workAreas.map((area, index) => {
-      const id = area.id || `index-${index}`;
-      const isChanged = wasChanged(id, 'workAreas');
-      const highlightClass = isChanged ? 'bg-yellow-50 border-l-4 border-yellow-400 pl-3 -ml-3' : '';
-      
-      return (
-        <div key={id} className={`mb-6 ${highlightClass}`}>
-          {/* Add a change badge if this item was changed */}
-          {isChanged && (
-            <Badge className="mb-2 bg-yellow-100 text-yellow-800 hover:bg-yellow-200 flex w-fit items-center gap-1">
-              <ClipboardEdit className="h-3 w-3" /> Updated
-            </Badge>
-          )}
-          
-          <h3 className="text-lg font-semibold mb-2">{area.name}</h3>
-          <p className="text-gray-600 mb-3">{area.description || 'No description provided'}</p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <h4 className="font-medium text-sm mb-1">Location</h4>
-              <p className="text-gray-700">{area.location || 'Not specified'}</p>
-            </div>
-            <div>
-              <h4 className="font-medium text-sm mb-1">Dimensions</h4>
-              <p className="text-gray-700">{area.dimensions || 'Not specified'}</p>
-            </div>
-          </div>
-          
-          {area.notes && (
-            <div className="mt-2">
-              <h4 className="font-medium text-sm mb-1">Notes</h4>
-              <p className="text-gray-700">{area.notes}</p>
-            </div>
-          )}
-        </div>
-      );
-    });
-  };
-
-  const renderLaborItems = () => {
-    return laborItems.map((item, index) => {
-      const id = item.id || `index-${index}`;
-      const isChanged = wasChanged(id, 'laborItems');
-      const highlightClass = isChanged ? 'bg-yellow-50 border-l-4 border-yellow-400 pl-3 -ml-3' : '';
-      
-      return (
-        <div key={id} className={`mb-4 ${highlightClass}`}>
-          {isChanged && (
-            <Badge className="mb-2 bg-yellow-100 text-yellow-800 hover:bg-yellow-200 flex w-fit items-center gap-1">
-              <ClipboardEdit className="h-3 w-3" /> Updated
-            </Badge>
-          )}
-          
-          <h4 className="font-medium">{item.title}</h4>
-          <p className="text-sm text-gray-600">{item.description}</p>
-          
-          <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <span className="text-xs text-gray-500">Work Area:</span>
-              <p className="text-sm">{item.workArea || 'All areas'}</p>
-            </div>
-            <div>
-              <span className="text-xs text-gray-500">Expertise Required:</span>
-              <p className="text-sm">{item.expertise || 'General'}</p>
-            </div>
-          </div>
-          
-          {item.notes && (
-            <div className="mt-2">
-              <span className="text-xs text-gray-500">Notes:</span>
-              <p className="text-sm">{item.notes}</p>
-            </div>
-          )}
-        </div>
-      );
-    });
-  };
-
-  const renderMaterialItems = () => {
-    return materialItems.map((item, index) => {
-      const id = item.id || `index-${index}`;
-      const isChanged = wasChanged(id, 'materialItems');
-      const highlightClass = isChanged ? 'bg-yellow-50 border-l-4 border-yellow-400 pl-3 -ml-3' : '';
-      
-      return (
-        <div key={id} className={`mb-4 ${highlightClass}`}>
-          {isChanged && (
-            <Badge className="mb-2 bg-yellow-100 text-yellow-800 hover:bg-yellow-200 flex w-fit items-center gap-1">
-              <ClipboardEdit className="h-3 w-3" /> Updated
-            </Badge>
-          )}
-          
-          <h4 className="font-medium">{item.name}</h4>
-          <p className="text-sm text-gray-600">{item.description}</p>
-          
-          <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <span className="text-xs text-gray-500">Work Area:</span>
-              <p className="text-sm">{item.workArea || 'All areas'}</p>
-            </div>
-            <div>
-              <span className="text-xs text-gray-500">Quantity:</span>
-              <p className="text-sm">{item.quantity || 'Not specified'}</p>
-            </div>
-          </div>
-          
-          {item.specifications && (
-            <div className="mt-2">
-              <span className="text-xs text-gray-500">Specifications:</span>
-              <p className="text-sm">{item.specifications}</p>
-            </div>
-          )}
-          
-          {item.notes && (
-            <div className="mt-2">
-              <span className="text-xs text-gray-500">Notes:</span>
-              <p className="text-sm">{item.notes}</p>
-            </div>
-          )}
-        </div>
-      );
-    });
-  };
-
-  const renderBidConfiguration = () => {
-    const isChanged = changes?.bidConfiguration;
-    const highlightClass = isChanged ? 'bg-yellow-50 border-l-4 border-yellow-400 pl-3 -ml-3' : '';
+  const getHighlightClass = (field: string, subField?: string) => {
+    if (!isRevision || !changes) return "";
     
-    return (
-      <div className={`mb-6 ${highlightClass}`}>
-        {isChanged && (
-          <Badge className="mb-2 bg-yellow-100 text-yellow-800 hover:bg-yellow-200 flex w-fit items-center gap-1">
-            <ClipboardEdit className="h-3 w-3" /> Updated
-          </Badge>
-        )}
-        
-        <h3 className="text-lg font-semibold mb-2">Bid Configuration</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div>
-            <h4 className="font-medium text-sm mb-1">Bid Duration</h4>
-            <p className="text-gray-700">{bidConfiguration.bidDuration} days</p>
+    const fieldChanges = changes[field];
+    if (!fieldChanges) return "";
+    
+    if (subField) {
+      const subFieldChanges = fieldChanges[subField];
+      if (!subFieldChanges) return "";
+      
+      return subFieldChanges.status === "added" ? "bg-green-100" : 
+             subFieldChanges.status === "modified" ? "bg-yellow-100" : "";
+    }
+    
+    return fieldChanges.status === "added" ? "bg-green-100" : 
+           fieldChanges.status === "modified" ? "bg-yellow-100" : "";
+  };
+
+  const handleApprove = async () => {
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('statement_of_work')
+        .update({ status: 'approved' })
+        .eq('project_id', projectId);
+      
+      if (error) throw error;
+      
+      toast.success("Statement of Work approved successfully");
+      // Redirect back to project
+      navigate(`/project-dashboard/${projectId}`);
+    } catch (error) {
+      console.error("Error approving SOW:", error);
+      toast.error("Failed to approve the Statement of Work");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRequestRevision = async () => {
+    if (!feedback.trim()) {
+      toast.error("Please provide feedback before requesting revisions");
+      return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('statement_of_work')
+        .update({ 
+          status: 'pending revision',
+          feedback: feedback
+        })
+        .eq('project_id', projectId);
+      
+      if (error) throw error;
+      
+      toast.success("Revision requested successfully");
+      // Redirect back to project
+      navigate(`/project-dashboard/${projectId}`);
+    } catch (error) {
+      console.error("Error requesting revision:", error);
+      toast.error("Failed to request revision");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Safe rendering helper for specifications
+  const renderSpecifications = (specs: any) => {
+    if (!specs) return null;
+    
+    // Handle cabinets specifically since it's a common source of errors
+    if (specs.cabinets) {
+      let cabinetsData = specs.cabinets;
+      
+      // If cabinets is an object but not an array, convert it to array
+      if (typeof cabinetsData === 'object' && !Array.isArray(cabinetsData)) {
+        cabinetsData = [cabinetsData];
+      }
+      
+      if (Array.isArray(cabinetsData)) {
+        return (
+          <div className="mt-2">
+            <h4 className="text-sm font-medium">Cabinet Specifications:</h4>
+            {cabinetsData.map((cabinet: any, index: number) => (
+              <div key={index} className="ml-4 text-sm">
+                <p>Type: {cabinet.type || 'Not specified'}</p>
+                <p>Doors: {cabinet.doors || '0'}</p>
+                <p>Drawers: {cabinet.drawers || '0'}</p>
+                <p>Size: {cabinet.size || 'Not specified'}</p>
+              </div>
+            ))}
           </div>
-        </div>
-        
-        <div>
-          <h4 className="font-medium text-sm mb-1">Project Description</h4>
-          <p className="text-gray-700 whitespace-pre-wrap">{bidConfiguration.projectDescription || 'No description provided'}</p>
-        </div>
+        );
+      }
+      
+      return <p className="text-sm text-red-500">Invalid cabinet data format</p>;
+    }
+    
+    // For other specification types
+    return (
+      <div className="mt-2">
+        {Object.entries(specs).map(([key, value]: [string, any]) => {
+          // Skip rendering if it's the cabinets property since we handled it above
+          if (key === 'cabinets') return null;
+          
+          // For objects, format as JSON
+          if (value && typeof value === 'object') {
+            return <p key={key} className="text-sm"><strong>{key}:</strong> {JSON.stringify(value)}</p>;
+          }
+          
+          return <p key={key} className="text-sm"><strong>{key}:</strong> {value?.toString() || 'Not specified'}</p>;
+        })}
       </div>
     );
   };
 
   return (
-    <div>
-      {(isRevision || isRevised) && (
-        <Alert className="mb-6 bg-blue-50 border-blue-200">
-          <ClipboardEdit className="h-4 w-4 text-blue-600" />
-          <AlertTitle className="text-blue-800">Revised Document</AlertTitle>
-          <AlertDescription className="text-blue-700">
-            This is a revised version of the Statement of Work. Changes based on feedback are highlighted.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Work Areas</h2>
-          {workAreas.length > 0 ? (
-            <div>{renderWorkAreas()}</div>
-          ) : (
-            <p className="text-gray-500">No work areas defined.</p>
-          )}
-        </div>
-
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Labor Requirements</h2>
-          {laborItems.length > 0 ? (
-            <div>{renderLaborItems()}</div>
-          ) : (
-            <p className="text-gray-500">No labor requirements defined.</p>
-          )}
-        </div>
-
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Material Requirements</h2>
-          {materialItems.length > 0 ? (
-            <div>{renderMaterialItems()}</div>
-          ) : (
-            <p className="text-gray-500">No material requirements defined.</p>
-          )}
-        </div>
-
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Bid Configuration</h2>
-          {renderBidConfiguration()}
+    <div className="space-y-8 pb-10">
+      <div className={`rounded-lg border p-6 ${getHighlightClass('bidConfiguration')}`}>
+        <h3 className="text-lg font-medium mb-4">Bid Configuration</h3>
+        <div className="space-y-4">
+          <div>
+            <h4 className="text-sm font-medium">Bid Duration</h4>
+            <p className="text-sm">{bidConfiguration?.bidDuration || 'Not specified'} days</p>
+          </div>
+          <div>
+            <h4 className="text-sm font-medium">Project Description</h4>
+            <p className="text-sm">{bidConfiguration?.projectDescription || 'No description provided.'}</p>
+          </div>
         </div>
       </div>
 
-      {onSave && (
-        <div className="mt-8 flex justify-end">
-          <Button
-            variant="outline"
-            className="mr-4"
-            onClick={() => onSave(false)}
-          >
-            Cancel
-          </Button>
-          <Button 
-            onClick={() => onSave(true)}
-          >
-            {isRevision ? "Submit Revised SOW" : "Submit SOW for Review"}
-          </Button>
+      <div className={`rounded-lg border p-6 ${getHighlightClass('workAreas')}`}>
+        <h3 className="text-lg font-medium mb-4">Work Areas</h3>
+        {workAreas && workAreas.length > 0 ? (
+          <div className="space-y-6">
+            {workAreas.map((area, index) => (
+              <div key={index} className="p-4 border rounded-md">
+                <h4 className="font-medium">{area.name}</h4>
+                <p className="text-sm text-gray-600 mt-1">Dimensions: {area.width}' × {area.length}' × {area.height}'</p>
+                {area.notes && <p className="text-sm mt-2">{area.notes}</p>}
+                
+                {area.additionalAreas && area.additionalAreas.length > 0 && (
+                  <div className="mt-4">
+                    <h5 className="text-sm font-medium">Additional Areas:</h5>
+                    <ul className="ml-4 text-sm">
+                      {area.additionalAreas.map((subArea: any, subIndex: number) => (
+                        <li key={subIndex} className="mt-2">
+                          <span className="font-medium">{subArea.name}</span>
+                          <p className="text-gray-600">Dimensions: {subArea.width}' × {subArea.length}' × {subArea.height}'</p>
+                          {subArea.notes && <p>{subArea.notes}</p>}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500">No work areas defined.</p>
+        )}
+      </div>
+
+      <div className={`rounded-lg border p-6 ${getHighlightClass('laborItems')}`}>
+        <h3 className="text-lg font-medium mb-4">Labor Requirements</h3>
+        {laborItems && laborItems.length > 0 ? (
+          <div className="space-y-6">
+            {laborItems.map((item, index) => (
+              <div key={index} className="p-4 border rounded-md">
+                <div className="flex justify-between">
+                  <h4 className="font-medium">{item.category}</h4>
+                  <span className="text-sm text-gray-500">{item.laborType}</span>
+                </div>
+                
+                {item.rooms && item.rooms.length > 0 && (
+                  <div className="mt-4">
+                    <h5 className="text-sm font-medium">Affected Areas:</h5>
+                    <ul className="ml-4 text-sm">
+                      {item.rooms.map((room: any, roomIndex: number) => (
+                        <li key={roomIndex} className="mt-2">
+                          <span className="font-medium">{room.name}</span>
+                          {room.notes && <p>{room.notes}</p>}
+                          
+                          {room.affectedAreas && room.affectedAreas.length > 0 && (
+                            <div className="ml-4 mt-1">
+                              <span className="text-xs text-gray-500">Connected areas:</span>
+                              <ul className="ml-2">
+                                {room.affectedAreas.map((area: any, areaIndex: number) => (
+                                  <li key={areaIndex}>
+                                    <span>{area.name}</span>
+                                    {area.notes && <p className="text-xs text-gray-600">{area.notes}</p>}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500">No labor requirements defined.</p>
+        )}
+      </div>
+
+      <div className={`rounded-lg border p-6 ${getHighlightClass('materialItems')}`}>
+        <h3 className="text-lg font-medium mb-4">Material Requirements</h3>
+        {materialItems && materialItems.length > 0 ? (
+          <div className="space-y-6">
+            {materialItems.map((item, index) => (
+              <div key={index} className="p-4 border rounded-md">
+                <div className="flex justify-between">
+                  <h4 className="font-medium">{item.category}</h4>
+                  <span className="text-sm text-gray-500">{item.materialType}</span>
+                </div>
+                
+                {item.rooms && item.rooms.length > 0 && (
+                  <div className="mt-4">
+                    <h5 className="text-sm font-medium">Affected Areas:</h5>
+                    <ul className="ml-4 text-sm">
+                      {item.rooms.map((room: any, roomIndex: number) => (
+                        <li key={roomIndex} className="mt-2">
+                          <span className="font-medium">{room.name}</span>
+                          {room.notes && <p>{room.notes}</p>}
+                          
+                          {/* Safely render specifications */}
+                          {room.specifications && renderSpecifications(room.specifications)}
+                          
+                          {room.affectedAreas && room.affectedAreas.length > 0 && (
+                            <div className="ml-4 mt-1">
+                              <span className="text-xs text-gray-500">Connected areas:</span>
+                              <ul className="ml-2">
+                                {room.affectedAreas.map((area: any, areaIndex: number) => (
+                                  <li key={areaIndex}>
+                                    <span>{area.name}</span>
+                                    {area.notes && <p className="text-xs text-gray-600">{area.notes}</p>}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500">No material requirements defined.</p>
+        )}
+      </div>
+
+      <div className="rounded-lg border p-6">
+        <h3 className="text-lg font-medium mb-4">Review Options</h3>
+        
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="feedback" className="block text-sm font-medium mb-2">
+              {isRevision ? "Additional Feedback" : "Feedback"}
+              {isRevision && hasChanges && (
+                <span className="text-green-600 ml-2 text-xs">
+                  (Previous feedback has been addressed)
+                </span>
+              )}
+            </label>
+            <textarea
+              id="feedback"
+              className="w-full p-2 border rounded-md"
+              rows={4}
+              placeholder="Provide feedback or change requests..."
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
+            />
+          </div>
+          
+          <div className="flex justify-end space-x-4">
+            <Button
+              variant="outline"
+              onClick={handleRequestRevision}
+              disabled={isSubmitting}
+            >
+              Request Revision
+            </Button>
+            <Button 
+              onClick={handleApprove}
+              disabled={isSubmitting}
+            >
+              Approve
+            </Button>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
-};
+}

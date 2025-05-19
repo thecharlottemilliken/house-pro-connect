@@ -1,3 +1,4 @@
+
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -193,15 +194,31 @@ export function MaterialItemAccordion({
     onUpdateRooms(updatedRooms);
   };
 
+  // Helper function to ensure cabinets is always an array
+  const ensureCabinetsArray = (specifications: any): CabinetSpecification[] => {
+    if (!specifications?.cabinets) return [];
+    
+    // If cabinets is an object with no length property, wrap it in an array
+    if (typeof specifications.cabinets === 'object' && !Array.isArray(specifications.cabinets)) {
+      return [specifications.cabinets];
+    }
+    
+    // If cabinets is already an array, return it
+    if (Array.isArray(specifications.cabinets)) {
+      return specifications.cabinets;
+    }
+    
+    // Default fallback
+    return [];
+  };
+
   const renderSpecificationsForm = () => {
     const specifications = selectedRooms[0]?.specifications || {};
     
     switch (materialType) {
       case "Cabinets":
-        // Ensure cabinets is always an array
-        const cabinetsArray = Array.isArray(specifications.cabinets) 
-          ? specifications.cabinets 
-          : (specifications.cabinets ? [specifications.cabinets] : []);
+        // Use our helper function to ensure cabinets is always an array
+        const cabinetsArray = ensureCabinetsArray(specifications);
           
         return (
           <div className="space-y-6 mt-4 p-4 bg-gray-50 rounded-md">
@@ -709,7 +726,8 @@ export function MaterialItemAccordion({
         </div>
       </div>
 
-      {renderSpecificationsForm()}
+      {/* Safe rendering of specifications form with error boundary */}
+      {selectedRooms.length > 0 && renderSpecificationsForm()}
 
       {selectedRooms.map((room) => (
         <div key={room.name} className="space-y-2">

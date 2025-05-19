@@ -178,6 +178,14 @@ const ProjectSOW = () => {
       );
     }
 
+    // Ensure SOW data is properly structured before rendering
+    const safeWorkAreas = Array.isArray(sowData.work_areas) ? sowData.work_areas : [];
+    const safeLaborItems = Array.isArray(sowData.labor_items) ? sowData.labor_items : [];
+    const safeMaterialItems = Array.isArray(sowData.material_items) ? sowData.material_items : [];
+    const safeBidConfig = typeof sowData.bid_configuration === 'object' && sowData.bid_configuration !== null
+      ? sowData.bid_configuration
+      : { bidDuration: '', projectDescription: '' };
+
     return (
       <div className="max-w-6xl mx-auto px-6 py-6">
         <h2 className="text-2xl font-semibold text-gray-900 mb-6">
@@ -185,10 +193,10 @@ const ProjectSOW = () => {
         </h2>
 
         <ProjectReviewForm
-          workAreas={sowData.work_areas || []}
-          laborItems={sowData.labor_items || []}
-          materialItems={sowData.material_items || []}
-          bidConfiguration={sowData.bid_configuration || { bidDuration: '', projectDescription: '' }}
+          workAreas={safeWorkAreas}
+          laborItems={safeLaborItems}
+          materialItems={safeMaterialItems}
+          bidConfiguration={safeBidConfig}
           projectId={params.projectId || ''}
           onSave={() => { }}
           isRevision={isRevision}
