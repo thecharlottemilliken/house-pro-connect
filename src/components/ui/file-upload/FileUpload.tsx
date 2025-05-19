@@ -55,26 +55,23 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       }
     }
 
-    // Mock upload process
+    // Start the upload process
     setIsUploading(true);
     try {
-      // This is a simplified mock that would be replaced with actual upload logic
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      // Generate mock URLs (in a real app, these would be actual URLs to the uploaded files)
-      const uploadedUrls = Array.from(files).map(
+      // Generate temporary blob URLs for the files
+      const blobUrls = Array.from(files).map(
         (file) => URL.createObjectURL(file)
       );
       
-      onUploadComplete(uploadedUrls);
+      onUploadComplete(blobUrls);
       e.target.value = ""; // Reset input
       
       toast({
-        title: "Files uploaded",
+        title: "Files processed",
         description: `Successfully uploaded ${files.length} file${files.length !== 1 ? "s" : ""}`,
       });
     } catch (error) {
-      console.error("Error uploading files:", error);
+      console.error("Error processing files:", error);
       toast({
         title: "Upload failed",
         description: "There was an error uploading your files",
@@ -102,7 +99,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         className={className}
         disabled={isUploading}
       >
-        {isUploading ? "Uploading..." : children || label}
+        {isUploading ? "Processing..." : children || label}
       </Button>
       <p className="sr-only">{description}</p>
     </div>

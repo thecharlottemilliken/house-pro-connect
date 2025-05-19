@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import {
   Dialog,
@@ -8,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { FileUpload } from "@/components/ui/file-upload";
 import { toast } from "@/hooks/use-toast";
+import { uploadFile } from "@/components/ui/file-upload/upload-service";
 
 interface UploadInspirationModalProps {
   isOpen: boolean;
@@ -25,43 +27,81 @@ const UploadInspirationModal: React.FC<UploadInspirationModalProps> = ({
   const [isUploading, setIsUploading] = useState(false);
 
   // Handle file upload completion
-  const handleUploadComplete = (files: Array<string | { url: string; status: string }>) => {
-    setIsUploading(false);
+  const handleUploadComplete = async (files: Array<string>) => {
+    setIsUploading(true);
     
-    // Process the files to extract valid URLs
-    const validUrls: string[] = files.map(file => {
-      // Handle both string URLs and object formats
-      if (typeof file === 'string') {
-        return file; // Direct URL string
-      } else if (file && typeof file === 'object' && file.url && file.status === 'complete') {
-        return file.url; // Extract URL from file object
+    try {
+      // For blob URLs, we need to convert them to actual files and upload to Supabase
+      const validUrls: string[] = [];
+      
+      for (const fileUrl of files) {
+        // Skip empty URLs
+        if (!fileUrl) continue;
+        
+        // If it's already a proper URL (from cloud storage), use it directly
+        if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+          validUrls.push(fileUrl);
+          continue;
+        }
+        
+        // For blob URLs, fetch the file and upload to Supabase
+        if (fileUrl.startsWith('blob:')) {
+          try {
+            // Fetch the file data from the blob URL
+            const response = await fetch(fileUrl);
+            const blob = await response.blob();
+            
+            // Create a File object from the blob
+            const fileName = `inspiration-${Date.now()}.${blob.type.split('/')[1] || 'jpg'}`;
+            const file = new File([blob], fileName, { type: blob.type });
+            
+            // Upload to Supabase
+            const { url, error } = await uploadFile(file);
+            
+            if (error) {
+              console.error("Error uploading file:", error);
+              toast({
+                title: "Upload Error",
+                description: `Failed to upload ${fileName}`,
+                variant: "destructive"
+              });
+              continue;
+            }
+            
+            if (url) {
+              validUrls.push(url);
+            }
+          } catch (error) {
+            console.error("Error processing blob URL:", error);
+          }
+        }
       }
-      return '';
-    }).filter(url => {
-      // Only keep valid URLs (non-empty and starts with http)
-      const isValid = url && (url.startsWith('http://') || url.startsWith('https://'));
-      if (!isValid && url) {
-        console.warn('Invalid URL filtered out:', url);
-      }
-      return isValid;
-    });
 
-    // If we have valid URLs, pass them to the parent component
-    if (validUrls.length > 0) {
-      onUploadComplete(validUrls);
+      // If we have valid URLs, pass them to the parent component
+      if (validUrls.length > 0) {
+        onUploadComplete(validUrls);
+        toast({
+          title: "Upload Complete",
+          description: `Added ${validUrls.length} inspiration ${validUrls.length === 1 ? 'image' : 'images'} to ${roomName}`,
+        });
+        onClose(); // Close the modal after successful upload
+      } else {
+        toast({
+          title: "Upload Failed",
+          description: "No valid images were uploaded",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Error processing uploads:", error);
       toast({
-        title: "Upload Complete",
-        description: `Added ${validUrls.length} inspiration ${validUrls.length === 1 ? 'image' : 'images'} to ${roomName}`,
-      });
-    } else {
-      toast({
-        title: "Upload Failed",
-        description: "No valid images were uploaded",
+        title: "Upload Error",
+        description: "An unexpected error occurred during upload",
         variant: "destructive"
       });
+    } finally {
+      setIsUploading(false);
     }
-
-    onClose(); // Close the modal after handling the upload
   };
 
   return (

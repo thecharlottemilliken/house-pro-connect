@@ -39,7 +39,10 @@ const InspirationImagesGrid: React.FC<InspirationImagesGridProps> = ({
                 variant="destructive"
                 size="sm"
                 className="flex items-center gap-2"
-                onClick={() => onDeleteImage(img)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteImage(img);
+                }}
               >
                 <Trash2 className="h-4 w-4" />
                 Delete

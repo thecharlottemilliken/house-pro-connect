@@ -479,7 +479,7 @@ export const useDesignActions = (projectId: string | undefined) => {
       setIsSaving(false);
     }
   }, [projectId]);
-
+  
   // Add inspiration images
   const handleAddInspirationImages = useCallback(async (
     images: FileWithPreview[] | string[],
