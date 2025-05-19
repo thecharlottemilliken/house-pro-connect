@@ -2,7 +2,7 @@
 import React, { useEffect } from "react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Check, FileText, Camera, Ruler, ListTodo, PenBox, FilePen, FilePlus } from "lucide-react";
+import { ArrowRight, Check, FileText, Camera, Ruler, ListTodo, PenBox, FilePen, FilePlus, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ProjectData } from "@/hooks/useProjectData";
 import { useNavigate } from "react-router-dom";

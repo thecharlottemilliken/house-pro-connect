@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { useLocation, useParams, Navigate, useNavigate } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
@@ -14,7 +13,7 @@ import { useProjectAccess } from "@/hooks/useProjectAccess";
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useActionItemsGenerator } from "@/hooks/useActionItemsGenerator";
-import { useSOWNotifications } from "@/hooks/useSOWNotifications"; // Import the new hook
+import { useSOWNotifications } from "@/hooks/useSOWNotifications";
 
 // Import our components
 import ProjectProgressCard from "@/components/project/ProjectProgressCard";
@@ -47,17 +46,17 @@ const ProjectDashboard = () => {
   } = useProjectData(projectId, location.state);
   
   const isLoading = isAccessLoading || isProjectLoading;
-  const { generateActionItems } = useActionItemsGenerator();
+  const { generateActionItems, hasErrored } = useActionItemsGenerator();
   
   // Enable SOW notifications
   useSOWNotifications();
   
-  // Generate action items when dashboard loads
+  // Generate action items when dashboard loads - but don't retry if there was an error
   useEffect(() => {
-    if (!isLoading && projectData) {
+    if (!isLoading && projectData && !hasErrored) {
       generateActionItems(projectId);
     }
-  }, [projectId, isLoading, projectData, generateActionItems]);
+  }, [projectId, isLoading, projectData, generateActionItems, hasErrored]);
   
   React.useEffect(() => {
     if (error) {
