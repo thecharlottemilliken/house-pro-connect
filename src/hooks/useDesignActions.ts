@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -480,7 +481,7 @@ export const useDesignActions = (projectId: string | undefined) => {
     }
   }, [projectId]);
 
-  // Add inspiration images
+  // Add inspiration images - Fixed function
   const handleAddInspirationImages = useCallback(async (
     images: FileWithPreview[],
     designPreferences: any
@@ -497,14 +498,14 @@ export const useDesignActions = (projectId: string | undefined) => {
     setIsSaving(true);
     
     try {
-      // Get urls from uploaded images
+      // Get valid URLs from the uploaded images
       const imageUrls = images
-        .filter(p => p.status === 'complete' && p.url)
-        .map(p => p.url) as string[];
+        .filter(img => img.status === 'complete' && img.url)
+        .map(img => img.url) as string[];
       
       console.log("Inspiration image URLs to be saved:", imageUrls);
       
-      // If no valid urls, do nothing
+      // If no valid URLs, do nothing
       if (imageUrls.length === 0) {
         toast({
           title: "Warning",
@@ -522,26 +523,45 @@ export const useDesignActions = (projectId: string | undefined) => {
         updatedPrefs.inspirationImages = [];
       }
       
-      // Add the new images
-      updatedPrefs.inspirationImages = [
-        ...updatedPrefs.inspirationImages,
-        ...imageUrls
-      ];
+      // Add the new images, ensuring they are real URLs and not blob URLs
+      const validUrls = imageUrls.filter(url => 
+        url.startsWith('http') || url.startsWith('https'));
+        
+      console.log("Filtered valid image URLs:", validUrls);
       
-      // Update the project in Supabase
-      const { error } = await supabase
-        .from('projects')
-        .update({ design_preferences: updatedPrefs })
-        .eq('id', projectId);
+      // Only add valid URLs
+      if (validUrls.length > 0) {
+        updatedPrefs.inspirationImages = [
+          ...(updatedPrefs.inspirationImages || []),
+          ...validUrls
+        ];
       
-      if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Inspiration images added successfully"
-      });
-      
-      return updatedPrefs;
+        console.log("Updated inspiration images:", updatedPrefs.inspirationImages);
+        
+        // Update the project in Supabase
+        const { error } = await supabase
+          .from('projects')
+          .update({ design_preferences: updatedPrefs })
+          .eq('id', projectId);
+        
+        if (error) {
+          console.error("Error updating inspiration images in database:", error);
+          throw error;
+        }
+        
+        toast({
+          title: "Success",
+          description: "Inspiration images added successfully"
+        });
+        
+        return updatedPrefs;
+      } else {
+        toast({
+          title: "Error",
+          description: "No valid image URLs found to add",
+          variant: "destructive"
+        });
+      }
       
     } catch (error) {
       console.error('Error adding inspiration images:', error);

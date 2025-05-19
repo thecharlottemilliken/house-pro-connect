@@ -109,6 +109,9 @@ const ProjectDesign = () => {
     if (projectData?.design_preferences?.designAssets) {
       console.log("Project design assets:", projectData.design_preferences.designAssets);
     }
+    if (projectData?.design_preferences?.inspirationImages) {
+      console.log("Project inspiration images:", projectData.design_preferences.inspirationImages);
+    }
   }, [projectData, refreshTrigger]);
 
   if (isLoading || !projectData) {
@@ -123,6 +126,22 @@ const ProjectDesign = () => {
   const renovationAreas = projectData.renovation_areas || [];
   const propertyPhotos = propertyDetails?.home_photos || [];
   const designPreferences = projectData.design_preferences || { hasDesigns: false };
+
+  // Check if inspiration images need to be fixed
+  const handleAddInspirationImagesFixed = async (images: string[]) => {
+    console.log("Adding inspiration images:", images);
+    // Make sure we're passing actual URLs, not blob URLs
+    const validImages = images.filter(url => 
+      url.startsWith('http') || url.startsWith('https'));
+    
+    if (validImages.length === 0) {
+      console.error("No valid image URLs to add");
+      return;
+    }
+    
+    // Convert to file objects and pass to the handler
+    return await handleAddInspirationImages(convertUrlsToFileObjects(validImages), designPreferences);
+  };
 
   return (
     <div className="flex flex-col bg-white min-h-screen">
@@ -162,7 +181,7 @@ const ProjectDesign = () => {
                   onAddProjectFiles={(area, files) => handleAddProjectFiles(area, files, designPreferences)}
                   onRemoveDesignAsset={(index) => handleRemoveDesignAsset(index, designPreferences)}
                   onUpdateAssetTags={enhancedUpdateAssetTags}
-                  onAddInspirationImages={(images) => handleAddInspirationImages(convertUrlsToFileObjects(images), designPreferences)}
+                  onAddInspirationImages={handleAddInspirationImagesFixed}
                   onAddPinterestBoards={handleAddPinterestBoards}
                 />
               </div>
