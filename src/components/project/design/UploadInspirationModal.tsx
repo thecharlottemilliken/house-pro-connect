@@ -59,14 +59,7 @@ const UploadInspirationModal: React.FC<UploadInspirationModalProps> = ({
           <FileUpload
             accept="image/*"
             multiple={true}
-            onUploadComplete={(files) => {
-              console.log("Files uploaded:", files);
-              // Extract URLs from the uploaded files
-              const urls = files
-                .filter(file => file.status === 'complete' && file.url)
-                .map(file => file.url || "");
-              handleUploadComplete(urls);
-            }}
+            onUploadComplete={handleUploadComplete}
             label="Drop your inspiration images here"
             description="Upload images in JPG, PNG format"
           />
