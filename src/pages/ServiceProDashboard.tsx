@@ -50,11 +50,14 @@ const ServiceProDashboard = () => {
           .select('*', { count: 'exact', head: true })
           .eq('owner_id', user.id);
         
-        setProfileItems(prev => [
-          { ...prev[0], completed: licensesCount > 0 },
-          { ...prev[1], completed: !!(data?.about_text && data?.about_text.length > 0) },
-          { ...prev[2], completed: propertiesCount > 0 }
-        ]);
+        // Create a new array instead of modifying the previous state directly
+        const updatedItems: ProfileItem[] = [
+          { ...profileItems[0], completed: licensesCount > 0 },
+          { ...profileItems[1], completed: !!(data?.about_text && data?.about_text.length > 0) },
+          { ...profileItems[2], completed: propertiesCount > 0 }
+        ];
+        
+        setProfileItems(updatedItems);
         
       } catch (error) {
         console.error("Error checking profile completion:", error);
