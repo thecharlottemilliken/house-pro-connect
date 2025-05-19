@@ -1,6 +1,7 @@
 
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import ServiceProNavbar from "@/components/service-pro/ServiceProNavbar";
 
 interface ServiceProRouteProps {
   children: React.ReactNode;
@@ -29,8 +30,13 @@ const ServiceProRoute = ({ children }: ServiceProRouteProps) => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // If authenticated and a service pro, render the children
-  return <>{children}</>;
+  // If authenticated and a service pro, render the ServiceProNavbar and children
+  return (
+    <>
+      <ServiceProNavbar />
+      {children}
+    </>
+  );
 };
 
 export default ServiceProRoute;
