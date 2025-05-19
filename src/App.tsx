@@ -1,52 +1,56 @@
 
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import {
-  LandingPage,
-  SignIn,
-  SignUp,
-  NotFound,
-  ResidentDashboard,
-  Profile,
-  Notifications,
-  Properties,
-  AddProperty,
-  PropertyDetails,
-  Projects,
-  CreateProject,
-  ProjectPreferences,
-  DesignPreferences,
-  ManagementPreferences,
-  ConstructionPreferences,
-  RenovationAreas,
-  PriorExperience,
-  ProjectDashboard,
-  ProjectDesign,
-  ProjectManage,
-  ProjectTeam,
-  ProjectMessages,
-  ProjectActivityHistory,
-  ProjectCalendar,
-  ProjectAccounting,
-  ProjectSOW,
-  ProjectBidsProposals,
-  ProjectMaterials,
-  ProjectDocuments,
-  ProjectSummary,
-  Jobs,
-  JobDetails,
-  CoachDashboard,
-  ServiceProDashboard,
-  ServiceProJobs,
-  ServiceProMessages,
-} from "@/pages";
-import { ProtectedRoute, CoachRoute, ServiceProRoute } from "@/components/auth";
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "@/components/ui/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+// Import pages directly from their files
+import LandingPage from "@/pages/LandingPage";
+import SignIn from "@/pages/SignIn";
+import SignUp from "@/pages/SignUp";
+import NotFound from "@/pages/NotFound";
+import ResidentDashboard from "@/pages/ResidentDashboard";
+import Profile from "@/pages/Profile";
+import Notifications from "@/pages/Notifications";
+import Properties from "@/pages/Properties";
+import AddProperty from "@/pages/AddProperty";
+import PropertyDetails from "@/pages/PropertyDetails";
+import Projects from "@/pages/Projects";
+import CreateProject from "@/pages/CreateProject";
+import ProjectPreferences from "@/pages/ProjectPreferences";
+import DesignPreferences from "@/pages/DesignPreferences";
+import ManagementPreferences from "@/pages/ManagementPreferences";
+import ConstructionPreferences from "@/pages/ConstructionPreferences";
+import RenovationAreas from "@/pages/RenovationAreas";
+import PriorExperience from "@/pages/PriorExperience";
+import ProjectDashboard from "@/pages/ProjectDashboard";
+import ProjectDesign from "@/pages/ProjectDesign";
+import ProjectManage from "@/pages/ProjectManage";
+import ProjectTeam from "@/pages/ProjectTeam";
+import ProjectMessages from "@/pages/ProjectMessages";
+import ProjectActivityHistory from "@/pages/ProjectActivityHistory";
+import ProjectCalendar from "@/pages/ProjectCalendar";
+import ProjectAccounting from "@/pages/ProjectAccounting";
+import ProjectSOW from "@/pages/ProjectSOW";
+import ProjectBidsProposals from "@/pages/ProjectBidsProposals";
+import ProjectMaterials from "@/pages/ProjectMaterials";
+import ProjectDocuments from "@/pages/ProjectDocuments";
+import ProjectSummary from "@/pages/ProjectSummary";
+import Jobs from "@/pages/Jobs";
+import JobDetails from "@/pages/JobDetails";
+import CoachDashboard from "@/pages/CoachDashboard";
+import ServiceProDashboard from "@/pages/ServiceProDashboard";
+import ServiceProJobs from "@/pages/ServiceProJobs";
+import ServiceProMessages from "@/pages/ServiceProMessages";
 import ServiceProProfile from "@/pages/ServiceProProfile";
 import ServiceProProfileEdit from "@/pages/ServiceProProfileEdit";
+
+// Import auth components directly
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import CoachRoute from "@/components/auth/CoachRoute";
+import ServiceProRoute from "@/components/auth/ServiceProRoute";
 
 const queryClient = new QueryClient();
 
