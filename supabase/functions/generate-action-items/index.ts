@@ -102,6 +102,27 @@ serve(async (req) => {
       });
     }
     
+    // Check if there's an SOW ready for review and create action item for project owner
+    const { data: sowData } = await supabase
+      .from('statement_of_work')
+      .select('id, status')
+      .eq('project_id', projectId)
+      .single();
+      
+    if (sowData && sowData.status === 'ready for review' && !existingTitles.has("Review Statement of Work")) {
+      actionItems.push({
+        project_id: projectId,
+        title: "Review Statement of Work",
+        description: "Review the Statement of Work submitted by your coach.",
+        priority: "high",
+        icon_name: "clipboard-check",
+        action_type: "navigate",
+        action_data: { route: `/project-sow/${projectId}?review=true` },
+        for_role: "resident", // Only for project owners
+        completed: false
+      });
+    }
+    
     // Add action item for uploading blueprint if not already done
     const hasBlueprint = projectData?.design_preferences?.blueprintUrl || 
                         (projectData?.design_preferences?.designAssets || []).some(asset => 

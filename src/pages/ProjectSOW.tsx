@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import SOWReviewDialog from "@/components/project/sow/SOWReviewDialog";
+import { useSOWNotifications } from "@/hooks/useSOWNotifications";
 
 const ProjectSOW = () => {
   const location = useLocation();
@@ -16,6 +17,9 @@ const ProjectSOW = () => {
   const isViewMode = searchParams.get("view") === "true";
   const isReviewMode = searchParams.get("review") === "true";
   const navigate = useNavigate();
+
+  // Initialize SOW notifications
+  useSOWNotifications();
 
   const { projectData, propertyDetails, isLoading: projectLoading } = useProjectData(
     params.projectId,

@@ -1,119 +1,101 @@
 
-import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogClose } from "@/components/ui/dialog";
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { toast } from "@/hooks/use-toast";
+import { useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
 
 interface SOWReviewDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   projectId: string;
   sowId: string;
-  onActionComplete: () => void;
+  onActionComplete?: () => void;
 }
 
-const SOWReviewDialog: React.FC<SOWReviewDialogProps> = ({
-  open,
-  onOpenChange,
-  projectId,
+const SOWReviewDialog: React.FC<SOWReviewDialogProps> = ({ 
+  open, 
+  onOpenChange, 
+  projectId, 
   sowId,
-  onActionComplete,
+  onActionComplete 
 }) => {
-  const [feedback, setFeedback] = useState("");
-  const [loading, setLoading] = useState(false);
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleApprove = async () => {
-    setLoading(true);
-    const { error } = await supabase
-      .from("statement_of_work")
-      .update({ status: "approved", feedback: null })
-      .eq("id", sowId);
-    setLoading(false);
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to approve SOW.",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "SOW Approved",
-        description: "Statement of Work successfully approved.",
-      });
-      
-      // The notification will be created automatically by the database trigger
-      
-      onOpenChange(false);
-      onActionComplete();
-    }
+  const handleReviewNow = () => {
+    navigate(`/project-sow/${projectId}/review`);
+    onOpenChange(false);
   };
 
-  const handleReject = async () => {
-    if (!feedback) {
-      toast({
-        title: "Feedback Required",
-        description: "Please provide feedback for the coach.",
-        variant: "destructive",
-      });
-      return;
-    }
-    setLoading(true);
-    const { error } = await supabase
-      .from("statement_of_work")
-      .update({ status: "pending revision", feedback })
-      .eq("id", sowId);
-    setLoading(false);
+  const handleReviewLater = () => {
+    onOpenChange(false);
+  };
 
-    if (error) {
+  const markActionItemAsComplete = async () => {
+    setIsLoading(true);
+    try {
+      // Find the SOW review action item for this project
+      const { data: actionItems } = await supabase
+        .from('project_action_items')
+        .select('id')
+        .eq('project_id', projectId)
+        .eq('title', 'Review Statement of Work')
+        .maybeSingle();
+
+      if (actionItems?.id) {
+        // Mark it as completed
+        await supabase
+          .rpc('update_action_item_completion', { 
+            item_id: actionItems.id, 
+            is_completed: true 
+          });
+      }
+      
+      if (onActionComplete) {
+        onActionComplete();
+      }
+    } catch (error) {
+      console.error('Error updating action item:', error);
       toast({
         title: "Error",
-        description: "Failed to request SOW revisions.",
-        variant: "destructive",
+        description: "Failed to update action item status",
+        variant: "destructive"
       });
-    } else {
-      toast({
-        title: "Revision Requested",
-        description: "Coach will be notified to address feedback.",
-      });
-      
-      // The notification will be created automatically by the database trigger
-      
-      onOpenChange(false);
-      setFeedback("");
-      onActionComplete();
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Review Statement of Work</DialogTitle>
+          <DialogTitle>Statement of Work Ready for Review</DialogTitle>
           <DialogDescription>
-            Review the SOW below. Approve if everything looks good or reject and provide feedback if revisions are needed.
+            Your project's Statement of Work (SOW) is ready for your review. 
+            This document outlines the scope of work, materials, and estimated costs for your project.
           </DialogDescription>
         </DialogHeader>
-        <div className="mb-4">
-          <Textarea
-            value={feedback}
-            onChange={e => setFeedback(e.target.value)}
-            placeholder="If requesting changes, provide your feedback to the coach here."
-            rows={4}
-          />
+        <div className="flex flex-col sm:flex-row gap-3 justify-end mt-4">
+          <Button 
+            variant="outline" 
+            onClick={handleReviewLater}
+            disabled={isLoading}
+          >
+            Review Later
+          </Button>
+          <Button 
+            onClick={() => {
+              handleReviewNow();
+              markActionItemAsComplete();
+            }}
+            disabled={isLoading}
+          >
+            Review Now
+          </Button>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={handleReject} disabled={loading}>
-            Request Changes
-          </Button>
-          <Button onClick={handleApprove} disabled={loading}>
-            Approve SOW
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
