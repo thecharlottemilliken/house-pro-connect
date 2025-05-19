@@ -1,128 +1,113 @@
 
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { LogOut, Menu, X, Bell } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom"; 
 import { useAuth } from "@/contexts/AuthContext";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import NotificationsPopover from "@/components/notifications/NotificationsPopover";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { Button } from "@/components/ui/button";
+import { Settings, User } from "lucide-react";
 
 const ServiceProNavbar = () => {
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const isMobile = useIsMobile();
+  const { user } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate("/signin");
-  };
-
-  const navItems = [
-    { name: "Dashboard", href: "/service-pro-dashboard" },
-    { name: "Profile", href: "/service-pro-profile" },
-    { name: "Jobs", href: "/service-pro-jobs" },
-    { name: "Messages", href: "/service-pro-messages" },
+  
+  const navLinks = [
+    { name: "DASHBOARD", href: "/service-pro-dashboard" },
+    { name: "PROJECTS", href: "/projects" },
+    { name: "REAL ESTATE", href: "/real-estate" },
+    { name: "YOUR PROJECTS", href: "/your-projects" },
+    { name: "YOUR PROPERTIES", href: "/your-properties" },
+    { name: "MESSAGES", href: "/service-pro-messages" },
+    { name: "ACCOUNTING", href: "/accounting" },
   ];
 
-  const isActive = (path: string) => location.pathname === path;
-
   return (
-    <nav className="bg-orange-600 text-white shadow-md w-full z-10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <header className="bg-orange-600 text-white">
+      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
+          {/* Logo */}
           <div className="flex-shrink-0">
-            <Link to="/service-pro-dashboard" className="flex items-center">
-              <span className="font-bold text-xl">Pro Dashboard</span>
+            <Link to="/service-pro-dashboard" className="flex">
+              <span className="text-xl font-bold bg-gray-800 px-4 py-2 rounded">Rehab Squared</span>
             </Link>
           </div>
           
-          {/* Desktop navigation */}
-          <div className="hidden md:flex">
-            <div className="ml-10 flex items-center space-x-4">
-              {navItems.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={`px-3 py-2 rounded-md text-sm font-medium ${
-                    isActive(item.href)
-                      ? "bg-orange-700 text-white"
-                      : "hover:bg-orange-700 text-white"
-                  }`}
+          {/* Navigation links - desktop */}
+          <div className="hidden md:flex items-center space-x-4">
+            {navLinks.map((link) => (
+              <Link
+                key={link.name}
+                to={link.href}
+                className="text-sm font-medium text-white hover:text-gray-200"
+              >
+                {link.name}
+              </Link>
+            ))}
+          </div>
+          
+          {/* User profile and settings */}
+          <div className="flex items-center">
+            <Link to="/service-pro-profile">
+              <Button variant="ghost" size="icon" className="text-white">
+                <User className="h-5 w-5" />
+              </Button>
+            </Link>
+            <Button variant="ghost" size="icon" className="text-white">
+              <Settings className="h-5 w-5" />
+            </Button>
+            
+            {/* Mobile menu button */}
+            <div className="md:hidden ml-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="text-white"
+              >
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
                 >
-                  {item.name}
+                  {isMenuOpen ? (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  ) : (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 6h16M4 12h16M4 18h16"
+                    />
+                  )}
+                </svg>
+              </Button>
+            </div>
+          </div>
+        </div>
+        
+        {/* Mobile menu */}
+        {isMenuOpen && (
+          <div className="md:hidden pb-3 pt-2 border-t border-white/20">
+            <div className="flex flex-col space-y-2">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.name}
+                  to={link.href}
+                  className="text-sm font-medium text-white hover:text-gray-200 px-3 py-2"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {link.name}
                 </Link>
               ))}
             </div>
           </div>
-          
-          <div className="flex items-center">
-            <div className="ml-3 relative">
-              <NotificationsPopover />
-            </div>
-            
-            <div className="ml-3 relative hidden md:block">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleSignOut}
-                className="text-white hover:bg-orange-700"
-              >
-                <LogOut className="h-5 w-5 mr-1" />
-                Sign Out
-              </Button>
-            </div>
-            
-            {/* Mobile menu button */}
-            {isMobile && (
-              <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-                <SheetTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    className="ml-2 text-white hover:bg-orange-700 inline-flex items-center justify-center p-2 rounded-md"
-                  >
-                    <span className="sr-only">Open main menu</span>
-                    {isMenuOpen ? (
-                      <X className="block h-6 w-6" aria-hidden="true" />
-                    ) : (
-                      <Menu className="block h-6 w-6" aria-hidden="true" />
-                    )}
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="bg-orange-600 text-white">
-                  <div className="flex flex-col pt-4 space-y-1">
-                    {navItems.map((item) => (
-                      <Link
-                        key={item.name}
-                        to={item.href}
-                        className={`px-3 py-2 rounded-md text-base font-medium ${
-                          isActive(item.href) 
-                            ? "bg-orange-700" 
-                            : "hover:bg-orange-700"
-                        }`}
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        {item.name}
-                      </Link>
-                    ))}
-                    <Button
-                      variant="ghost"
-                      onClick={handleSignOut}
-                      className="text-white hover:bg-orange-700 justify-start px-3 py-2"
-                    >
-                      <LogOut className="h-5 w-5 mr-2" />
-                      Sign Out
-                    </Button>
-                  </div>
-                </SheetContent>
-              </Sheet>
-            )}
-          </div>
-        </div>
-      </div>
-    </nav>
+        )}
+      </nav>
+    </header>
   );
 };
 

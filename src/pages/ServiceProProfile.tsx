@@ -1,305 +1,200 @@
 
-import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
-import ServiceProNavbar from "@/components/service-pro/ServiceProNavbar";
-import { 
-  Card, 
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardFooter 
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { 
-  Briefcase, 
-  FileText, 
-  Image as ImageIcon, 
-  Plus, 
-  Star, 
-  User, 
-  Users
-} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Plus, Star, FileText, Briefcase } from "lucide-react";
+import ServiceProNavbar from "@/components/service-pro/ServiceProNavbar";
+import { useAuth } from "@/contexts/AuthContext";
+import { Separator } from "@/components/ui/separator";
 
 const ServiceProProfile = () => {
-  const location = useLocation();
+  const { profile, user } = useAuth();
   const [activeSpecialty, setActiveSpecialty] = useState("electrical");
   
   const specialties = [
     { id: "electrical", name: "Electrical" },
-    { id: "plumbing", name: "Plumbing" },
     { id: "drywall", name: "Drywall" },
+    { id: "plumbing", name: "Plumbing" },
     { id: "painting", name: "Painting" },
     { id: "flooring", name: "Flooring" },
     { id: "carpentry", name: "Carpentry" }
   ];
   
+  // Placeholder name for company - would come from profile in real app
+  const companyName = profile?.company || "Morales Construction LLC";
+  const location = profile?.location || "Salt Lake City, UT";
+  const displayName = profile?.name || user?.email?.split('@')[0] || "Service Pro";
+  
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       <ServiceProNavbar />
       
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Service Pro Profile</h1>
-          <p className="text-gray-600 mt-2">
-            Manage your professional profile and credentials.
-          </p>
-        </div>
-        
-        {/* Profile Header Card */}
-        <Card className="mb-6">
-          <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-              <Avatar className="h-24 w-24 border-2 border-orange-600">
-                <AvatarImage src="https://randomuser.me/api/portraits/men/32.jpg" alt="Service Pro" />
-                <AvatarFallback>JP</AvatarFallback>
-              </Avatar>
-              
-              <div className="flex-grow">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div>
-                    <h2 className="text-2xl font-bold">John Peterson</h2>
-                    <p className="text-gray-500">Renovation Specialist • Chicago, IL</p>
-                  </div>
+      <main className="flex-grow px-6 py-6 max-w-7xl mx-auto w-full">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+          {/* Left Column - Profile Information */}
+          <div className="md:col-span-4 space-y-6">
+            {/* Profile Card */}
+            <Card className="border border-gray-200">
+              <CardContent className="pt-6 pb-6">
+                <div className="flex flex-col items-center">
+                  <Avatar className="h-32 w-32 mb-4">
+                    <AvatarImage src="https://randomuser.me/api/portraits/men/32.jpg" alt="Profile" />
+                    <AvatarFallback>{displayName.substring(0, 2).toUpperCase()}</AvatarFallback>
+                  </Avatar>
                   
-                  <Button className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700">
-                    <User size={18} />
-                    Edit Profile
-                  </Button>
-                </div>
-                
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-                  <div className="text-center p-3 bg-orange-50 rounded-lg">
-                    <p className="text-xl font-bold text-orange-600">82</p>
-                    <p className="text-sm text-gray-600">Jobs Completed</p>
-                  </div>
-                  <div className="text-center p-3 bg-orange-50 rounded-lg">
-                    <p className="text-xl font-bold text-orange-600">98%</p>
-                    <p className="text-sm text-gray-600">Success Rate</p>
-                  </div>
-                  <div className="text-center p-3 bg-orange-50 rounded-lg">
-                    <p className="text-xl font-bold text-orange-600">4.9</p>
-                    <p className="text-sm text-gray-600">Rating</p>
-                  </div>
-                  <div className="text-center p-3 bg-orange-50 rounded-lg">
-                    <p className="text-xl font-bold text-orange-600">3 yrs</p>
-                    <p className="text-sm text-gray-600">Experience</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        {/* Specialty Tabs */}
-        <Card className="mb-6 overflow-hidden">
-          <CardContent className="pt-6">
-            <div className="flex overflow-x-auto pb-2 gap-2 specialties-scroll">
-              {specialties.map(specialty => (
-                <Badge 
-                  key={specialty.id}
-                  variant="outline"
-                  className={`cursor-pointer px-4 py-2 text-base whitespace-nowrap ${
-                    activeSpecialty === specialty.id 
-                      ? "bg-orange-600 text-white border-orange-600" 
-                      : "bg-white hover:bg-orange-50 hover:text-orange-600"
-                  }`}
-                  onClick={() => setActiveSpecialty(specialty.id)}
-                >
-                  {specialty.name}
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-        
-        {/* Content Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Service Description Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-orange-600" /> 
-                Primary Specialty
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {activeSpecialty === "electrical" ? (
-                <p className="text-gray-700">
-                  Specialized in residential and commercial electrical installations, repairs and maintenance.
-                  Licensed electrician with extensive experience in both new construction and remodels.
-                </p>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-8">
-                  <p className="text-gray-500 mb-4">No description added yet</p>
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <Plus size={16} /> Add Description
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          
-          {/* Licenses Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Briefcase className="h-5 w-5 text-orange-600" />
-                Licenses & Certifications
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="p-3 border rounded-lg">
-                  <p className="font-medium">Master Electrician</p>
-                  <p className="text-sm text-gray-500">License #EL-12345 • Expires Dec 2024</p>
-                </div>
-                <div className="p-3 border rounded-lg">
-                  <p className="font-medium">Safety Certification</p>
-                  <p className="text-sm text-gray-500">OSHA 30-Hour • Completed Jan 2023</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* Insurance Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Insurance Information</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="p-3 border rounded-lg">
-                  <p className="font-medium">Liability Insurance</p>
-                  <p className="text-sm text-gray-500">Policy #LI-987654 • $2M Coverage</p>
-                </div>
-                <div className="p-3 border rounded-lg">
-                  <p className="font-medium">Workers' Compensation</p>
-                  <p className="text-sm text-gray-500">Policy #WC-456789 • Active</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* Portfolio Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ImageIcon className="h-5 w-5 text-orange-600" />
-                Portfolio
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {activeSpecialty === "electrical" ? (
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="aspect-square bg-gray-200 rounded-md overflow-hidden">
-                    <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Project" className="w-full h-full object-cover" />
-                  </div>
-                  <div className="aspect-square bg-gray-200 rounded-md overflow-hidden">
-                    <img src="https://randomuser.me/api/portraits/men/33.jpg" alt="Project" className="w-full h-full object-cover" />
-                  </div>
-                  <div className="aspect-square bg-gray-200 rounded-md overflow-hidden">
-                    <img src="https://randomuser.me/api/portraits/men/34.jpg" alt="Project" className="w-full h-full object-cover" />
-                  </div>
-                  <div className="aspect-square flex items-center justify-center bg-gray-100 rounded-md">
-                    <Button variant="ghost" className="text-orange-600">
-                      <Plus size={24} />
+                  <div className="relative">
+                    <Button variant="outline" size="icon" className="rounded-full absolute -right-3 -top-16 bg-white">
+                      <Plus className="h-5 w-5" />
                     </Button>
                   </div>
+                  
+                  <div className="flex items-center justify-between w-full">
+                    <h2 className="text-3xl font-bold text-center mt-2">{displayName}</h2>
+                    <Button variant="ghost" size="icon">
+                      <svg 
+                        className="h-5 w-5"
+                        viewBox="0 0 24 24" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        strokeWidth="2" 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round"
+                      >
+                        <path d="M16 3L21 8L8 21L3 21L3 16L16 3Z"></path>
+                      </svg>
+                    </Button>
+                  </div>
+                  
+                  <div className="w-full mt-4 space-y-2">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-gray-500">Location:</p>
+                      <p>Pro Resident in {location}</p>
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-gray-500">Company:</p>
+                      <p>{companyName}</p>
+                    </div>
+                  </div>
                 </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-8">
-                  <p className="text-gray-500 mb-4">No projects added yet</p>
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <Plus size={16} /> Add Project
+              </CardContent>
+            </Card>
+            
+            {/* Stats Card */}
+            <Card className="border border-gray-200">
+              <CardContent className="p-6">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="text-center">
+                    <p className="text-3xl font-bold">0</p>
+                    <p className="text-sm text-gray-500">Jobs Completed</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-3xl font-bold">0%</p>
+                    <p className="text-sm text-gray-500">Job Success Rate</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Team Card */}
+            <Card className="border border-gray-200">
+              <CardContent className="p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-bold">Javier's Team</h3>
+                </div>
+                <p className="text-gray-500 mb-4">No team members listed.</p>
+                <Button variant="outline" className="w-full">
+                  ADD TEAM MEMBERS
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* Right Column - Main Content */}
+          <div className="md:col-span-8 space-y-6">
+            {/* Specialty Tabs */}
+            <div className="border-b border-gray-200 mb-4">
+              <div className="flex overflow-x-auto space-x-2 pb-2 specialties-scroll">
+                {specialties.map(specialty => (
+                  <Button 
+                    key={specialty.id}
+                    variant={activeSpecialty === specialty.id ? "default" : "ghost"}
+                    className={`${
+                      activeSpecialty === specialty.id 
+                        ? "border-b-2 border-black rounded-none px-4"
+                        : "text-gray-500 rounded-none px-4"
+                    } transition-colors`}
+                    onClick={() => setActiveSpecialty(specialty.id)}
+                  >
+                    {specialty.name}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            
+            {/* Primary Specialty */}
+            <div>
+              <h3 className="text-lg font-medium text-gray-700 mb-2">Primary Specialty</h3>
+              <h2 className="text-2xl font-bold mb-4">Electrical</h2>
+              
+              <div className="bg-gray-50 border border-gray-100 rounded-md p-6">
+                <p className="text-gray-600">
+                  Add a description of your service so clients know what to expect.
+                </p>
+                <div className="mt-4">
+                  <Button variant="outline" className="border-gray-300">
+                    ADD DESCRIPTION
                   </Button>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-          
-          {/* Reviews Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Star className="h-5 w-5 text-orange-600" />
-                What People Are Saying
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="p-3 border rounded-lg">
-                  <div className="flex justify-between mb-1">
-                    <p className="font-medium">Sarah Johnson</p>
-                    <div className="flex items-center text-yellow-500">
-                      <Star className="h-4 w-4 fill-current" />
-                      <Star className="h-4 w-4 fill-current" />
-                      <Star className="h-4 w-4 fill-current" />
-                      <Star className="h-4 w-4 fill-current" />
-                      <Star className="h-4 w-4 fill-current" />
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-700">
-                    "John did an excellent job rewiring our kitchen. Professional, punctual and very knowledgeable."
-                  </p>
-                </div>
-                <div className="p-3 border rounded-lg">
-                  <div className="flex justify-between mb-1">
-                    <p className="font-medium">Michael Brown</p>
-                    <div className="flex items-center text-yellow-500">
-                      <Star className="h-4 w-4 fill-current" />
-                      <Star className="h-4 w-4 fill-current" />
-                      <Star className="h-4 w-4 fill-current" />
-                      <Star className="h-4 w-4 fill-current" />
-                      <Star className="h-4 w-4 fill-current" />
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-700">
-                    "Fixed electrical issues that other contractors couldn't figure out. Highly recommended!"
-                  </p>
-                </div>
               </div>
-            </CardContent>
-          </Card>
-          
-          {/* Team Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-orange-600" />
-                Team Members
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 p-3 border rounded-lg">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src="https://randomuser.me/api/portraits/men/42.jpg" alt="Team Member" />
-                    <AvatarFallback>RM</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium">Robert Martinez</p>
-                    <p className="text-sm text-gray-500">Apprentice Electrician</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 border rounded-lg">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src="https://randomuser.me/api/portraits/women/24.jpg" alt="Team Member" />
-                    <AvatarFallback>AW</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium">Amanda Wilson</p>
-                    <p className="text-sm text-gray-500">Office Manager</p>
-                  </div>
-                </div>
-                <Button variant="outline" className="w-full flex items-center justify-center gap-2">
-                  <Plus size={16} /> Add Team Member
+            </div>
+            
+            {/* Licenses & Certifications */}
+            <Card className="border border-gray-200">
+              <CardHeader>
+                <CardTitle className="text-xl">Licenses & Certifications</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 mb-4">
+                  No licenses or certifications listed. Add your insurance information to begin bidding on projects.
+                </p>
+              </CardContent>
+            </Card>
+            
+            {/* Insurance Information */}
+            <Card className="border border-gray-200">
+              <CardHeader>
+                <CardTitle className="text-xl">Insurance</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 mb-4">
+                  No insurance provided. Add your insurance information to begin bidding on projects.
+                </p>
+                <Button variant="outline">
+                  ADD LICENSE & INSURANCE
+                </Button>
+              </CardContent>
+            </Card>
+            
+            {/* Portfolio */}
+            <div>
+              <h2 className="text-2xl font-bold mb-4">Portfolio</h2>
+              <div className="bg-gray-50 border border-gray-100 rounded-md p-6">
+                <p className="mb-2">To bid on projects you'll need at least <strong>3 portfolio projects</strong> so we can verify your work history.</p>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Plus size={16} /> ADD PROJECT
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+            
+            {/* Reviews */}
+            <div>
+              <h2 className="text-2xl font-bold mb-4">What People are Saying</h2>
+              <p className="text-gray-500">No reviews yet!</p>
+            </div>
+          </div>
         </div>
       </main>
     </div>
