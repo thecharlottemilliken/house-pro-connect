@@ -14,6 +14,7 @@ export interface SOWData {
     projectDescription: string;
   };
   status: string;
+  feedback: string | null; // Added feedback property
   created_at?: string;
   updated_at?: string;
 }
@@ -60,6 +61,7 @@ export const useSOWData = (projectId: string | undefined) => {
             labor_items: parseJsonField(data.labor_items, []),
             material_items: parseJsonField(data.material_items, []),
             bid_configuration: parseJsonField(data.bid_configuration, { bidDuration: '7', projectDescription: '' }),
+            feedback: data.feedback, // Add feedback property
           });
         } else {
           // Create an empty SOW record if none exists
@@ -72,7 +74,8 @@ export const useSOWData = (projectId: string | undefined) => {
               bidDuration: '7',
               projectDescription: ''
             },
-            status: 'draft'
+            status: 'draft',
+            feedback: null // Add feedback property
           });
         }
       } catch (err: any) {
