@@ -85,6 +85,7 @@ serve(async (req) => {
     // Get unique property IDs and user IDs from projects
     const propertyIds = [...new Set(projects.map(p => p.property_id))];
     const userIds = [...new Set(projects.map(p => p.user_id))];
+    const projectIds = projects.map(p => p.id);
 
     // Fetch properties data
     const { data: properties, error: propertiesError } = await supabase
@@ -122,6 +123,29 @@ serve(async (req) => {
       );
     }
 
+    // NEW: Fetch coaching session events for these projects
+    const { data: coachingEvents, error: eventsError } = await supabase
+      .from("project_events")
+      .select(`
+        id,
+        project_id,
+        event_type
+      `)
+      .in("project_id", projectIds)
+      .eq("event_type", "coaching_session");
+    
+    if (eventsError) {
+      console.error("Error fetching coaching events:", eventsError);
+      // Continue without events data rather than failing the whole request
+    }
+
+    // Create a map of projects that already have coaching sessions scheduled
+    const projectsWithCoachingSessions = new Set(
+      (coachingEvents || []).map(event => event.project_id)
+    );
+    
+    console.log("Projects with coaching sessions:", Array.from(projectsWithCoachingSessions));
+
     // Map properties and users to dictionaries for quick lookup
     const propertiesMap = properties.reduce((acc, property) => {
       acc[property.id] = property;
@@ -148,6 +172,9 @@ serve(async (req) => {
         email: "email@unknown.com",
       };
 
+      // Add flag indicating if a coaching session is already scheduled
+      const hasCoachingSession = projectsWithCoachingSessions.has(project.id);
+
       return {
         id: project.id,
         title: project.title,
@@ -155,7 +182,9 @@ serve(async (req) => {
         state: project.state,
         property,
         owner,
-        management_preferences: project.management_preferences
+        management_preferences: project.management_preferences,
+        // Add the new flag
+        hasCoachingSession
       };
     });
 

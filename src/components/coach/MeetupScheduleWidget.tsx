@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,6 +36,7 @@ interface ProjectWithMeetups {
     email: string;
   };
   meetupTimes: MeetupTime[];
+  hasCoachingSession?: boolean; // New property to track scheduled sessions
 }
 
 export const MeetupScheduleWidget = () => {
@@ -52,10 +52,21 @@ export const MeetupScheduleWidget = () => {
   const projectsWithMeetups = projects
     .filter(project => {
       const managementPrefs = project.management_preferences as any;
-      // Skip this project if it's already been processed
-      if (processedProjects.has(project.id)) {
+      
+      // Skip this project if:
+      // 1. It's already been processed locally
+      // 2. It already has a coaching session scheduled (new condition)
+      // 3. It doesn't want a project coach or doesn't have time slots
+      if (
+        processedProjects.has(project.id) || 
+        project.hasCoachingSession ||
+        !managementPrefs?.wantProjectCoach === "yes" || 
+        !managementPrefs?.timeSlots || 
+        !managementPrefs.timeSlots.length
+      ) {
         return false;
       }
+      
       return managementPrefs?.wantProjectCoach === "yes" && 
              managementPrefs?.timeSlots && 
              managementPrefs.timeSlots.length > 0;
@@ -67,7 +78,8 @@ export const MeetupScheduleWidget = () => {
         title: project.title,
         created_at: project.created_at,
         owner: project.owner,
-        meetupTimes: managementPrefs?.timeSlots || []
+        meetupTimes: managementPrefs?.timeSlots || [],
+        hasCoachingSession: project.hasCoachingSession
       };
     });
 
