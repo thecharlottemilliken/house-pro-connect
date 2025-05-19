@@ -1,6 +1,7 @@
 
-import React from 'react';
-import { Ruler, Maximize2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Ruler, Maximize2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface RoomMeasurementsProps {
   measurements?: {
@@ -14,6 +15,8 @@ interface RoomMeasurementsProps {
 }
 
 export function RoomMeasurementsSection({ measurements, selectedRoom }: RoomMeasurementsProps) {
+  const [isOpen, setIsOpen] = useState(true);
+  
   // Debug the incoming measurements with more detail
   console.log(`RoomMeasurementsSection for ${selectedRoom}:`, measurements);
   
@@ -57,45 +60,56 @@ export function RoomMeasurementsSection({ measurements, selectedRoom }: RoomMeas
   };
 
   return (
-    <div className="px-4 py-3 border-t border-b border-gray-100 bg-gray-50">
-      <div className="flex items-center gap-2 mb-2">
-        <Ruler className="h-4 w-4 text-gray-500" />
-        <h3 className="text-sm font-medium">Room Measurements</h3>
-      </div>
-      
-      {hasDimensions && (
-        <div className="grid grid-cols-3 gap-2 text-xs mb-2">
-          <div className="bg-white p-2 rounded shadow-sm border border-gray-100">
-            <span className="text-gray-500 block">Length</span>
-            <span className="font-medium">{formatMeasurement(length)}</span>
+    <div className="border-t border-b border-gray-100 bg-gray-50">
+      <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
+        <CollapsibleTrigger className="flex items-center justify-between w-full px-4 py-3 text-left">
+          <div className="flex items-center gap-2">
+            <Ruler className="h-4 w-4 text-gray-500" />
+            <h3 className="text-sm font-medium">Room Measurements</h3>
           </div>
-          <div className="bg-white p-2 rounded shadow-sm border border-gray-100">
-            <span className="text-gray-500 block">Width</span>
-            <span className="font-medium">{formatMeasurement(width)}</span>
-          </div>
-          <div className="bg-white p-2 rounded shadow-sm border border-gray-100">
-            <span className="text-gray-500 block">Height</span>
-            <span className="font-medium">{formatMeasurement(height)}</span>
-          </div>
-        </div>
-      )}
-      
-      {squareFootage && (
-        <div className="flex items-center gap-2 bg-white p-2 rounded text-xs mb-2 shadow-sm border border-gray-100">
-          <Maximize2 className="h-3 w-3 text-gray-500" />
-          <div>
-            <span className="text-gray-500 block">Area</span>
-            <span className="font-medium">{squareFootage}</span>
-          </div>
-        </div>
-      )}
-      
-      {hasNotes && (
-        <div className="bg-white p-2 rounded text-xs shadow-sm border border-gray-100">
-          <span className="text-gray-500 font-medium block mb-1">Notes: </span>
-          <span className="text-gray-700">{additionalNotes}</span>
-        </div>
-      )}
+          {isOpen ? (
+            <ChevronUp className="h-4 w-4 text-gray-500" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-gray-500" />
+          )}
+        </CollapsibleTrigger>
+        
+        <CollapsibleContent className="px-4 pb-3">
+          {hasDimensions && (
+            <div className="grid grid-cols-3 gap-2 text-xs mb-2">
+              <div className="bg-white p-2 rounded shadow-sm border border-gray-100">
+                <span className="text-gray-500 block">Length</span>
+                <span className="font-medium">{formatMeasurement(length)}</span>
+              </div>
+              <div className="bg-white p-2 rounded shadow-sm border border-gray-100">
+                <span className="text-gray-500 block">Width</span>
+                <span className="font-medium">{formatMeasurement(width)}</span>
+              </div>
+              <div className="bg-white p-2 rounded shadow-sm border border-gray-100">
+                <span className="text-gray-500 block">Height</span>
+                <span className="font-medium">{formatMeasurement(height)}</span>
+              </div>
+            </div>
+          )}
+          
+          {squareFootage && (
+            <div className="flex items-center gap-2 bg-white p-2 rounded text-xs mb-2 shadow-sm border border-gray-100">
+              <Maximize2 className="h-3 w-3 text-gray-500" />
+              <div>
+                <span className="text-gray-500 block">Area</span>
+                <span className="font-medium">{squareFootage}</span>
+              </div>
+            </div>
+          )}
+          
+          {hasNotes && (
+            <div className="bg-white p-2 rounded text-xs shadow-sm border border-gray-100">
+              <span className="text-gray-500 font-medium block mb-1">Notes: </span>
+              <span className="text-gray-700">{additionalNotes}</span>
+            </div>
+          )}
+        </CollapsibleContent>
+      </Collapsible>
     </div>
   );
 }

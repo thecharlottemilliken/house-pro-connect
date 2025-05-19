@@ -13,7 +13,7 @@ interface AssetGalleryProps {
   };
   isLoading: boolean;
   selectedRoom: string;
-  onPreview?: (url: string) => void; // Make this prop optional
+  onPreview?: (url: string) => void;
 }
 
 export function AssetGallery({ 
@@ -38,7 +38,7 @@ export function AssetGallery({
   }
 
   return (
-    <div>
+    <div className="bg-white">
       <AssetTypeSection 
         title="Design Assets" 
         assets={assetGroups.design} 
