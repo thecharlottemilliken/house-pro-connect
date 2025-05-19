@@ -4,6 +4,20 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { FileWithPreview } from '@/components/ui/file-upload';
 
+// Helper function to convert string URLs to FileWithPreview objects
+const convertUrlsToFileObjects = (urls: string[]): FileWithPreview[] => {
+  return urls.map(url => ({
+    id: url,
+    name: url.split('/').pop() || 'file',
+    size: '0',
+    type: 'image/jpeg',
+    url,
+    progress: 100,
+    tags: [],
+    status: 'complete'
+  }));
+};
+
 export const useDesignActions = (projectId: string | undefined) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -156,6 +170,8 @@ export const useDesignActions = (projectId: string | undefined) => {
         });
         return;
       }
+      
+      console.log("Photo URLs to be saved:", photoUrls);
       
       // Update the designPreferences object with the uploaded photos
       const updatedPrefs = { ...designPreferences };
@@ -476,6 +492,8 @@ export const useDesignActions = (projectId: string | undefined) => {
       const imageUrls = images
         .filter(p => p.status === 'complete' && p.url)
         .map(p => p.url) as string[];
+      
+      console.log("Inspiration image URLs to be saved:", imageUrls);
       
       // If no valid urls, do nothing
       if (imageUrls.length === 0) {

@@ -11,6 +11,7 @@ import { useEffect, useCallback } from "react";
 import { useRoomDesign } from "@/hooks/useRoomDesign";
 import { useDesignActions } from "@/hooks/useDesignActions";
 import ProjectDesignTabs from "@/components/project/design/ProjectDesignTabs";
+import { FileWithPreview } from "@/components/ui/file-upload";
 
 const ProjectDesign = () => {
   const location = useLocation();
@@ -74,6 +75,20 @@ const ProjectDesign = () => {
     }
   }, [propertyDetails?.id, projectData?.renovation_areas, setupRooms]);
 
+  // Helper function to convert string URLs to FileWithPreview objects
+  const convertUrlsToFileObjects = (urls: string[]): FileWithPreview[] => {
+    return urls.map(url => ({
+      id: url,
+      name: url.split('/').pop() || 'file',
+      size: '0',
+      type: 'image/jpeg',
+      url,
+      progress: 100,
+      tags: [],
+      status: 'complete'
+    }));
+  };
+
   if (isLoading || !projectData) {
     return <div className="min-h-screen flex flex-col bg-white">
         <DashboardNavbar />
@@ -120,11 +135,11 @@ const ProjectDesign = () => {
                   onAddBlueprints={handleAddBlueprints}
                   onSaveMeasurements={(area, measurements) => handleSaveMeasurements(area, measurements, designPreferences)}
                   onSelectBeforePhotos={(area, photos) => handleSelectBeforePhotos(area, photos, designPreferences)}
-                  onUploadBeforePhotos={(area, photos) => handleUploadBeforePhotos(area, photos, designPreferences)}
+                  onUploadBeforePhotos={(area, photos) => handleUploadBeforePhotos(area, convertUrlsToFileObjects(photos), designPreferences)}
                   onAddProjectFiles={(area, files) => handleAddProjectFiles(area, files, designPreferences)}
                   onRemoveDesignAsset={(index) => handleRemoveDesignAsset(index, designPreferences)}
                   onUpdateAssetTags={(index, tags) => handleUpdateAssetTags(index, tags, designPreferences)}
-                  onAddInspirationImages={handleAddInspirationImages}
+                  onAddInspirationImages={(images) => handleAddInspirationImages(convertUrlsToFileObjects(images), designPreferences)}
                   onAddPinterestBoards={handleAddPinterestBoards}
                 />
               </div>

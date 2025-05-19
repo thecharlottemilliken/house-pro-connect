@@ -8,7 +8,7 @@ import { Dialog } from "@/components/ui/dialog";
 interface PhotoControlsProps {
   propertyPhotos: string[];
   onSelectBeforePhotos: (photos: string[]) => void;
-  onUploadBeforePhotos: (photos: string[]) => void;
+  onUploadBeforePhotos: (photos: string[]) => void; // Keeping type as string[] for consistency
 }
 
 const PhotoControls = ({
@@ -42,7 +42,10 @@ const PhotoControls = ({
         description="Upload additional photos of the room's current state"
         accept="image/*"
         multiple={true}
-        onUploadComplete={onUploadBeforePhotos}
+        onUploadComplete={(urls) => {
+          // Just pass the URLs directly
+          onUploadBeforePhotos(urls);
+        }}
         className="w-full border-[#1A6985] border-2 text-[#1A6985] hover:bg-transparent hover:text-[#1A6985]/90 font-medium uppercase tracking-wider py-6"
       >
         Upload
