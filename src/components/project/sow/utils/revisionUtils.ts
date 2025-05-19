@@ -193,3 +193,20 @@ export const trackChanges = (previousData: SOWData | null, currentData: SOWData 
   
   return changes;
 };
+
+// Helper functions to check if items have changes
+export const hasWorkAreaChanges = (changes: ChangeTracker, id: string): boolean => {
+  return !!(changes?.workAreas[id] && changes.workAreas[id].status !== 'unchanged');
+};
+
+export const hasLaborItemChanges = (changes: ChangeTracker, id: string): boolean => {
+  return !!(changes?.laborItems[id] && changes.laborItems[id].status !== 'unchanged');
+};
+
+export const hasMaterialItemChanges = (changes: ChangeTracker, id: string): boolean => {
+  return !!(changes?.materialItems[id] && changes.materialItems[id].status !== 'unchanged');
+};
+
+export const hasBidConfigChanges = (changes: ChangeTracker): boolean => {
+  return changes?.bidConfiguration?.status === 'modified';
+};

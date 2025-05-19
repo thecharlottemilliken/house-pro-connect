@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -22,7 +23,16 @@ import { BidConfigurationForm } from "./BidConfigurationForm";
 import { ProjectReviewForm } from "./ProjectReviewForm";
 import { toast } from "@/hooks/use-toast";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
-import { trackChanges, initializeChangeTracker, ChangeTracker, parseJsonField } from "./utils/revisionUtils";
+import { 
+  trackChanges, 
+  initializeChangeTracker, 
+  ChangeTracker, 
+  parseJsonField,
+  hasWorkAreaChanges,
+  hasLaborItemChanges,
+  hasMaterialItemChanges,
+  hasBidConfigChanges
+} from "./utils/revisionUtils";
 import { supabase } from "@/integrations/supabase/client";
 
 const steps = [
@@ -250,7 +260,7 @@ export function SOWWizard({ isRevision = false }: SOWWizardProps) {
             onSave={handleBidConfigSubmit}
             bidConfiguration={sowData.bid_configuration}
             isRevision={isPendingRevision}
-            hasChanges={changes.bidConfiguration}
+            hasChanges={hasBidConfigChanges(changes)}
           />
         );
       case 4:
