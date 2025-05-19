@@ -28,13 +28,22 @@ const ActionItemsWidget = ({
   const { actionItems, isLoading, markActionItemComplete } = useProjectActionItems(projectId);
   const { generateActionItems, isGenerating } = useActionItemsGenerator();
 
-  // Generate action items when the component mounts
+  // Generate action items when the component mounts, but only once
   useEffect(() => {
-    if (projectId) {
+    let isFirstRender = true;
+    
+    if (projectId && isFirstRender) {
+      console.log("Generating action items for project:", projectId);
       generateActionItems(projectId).catch(err => 
         console.error("Failed to generate action items:", err)
       );
+      isFirstRender = false;
     }
+    
+    // Clean-up function
+    return () => {
+      isFirstRender = false;
+    };
   }, [projectId]);
 
   // Handle action click
@@ -94,6 +103,15 @@ const ActionItemsWidget = ({
     }
   };
 
+  // Deduplicate action items by title to avoid showing multiple SOW tasks
+  const uniqueActionItems = actionItems.reduce((acc, current) => {
+    const isDuplicate = acc.some(item => item.title === current.title);
+    if (!isDuplicate) {
+      acc.push(current);
+    }
+    return acc;
+  }, [] as ActionItem[]);
+
   return (
     <Card className={cn("overflow-hidden", className)}>
       <CardHeader className="bg-[#f8f9fa] border-b p-4">
@@ -101,7 +119,7 @@ const ActionItemsWidget = ({
           <h3 className="text-lg font-semibold">Action Items</h3>
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-gray-500">
-              {actionItems.filter(item => item.completed).length}/{actionItems.length} Complete
+              {uniqueActionItems.filter(item => item.completed).length}/{uniqueActionItems.length} Complete
             </span>
             <Button 
               variant="ghost" 
@@ -123,7 +141,7 @@ const ActionItemsWidget = ({
             </div>
           ) : (
             <>
-              {actionItems.map((item) => (
+              {uniqueActionItems.map((item) => (
                 <div key={item.id} className="p-4 hover:bg-gray-50">
                   <div className="flex gap-3">
                     <div className={cn("p-2 rounded-lg flex-shrink-0", getPriorityColor(item.priority))}>
@@ -146,7 +164,7 @@ const ActionItemsWidget = ({
                 </div>
               ))}
               
-              {actionItems.length === 0 && !isLoading && !isGenerating && (
+              {uniqueActionItems.length === 0 && !isLoading && !isGenerating && (
                 <div className="p-8 text-center">
                   <div className="bg-green-100 h-12 w-12 rounded-full flex items-center justify-center mx-auto mb-3">
                     <Check className="h-6 w-6 text-green-600" />

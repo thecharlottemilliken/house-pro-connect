@@ -1,237 +1,217 @@
 
-// This edge function will generate action items for a project
-// It can be called manually or by a cron job
+import { serve } from "https://deno.land/std@0.131.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.32.0";
 
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.21.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+type ProjectDataTypeSimple = {
+  id: string;
+  state: string;
+  title: string;
+  design_preferences?: any;
+  construction_preferences?: any;
+  management_preferences?: any;
+  user_id: string;
 };
 
-serve(async (req: Request) => {
-  // Handle CORS preflight
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+serve(async (req) => {
+  // Handle CORS preflight request
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
   }
-  
+
   try {
-    // Get project ID from request
-    const { projectId } = await req.json();
+    // Create Supabase client
+    const authHeader = req.headers.get('Authorization');
     
-    if (!projectId) {
-      return new Response(
-        JSON.stringify({ error: "Project ID is required" }),
-        { 
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 400 
-        }
-      );
-    }
-    
-    // Create Supabase client using Admin key to bypass RLS
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-    
-    if (!supabaseUrl || !supabaseServiceKey) {
-      return new Response(
-        JSON.stringify({ error: "Server configuration error" }),
-        { 
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500 
-        }
-      );
-    }
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    // Get project data
-    const { data: projectData, error: projectError } = await supabase
-      .from('projects')
-      .select('*, design_preferences')
-      .eq('id', projectId)
-      .single();
-      
-    if (projectError || !projectData) {
-      return new Response(
-        JSON.stringify({ error: "Project not found", details: projectError }),
-        { 
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 404 
-        }
-      );
-    }
-    
-    // Get SOW data
-    const { data: sowData, error: sowError } = await supabase
-      .from('statement_of_work')
-      .select('*')
-      .eq('project_id', projectId)
-      .maybeSingle();
-      
-    if (sowError) {
-      console.error("Error getting SOW data:", sowError);
-      // Continue anyway, absence of SOW is handled below
-    }
-    
-    // Find coaches
-    const { data: coaches, error: coachError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('role', 'coach');
-      
-    if (coachError) {
-      console.error("Error getting coaches:", coachError);
-      // Continue anyway, absence of coaches is handled below
-    }
-    
-    const coachIds = coaches ? coaches.map(coach => coach.id) : [];
-    
-    // Check if there's a coaching session scheduled for this project
-    const { data: coachingSessionEvents, error: eventError } = await supabase
-      .from('project_events')
-      .select('*')
-      .eq('project_id', projectId)
-      .eq('event_type', 'coaching_session')
-      .maybeSingle();
-    
-    if (eventError) {
-      console.error("Error checking for coaching sessions:", eventError);
-      // Continue anyway, we'll handle the null case
-    }
-    
-    const hasCoachingSession = !!coachingSessionEvents;
-    console.log("Has coaching session:", hasCoachingSession, coachingSessionEvents);
-    
-    // Delete existing action items
-    const { error: deleteError } = await supabase
-      .from('project_action_items')
-      .delete()
-      .eq('project_id', projectId)
-      .eq('completed', false);
-      
-    if (deleteError) {
-      console.error("Error deleting existing action items:", deleteError);
-      return new Response(
-        JSON.stringify({ error: "Failed to clear existing action items", details: deleteError }),
-        { 
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 500 
-        }
-      );
-    }
-    
-    const actionItems = [];
-    
-    // SOW actions for coaches - only if a coaching session has been scheduled
-    if (coachIds.length > 0 && hasCoachingSession) {
-      // Check if no SOW exists or it's in draft
-      if (!sowData || sowData.status === "draft") {
-        // If no SOW exists, create action to create one
-        if (!sowData) {
-          actionItems.push({
-            project_id: projectId,
-            title: "Create Statement of Work",
-            description: "Draft a Statement of Work for this project",
-            priority: "high",
-            icon_name: "file-plus",
-            action_type: "sow",
-            action_data: { route: `/project-sow/${projectId}` },
-            for_role: "coach"
-          });
-        } else if (sowData.status === "draft") {
-          // SOW in draft, create action to finish it
-          actionItems.push({
-            project_id: projectId,
-            title: "Finish completing the SOW",
-            description: "Complete the Statement of Work for this project",
-            priority: "high",
-            icon_name: "file-pen",
-            action_type: "sow",
-            action_data: { route: `/project-sow/${projectId}` },
-            for_role: "coach"
-          });
-        }
-      }
-    }
-    
-    // Design-related action items for owner
-    const designPrefs = projectData.design_preferences || {};
-    
-    if (!designPrefs.beforePhotos || 
-        Object.keys(designPrefs.beforePhotos || {}).length === 0) {
-      actionItems.push({
-        project_id: projectId,
-        title: "Upload Before Photos",
-        description: "Add photos of your current space",
-        priority: "medium",
-        icon_name: "camera",
-        action_type: "navigate",
-        action_data: { route: `/project-design/${projectId}` },
-        for_role: "owner"
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Missing Authorization header' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
     
-    if (!designPrefs.roomMeasurements || 
-        Object.keys(designPrefs.roomMeasurements || {}).length === 0) {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    const body = await req.json();
+    const { projectId } = body;
+    
+    if (!projectId) {
+      return new Response(JSON.stringify({ error: 'Missing project ID in request body' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    console.log("Generating action items for project:", projectId);
+    
+    // Fetch project data from Supabase
+    const { data: projectData, error: projectError } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('id', projectId)
+      .single();
+    
+    if (projectError || !projectData) {
+      console.error("Error fetching project data:", projectError);
+      return new Response(JSON.stringify({ error: `Error fetching project data: ${projectError?.message}` }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    console.log("Project data fetched:", projectData);
+    
+    // Check for existing action items to prevent duplicates
+    const { data: existingItems, error: existingItemsError } = await supabase
+      .from('project_action_items')
+      .select('id, title')
+      .eq('project_id', projectId);
+    
+    if (existingItemsError) {
+      console.error("Error checking existing action items:", existingItemsError);
+      return new Response(JSON.stringify({ error: `Error checking existing action items: ${existingItemsError.message}` }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    console.log("Existing action items:", existingItems);
+    
+    // Generate action items based on project state and preferences
+    let actionItems = [];
+    const existingTitles = new Set(existingItems?.map(item => item.title) || []);
+    
+    // SOW creation action item
+    if (!existingTitles.has("Create Statement of Work (SOW)")) {
+      actionItems.push({
+        project_id: projectId,
+        title: "Create Statement of Work (SOW)",
+        description: "Define the work to be done, materials needed, and estimated costs.",
+        priority: "high",
+        icon_name: "file-plus",
+        action_type: "sow",
+        action_data: { route: `/project-sow/${projectId}` },
+        for_role: "coach", // Only for coaches
+        completed: false
+      });
+    }
+    
+    // Add action item for uploading blueprint if not already done
+    const hasBlueprint = projectData?.design_preferences?.blueprintUrl || 
+                        (projectData?.design_preferences?.designAssets || []).some(asset => 
+                          asset.tags?.includes("Blueprint"));
+    
+    if (!hasBlueprint && !existingTitles.has("Upload Room Blueprints")) {
+      actionItems.push({
+        project_id: projectId,
+        title: "Upload Room Blueprints",
+        description: "Upload your floor plans to help designers visualize the space.",
+        priority: "medium",
+        icon_name: "file-text",
+        action_type: "navigate",
+        action_data: { route: `/project-design/${projectId}` },
+        completed: false
+      });
+    }
+    
+    // Add action item for adding photos if not already done
+    const hasBeforePhotos = projectData?.design_preferences?.beforePhotos && 
+                          Object.keys(projectData.design_preferences.beforePhotos).length > 0;
+    
+    if (!hasBeforePhotos && !existingTitles.has("Add Room Photos")) {
+      actionItems.push({
+        project_id: projectId,
+        title: "Add Room Photos",
+        description: "Upload photos of your current space to show designers what you're working with.",
+        priority: "high",
+        icon_name: "camera",
+        action_type: "navigate",
+        action_data: { route: `/project-design/${projectId}` },
+        completed: false
+      });
+    }
+    
+    // Add action item for room measurements if not already done
+    const hasRoomMeasurements = projectData?.design_preferences?.roomMeasurements && 
+                              Object.keys(projectData.design_preferences.roomMeasurements).length > 0;
+    
+    if (!hasRoomMeasurements && !existingTitles.has("Add Room Measurements")) {
       actionItems.push({
         project_id: projectId,
         title: "Add Room Measurements",
-        description: "Provide accurate measurements for design planning",
+        description: "Provide accurate measurements of your space for proper design planning.",
         priority: "medium",
         icon_name: "ruler",
         action_type: "navigate",
         action_data: { route: `/project-design/${projectId}` },
-        for_role: "owner"
+        completed: false
+      });
+    }
+    
+    // Add action item for design preferences if not already done
+    const hasInspirationImages = projectData?.design_preferences?.inspirationImages && 
+                               projectData.design_preferences.inspirationImages.length > 0;
+    
+    if (!hasInspirationImages && !existingTitles.has("Add Design Inspirations")) {
+      actionItems.push({
+        project_id: projectId,
+        title: "Add Design Inspirations",
+        description: "Share design ideas or Pinterest boards that inspire your vision.",
+        priority: "low",
+        icon_name: "pen-box",
+        action_type: "navigate",
+        action_data: { route: `/project-design/${projectId}` },
+        completed: false
+      });
+    }
+    
+    // Filter out any action items that already exist to prevent duplicates
+    const newActionItems = actionItems.filter(item => !existingTitles.has(item.title));
+    
+    if (newActionItems.length === 0) {
+      console.log("No new action items to create");
+      return new Response(JSON.stringify({ message: "No new action items to create" }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
     
     // Insert new action items
-    if (actionItems.length > 0) {
-      const { data: insertedItems, error: insertError } = await supabase
-        .from('project_action_items')
-        .insert(actionItems)
-        .select();
-        
-      if (insertError) {
-        return new Response(
-          JSON.stringify({ error: "Failed to insert action items", details: insertError }),
-          { 
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 500 
-          }
-        );
-      }
-      
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: `Generated ${insertedItems.length} action items`,
-          items: insertedItems
-        }),
-        { 
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200 
-        }
-      );
-    } else {
-      return new Response(
-        JSON.stringify({ success: true, message: "No action items needed" }),
-        { 
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200 
-        }
-      );
+    const { data: insertedItems, error: insertError } = await supabase
+      .from('project_action_items')
+      .insert(newActionItems)
+      .select();
+    
+    if (insertError) {
+      console.error("Error inserting action items:", insertError);
+      return new Response(JSON.stringify({ error: `Error inserting action items: ${insertError.message}` }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
+    
+    console.log(`Successfully created ${insertedItems?.length} action items`);
+    
+    return new Response(JSON.stringify({ 
+      success: true, 
+      message: `Created ${insertedItems?.length} action items`,
+      items: insertedItems 
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
   } catch (error) {
-    console.error("Error generating action items:", error);
-    return new Response(
-      JSON.stringify({ error: "Server error", details: error.message }),
-      { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500 
-      }
-    );
+    console.error("Unexpected error:", error);
+    return new Response(JSON.stringify({ error: `Unexpected error: ${error.message}` }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });

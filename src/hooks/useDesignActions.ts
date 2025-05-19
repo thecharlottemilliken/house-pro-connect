@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -369,13 +368,13 @@ export const useDesignActions = (projectId: string | undefined) => {
     setIsSaving(true);
     
     try {
-      console.log("Updating tags for index", index, "with tags:", tags);
+      console.log(`Updating tags for asset at index ${index}, with tags:`, tags);
       
-      // Update the designPreferences object by updating tags for the file at index
-      const updatedPrefs = { ...designPreferences };
+      // Make a deep copy of the design preferences to avoid mutations
+      const updatedPrefs = JSON.parse(JSON.stringify(designPreferences));
       
-      if (!updatedPrefs.designAssets || index >= updatedPrefs.designAssets.length) {
-        throw new Error("Asset not found");
+      if (!updatedPrefs.designAssets || !Array.isArray(updatedPrefs.designAssets) || index >= updatedPrefs.designAssets.length) {
+        throw new Error("Asset not found or designAssets is not properly initialized");
       }
       
       // Update the tags for the specified asset
@@ -384,15 +383,21 @@ export const useDesignActions = (projectId: string | undefined) => {
         tags: tags
       };
       
-      console.log("Updated design assets:", updatedPrefs.designAssets);
+      console.log("Updated design preferences:", updatedPrefs);
       
-      // Update the project in Supabase
-      const { error } = await supabase
+      // Update the project in Supabase with explicit error handling and logging
+      const { data, error } = await supabase
         .from('projects')
         .update({ design_preferences: updatedPrefs })
-        .eq('id', projectId);
+        .eq('id', projectId)
+        .select();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating design preferences:', error);
+        throw error;
+      }
+      
+      console.log("Supabase update response:", data);
       
       toast({
         title: "Success",
@@ -405,7 +410,7 @@ export const useDesignActions = (projectId: string | undefined) => {
       console.error('Error updating asset tags:', error);
       toast({
         title: "Error",
-        description: "Failed to update tags",
+        description: "Failed to update tags. Please try again.",
         variant: "destructive"
       });
     } finally {
