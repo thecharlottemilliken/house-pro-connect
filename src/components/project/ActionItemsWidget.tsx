@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,21 +29,17 @@ const ActionItemsWidget = ({
 
   // Generate action items when the component mounts, but only once
   useEffect(() => {
-    let isFirstRender = true;
-    
-    if (projectId && isFirstRender) {
-      console.log("Generating action items for project:", projectId);
-      generateActionItems(projectId).catch(err => 
-        console.error("Failed to generate action items:", err)
-      );
-      isFirstRender = false;
+    if (projectId) {
+      console.log("Checking if action items need to be generated for project:", projectId);
+      // Only generate if there are no existing action items
+      if (actionItems.length === 0 && !isLoading) {
+        console.log("Generating action items for project:", projectId);
+        generateActionItems(projectId).catch(err => 
+          console.error("Failed to generate action items:", err)
+        );
+      }
     }
-    
-    // Clean-up function
-    return () => {
-      isFirstRender = false;
-    };
-  }, [projectId]);
+  }, [projectId, actionItems.length, isLoading, generateActionItems]);
 
   // Handle action click
   const handleActionClick = (item: ActionItem) => {

@@ -368,9 +368,9 @@ export const useDesignActions = (projectId: string | undefined) => {
     setIsSaving(true);
     
     try {
-      console.log(`Updating tags for asset at index ${index}, with tags:`, tags);
+      console.log(`Updating tags for asset at index ${index} with tags:`, tags);
       
-      // Make a deep copy of the design preferences to avoid mutations
+      // Create a deep copy of the design preferences to avoid mutations
       const updatedPrefs = JSON.parse(JSON.stringify(designPreferences));
       
       if (!updatedPrefs.designAssets || !Array.isArray(updatedPrefs.designAssets) || index >= updatedPrefs.designAssets.length) {
@@ -385,19 +385,35 @@ export const useDesignActions = (projectId: string | undefined) => {
       
       console.log("Updated design preferences:", updatedPrefs);
       
-      // Update the project in Supabase with explicit error handling and logging
-      const { data, error } = await supabase
-        .from('projects')
-        .update({ design_preferences: updatedPrefs })
-        .eq('id', projectId)
-        .select();
-      
-      if (error) {
-        console.error('Error updating design preferences:', error);
-        throw error;
+      // First try using the edge function for bypassing RLS issues
+      const { data: updateData, error: updateError } = await supabase.functions.invoke(
+        'handle-project-update',
+        {
+          method: 'POST',
+          body: { 
+            projectId,
+            userId: (await supabase.auth.getUser()).data.user?.id,
+            designPreferences: updatedPrefs
+          }
+        }
+      );
+
+      if (updateError) {
+        console.error('Error updating via edge function:', updateError);
+        
+        // Fall back to direct update
+        const { error } = await supabase
+          .from('projects')
+          .update({
+            design_preferences: updatedPrefs
+          })
+          .eq('id', projectId);
+
+        if (error) {
+          console.error('Error updating project directly:', error);
+          throw error;
+        }
       }
-      
-      console.log("Supabase update response:", data);
       
       toast({
         title: "Success",
@@ -413,6 +429,7 @@ export const useDesignActions = (projectId: string | undefined) => {
         description: "Failed to update tags. Please try again.",
         variant: "destructive"
       });
+      return null;
     } finally {
       setIsSaving(false);
     }
