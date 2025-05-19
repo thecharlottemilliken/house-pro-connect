@@ -107,16 +107,10 @@ const RoomDetailsSection: React.FC<RoomDetailsSectionProps> = ({
         />
       </div>
       
-      {/* Column 2-3: Measurements Card and Photos */}
+      {/* Column 2-3: Banner (if no measurements) and Photos */}
       <div className="lg:col-span-2 space-y-6">
-        {/* Only show measurements card if measurements exist, otherwise show nothing */}
-        {measurementsExist ? (
-          <RoomMeasurementsCard 
-            area={area}
-            measurements={measurements}
-            onSaveMeasurements={onSaveMeasurements}
-          />
-        ) : (
+        {/* Only show measurements banner if no measurements exist */}
+        {!measurementsExist && (
           <MeasurementsBanner 
             area={area}
             onMeasureRoom={onMeasureRoom}
