@@ -53,11 +53,7 @@ const ServiceProNavbar = () => {
           
           <div className="flex items-center">
             <div className="ml-3 relative">
-              <NotificationsPopover>
-                <Button variant="ghost" size="sm" className="text-white hover:bg-orange-700">
-                  <Bell className="h-5 w-5" />
-                </Button>
-              </NotificationsPopover>
+              <NotificationsPopover />
             </div>
             
             <div className="ml-3 relative hidden md:block">
