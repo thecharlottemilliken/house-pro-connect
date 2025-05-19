@@ -23,6 +23,7 @@ export const useActionItemsGenerator = () => {
         console.error("Edge function error:", error);
         // Don't throw to prevent breaking UI flows
         setError(error);
+        // Silently fail - this is a background process that shouldn't break the UI
         return false;
       }
       
@@ -31,6 +32,7 @@ export const useActionItemsGenerator = () => {
     } catch (err: any) {
       console.error("Error generating action items:", err);
       setError(err);
+      // Silently fail - this is a background process that shouldn't break the UI
       return false;
     } finally {
       setIsGenerating(false);

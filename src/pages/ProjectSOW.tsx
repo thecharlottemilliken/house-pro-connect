@@ -96,6 +96,8 @@ const ProjectSOW = () => {
   // and only after data is loaded
   useEffect(() => {
     if (!isLoading && sowData && isReviewMode && (sowData.status === "ready for review" || sowData.status === "pending")) {
+      // We only want to show the dialog if the user explicitly requested to review
+      // and we have now verified that the SOW is in a reviewable status
       setShowReviewDialog(true);
     }
   }, [isReviewMode, isLoading, sowData]);

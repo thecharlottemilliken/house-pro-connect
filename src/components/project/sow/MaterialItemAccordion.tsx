@@ -212,11 +212,11 @@ export function MaterialItemAccordion({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {specifications.cabinets?.map((cabinet: CabinetSpecification, index: number) => (
-                  <TableRow key={cabinet.id}>
+                {Array.isArray(specifications.cabinets) && specifications.cabinets.map((cabinet: CabinetSpecification, index: number) => (
+                  <TableRow key={cabinet.id || index}>
                     <TableCell>
                       <Input
-                        value={cabinet.type}
+                        value={cabinet.type || ''}
                         onChange={(e) => {
                           const updatedCabinets = [...(specifications.cabinets || [])];
                           updatedCabinets[index] = { ...cabinet, type: e.target.value };
@@ -228,10 +228,10 @@ export function MaterialItemAccordion({
                     <TableCell>
                       <Input
                         type="number"
-                        value={cabinet.doors}
+                        value={cabinet.doors || 0}
                         onChange={(e) => {
                           const updatedCabinets = [...(specifications.cabinets || [])];
-                          updatedCabinets[index] = { ...cabinet, doors: parseInt(e.target.value) };
+                          updatedCabinets[index] = { ...cabinet, doors: parseInt(e.target.value) || 0 };
                           onUpdateSpecifications({ ...specifications, cabinets: updatedCabinets });
                         }}
                         placeholder="Number of doors"
@@ -240,10 +240,10 @@ export function MaterialItemAccordion({
                     <TableCell>
                       <Input
                         type="number"
-                        value={cabinet.drawers}
+                        value={cabinet.drawers || 0}
                         onChange={(e) => {
                           const updatedCabinets = [...(specifications.cabinets || [])];
-                          updatedCabinets[index] = { ...cabinet, drawers: parseInt(e.target.value) };
+                          updatedCabinets[index] = { ...cabinet, drawers: parseInt(e.target.value) || 0 };
                           onUpdateSpecifications({ ...specifications, cabinets: updatedCabinets });
                         }}
                         placeholder="Number of drawers"
@@ -251,7 +251,7 @@ export function MaterialItemAccordion({
                     </TableCell>
                     <TableCell>
                       <Input
-                        value={cabinet.size}
+                        value={cabinet.size || ''}
                         onChange={(e) => {
                           const updatedCabinets = [...(specifications.cabinets || [])];
                           updatedCabinets[index] = { ...cabinet, size: e.target.value };
@@ -290,7 +290,7 @@ export function MaterialItemAccordion({
                 };
                 onUpdateSpecifications({
                   ...specifications,
-                  cabinets: [...(specifications.cabinets || []), newCabinet]
+                  cabinets: [...(Array.isArray(specifications.cabinets) ? specifications.cabinets : []), newCabinet]
                 });
               }}
             >
@@ -307,7 +307,7 @@ export function MaterialItemAccordion({
               <div>
                 <Label>Material Type</Label>
                 <Select
-                  value={specifications.materialType}
+                  value={specifications.materialType || ''}
                   onValueChange={(value) => onUpdateSpecifications({ ...specifications, materialType: value })}
                 >
                   <SelectTrigger>
@@ -327,10 +327,10 @@ export function MaterialItemAccordion({
                 <Label>Square Footage</Label>
                 <Input
                   type="number"
-                  value={specifications.squareFootage}
+                  value={specifications.squareFootage || 0}
                   onChange={(e) => onUpdateSpecifications({ 
                     ...specifications, 
-                    squareFootage: parseFloat(e.target.value) 
+                    squareFootage: parseFloat(e.target.value) || 0
                   })}
                   placeholder="Enter square footage"
                 />
@@ -339,7 +339,7 @@ export function MaterialItemAccordion({
               <div>
                 <Label>Color/Pattern</Label>
                 <Input
-                  value={specifications.color}
+                  value={specifications.color || ''}
                   onChange={(e) => onUpdateSpecifications({ 
                     ...specifications, 
                     color: e.target.value 
@@ -351,7 +351,7 @@ export function MaterialItemAccordion({
               <div>
                 <Label>Brand</Label>
                 <Input
-                  value={specifications.brand}
+                  value={specifications.brand || ''}
                   onChange={(e) => onUpdateSpecifications({ 
                     ...specifications, 
                     brand: e.target.value 
@@ -363,7 +363,7 @@ export function MaterialItemAccordion({
               <div>
                 <Label>Status</Label>
                 <Select
-                  value={specifications.status}
+                  value={specifications.status || 'needed'}
                   onValueChange={(value) => onUpdateSpecifications({ ...specifications, status: value })}
                 >
                   <SelectTrigger>
@@ -388,7 +388,7 @@ export function MaterialItemAccordion({
               <div>
                 <Label>Material</Label>
                 <Select
-                  value={specifications.material}
+                  value={specifications.material || ''}
                   onValueChange={(value) => onUpdateSpecifications({ ...specifications, material: value })}
                 >
                   <SelectTrigger>
@@ -407,10 +407,10 @@ export function MaterialItemAccordion({
                 <Label>Square Footage</Label>
                 <Input
                   type="number"
-                  value={specifications.squareFootage}
+                  value={specifications.squareFootage || 0}
                   onChange={(e) => onUpdateSpecifications({ 
                     ...specifications, 
-                    squareFootage: parseFloat(e.target.value) 
+                    squareFootage: parseFloat(e.target.value) || 0
                   })}
                   placeholder="Enter square footage"
                 />
@@ -419,7 +419,7 @@ export function MaterialItemAccordion({
               <div>
                 <Label>Thickness</Label>
                 <Select
-                  value={specifications.thickness}
+                  value={specifications.thickness || ''}
                   onValueChange={(value) => onUpdateSpecifications({ ...specifications, thickness: value })}
                 >
                   <SelectTrigger>
@@ -435,7 +435,7 @@ export function MaterialItemAccordion({
               <div>
                 <Label>Edge Profile</Label>
                 <Select
-                  value={specifications.edgeProfile}
+                  value={specifications.edgeProfile || ''}
                   onValueChange={(value) => onUpdateSpecifications({ ...specifications, edgeProfile: value })}
                 >
                   <SelectTrigger>
@@ -453,7 +453,7 @@ export function MaterialItemAccordion({
               <div>
                 <Label>Color</Label>
                 <Input
-                  value={specifications.color}
+                  value={specifications.color || ''}
                   onChange={(e) => onUpdateSpecifications({ 
                     ...specifications, 
                     color: e.target.value 
@@ -465,7 +465,7 @@ export function MaterialItemAccordion({
               <div>
                 <Label>Status</Label>
                 <Select
-                  value={specifications.status}
+                  value={specifications.status || 'needed'}
                   onValueChange={(value) => onUpdateSpecifications({ ...specifications, status: value })}
                 >
                   <SelectTrigger>
@@ -490,7 +490,7 @@ export function MaterialItemAccordion({
               <div>
                 <Label>Brand</Label>
                 <Input
-                  value={specifications.brand}
+                  value={specifications.brand || ''}
                   onChange={(e) => onUpdateSpecifications({ 
                     ...specifications, 
                     brand: e.target.value 
@@ -502,7 +502,7 @@ export function MaterialItemAccordion({
               <div>
                 <Label>Model</Label>
                 <Input
-                  value={specifications.model}
+                  value={specifications.model || ''}
                   onChange={(e) => onUpdateSpecifications({ 
                     ...specifications, 
                     model: e.target.value 
@@ -514,7 +514,7 @@ export function MaterialItemAccordion({
               <div>
                 <Label>Color</Label>
                 <Select
-                  value={specifications.color}
+                  value={specifications.color || ''}
                   onValueChange={(value) => onUpdateSpecifications({ ...specifications, color: value })}
                 >
                   <SelectTrigger>
@@ -532,7 +532,7 @@ export function MaterialItemAccordion({
               <div>
                 <Label>Size</Label>
                 <Input
-                  value={specifications.size}
+                  value={specifications.size || ''}
                   onChange={(e) => onUpdateSpecifications({ 
                     ...specifications, 
                     size: e.target.value 
@@ -545,7 +545,7 @@ export function MaterialItemAccordion({
                 <Label>Quantity</Label>
                 <Input
                   type="number"
-                  value={specifications.quantity}
+                  value={specifications.quantity || 1}
                   onChange={(e) => onUpdateSpecifications({ 
                     ...specifications, 
                     quantity: parseInt(e.target.value) || 1
@@ -557,7 +557,7 @@ export function MaterialItemAccordion({
               <div>
                 <Label>Status</Label>
                 <Select
-                  value={specifications.status}
+                  value={specifications.status || 'needed'}
                   onValueChange={(value) => onUpdateSpecifications({ ...specifications, status: value })}
                 >
                   <SelectTrigger>
@@ -585,7 +585,7 @@ export function MaterialItemAccordion({
               <div>
                 <Label>Manufacturer</Label>
                 <Input
-                  value={specifications.manufacturer}
+                  value={specifications.manufacturer || ''}
                   onChange={(e) => onUpdateSpecifications({ 
                     ...specifications, 
                     manufacturer: e.target.value 
@@ -597,7 +597,7 @@ export function MaterialItemAccordion({
               <div>
                 <Label>Model</Label>
                 <Input
-                  value={specifications.model}
+                  value={specifications.model || ''}
                   onChange={(e) => onUpdateSpecifications({ 
                     ...specifications, 
                     model: e.target.value 
@@ -609,7 +609,7 @@ export function MaterialItemAccordion({
               <div>
                 <Label>Finish</Label>
                 <Select
-                  value={specifications.finish}
+                  value={specifications.finish || ''}
                   onValueChange={(value) => onUpdateSpecifications({ ...specifications, finish: value })}
                 >
                   <SelectTrigger>
@@ -628,7 +628,7 @@ export function MaterialItemAccordion({
                 <Label>Quantity</Label>
                 <Input
                   type="number"
-                  value={specifications.quantity}
+                  value={specifications.quantity || 1}
                   onChange={(e) => onUpdateSpecifications({ 
                     ...specifications, 
                     quantity: parseInt(e.target.value) || 1
@@ -640,7 +640,7 @@ export function MaterialItemAccordion({
               <div>
                 <Label>Status</Label>
                 <Select
-                  value={specifications.status}
+                  value={specifications.status || 'needed'}
                   onValueChange={(value) => onUpdateSpecifications({ ...specifications, status: value })}
                 >
                   <SelectTrigger>
