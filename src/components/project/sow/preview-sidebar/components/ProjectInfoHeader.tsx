@@ -9,7 +9,19 @@ interface ProjectInfoHeaderProps {
 
 export function ProjectInfoHeader({ projectData, propertyDetails }: ProjectInfoHeaderProps) {
   const [isExpanded, setIsExpanded] = useState(true);
+  const [showFullDescription, setShowFullDescription] = useState(false);
   const renovationAreas = projectData?.renovation_areas || [];
+  
+  const description = projectData?.description || 'No description provided';
+  const isLongDescription = description.length > 100;
+  
+  const toggleDescription = () => {
+    setShowFullDescription(prev => !prev);
+  };
+  
+  const displayDescription = isLongDescription && !showFullDescription
+    ? `${description.substring(0, 100)}...`
+    : description;
 
   return (
     <div className="border-b">
@@ -31,7 +43,20 @@ export function ProjectInfoHeader({ projectData, propertyDetails }: ProjectInfoH
             <Info className="w-5 h-5 text-gray-500 mt-0.5" />
             <div>
               <h3 className="text-sm font-medium text-gray-900">Project Description</h3>
-              <p className="text-sm text-gray-500">{projectData?.description || 'No description provided'}</p>
+              <p className="text-sm text-gray-500">
+                {displayDescription}
+                {isLongDescription && (
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleDescription();
+                    }} 
+                    className="ml-1 text-blue-500 hover:text-blue-700 font-medium"
+                  >
+                    {showFullDescription ? 'Show less' : 'Read more'}
+                  </button>
+                )}
+              </p>
             </div>
           </div>
 
