@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { FileImage, Download, Eye, Loader, Info, Building, MapPin, Settings } from "lucide-react";
+import { FileImage, Download, Eye, Loader, Info, Building, MapPin, Settings, Tag } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   Select,
@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -17,32 +18,33 @@ interface PreviewSidebarProps {
   propertyDetails: any;
 }
 
-type AssetType = 'inspiration' | 'before-photos' | 'drawings' | 'renderings' | 'blueprints';
-
-interface RoomAsset {
+interface RoomAssetWithType {
+  name: string;
   roomName: string;
   url: string;
+  type: 'design' | 'before-photo' | 'inspiration';
+  tags?: string[];
+}
+
+interface Room {
+  id: string;
+  name: string;
 }
 
 export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarProps) {
-  const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
-  const [selectedType, setSelectedType] = React.useState<AssetType>('inspiration');
-  const [isPreviewLoading, setIsPreviewLoading] = React.useState(false);
-  const [roomRenderingsWithNames, setRoomRenderingsWithNames] = useState<RoomAsset[]>([]);
-  const [roomDrawingsWithNames, setRoomDrawingsWithNames] = useState<RoomAsset[]>([]);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [selectedRoom, setSelectedRoom] = useState<string>("all");
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
+  const [allAssets, setAllAssets] = useState<RoomAssetWithType[]>([]);
+
   const designPreferences = projectData?.design_preferences || {};
-  
   const beforePhotos = designPreferences.beforePhotos || {};
   const blueprintUrl = propertyDetails?.blueprint_url;
   const inspirationImages = designPreferences.inspirationImages || [];
 
-  console.info("Design Preferences:", designPreferences);
-  console.info("Before Photos:", beforePhotos);
-  console.info("Inspiration Images:", inspirationImages);
-  console.info("Blueprint URL:", blueprintUrl);
-
+  // Load all room and asset data
   useEffect(() => {
     const fetchRoomData = async () => {
       if (!propertyDetails?.id) {
@@ -52,7 +54,8 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
 
       setIsLoading(true);
       try {
-        const { data: rooms, error: roomsError } = await supabase
+        // Fetch rooms
+        const { data: roomsData, error: roomsError } = await supabase
           .from('property_rooms')
           .select('id, name')
           .eq('property_id', propertyDetails.id);
@@ -63,18 +66,19 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
           return;
         }
 
-        console.info("Rooms for property:", rooms);
-
-        if (!rooms || rooms.length === 0) {
+        if (!roomsData || roomsData.length === 0) {
           console.info("No rooms found for this property");
           setIsLoading(false);
           return;
         }
 
-        const roomIds = rooms.map(room => room.id);
+        setRooms(roomsData);
+
+        // Fetch all room assets
+        const roomIds = roomsData.map(room => room.id);
         const { data: designPrefs, error: prefsError } = await supabase
           .from('room_design_preferences')
-          .select('room_id, renderings, drawings')
+          .select('room_id, renderings, drawings, inspiration_images')
           .in('room_id', roomIds);
 
         if (prefsError) {
@@ -83,35 +87,89 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
           return;
         }
 
-        let allRenderingsWithNames: RoomAsset[] = [];
-        let allDrawingsWithNames: RoomAsset[] = [];
+        // Process all assets with their types
+        let allRoomAssets: RoomAssetWithType[] = [];
 
+        // Process room-specific assets
         designPrefs?.forEach(pref => {
-          const room = rooms.find(r => r.id === pref.room_id);
+          const room = roomsData.find(r => r.id === pref.room_id);
           const roomName = room?.name || 'Unknown Room';
 
+          // Add renderings as design assets
           if (pref.renderings && Array.isArray(pref.renderings)) {
-            const renderingsWithRoom = pref.renderings.map(url => ({
+            const renderings = pref.renderings.map(url => ({
               roomName,
-              url
+              name: `Rendering - ${url.split('/').pop()?.split('?')[0] || 'Unnamed'}`,
+              url,
+              type: 'design' as const,
+              tags: getTagsForAsset(url)
             }));
-            allRenderingsWithNames = [...allRenderingsWithNames, ...renderingsWithRoom];
+            allRoomAssets = [...allRoomAssets, ...renderings];
           }
           
+          // Add drawings as design assets
           if (pref.drawings && Array.isArray(pref.drawings)) {
-            const drawingsWithRoom = pref.drawings.map(url => ({
+            const drawings = pref.drawings.map(url => ({
               roomName,
-              url
+              name: `Drawing - ${url.split('/').pop()?.split('?')[0] || 'Unnamed'}`,
+              url,
+              type: 'design' as const,
+              tags: getTagsForAsset(url)
             }));
-            allDrawingsWithNames = [...allDrawingsWithNames, ...drawingsWithRoom];
+            allRoomAssets = [...allRoomAssets, ...drawings];
+          }
+
+          // Add room-specific inspiration images
+          if (pref.inspiration_images && Array.isArray(pref.inspiration_images)) {
+            const inspirations = pref.inspiration_images.map((url, index) => ({
+              roomName,
+              name: `Inspiration ${index + 1}`,
+              url,
+              type: 'inspiration' as const,
+              tags: getTagsForAsset(url)
+            }));
+            allRoomAssets = [...allRoomAssets, ...inspirations];
           }
         });
 
-        console.info("All room renderings with names:", allRenderingsWithNames);
-        console.info("All room drawings with names:", allDrawingsWithNames);
+        // Process before photos from design preferences
+        Object.entries(beforePhotos || {}).forEach(([room, photos]) => {
+          if (Array.isArray(photos)) {
+            const beforePhotoAssets = photos.map((url, index) => ({
+              roomName: room,
+              name: `Before Photo ${index + 1}`,
+              url,
+              type: 'before-photo' as const,
+              tags: getTagsForAsset(url)
+            }));
+            allRoomAssets = [...allRoomAssets, ...beforePhotoAssets];
+          }
+        });
 
-        setRoomRenderingsWithNames(allRenderingsWithNames);
-        setRoomDrawingsWithNames(allDrawingsWithNames);
+        // Process global inspiration images
+        if (Array.isArray(inspirationImages)) {
+          const globalInspirations = inspirationImages.map((url, index) => ({
+            roomName: 'General',
+            name: `Inspiration ${index + 1}`,
+            url,
+            type: 'inspiration' as const,
+            tags: getTagsForAsset(url)
+          }));
+          allRoomAssets = [...allRoomAssets, ...globalInspirations];
+        }
+
+        // Add blueprint as a design asset if available
+        if (blueprintUrl) {
+          allRoomAssets.push({
+            roomName: 'Property',
+            name: 'Blueprint',
+            url: blueprintUrl,
+            type: 'design',
+            tags: getTagsForAsset(blueprintUrl)
+          });
+        }
+
+        setAllAssets(allRoomAssets);
       } catch (error) {
         console.error("Error in fetchRoomData:", error);
       } finally {
@@ -120,7 +178,15 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
     };
 
     fetchRoomData();
-  }, [propertyDetails?.id]);
+  }, [propertyDetails?.id, beforePhotos, inspirationImages, blueprintUrl]);
+
+  // Helper to get tags for an asset URL from design preferences
+  const getTagsForAsset = (url: string): string[] => {
+    if (!designPreferences.designAssets) return [];
+    
+    const asset = designPreferences.designAssets.find((a: any) => a.url === url);
+    return asset?.tags || [];
+  };
 
   const handlePreview = (url: string) => {
     setIsPreviewLoading(true);
@@ -136,80 +202,124 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
     console.error("Error loading image:", previewUrl);
   };
 
+  // Filter assets based on the selected room
   const getFilteredAssets = () => {
-    switch (selectedType) {
-      case 'inspiration':
-        return Array.isArray(inspirationImages) ? inspirationImages.map((url: string, index: number) => ({
-          name: `Inspiration ${index + 1}`,
-          room: 'Design',
-          url
-        })) : [];
-      case 'before-photos':
-        return Object.entries(beforePhotos || {}).flatMap(([room, photos]) => 
-          Array.isArray(photos) ? photos.map((url, index) => ({
-            name: `Photo ${index + 1}`,
-            room,
-            url
-          })) : []
-        );
-      case 'drawings':
-        console.info("Processing drawings with room names:", roomDrawingsWithNames);
-        return roomDrawingsWithNames.map((item, index) => ({
-          name: `Drawing ${index + 1}`,
-          room: item.roomName,
-          url: item.url
-        }));
-      case 'renderings':
-        console.info("Processing renderings with room names:", roomRenderingsWithNames);
-        return roomRenderingsWithNames.map((item, index) => ({
-          name: `Rendering ${index + 1}`,
-          room: item.roomName,
-          url: item.url
-        }));
-      case 'blueprints':
-        return blueprintUrl ? [{
-          name: 'Blueprint',
-          room: 'Property',
-          url: blueprintUrl
-        }] : [];
-      default:
-        return [];
+    if (selectedRoom === "all") {
+      return allAssets;
     }
+    
+    return allAssets.filter(asset => 
+      asset.roomName.toLowerCase() === selectedRoom.toLowerCase()
+    );
   };
 
-  const FileListItem = ({ name, room, url }: { name: string; room: string; url: string }) => (
-    <div className="flex items-center justify-between py-4 border-b border-gray-100 last:border-0">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-          <FileImage className="w-5 h-5 text-gray-500" />
+  // Group assets by type for display
+  const groupAssetsByType = (assets: RoomAssetWithType[]) => {
+    const groups: {
+      [key: string]: RoomAssetWithType[];
+    } = {
+      design: [],
+      'before-photo': [],
+      inspiration: []
+    };
+
+    assets.forEach(asset => {
+      if (groups[asset.type]) {
+        groups[asset.type].push(asset);
+      }
+    });
+
+    return groups;
+  };
+
+  // Get the list of unique room names
+  const roomOptions = React.useMemo(() => {
+    const uniqueRooms = new Set<string>();
+    
+    // Add rooms from database
+    rooms.forEach(room => uniqueRooms.add(room.name));
+    
+    // Add rooms from assets
+    allAssets.forEach(asset => uniqueRooms.add(asset.roomName));
+    
+    return Array.from(uniqueRooms).sort();
+  }, [rooms, allAssets]);
+
+  // Component to display a file list item with tags
+  const FileListItem = ({ asset }: { asset: RoomAssetWithType }) => (
+    <div className="flex flex-col gap-1 py-4 border-b border-gray-100 last:border-0">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+            <FileImage className="w-5 h-5 text-gray-500" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-900">{asset.name}</p>
+            <p className="text-xs text-gray-500">{asset.roomName}</p>
+          </div>
         </div>
-        <div>
-          <p className="text-sm font-medium text-gray-900">{name}</p>
-          <p className="text-xs text-gray-500">{room}</p>
+        <div className="flex items-center gap-2">
+          <a
+            href={asset.url}
+            download
+            className="p-1.5 text-gray-500 hover:text-gray-700 transition-colors"
+            onClick={(e) => e.stopPropagation()}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Download className="w-4 h-4" />
+          </a>
+          <button
+            onClick={() => handlePreview(asset.url)}
+            className="p-1.5 text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            <Eye className="w-4 h-4" />
+          </button>
         </div>
       </div>
-      <div className="flex items-center gap-2">
-        <a
-          href={url}
-          download
-          className="p-1.5 text-gray-500 hover:text-gray-700 transition-colors"
-          onClick={(e) => e.stopPropagation()}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Download className="w-4 h-4" />
-        </a>
-        <button
-          onClick={() => handlePreview(url)}
-          className="p-1.5 text-gray-500 hover:text-gray-700 transition-colors"
-        >
-          <Eye className="w-4 h-4" />
-        </button>
-      </div>
+      
+      {/* Display tags if available */}
+      {asset.tags && asset.tags.length > 0 && (
+        <div className="flex flex-wrap gap-1 ml-12 mt-0.5">
+          {asset.tags.map((tag, idx) => (
+            <Badge 
+              key={`${asset.url}-tag-${idx}`} 
+              variant="secondary" 
+              className="text-xs px-1.5 py-0 h-5 bg-blue-50 text-blue-700 hover:bg-blue-100"
+            >
+              <Tag className="w-3 h-3 mr-1" />
+              {tag}
+            </Badge>
+          ))}
+        </div>
+      )}
     </div>
   );
 
+  // Component for showing a section of assets by type
+  const AssetTypeSection = ({ title, assets }: { title: string, assets: RoomAssetWithType[] }) => {
+    if (assets.length === 0) return null;
+    
+    return (
+      <div className="mb-6">
+        <h3 className="text-sm font-medium text-gray-900 mb-2 px-4">
+          {title} ({assets.length})
+        </h3>
+        
+        <div className="space-y-1 px-4">
+          {assets.map((asset, index) => (
+            <FileListItem
+              key={`${asset.type}-${asset.roomName}-${index}`}
+              asset={asset}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   const filteredAssets = getFilteredAssets();
+  const assetGroups = groupAssetsByType(filteredAssets);
 
   const LoadingSkeleton = () => (
     <div className="space-y-4">
@@ -283,47 +393,42 @@ export function PreviewSidebar({ projectData, propertyDetails }: PreviewSidebarP
           
           <h2 className="text-lg font-semibold mb-4 mt-6 px-4">Project Assets</h2>
           <div className="px-4">
-            <Select value={selectedType} onValueChange={(value: AssetType) => setSelectedType(value)}>
+            <Select value={selectedRoom} onValueChange={(value) => setSelectedRoom(value)}>
               <SelectTrigger className="w-full bg-white">
-                <SelectValue placeholder="Select asset type" />
+                <SelectValue placeholder="Select room" />
               </SelectTrigger>
               <SelectContent className="bg-white">
-                <SelectItem value="inspiration">Inspiration</SelectItem>
-                <SelectItem value="before-photos">Before Photos</SelectItem>
-                <SelectItem value="drawings">Drawings</SelectItem>
-                <SelectItem value="renderings">Renderings</SelectItem>
-                <SelectItem value="blueprints">Blueprints</SelectItem>
+                <SelectItem value="all">All Rooms</SelectItem>
+                {roomOptions.map((room) => (
+                  <SelectItem key={room} value={room.toLowerCase()}>
+                    {room}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
         </div>
 
         <div className="flex-1 overflow-auto">
-          <div className="p-0">
-            <h3 className="text-sm font-medium text-gray-900 mb-2 px-4">
-              Files {selectedType === 'renderings' && '(Renderings)'} {selectedType === 'drawings' && '(Drawings)'}
-            </h3>
-            
-            {isLoading && (selectedType === 'renderings' || selectedType === 'drawings') ? (
+          {isLoading ? (
+            <div className="px-4 py-4">
               <LoadingSkeleton />
-            ) : (
-              <div className="space-y-1 px-4">
-                {filteredAssets.map((asset, index) => (
-                  <FileListItem
-                    key={`${asset.name}-${index}`}
-                    name={asset.name}
-                    room={asset.room}
-                    url={asset.url}
-                  />
-                ))}
-                {filteredAssets.length === 0 && !isLoading && (
-                  <p className="text-sm text-gray-500 py-4 text-center">
-                    No {selectedType.replace('-', ' ')} available
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="p-0">
+              {filteredAssets.length > 0 ? (
+                <>
+                  <AssetTypeSection title="Design Assets" assets={assetGroups.design} />
+                  <AssetTypeSection title="Before Photos" assets={assetGroups['before-photo']} />
+                  <AssetTypeSection title="Inspiration" assets={assetGroups.inspiration} />
+                </>
+              ) : (
+                <p className="text-sm text-gray-500 py-4 text-center">
+                  No assets available for {selectedRoom === 'all' ? 'any rooms' : selectedRoom}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

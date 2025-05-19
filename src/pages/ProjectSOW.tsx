@@ -1,4 +1,3 @@
-
 import { useParams, useLocation, useSearchParams, useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import SOWReviewDialog from "@/components/project/sow/SOWReviewDialog";
+import { PreviewSidebar } from "@/components/project/sow/PreviewSidebar";
 
 const ProjectSOW = () => {
   const location = useLocation();
@@ -18,7 +18,7 @@ const ProjectSOW = () => {
   const isReviewMode = searchParams.get("review") === "true";
   const navigate = useNavigate();
 
-  const { projectData, isLoading: projectLoading } = useProjectData(
+  const { projectData, propertyDetails, isLoading: projectLoading } = useProjectData(
     params.projectId,
     location.state
   );
@@ -120,21 +120,28 @@ const ProjectSOW = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      <header className="h-14 border-b flex items-center px-0 bg-white">
-        <Button variant="ghost" size="sm" className="gap-2" onClick={() => window.history.back()}>
-          <ChevronLeft className="h-4 w-4" />
-          Back to Project
-        </Button>
-        <div className="flex-1 flex justify-center">
-          <h1 className="text-sm font-medium">{projectTitle} - Statement of Work</h1>
-        </div>
-        <div className="w-[72px]" />
-      </header>
+    <div className="min-h-screen bg-white flex">
+      {/* Add PreviewSidebar */}
+      {!projectLoading && projectData && propertyDetails && (
+        <PreviewSidebar projectData={projectData} propertyDetails={propertyDetails} />
+      )}
+      
+      <div className="flex-1 flex flex-col">
+        <header className="h-14 border-b flex items-center px-0 bg-white">
+          <Button variant="ghost" size="sm" className="gap-2" onClick={() => window.history.back()}>
+            <ChevronLeft className="h-4 w-4" />
+            Back to Project
+          </Button>
+          <div className="flex-1 flex justify-center">
+            <h1 className="text-sm font-medium">{projectTitle} - Statement of Work</h1>
+          </div>
+          <div className="w-[72px]" />
+        </header>
 
-      <main className="px-0 py-0">
-        {isViewMode || isReviewMode ? renderSOWView() : <SOWWizard />}
-      </main>
+        <main className="px-0 py-0 flex-1 overflow-auto">
+          {isViewMode || isReviewMode ? renderSOWView() : <SOWWizard />}
+        </main>
+      </div>
       
       {sowData && (
         <SOWReviewDialog 
