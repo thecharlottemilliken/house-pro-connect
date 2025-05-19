@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import ServiceProNavbar from "@/components/service-pro/ServiceProNavbar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,12 +20,15 @@ interface ProfileItem {
 const ServiceProDashboard = () => {
   const { user, profile } = useAuth();
   const [profileComplete, setProfileComplete] = useState(false);
-  // Initialize with explicit type annotation
-  const [profileItems, setProfileItems] = useState<ProfileItem[]>([
+  
+  // Fixed initialization with explicit type annotation and initial items
+  const initialProfileItems: ProfileItem[] = [
     { id: 1, text: "Add Your License Information", completed: false, route: "/service-pro-profile?section=licenses" },
     { id: 2, text: "Add Your Bio", completed: false, route: "/service-pro-profile?section=basic" },
     { id: 3, text: "List Your Properties", completed: false, route: "/your-properties" }
-  ]);
+  ];
+  
+  const [profileItems, setProfileItems] = useState<ProfileItem[]>(initialProfileItems);
   
   useEffect(() => {
     const checkProfileCompletion = async () => {
