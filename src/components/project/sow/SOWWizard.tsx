@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -118,6 +117,8 @@ export function SOWWizard() {
           <WorkAreaForm 
             onSave={handleWorkAreasSubmit}
             workAreas={sowData.work_areas || []}
+            projectData={projectData}
+            propertyDetails={propertyDetails}
           />
         );
       case 1:

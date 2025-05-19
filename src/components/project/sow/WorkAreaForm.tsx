@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,9 +7,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Square, Ruler } from "lucide-react";
+import { Plus, Square, Ruler, Bookmark, MoveRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { WorkAreaTable } from "./WorkAreaTable";
+import { useRoomDesign } from "@/hooks/useRoomDesign";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -31,15 +34,34 @@ interface WorkArea {
     name: string;
     notes: string;
   }>;
+  sourceRoomId?: string;
 }
 
 interface WorkAreaFormProps {
   onSave: (areas: WorkArea[]) => void;
   workAreas?: WorkArea[];
   initialData?: WorkArea[];
+  projectData?: any;
+  propertyDetails?: any;
 }
 
-export function WorkAreaForm({ onSave, workAreas = [], initialData = [] }: WorkAreaFormProps) {
+const convertMeasurements = (roomMeasurements: any) => {
+  if (!roomMeasurements) return null;
+  
+  // Handle cases where measurements might be in ft or m
+  const multiplier = roomMeasurements.unit === 'ft' ? 12 : 39.37; // Convert to inches
+  
+  return {
+    length: roomMeasurements.length ? String(Math.round(roomMeasurements.length * multiplier)) : '',
+    width: roomMeasurements.width ? String(Math.round(roomMeasurements.width * multiplier)) : '',
+    height: roomMeasurements.height ? String(Math.round(roomMeasurements.height * multiplier)) : '',
+    totalSqft: roomMeasurements.length && roomMeasurements.width 
+      ? String(Math.round(roomMeasurements.length * roomMeasurements.width)) 
+      : ''
+  };
+};
+
+export function WorkAreaForm({ onSave, workAreas = [], initialData = [], projectData, propertyDetails }: WorkAreaFormProps) {
   const [activeTab, setActiveTab] = useState("interior");
   const [workAreasState, setWorkAreasState] = useState<WorkArea[]>([]);
   const [currentArea, setCurrentArea] = useState<WorkArea>({
@@ -55,7 +77,16 @@ export function WorkAreaForm({ onSave, workAreas = [], initialData = [] }: WorkA
     additionalAreas: []
   });
   const [isAddingArea, setIsAddingArea] = useState(false);
+  const [createMode, setCreateMode] = useState<'new' | 'existing'>('new');
   const { toast } = useToast();
+  
+  const { fetchPropertyRooms, propertyRooms } = useRoomDesign(propertyDetails?.id);
+  
+  useEffect(() => {
+    if (propertyDetails?.id) {
+      fetchPropertyRooms(propertyDetails.id);
+    }
+  }, [propertyDetails?.id, fetchPropertyRooms]);
 
   useEffect(() => {
     if (workAreas && workAreas.length > 0) {
@@ -107,6 +138,7 @@ export function WorkAreaForm({ onSave, workAreas = [], initialData = [] }: WorkA
   const handleEdit = (area: WorkArea, index: number) => {
     setCurrentArea(area);
     setIsAddingArea(true);
+    setCreateMode('new');
   };
 
   const handleDuplicate = (area: WorkArea) => {
@@ -146,6 +178,29 @@ export function WorkAreaForm({ onSave, workAreas = [], initialData = [] }: WorkA
       description: `Successfully saved ${workAreasState.length} work area(s).`,
     });
   };
+  
+  const handleRoomSelect = (roomId: string) => {
+    const selectedRoom = propertyRooms.find(room => room.id === roomId);
+    if (!selectedRoom) return;
+    
+    // Get room measurements from design preferences
+    const roomMeasurements = projectData?.design_preferences?.roomMeasurements?.[selectedRoom.name];
+    const convertedMeasurements = convertMeasurements(roomMeasurements);
+    
+    setCurrentArea({
+      name: selectedRoom.name,
+      notes: '',
+      measurements: convertedMeasurements || {
+        length: '',
+        width: '',
+        height: '',
+        totalSqft: ''
+      },
+      affectsOtherAreas: false,
+      additionalAreas: [],
+      sourceRoomId: selectedRoom.id
+    });
+  };
 
   return (
     <div className="space-y-8">
@@ -182,6 +237,49 @@ export function WorkAreaForm({ onSave, workAreas = [], initialData = [] }: WorkA
             <div className="space-y-6">
               <Card className="p-6">
                 <div className="space-y-6">
+                  <div className="flex items-center justify-start gap-4 mb-4">
+                    <Button
+                      variant={createMode === 'new' ? "default" : "outline"}
+                      onClick={() => setCreateMode('new')}
+                      className="flex-1"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create New
+                    </Button>
+                    <Button
+                      variant={createMode === 'existing' ? "default" : "outline"}
+                      onClick={() => setCreateMode('existing')}
+                      className="flex-1"
+                      disabled={!propertyDetails?.id || propertyRooms.length === 0}
+                    >
+                      <Bookmark className="h-4 w-4 mr-2" />
+                      Use Existing Room
+                    </Button>
+                  </div>
+                  
+                  {createMode === 'existing' && (
+                    <div className="space-y-4 my-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="room-select">Select an existing room</Label>
+                        <Select onValueChange={handleRoomSelect}>
+                          <SelectTrigger id="room-select">
+                            <SelectValue placeholder="Select a room" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {propertyRooms.map(room => (
+                              <SelectItem key={room.id} value={room.id}>{room.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {currentArea.sourceRoomId && (
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Room data and measurements will be imported
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-2">
                     <Square className="h-5 w-5 text-muted-foreground" />
                     <h3 className="text-lg font-medium">Work Area Details</h3>
@@ -216,6 +314,11 @@ export function WorkAreaForm({ onSave, workAreas = [], initialData = [] }: WorkA
                   <div className="flex items-center gap-2">
                     <Ruler className="h-5 w-5 text-muted-foreground" />
                     <h3 className="text-lg font-medium">Room Measurements</h3>
+                    {currentArea.sourceRoomId && (
+                      <Badge variant="outline" className="ml-auto">
+                        Imported from room data
+                      </Badge>
+                    )}
                   </div>
                   
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
