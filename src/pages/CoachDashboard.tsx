@@ -52,6 +52,14 @@ const CoachDashboard = () => {
             toast.success('New meeting scheduled');
             console.log('Received meeting notification:', payload.new);
             refreshNotifications();
+          } else if (payload.new?.type === 'sow_approved') {
+            toast.success('SOW has been approved');
+            console.log('Received SOW approval notification:', payload.new);
+            refreshNotifications();
+          } else if (payload.new?.type === 'sow_revision_requested') {
+            toast.success('SOW revision requested');
+            console.log('Received SOW revision notification:', payload.new);
+            refreshNotifications();
           }
           
           // Refresh data
@@ -81,10 +89,49 @@ const CoachDashboard = () => {
         console.log(`Coach events subscription status: ${status}`);
       });
     
+    // Add direct subscription to SOW status changes for coaches
+    const sowChannel = supabase
+      .channel(`coach_sow_${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'statement_of_work'
+        },
+        async (payload) => {
+          // Only process if status has changed
+          if (payload.old.status !== payload.new.status) {
+            console.log('SOW status changed:', payload.old.status, '->', payload.new.status);
+            
+            // Refresh notifications to ensure any SOW status change notifications are fetched
+            refreshNotifications();
+            
+            if (payload.new.status === 'approved') {
+              // Fetch project details for better context in the toast
+              const { data: projectData } = await supabase
+                .from('projects')
+                .select('title')
+                .eq('id', payload.new.project_id)
+                .single();
+                
+              const projectTitle = projectData?.title || 'a project';
+              
+              // Show toast for approved SOWs
+              toast.success(`SOW for ${projectTitle} has been approved!`);
+            }
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log(`Coach SOW subscription status: ${status}`);
+      });
+    
     return () => {
       console.log(`Removing ${channelName} subscription`);
       supabase.removeChannel(channel);
       supabase.removeChannel(eventsChannel);
+      supabase.removeChannel(sowChannel);
     };
   }, [user, fetchProjects, refreshNotifications]);
 
