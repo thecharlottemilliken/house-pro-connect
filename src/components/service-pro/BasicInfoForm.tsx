@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "@/hooks/use-toast";
@@ -167,6 +166,8 @@ const BasicInfoForm = ({ onComplete }: BasicInfoFormProps) => {
               accept="image/*"
               maxFiles={1}
               onUploadComplete={handlePhotoUpload}
+              label="Upload profile photo"
+              description="Upload a professional photo for your profile"
             />
           )}
         </div>

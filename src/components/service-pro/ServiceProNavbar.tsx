@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { NotificationsPopover } from "@/components/notifications/NotificationsPopover";
+import NotificationsPopover from "@/components/notifications/NotificationsPopover";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const ServiceProNavbar = () => {

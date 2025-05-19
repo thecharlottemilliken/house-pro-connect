@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { toast } from "@/hooks/use-toast";
@@ -322,6 +321,8 @@ const LicensesForm = ({ onComplete }: LicensesFormProps) => {
                       accept=".pdf,.jpg,.jpeg,.png"
                       maxFiles={1}
                       onUploadComplete={handleFileUpload}
+                      label="Upload license document"
+                      description="Upload your license or certification document (PDF or image)"
                     />
                   )}
                 </div>
