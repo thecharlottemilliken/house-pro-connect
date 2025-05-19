@@ -61,6 +61,16 @@ const SignIn = () => {
     return valid;
   };
 
+  const navigateBasedOnRole = (role: string | null) => {
+    if (role === 'service_pro' || role === 'service-pro') {
+      navigate('/service-pro-dashboard');
+    } else if (role === 'coach') {
+      navigate('/coach-dashboard');
+    } else {
+      navigate('/dashboard');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
@@ -110,11 +120,31 @@ const SignIn = () => {
                 }
               }
             }
+
+            // Get user role from user metadata or profile to determine redirect path
+            const userRole = user?.user_metadata?.role || data?.user?.user_metadata?.role;
+            
+            if (!userRole) {
+              // Try to fetch the user role from the profiles table
+              const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single();
+                
+              if (!profileError && profileData) {
+                navigateBasedOnRole(profileData.role);
+              } else {
+                // Default to dashboard if role can't be determined
+                navigate('/dashboard');
+              }
+            } else {
+              navigateBasedOnRole(userRole);
+            }
           } catch (fnError) {
             console.error("Failed to call set-claims function:", fnError);
+            navigate('/dashboard'); // Default fallback
           }
-          
-          navigate("/dashboard");
         }
       } catch (err: any) {
         toast({ title: "Error signing in", description: err.message, variant: "destructive" });

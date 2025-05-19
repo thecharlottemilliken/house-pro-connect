@@ -1,6 +1,6 @@
 
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -18,7 +18,12 @@ const Profile = () => {
   const { toast } = useToast();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isDeleteAccountDialogOpen, setIsDeleteAccountDialogOpen] = useState(false);
-  const { displayRole, isLoading: isRoleLoading } = useProfileRole();
+  const { role, displayRole, isLoading: isRoleLoading } = useProfileRole();
+
+  // Redirect service pro users to the service pro profile page
+  if (role === 'service_pro' || role === 'service-pro') {
+    return <Navigate to="/service-pro-profile" replace />;
+  }
 
   const handleSignOut = async () => {
     try {
