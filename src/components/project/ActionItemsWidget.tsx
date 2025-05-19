@@ -26,21 +26,29 @@ const ActionItemsWidget = ({
   className 
 }: ActionItemsWidgetProps) => {
   const navigate = useNavigate();
-  const { actionItems, isLoading, markActionItemComplete } = useProjectActionItems(projectId);
-  const { generateActionItems, isGenerating, hasErrored, resetErrorState } = useActionItemsGenerator();
+  const { actionItems, isLoading: itemsLoading, refetch } = useProjectActionItems(projectId);
+  const { 
+    generateActionItems, 
+    isGenerating, 
+    hasErrored, 
+    resetErrorState,
+    retryCount 
+  } = useActionItemsGenerator();
+  
   const { profile } = useAuth();
   const userRole = profile?.role || '';
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  const isLoading = itemsLoading || isGenerating;
 
   // Generate action items when the component mounts, but only once
   useEffect(() => {
-    if (!projectId || initialLoadComplete) return;
+    if (!projectId || initialLoadComplete || !profile) return;
 
     const initialGeneration = async () => {
       console.log("Checking if action items need to be generated for project:", projectId);
       
       // Only generate if there are no existing action items and we're not already loading
-      if (actionItems.length === 0 && !isLoading && !isGenerating && !hasErrored) {
+      if (actionItems.length === 0 && !itemsLoading && !isGenerating && !hasErrored) {
         console.log("Generating action items for project:", projectId);
         await generateActionItems(projectId);
       }
@@ -49,12 +57,12 @@ const ActionItemsWidget = ({
     };
     
     // Only run the generation if we have finished loading the action items
-    if (!isLoading) {
+    if (!itemsLoading) {
       initialGeneration().catch(err => 
         console.error("Failed to generate action items:", err)
       );
     }
-  }, [projectId, actionItems.length, isLoading, generateActionItems, isGenerating, hasErrored, initialLoadComplete]);
+  }, [projectId, actionItems.length, itemsLoading, generateActionItems, isGenerating, hasErrored, initialLoadComplete, profile]);
 
   // Handle action click
   const handleActionClick = (item: ActionItem) => {
@@ -131,9 +139,10 @@ const ActionItemsWidget = ({
 
   // Handle refresh button click
   const handleRefresh = async () => {
-    if (isGenerating) return;
+    if (isLoading) return;
     
     resetErrorState();
+    await refetch();
     await generateActionItems(projectId);
   };
 
@@ -170,7 +179,7 @@ const ActionItemsWidget = ({
       </CardHeader>
       <CardContent className="p-0">
         <div className="divide-y">
-          {(isLoading || isGenerating) ? (
+          {(itemsLoading || isGenerating) ? (
             <div className="p-4 text-center">
               <div className="animate-spin h-6 w-6 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-2"></div>
               <p className="text-gray-600 text-sm">Loading action items...</p>
@@ -185,6 +194,7 @@ const ActionItemsWidget = ({
                   size="sm"
                   onClick={handleRefresh}
                   className="flex items-center gap-1"
+                  disabled={retryCount >= 3}
                 >
                   <RefreshCw className="h-3.5 w-3.5" /> Try Again
                 </Button>
@@ -192,30 +202,30 @@ const ActionItemsWidget = ({
             </div>
           ) : (
             <>
-              {filteredActionItems.map((item) => (
-                <div key={item.id} className="p-4 hover:bg-gray-50">
-                  <div className="flex gap-3">
-                    <div className={cn("p-2 rounded-lg flex-shrink-0", getPriorityColor(item.priority))}>
-                      {getIconComponent(item.icon_name)}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-medium text-gray-900 mb-1">{item.title}</h4>
-                      <p className="text-gray-600 text-sm mb-3">{item.description}</p>
-                      <Button 
-                        variant="outline"
-                        size="sm"
-                        className="text-sm"
-                        onClick={() => handleActionClick(item)}
-                      >
-                        {getButtonText(item)}
-                        <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-                      </Button>
+              {filteredActionItems.length > 0 ? (
+                filteredActionItems.map((item) => (
+                  <div key={item.id} className="p-4 hover:bg-gray-50">
+                    <div className="flex gap-3">
+                      <div className={cn("p-2 rounded-lg flex-shrink-0", getPriorityColor(item.priority))}>
+                        {getIconComponent(item.icon_name)}
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium text-gray-900 mb-1">{item.title}</h4>
+                        <p className="text-gray-600 text-sm mb-3">{item.description}</p>
+                        <Button 
+                          variant="outline"
+                          size="sm"
+                          className="text-sm"
+                          onClick={() => handleActionClick(item)}
+                        >
+                          {getButtonText(item)}
+                          <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-              
-              {filteredActionItems.length === 0 && !isLoading && !isGenerating && !hasErrored && (
+                ))
+              ) : (
                 <div className="p-8 text-center">
                   <div className="bg-green-100 h-12 w-12 rounded-full flex items-center justify-center mx-auto mb-3">
                     <Check className="h-6 w-6 text-green-600" />

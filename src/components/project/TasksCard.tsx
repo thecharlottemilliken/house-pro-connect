@@ -27,10 +27,11 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
   const navigate = useNavigate();
   const { generateActionItems, isGenerating, hasErrored, resetErrorState } = useActionItemsGenerator();
   const [loadError, setLoadError] = useState<Error | null>(null);
+  const [isSubscribed, setIsSubscribed] = useState(false);
 
   // Fetch SOW data and set up real-time subscription
   useEffect(() => {
-    if (!projectId) return;
+    if (!projectId || !profile) return;
     
     const fetchSOW = async () => {
       setIsLoading(true);
@@ -49,11 +50,6 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
         
         if (data && typeof data === "object") {
           setSowData(data);
-          
-          // Ensure action items are current when SOW status changes
-          if (!hasErrored) {
-            await generateActionItems(projectId);
-          }
         } else {
           setSowData(null);
         }
@@ -68,34 +64,38 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
     
     fetchSOW();
     
-    // Set up real-time subscription for SOW changes
-    const channel = supabase
-      .channel('sow_changes')
-      .on('postgres_changes', 
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'statement_of_work',
-          filter: `project_id=eq.${projectId}`
-        }, 
-        (payload) => {
-          console.log("SOW change detected:", payload);
-          
-          const updatedSow = payload.new as SOWData;
-          setSowData(updatedSow);
-          
-          // Regenerate action items when SOW status changes, but only if we haven't had errors
-          if (!hasErrored) {
-            generateActionItems(projectId);
+    // Set up real-time subscription for SOW changes if not already subscribed
+    if (!isSubscribed) {
+      const channel = supabase
+        .channel('sow_changes_' + projectId)
+        .on('postgres_changes', 
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'statement_of_work',
+            filter: `project_id=eq.${projectId}`
+          }, 
+          (payload) => {
+            console.log("SOW change detected in TasksCard:", payload);
+            
+            const updatedSow = payload.new as SOWData;
+            setSowData(updatedSow);
           }
-        }
-      )
-      .subscribe();
-      
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [projectId, generateActionItems, hasErrored]);
+        )
+        .subscribe((status) => {
+          console.log(`SOW subscription status for TasksCard: ${status}`);
+          if (status === 'SUBSCRIBED') {
+            setIsSubscribed(true);
+          }
+        });
+        
+      return () => {
+        console.log("Cleaning up SOW subscription in TasksCard");
+        supabase.removeChannel(channel);
+        setIsSubscribed(false);
+      };
+    }
+  }, [projectId, profile]);
 
   // Callback to refresh SOW after action
   const handleRefresh = async () => {
@@ -321,6 +321,6 @@ const TasksCard = ({ projectId, isOwner }: TasksCardProps) => {
       </CardContent>
     </Card>
   );
-}
+};
 
 export default TasksCard;

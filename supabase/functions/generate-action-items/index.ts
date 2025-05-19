@@ -37,11 +37,16 @@ serve(async (req) => {
     }
 
     // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+    
+    console.log(`Initializing Supabase client with URL: ${supabaseUrl}`);
+    
     const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      supabaseUrl,
+      supabaseAnonKey,
       { global: { headers: { Authorization: authorizationHeader } } }
-    )
+    );
     
     // Parse request body
     const { projectId } = await req.json()
@@ -100,7 +105,7 @@ async function generateActionItems(supabase, projectId: string, userId: string) 
     
     if (projectError) {
       console.error("Error fetching project data:", projectError)
-      throw projectError
+      throw new Error(`Failed to fetch project data: ${projectError.message}`)
     }
     
     console.log("Project data fetched:", projectData)
@@ -113,7 +118,7 @@ async function generateActionItems(supabase, projectId: string, userId: string) 
     
     if (teamError) {
       console.error("Error fetching team members:", teamError)
-      throw teamError
+      throw new Error(`Failed to fetch team members: ${teamError.message}`)
     }
     
     console.log(`Team members found: ${teamMembers?.length || 0}`)
@@ -127,7 +132,7 @@ async function generateActionItems(supabase, projectId: string, userId: string) 
       
     if (profileError) {
       console.error("Error fetching user profile:", profileError)
-      throw profileError;
+      throw new Error(`Failed to fetch user profile: ${profileError.message}`)
     }
     
     const userRole = userProfile?.role || '';
@@ -142,7 +147,7 @@ async function generateActionItems(supabase, projectId: string, userId: string) 
     
     if (sowError) {
       console.error("Error fetching SOW data:", sowError)
-      throw sowError
+      throw new Error(`Failed to fetch SOW data: ${sowError.message}`)
     }
     
     console.log("SOW data:", sowData ? `Status: ${sowData.status}` : "No SOW found")
@@ -274,7 +279,7 @@ async function generateActionItems(supabase, projectId: string, userId: string) 
     
     if (projectDataError) {
       console.error("Error fetching project design preferences:", projectDataError)
-      throw projectDataError;
+      throw new Error(`Failed to fetch project design preferences: ${projectDataError.message}`)
     }
     
     const designPrefs = project.design_preferences || {};

@@ -39,7 +39,7 @@ const ProjectSOW = () => {
   const [changes, setChanges] = useState(initializeChangeTracker());
 
   const { profile } = useAuth();
-  const { generateActionItems } = useActionItemsGenerator();
+  const { generateActionItems, isGenerating } = useActionItemsGenerator();
 
   // Fetch SOW data from statement_of_work table
   useEffect(() => {
@@ -114,54 +114,54 @@ const ProjectSOW = () => {
     fetchSOWData();
   }, [params.projectId, profile, isRevised]);
 
-  // IMPORTANT: Remove the automatic display of the review dialog
-  // Now it will only show when the user explicitly clicks to open it
-  
   const projectTitle = projectData?.title || "Unknown Project";
   
-  const handleReviewComplete = () => {
+  const handleReviewComplete = async () => {
     // Refresh SOW data after review
-    const fetchUpdatedSOW = async () => {
-      if (!params.projectId) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('statement_of_work')
-          .select('*')
-          .eq('project_id', params.projectId)
-          .maybeSingle();
-
-        if (error) throw error;
-        
-        if (data) {
-          const parsedData = {
-            ...data,
-            work_areas: parseJsonField(data.work_areas, []),
-            labor_items: parseJsonField(data.labor_items, []),
-            material_items: parseJsonField(data.material_items, []),
-            bid_configuration: parseJsonField(data.bid_configuration, { bidDuration: '', projectDescription: '' }),
-          };
-          
-          setSOWData(parsedData);
-        }
-        
-        // Regenerate action items after review
-        if (params.projectId) {
-          try {
-            await generateActionItems(params.projectId);
-          } catch (error) {
-            console.error("Error generating action items:", error);
-            // Continue even if action item generation fails
-            toast.error("Failed to generate action items");
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching updated SOW data:", error);
-        toast.error("Failed to refresh Statement of Work data");
-      }
-    };
+    if (!params.projectId) return;
     
-    fetchUpdatedSOW();
+    try {
+      setIsLoading(true);
+      
+      const { data, error } = await supabase
+        .from('statement_of_work')
+        .select('*')
+        .eq('project_id', params.projectId)
+        .maybeSingle();
+
+      if (error) throw error;
+      
+      if (data) {
+        const parsedData = {
+          ...data,
+          work_areas: parseJsonField(data.work_areas, []),
+          labor_items: parseJsonField(data.labor_items, []),
+          material_items: parseJsonField(data.material_items, []),
+          bid_configuration: parseJsonField(data.bid_configuration, { bidDuration: '', projectDescription: '' }),
+        };
+        
+        setSOWData(parsedData);
+      }
+      
+      // Regenerate action items after review
+      if (params.projectId) {
+        console.log("Generating action items after SOW review");
+        try {
+          await generateActionItems(params.projectId);
+        } catch (error) {
+          console.error("Error generating action items:", error);
+          // Continue even if action item generation fails
+        }
+      }
+      
+      setIsLoading(false);
+      navigate(`/project-dashboard/${params.projectId}`);
+      
+    } catch (error) {
+      console.error("Error fetching updated SOW data:", error);
+      toast.error("Failed to refresh Statement of Work data");
+      setIsLoading(false);
+    }
   };
 
   // Function to render the SOW in view-only mode
