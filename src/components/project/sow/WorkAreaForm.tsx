@@ -1,6 +1,3 @@
-<think>
-
-</think>
 
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
@@ -12,6 +9,8 @@ import { WorkAreaFormTabs } from "./components/WorkAreaFormTabs";
 import { WorkAreaFormDialog } from "./components/WorkAreaFormDialog";
 import { convertMeasurements } from "./utils/measurementUtils";
 import { WorkAreaRevisionProps } from './components/RevisionAwareFormProps';
+import { WorkAreaFormControls } from './components/WorkAreaFormControls';
+import { WorkAreaEmptyState } from './components/WorkAreaEmptyState';
 
 interface WorkArea {
   name: string;
@@ -49,7 +48,13 @@ export function WorkAreaForm({
 }: WorkAreaFormProps) {
   const [activeTab, setActiveTab] = useState("interior");
   const [workAreasState, setWorkAreasState] = useState<WorkArea[]>([]);
-  const [currentArea, setCurrentArea] = useState<WorkArea>({
+  const [isAddingArea, setIsAddingArea] = useState(false);
+  const { toast } = useToast();
+  
+  const { fetchPropertyRooms, propertyRooms } = useRoomDesign(propertyDetails?.id);
+  
+  // Initialize default empty work area
+  const defaultWorkArea: WorkArea = {
     name: '',
     notes: '',
     measurements: {
@@ -60,19 +65,19 @@ export function WorkAreaForm({
     },
     affectsOtherAreas: false,
     additionalAreas: []
-  });
-  const [isAddingArea, setIsAddingArea] = useState(false);
+  };
+  
+  const [currentArea, setCurrentArea] = useState<WorkArea>(defaultWorkArea);
   const [createMode, setCreateMode] = useState<'new' | 'existing'>('new');
-  const { toast } = useToast();
   
-  const { fetchPropertyRooms, propertyRooms } = useRoomDesign(propertyDetails?.id);
-  
+  // Load property rooms
   useEffect(() => {
     if (propertyDetails?.id) {
       fetchPropertyRooms(propertyDetails.id);
     }
   }, [propertyDetails?.id, fetchPropertyRooms]);
 
+  // Set initial work areas
   useEffect(() => {
     if (workAreas && workAreas.length > 0) {
       setWorkAreasState(workAreas);
@@ -91,18 +96,7 @@ export function WorkAreaForm({
       return;
     }
     setWorkAreasState([...workAreasState, currentArea]);
-    setCurrentArea({
-      name: '',
-      notes: '',
-      measurements: {
-        length: '',
-        width: '',
-        height: '',
-        totalSqft: ''
-      },
-      affectsOtherAreas: false,
-      additionalAreas: []
-    });
+    setCurrentArea(defaultWorkArea);
     setIsAddingArea(false);
     toast({
       title: "Work Area Added",
@@ -219,29 +213,11 @@ export function WorkAreaForm({
           isRevision={isRevision}
           changedWorkAreas={changedWorkAreas}
         />
-      ) : null}
+      ) : (
+        <WorkAreaEmptyState />
+      )}
 
-      <div className="flex justify-between mt-6">
-        <Button
-          variant="outline"
-          onClick={() => window.history.back()}
-        >
-          BACK
-        </Button>
-        <div className="space-x-4">
-          <Button
-            variant="outline"
-            onClick={handleSave}
-          >
-            SAVE & EXIT
-          </Button>
-          <Button
-            onClick={handleSave}
-          >
-            NEXT
-          </Button>
-        </div>
-      </div>
+      <WorkAreaFormControls onBack={() => window.history.back()} onSave={handleSave} />
     </div>
   );
 }
