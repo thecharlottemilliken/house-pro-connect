@@ -53,15 +53,33 @@ const RoomDetailsSection: React.FC<RoomDetailsSectionProps> = ({
   beforePhotos,
   propertyPhotos
 }) => {
-  // Enhanced check for measurements presence - this is a more robust check
+  // Enhanced check for measurements presence - more robust validation
   const measurementsExist = Boolean(
-    measurements && 
-    (measurements.length || measurements.width || measurements.height || measurements.additionalNotes)
+    measurements && (
+      (typeof measurements.length === 'number' && measurements.length > 0) || 
+      (typeof measurements.width === 'number' && measurements.width > 0) || 
+      (typeof measurements.height === 'number' && measurements.height > 0) ||
+      measurements.additionalNotes
+    )
   );
   
-  // Added for debugging
-  console.log('RoomDetailsSection - measurements:', measurements);
-  console.log('RoomDetailsSection - measurementsExist check result:', measurementsExist);
+  // Extended debugging
+  console.log('RoomDetailsSection - measurements object:', JSON.stringify(measurements, null, 2));
+  console.log('RoomDetailsSection - measurementsExist result:', measurementsExist);
+  console.log('RoomDetailsSection - hasMeasurements prop:', hasMeasurements);
+  
+  // Log each measurement value and its type
+  if (measurements) {
+    console.log('RoomDetailsSection - measurement values:', {
+      length: measurements.length, 
+      lengthType: typeof measurements.length,
+      width: measurements.width, 
+      widthType: typeof measurements.width,
+      height: measurements.height, 
+      heightType: typeof measurements.height,
+      additionalNotes: measurements.additionalNotes ? 'present' : 'not present'
+    });
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -90,7 +108,7 @@ const RoomDetailsSection: React.FC<RoomDetailsSectionProps> = ({
       
       {/* Column 2-3: Measurements Banner/Card and Photos */}
       <div className="lg:col-span-2 space-y-6">
-        {/* Use measurementsExist check instead of hasMeasurements prop */}
+        {/* Use measurementsExist from our enhanced check */}
         {!measurementsExist ? (
           <MeasurementsBanner 
             area={area}

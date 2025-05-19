@@ -67,14 +67,32 @@ const ProjectDesign = () => {
     }
   }, [handleUpdateAssetTags, projectData]);
 
-  // Enhanced measurements save handler with immediate state update
+  // Enhanced measurements save handler with immediate state update and better type checking
   const enhancedSaveMeasurements = useCallback(async (area: string, measurements: any) => {
-    console.log("ProjectDesign: Saving measurements for area", area, measurements);
-    const updatedPrefs = await handleSaveMeasurements(area, measurements, projectData?.design_preferences || {});
+    console.log("ProjectDesign: Saving measurements for area", area, JSON.stringify(measurements, null, 2));
+    
+    // Ensure all numeric values are actually numbers
+    const normalizedMeasurements = {
+      ...measurements,
+      length: typeof measurements.length === 'string' ? parseFloat(measurements.length) || undefined : measurements.length,
+      width: typeof measurements.width === 'string' ? parseFloat(measurements.width) || undefined : measurements.width,
+      height: typeof measurements.height === 'string' ? parseFloat(measurements.height) || undefined : measurements.height,
+      unit: measurements.unit || 'ft'
+    };
+    
+    console.log("ProjectDesign: Normalized measurements:", JSON.stringify(normalizedMeasurements, null, 2));
+    
+    const updatedPrefs = await handleSaveMeasurements(area, normalizedMeasurements, projectData?.design_preferences || {});
+    
     if (updatedPrefs) {
-      // Force a UI refresh after successful measurements update
-      setRefreshTrigger(prev => prev + 1);
+      console.log("ProjectDesign: Measurements saved successfully, updating UI");
+      // Force a UI refresh after successful measurements update with slight delay to ensure DB consistency
+      setTimeout(() => {
+        setRefreshTrigger(prev => prev + 1);
+      }, 100);
     }
+    
+    return updatedPrefs;
   }, [handleSaveMeasurements, projectData]);
 
   // Set default tab based on renovation areas

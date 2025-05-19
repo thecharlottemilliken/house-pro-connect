@@ -74,10 +74,30 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
   const [showMeasuringDialog, setShowMeasuringDialog] = useState(false);
   const [measurementsState, setMeasurementsState] = useState(measurements);
   
-  // Update local state when measurements change
+  // Improved update logic for local state when measurements change
   useEffect(() => {
-    console.log("RoomTabContent - Measurements updated from props:", measurements);
-    setMeasurementsState(measurements);
+    console.log("RoomTabContent - Measurements updated from props:", JSON.stringify(measurements, null, 2));
+    
+    // Only update if measurements actually changed
+    if (JSON.stringify(measurements) !== JSON.stringify(measurementsState)) {
+      console.log("RoomTabContent - Updating local measurements state");
+      setMeasurementsState(measurements);
+    }
+  }, [measurements]);
+
+  // Extended debug: log the actual values and types of each measurement value
+  useEffect(() => {
+    if (measurements) {
+      console.log("RoomTabContent - Measurements Values:", {
+        length: measurements.length,
+        width: measurements.width,
+        height: measurements.height,
+        unit: measurements.unit,
+        lengthType: typeof measurements.length,
+        widthType: typeof measurements.width,
+        heightType: typeof measurements.height,
+      });
+    }
   }, [measurements]);
 
   // Filter design assets for the current room
@@ -117,24 +137,39 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
     console.log("Room preferences:", roomPreferences);
   }, [area.area, roomDesignAssets, designAssets, roomId, roomPreferences]);
   
-  // Enhanced check for measurements presence that considers all possible measurement properties
+  // Enhanced check for measurements presence with better type checking
   const hasMeasurements = Boolean(
-    measurements && 
-    (measurements.length || measurements.width || measurements.height || measurements.additionalNotes)
+    measurementsState && (
+      (typeof measurementsState.length === 'number' && measurementsState.length > 0) || 
+      (typeof measurementsState.width === 'number' && measurementsState.width > 0) || 
+      (typeof measurementsState.height === 'number' && measurementsState.height > 0) ||
+      measurementsState.additionalNotes
+    )
   );
   
   console.log("RoomTabContent - hasMeasurements check result:", hasMeasurements);
-  console.log("RoomTabContent - measurementsState:", measurementsState);
+  console.log("RoomTabContent - measurementsState:", JSON.stringify(measurementsState, null, 2));
 
-  // Wrap onSaveMeasurements to update local state
+  // Enhanced save measurements handler with better type validation
   const handleSaveMeasurements = (newMeasurements: any) => {
-    console.log("RoomTabContent - Saving measurements:", newMeasurements);
+    console.log("RoomTabContent - Saving measurements:", JSON.stringify(newMeasurements, null, 2));
     
-    // Call the original handler
-    onSaveMeasurements(newMeasurements);
+    // Ensure numeric values for measurements
+    const normalizedMeasurements = {
+      ...newMeasurements,
+      length: typeof newMeasurements.length === 'string' ? parseFloat(newMeasurements.length) || undefined : newMeasurements.length,
+      width: typeof newMeasurements.width === 'string' ? parseFloat(newMeasurements.width) || undefined : newMeasurements.width,
+      height: typeof newMeasurements.height === 'string' ? parseFloat(newMeasurements.height) || undefined : newMeasurements.height,
+      unit: newMeasurements.unit || 'ft'
+    };
+    
+    console.log("RoomTabContent - Normalized measurements:", JSON.stringify(normalizedMeasurements, null, 2));
+    
+    // Call the original handler with normalized measurements
+    onSaveMeasurements(normalizedMeasurements);
     
     // Update local state immediately for UI responsiveness
-    setMeasurementsState(newMeasurements);
+    setMeasurementsState(normalizedMeasurements);
   };
 
   return (

@@ -13,20 +13,33 @@ interface RoomMeasurementsProps {
 }
 
 export function RoomMeasurementsSection({ measurements, selectedRoom }: RoomMeasurementsProps) {
+  // Debug the incoming measurements
+  console.log(`RoomMeasurementsSection for ${selectedRoom}:`, JSON.stringify(measurements, null, 2));
+
   if (!measurements || selectedRoom === 'all') {
+    console.log(`RoomMeasurementsSection: No measurements or 'all' room selected`);
+    return null;
+  }
+
+  // Ensure measurements has the expected structure
+  const validMeasurements = measurements && (
+    typeof measurements.length === 'number' || 
+    typeof measurements.width === 'number' || 
+    typeof measurements.height === 'number' || 
+    measurements.additionalNotes
+  );
+
+  if (!validMeasurements) {
+    console.log(`RoomMeasurementsSection: No valid measurements for ${selectedRoom}`);
     return null;
   }
 
   // Guard against undefined measurements object
-  if (!measurements.unit) {
-    measurements = { ...measurements, unit: 'ft' };
-  }
-
-  const { length, width, height, unit, additionalNotes } = measurements;
+  const { length, width, height, unit = 'ft', additionalNotes } = measurements;
 
   // Calculate square footage when both length and width are available
   const calculateArea = () => {
-    if (length && width) {
+    if (typeof length === 'number' && typeof width === 'number' && length > 0 && width > 0) {
       return `${(length * width).toFixed(1)} sq ${unit}`;
     }
     return null;
@@ -36,7 +49,7 @@ export function RoomMeasurementsSection({ measurements, selectedRoom }: RoomMeas
 
   // Function to render measurement with unit
   const formatMeasurement = (value?: number) => {
-    if (value === undefined) return 'N/A';
+    if (typeof value !== 'number' || value <= 0) return 'N/A';
     return `${value} ${unit}`;
   };
 

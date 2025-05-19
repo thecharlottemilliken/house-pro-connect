@@ -28,10 +28,21 @@ export const useDesignActions = (projectId?: string) => {
     try {
       console.log("Saving measurements for area:", area, measurements);
       
-      // Create a standardized copy of the measurements to ensure unit is always present
-      const standardizedMeasurements = {
+      // Ensure numeric values are actually numbers, not strings
+      const normalizedMeasurements = {
         ...measurements,
+        length: typeof measurements.length === 'string' ? parseFloat(measurements.length) || undefined : measurements.length,
+        width: typeof measurements.width === 'string' ? parseFloat(measurements.width) || undefined : measurements.width,
+        height: typeof measurements.height === 'string' ? parseFloat(measurements.height) || undefined : measurements.height,
         unit: measurements.unit || 'ft'
+      };
+      
+      console.log("Normalized measurements:", normalizedMeasurements);
+      
+      // Create a standardized copy of the measurements with correct types
+      const standardizedMeasurements = {
+        ...normalizedMeasurements,
+        unit: normalizedMeasurements.unit || 'ft'
       };
       
       // Update the designPreferences object with the standardized measurements
@@ -43,7 +54,8 @@ export const useDesignActions = (projectId?: string) => {
         }
       };
       
-      console.log("Updated design preferences:", updatedDesignPreferences);
+      console.log("Updated design preferences:", JSON.stringify(updatedDesignPreferences, null, 2));
+      console.log("roomMeasurements object:", JSON.stringify(updatedDesignPreferences.roomMeasurements, null, 2));
       
       const { data, error } = await supabase
         .from('projects')

@@ -15,16 +15,23 @@ interface RoomPropertyInfoProps {
 }
 
 const RoomPropertyInfo: React.FC<RoomPropertyInfoProps> = ({ area, location, measurements }) => {
-  // Calculate square footage based on measurements
+  // Improved debugging for incoming measurements data
+  console.log("RoomPropertyInfo - Raw measurements data:", JSON.stringify(measurements, null, 2));
+  
+  // Calculate square footage based on measurements - improved null/undefined handling
   const calculateSquareFootage = (): string => {
-    if (measurements?.length && measurements?.width) {
+    if (measurements && 
+        typeof measurements.length === 'number' && 
+        typeof measurements.width === 'number' && 
+        measurements.length > 0 && 
+        measurements.width > 0) {
       const area = measurements.length * measurements.width;
       return `${area.toFixed(1)} ${measurements.unit === 'ft' ? 'SQFT' : 'm²'}`;
     }
-    return ""; // Return blank when no measurements
+    return ""; // Return blank when no valid measurements
   };
 
-  // Format dimensions based on the available data
+  // Format dimensions based on the available data - improved null/undefined handling
   const formatDimensions = (): string => {
     if (!measurements) return "";
     
@@ -32,9 +39,10 @@ const RoomPropertyInfo: React.FC<RoomPropertyInfoProps> = ({ area, location, mea
     const { length, width, height, unit = 'ft' } = measurements;
     const parts = [];
     
-    if (length) parts.push(`${length}`);
-    if (width) parts.push(`${width}`);
-    if (height) parts.push(`${height}`);
+    // Only add dimensions that are numbers greater than 0
+    if (typeof length === 'number' && length > 0) parts.push(`${length}`);
+    if (typeof width === 'number' && width > 0) parts.push(`${width}`);
+    if (typeof height === 'number' && height > 0) parts.push(`${height}`);
     
     if (parts.length === 0) return "";
     return `${parts.join(' × ')} ${unit}`;
@@ -43,10 +51,26 @@ const RoomPropertyInfo: React.FC<RoomPropertyInfoProps> = ({ area, location, mea
   const dimensions = formatDimensions();
   const squareFootage = calculateSquareFootage();
 
-  // Added console logging to debug measurements data
-  console.log("RoomPropertyInfo - Measurements data:", measurements);
-  console.log("RoomPropertyInfo - Dimensions:", dimensions);
-  console.log("RoomPropertyInfo - Square Footage:", squareFootage);
+  // More detailed logging to debug measurements display issues
+  console.log("RoomPropertyInfo - dimensions string:", dimensions);
+  console.log("RoomPropertyInfo - squareFootage string:", squareFootage);
+  console.log("RoomPropertyInfo - Measurement types:", {
+    length: measurements?.length ? typeof measurements.length : 'undefined',
+    width: measurements?.width ? typeof measurements.width : 'undefined',
+    height: measurements?.height ? typeof measurements.height : 'undefined',
+  });
+
+  // Check if we have valid measurements by checking if length, width or height are numbers
+  const hasMeasurements = Boolean(
+    measurements && (
+      (typeof measurements.length === 'number' && measurements.length > 0) || 
+      (typeof measurements.width === 'number' && measurements.width > 0) || 
+      (typeof measurements.height === 'number' && measurements.height > 0) ||
+      measurements.additionalNotes
+    )
+  );
+
+  console.log("RoomPropertyInfo - hasMeasurements:", hasMeasurements);
 
   return (
     <div className="space-y-4 mb-8">
@@ -62,7 +86,7 @@ const RoomPropertyInfo: React.FC<RoomPropertyInfoProps> = ({ area, location, mea
         </div>
       )}
 
-      {dimensions && (
+      {dimensions ? (
         <div className="flex items-center gap-3 text-gray-700">
           <span className="text-base font-medium">Dimensions:</span>
           <div className="flex items-center">
@@ -70,9 +94,7 @@ const RoomPropertyInfo: React.FC<RoomPropertyInfoProps> = ({ area, location, mea
             <span className="text-sm">{dimensions}</span>
           </div>
         </div>
-      )}
-
-      {!dimensions && (
+      ) : (
         <div className="flex items-center gap-3 text-gray-700">
           <span className="text-base font-medium">Dimensions:</span>
           <div className="flex items-center">
