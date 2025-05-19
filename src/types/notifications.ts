@@ -3,6 +3,8 @@ export type NotificationType =
   | 'message' 
   | 'sow_review' 
   | 'sow_approved' 
+  | 'sow_revised'
+  | 'sow_revision_requested'
   | 'project_ready' 
   | 'new_meeting'
   | 'project_coaching_request';
@@ -48,6 +50,7 @@ export interface Notification {
   };
   sow?: {
     id: string;
+    feedback?: string;
   };
   priority: NotificationPriority;
   availableActions: NotificationAction[];

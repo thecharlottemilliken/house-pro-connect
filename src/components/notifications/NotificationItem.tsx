@@ -1,7 +1,7 @@
 import React from 'react';
 import { Notification, NotificationAction } from '@/types/notifications';
 import { Button } from '@/components/ui/button';
-import { MessageCircle, Eye, Reply, Check, Calendar, ArrowRight } from 'lucide-react';
+import { MessageCircle, Eye, Reply, Check, Calendar, ArrowRight, ClipboardEdit } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface NotificationItemProps {
@@ -40,8 +40,15 @@ const NotificationItem = ({ notification, onMarkAsRead, compact = false, onClick
         break;
         
       case 'sow_review':
+      case 'sow_revised':
         if (notification.project?.id) {
-          navigate(`/project-sow/${notification.project.id}?review=true`);
+          navigate(`/project-sow/${notification.project.id}?review=true${notification.type === 'sow_revised' ? '&revised=true' : ''}`);
+        }
+        break;
+        
+      case 'sow_revision_requested':
+        if (notification.project?.id) {
+          navigate(`/project-sow/${notification.project.id}`);
         }
         break;
         
@@ -104,7 +111,9 @@ const NotificationItem = ({ notification, onMarkAsRead, compact = false, onClick
         
       case 'view_sow':
         if (notification.project?.id) {
-          navigate(`/project-sow/${notification.project.id}?review=true`);
+          // If it's a revised SOW, add the revised parameter
+          const isRevised = notification.type === 'sow_revised';
+          navigate(`/project-sow/${notification.project.id}?review=true${isRevised ? '&revised=true' : ''}`);
         }
         break;
         
@@ -146,6 +155,9 @@ const NotificationItem = ({ notification, onMarkAsRead, compact = false, onClick
         return <Calendar className="h-4 w-4" />;
       case 'project_coaching_request':
         return <Calendar className="h-4 w-4" />;
+      case 'sow_revised':
+      case 'sow_revision_requested':
+        return <ClipboardEdit className="h-4 w-4" />;
       default:
         return null;
     }
@@ -295,6 +307,12 @@ const NotificationItem = ({ notification, onMarkAsRead, compact = false, onClick
       {notification.type === "project_coaching_request" && (
         <div className="flex items-center mt-1 text-gray-500 text-xs">
           <Calendar className="h-4 w-4" /> <span className="ml-1">Coaching Request · {notification.project?.name}</span>
+        </div>
+      )}
+      
+      {(notification.type === "sow_revised" || notification.type === "sow_revision_requested") && (
+        <div className="flex items-center mt-1 text-gray-500 text-xs">
+          <ClipboardEdit className="h-4 w-4" /> <span className="ml-1">SOW Revision · {notification.project?.name}</span>
         </div>
       )}
     </div>

@@ -31,6 +31,7 @@ const ProjectSOW = () => {
   const [sowData, setSOWData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
+  const [isRevision, setIsRevision] = useState(false);
 
   const { profile } = useAuth();
   const { generateActionItems } = useActionItemsGenerator();
@@ -50,6 +51,11 @@ const ProjectSOW = () => {
         if (error) throw error;
         setSOWData(data);
         
+        // Check if this is a revision based on the status
+        if (data?.status === "ready for review" && searchParams.get("revised") === "true") {
+          setIsRevision(true);
+        }
+        
         // If in review mode and status is "ready for review" or "pending", show review dialog
         if (isReviewMode && (data?.status === "ready for review" || data?.status === "pending")) {
           setShowReviewDialog(true);
@@ -67,7 +73,7 @@ const ProjectSOW = () => {
     };
 
     fetchSOWData();
-  }, [params.projectId, profile, isReviewMode, generateActionItems]);
+  }, [params.projectId, profile, isReviewMode, generateActionItems, searchParams]);
 
   const projectTitle = projectData?.title || "Unknown Project";
   
@@ -121,7 +127,9 @@ const ProjectSOW = () => {
 
     return (
       <div className="max-w-6xl mx-auto px-6 py-6">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-6">Statement of Work</h2>
+        <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+          {isRevision ? "Revised Statement of Work" : "Statement of Work"}
+        </h2>
 
         <ProjectReviewForm
           workAreas={sowData.work_areas || []}
@@ -130,6 +138,7 @@ const ProjectSOW = () => {
           bidConfiguration={sowData.bid_configuration || { bidDuration: '', projectDescription: '' }}
           projectId={params.projectId || ''}
           onSave={() => { }}
+          isRevised={isRevision}
         />
       </div>
     );
@@ -143,13 +152,15 @@ const ProjectSOW = () => {
           Back to Project
         </Button>
         <div className="flex-1 flex justify-center">
-          <h1 className="text-sm font-medium">{projectTitle} - Statement of Work</h1>
+          <h1 className="text-sm font-medium">
+            {projectTitle} - {isRevision ? "Revised Statement of Work" : "Statement of Work"}
+          </h1>
         </div>
         <div className="w-[72px]" />
       </header>
 
       <main className="flex-1 overflow-hidden">
-        {isViewMode || isReviewMode ? renderSOWView() : <SOWWizard />}
+        {isViewMode || isReviewMode ? renderSOWView() : <SOWWizard isRevision={sowData?.status === 'pending revision'} />}
       </main>
       
       {sowData && (
@@ -159,6 +170,7 @@ const ProjectSOW = () => {
           projectId={params.projectId || ""}
           sowId={sowData.id}
           onActionComplete={handleReviewComplete}
+          isRevision={isRevision}
         />
       )}
     </div>

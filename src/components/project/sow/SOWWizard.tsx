@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import {
@@ -9,7 +9,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { ChevronRight, AlertCircle } from "lucide-react";
+import { ChevronRight, AlertCircle, ClipboardEdit } from "lucide-react";
 import { useProjectData } from "@/hooks/useProjectData";
 import { useSOWData } from "@/hooks/useSOWData";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,8 @@ import { BidConfigurationForm } from "./BidConfigurationForm";
 import { ProjectReviewForm } from "./ProjectReviewForm";
 import { toast } from "@/hooks/use-toast";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+import { trackChanges, initializeChangeTracker, ChangeTracker } from "./utils/revisionUtils";
+import { supabase } from "@/integrations/supabase/client";
 
 const steps = [
   { id: 'work-areas', title: 'Work Areas', description: 'Define specific areas requiring work' },
@@ -32,15 +34,53 @@ const steps = [
   { id: 'project-review', title: 'Project Review', description: 'Review project details and requirements' }
 ];
 
-export function SOWWizard() {
+interface SOWWizardProps {
+  isRevision?: boolean;
+}
+
+export function SOWWizard({ isRevision = false }: SOWWizardProps) {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const { projectData, propertyDetails, isLoading: projectLoading } = useProjectData(projectId);
   const { sowData, isLoading: sowLoading, saveSOWField } = useSOWData(projectId);
-  const [currentStep, setCurrentStep] = React.useState(0);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [originalSowData, setOriginalSowData] = useState(null);
+  const [changes, setChanges] = useState<ChangeTracker>(initializeChangeTracker());
   
   const isLoading = projectLoading || sowLoading;
   const isPendingRevision = sowData?.status === 'pending revision';
+
+  // Fetch the original version for comparison if this is a revision
+  useEffect(() => {
+    const fetchOriginalSOW = async () => {
+      if (!projectId || !isPendingRevision) return;
+
+      try {
+        // We're assuming you're storing historical SOW versions
+        // If you don't have this feature yet, this would just use the current data
+        // and highlight based on feedback instead
+        const { data, error } = await supabase
+          .from('statement_of_work')
+          .select('*')
+          .eq('project_id', projectId)
+          .single();
+          
+        if (error) throw error;
+        
+        setOriginalSowData(data);
+        
+        // Track changes between versions
+        if (data && sowData) {
+          const changesDetected = trackChanges(data, sowData);
+          setChanges(changesDetected);
+        }
+      } catch (error) {
+        console.error("Error fetching original SOW data:", error);
+      }
+    };
+    
+    fetchOriginalSOW();
+  }, [projectId, isPendingRevision, sowData]);
 
   // Save work areas
   const handleWorkAreasSubmit = async (areas: any[]) => {
@@ -98,6 +138,37 @@ export function SOWWizard() {
     }
   };
 
+  // Submit the revised SOW
+  const handleSubmitRevisions = async () => {
+    if (!projectId || !sowData) return;
+    
+    try {
+      const { error } = await supabase
+        .from('statement_of_work')
+        .update({
+          status: 'ready for review',
+        })
+        .eq('id', sowData.id);
+        
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Revised SOW submitted for review."
+      });
+      
+      // Navigate back to project dashboard
+      navigate(`/project-dashboard/${projectId}`);
+    } catch (error) {
+      console.error("Error submitting revised SOW:", error);
+      toast({
+        title: "Error",
+        description: "Failed to submit revised SOW.",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -138,6 +209,8 @@ export function SOWWizard() {
             workAreas={sowData.work_areas || []}
             projectData={projectData}
             propertyDetails={propertyDetails}
+            changedWorkAreas={changes.workAreas}
+            isRevision={isPendingRevision}
           />
         );
       case 1:
@@ -146,6 +219,8 @@ export function SOWWizard() {
             workAreas={sowData.work_areas || []} 
             onSave={handleLaborItemsSubmit}
             laborItems={sowData.labor_items || []}
+            changedLaborItems={changes.laborItems}
+            isRevision={isPendingRevision}
           />
         );
       case 2:
@@ -154,6 +229,8 @@ export function SOWWizard() {
             workAreas={sowData.work_areas || []}
             onSave={handleMaterialItemsSubmit}
             materialItems={sowData.material_items || []}
+            changedMaterialItems={changes.materialItems}
+            isRevision={isPendingRevision}
           />
         );
       case 3:
@@ -161,6 +238,8 @@ export function SOWWizard() {
           <BidConfigurationForm
             onSave={handleBidConfigSubmit}
             bidConfiguration={sowData.bid_configuration}
+            hasChanges={changes.bidConfiguration}
+            isRevision={isPendingRevision}
           />
         );
       case 4:
@@ -174,9 +253,14 @@ export function SOWWizard() {
             isRevision={isPendingRevision}
             onSave={(confirmed) => {
               if (confirmed) {
-                navigate(`/project-dashboard/${projectId}`);
+                if (isPendingRevision) {
+                  handleSubmitRevisions();
+                } else {
+                  navigate(`/project-dashboard/${projectId}`);
+                }
               }
             }}
+            changes={changes}
           />
         );
       default:
@@ -201,9 +285,16 @@ export function SOWWizard() {
               <div className="mb-8">
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h2 className="text-2xl font-semibold text-gray-900">
-                      {isPendingRevision ? 'Update Statement of Work' : 'Create Statement of Work'}
-                    </h2>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-2xl font-semibold text-gray-900">
+                        {isPendingRevision ? 'Update Statement of Work' : 'Create Statement of Work'}
+                      </h2>
+                      {isPendingRevision && (
+                        <Badge variant="outline" className="border-orange-500 text-orange-600 flex gap-1 items-center">
+                          <ClipboardEdit className="h-3 w-3" /> Revision
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-gray-500 mt-1">Step {currentStep + 1} of {steps.length}</p>
                   </div>
                   <Badge variant="secondary" className="text-sm">

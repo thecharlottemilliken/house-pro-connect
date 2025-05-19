@@ -1,19 +1,11 @@
-
-import React, { useState } from 'react';
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
+import React from 'react';
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useActionItemsGenerator } from "@/hooks/useActionItemsGenerator";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { ClipboardEdit } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ChangeTracker } from './utils/revisionUtils';
 
+// Update the interface to include the new props
 interface ProjectReviewFormProps {
   workAreas: any[];
   laborItems: any[];
@@ -24,289 +16,252 @@ interface ProjectReviewFormProps {
   };
   projectId: string;
   isRevision?: boolean;
+  isRevised?: boolean;
   onSave: (confirmed: boolean) => void;
+  changes?: ChangeTracker;
 }
 
-export function ProjectReviewForm({
+export const ProjectReviewForm = ({
   workAreas,
   laborItems,
   materialItems,
   bidConfiguration,
   projectId,
   isRevision = false,
-  onSave
-}: ProjectReviewFormProps) {
-  const [confirmed, setConfirmed] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const { generateActionItems } = useActionItemsGenerator();
-
-  const handleSaveSOW = async () => {
-    if (!confirmed) return;
-    
-    setIsSaving(true);
-    
-    try {
-      // First check if SOW exists for this project
-      const { data: existingSOW, error: fetchError } = await supabase
-        .from('statement_of_work')
-        .select('id')
-        .eq('project_id', projectId)
-        .maybeSingle();
-        
-      if (fetchError) throw fetchError;
-      
-      if (existingSOW) {
-        // Update existing SOW record with completed status
-        const { error } = await supabase
-          .from('statement_of_work')
-          .update({
-            work_areas: workAreas,
-            labor_items: laborItems,
-            material_items: materialItems,
-            bid_configuration: bidConfiguration,
-            status: 'ready for review', // This status is used for both initial submission and after revision
-            feedback: null // Clear any previous feedback when resubmitting
-          })
-          .eq('id', existingSOW.id);
-          
-        if (error) throw error;
-      } else {
-        // Create new SOW record with completed status
-        const { error } = await supabase
-          .from('statement_of_work')
-          .insert([{
-            project_id: projectId,
-            work_areas: workAreas,
-            labor_items: laborItems,
-            material_items: materialItems,
-            bid_configuration: bidConfiguration,
-            status: 'ready for review'
-          }]);
-          
-        if (error) throw error;
-      }
-      
-      // Generate action items to ensure the SOW review item appears
-      await generateActionItems(projectId);
-      
-      toast({
-        title: "Success",
-        description: isRevision 
-          ? "Revised Statement of Work has been submitted for review"
-          : "Statement of Work has been saved and submitted for review",
-      });
-      
-      onSave(true);
-    } catch (error) {
-      console.error("Error saving SOW:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save the Statement of Work",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSaving(false);
-    }
+  isRevised = false,
+  onSave,
+  changes
+}: ProjectReviewFormProps) => {
+  const handleSubmit = async () => {
+    onSave(true);
   };
 
-  // Helper function to format specifications object for display
-  const formatSpecifications = (specs: any): React.ReactNode => {
-    if (!specs || Object.keys(specs).length === 0) return null;
+  const handleCancel = () => {
+    onSave(false);
+  };
 
-    // Handle cabinet array specifically
-    if (specs.cabinets && Array.isArray(specs.cabinets)) {
+  // Helper to check if an item was changed
+  const wasChanged = (id: string, itemType: 'workAreas' | 'laborItems' | 'materialItems'): boolean => {
+    if (!changes) return false;
+    return !!changes[itemType]?.[id];
+  };
+
+  // Render each section with change highlighting
+  const renderWorkAreas = () => {
+    return workAreas.map((area, index) => {
+      const id = area.id || `index-${index}`;
+      const isChanged = wasChanged(id, 'workAreas');
+      const highlightClass = isChanged ? 'bg-yellow-50 border-l-4 border-yellow-400 pl-3 -ml-3' : '';
+      
       return (
-        <div>
-          <p className="font-medium">Cabinets:</p>
-          <ul className="list-disc pl-5 text-xs space-y-1">
-            {specs.cabinets.map((cab: any, i: number) => (
-              <li key={i}>
-                {cab.type} - {cab.doors} doors, {cab.drawers} drawers, {cab.size}
-              </li>
-            ))}
-          </ul>
+        <div key={id} className={`mb-6 ${highlightClass}`}>
+          {/* Add a change badge if this item was changed */}
+          {isChanged && (
+            <Badge className="mb-2 bg-yellow-100 text-yellow-800 hover:bg-yellow-200 flex w-fit items-center gap-1">
+              <ClipboardEdit className="h-3 w-3" /> Updated
+            </Badge>
+          )}
+          
+          <h3 className="text-lg font-semibold mb-2">{area.name}</h3>
+          <p className="text-gray-600 mb-3">{area.description || 'No description provided'}</p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <h4 className="font-medium text-sm mb-1">Location</h4>
+              <p className="text-gray-700">{area.location || 'Not specified'}</p>
+            </div>
+            <div>
+              <h4 className="font-medium text-sm mb-1">Dimensions</h4>
+              <p className="text-gray-700">{area.dimensions || 'Not specified'}</p>
+            </div>
+          </div>
+          
+          {area.notes && (
+            <div className="mt-2">
+              <h4 className="font-medium text-sm mb-1">Notes</h4>
+              <p className="text-gray-700">{area.notes}</p>
+            </div>
+          )}
         </div>
       );
-    }
+    });
+  };
 
-    // Generic handling for all other specification types
+  const renderLaborItems = () => {
+    return laborItems.map((item, index) => {
+      const id = item.id || `index-${index}`;
+      const isChanged = wasChanged(id, 'laborItems');
+      const highlightClass = isChanged ? 'bg-yellow-50 border-l-4 border-yellow-400 pl-3 -ml-3' : '';
+      
+      return (
+        <div key={id} className={`mb-4 ${highlightClass}`}>
+          {isChanged && (
+            <Badge className="mb-2 bg-yellow-100 text-yellow-800 hover:bg-yellow-200 flex w-fit items-center gap-1">
+              <ClipboardEdit className="h-3 w-3" /> Updated
+            </Badge>
+          )}
+          
+          <h4 className="font-medium">{item.title}</h4>
+          <p className="text-sm text-gray-600">{item.description}</p>
+          
+          <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <span className="text-xs text-gray-500">Work Area:</span>
+              <p className="text-sm">{item.workArea || 'All areas'}</p>
+            </div>
+            <div>
+              <span className="text-xs text-gray-500">Expertise Required:</span>
+              <p className="text-sm">{item.expertise || 'General'}</p>
+            </div>
+          </div>
+          
+          {item.notes && (
+            <div className="mt-2">
+              <span className="text-xs text-gray-500">Notes:</span>
+              <p className="text-sm">{item.notes}</p>
+            </div>
+          )}
+        </div>
+      );
+    });
+  };
+
+  const renderMaterialItems = () => {
+    return materialItems.map((item, index) => {
+      const id = item.id || `index-${index}`;
+      const isChanged = wasChanged(id, 'materialItems');
+      const highlightClass = isChanged ? 'bg-yellow-50 border-l-4 border-yellow-400 pl-3 -ml-3' : '';
+      
+      return (
+        <div key={id} className={`mb-4 ${highlightClass}`}>
+          {isChanged && (
+            <Badge className="mb-2 bg-yellow-100 text-yellow-800 hover:bg-yellow-200 flex w-fit items-center gap-1">
+              <ClipboardEdit className="h-3 w-3" /> Updated
+            </Badge>
+          )}
+          
+          <h4 className="font-medium">{item.name}</h4>
+          <p className="text-sm text-gray-600">{item.description}</p>
+          
+          <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <span className="text-xs text-gray-500">Work Area:</span>
+              <p className="text-sm">{item.workArea || 'All areas'}</p>
+            </div>
+            <div>
+              <span className="text-xs text-gray-500">Quantity:</span>
+              <p className="text-sm">{item.quantity || 'Not specified'}</p>
+            </div>
+          </div>
+          
+          {item.specifications && (
+            <div className="mt-2">
+              <span className="text-xs text-gray-500">Specifications:</span>
+              <p className="text-sm">{item.specifications}</p>
+            </div>
+          )}
+          
+          {item.notes && (
+            <div className="mt-2">
+              <span className="text-xs text-gray-500">Notes:</span>
+              <p className="text-sm">{item.notes}</p>
+            </div>
+          )}
+        </div>
+      );
+    });
+  };
+
+  const renderBidConfiguration = () => {
+    const isChanged = changes?.bidConfiguration;
+    const highlightClass = isChanged ? 'bg-yellow-50 border-l-4 border-yellow-400 pl-3 -ml-3' : '';
+    
     return (
-      <div>
-        {Object.entries(specs).map(([key, value]) => {
-          // Skip empty values or complex objects
-          if (!value || typeof value === 'object') return null;
-          return (
-            <p key={key} className="text-xs">
-              <span className="font-medium">{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: </span>
-              {String(value)}
-            </p>
-          );
-        })}
+      <div className={`mb-6 ${highlightClass}`}>
+        {isChanged && (
+          <Badge className="mb-2 bg-yellow-100 text-yellow-800 hover:bg-yellow-200 flex w-fit items-center gap-1">
+            <ClipboardEdit className="h-3 w-3" /> Updated
+          </Badge>
+        )}
+        
+        <h3 className="text-lg font-semibold mb-2">Bid Configuration</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <h4 className="font-medium text-sm mb-1">Bid Duration</h4>
+            <p className="text-gray-700">{bidConfiguration.bidDuration} days</p>
+          </div>
+        </div>
+        
+        <div>
+          <h4 className="font-medium text-sm mb-1">Project Description</h4>
+          <p className="text-gray-700 whitespace-pre-wrap">{bidConfiguration.projectDescription || 'No description provided'}</p>
+        </div>
       </div>
     );
   };
 
   return (
-    <div className="space-y-6">
+    <div>
+      {(isRevision || isRevised) && (
+        <Alert className="mb-6 bg-blue-50 border-blue-200">
+          <ClipboardEdit className="h-4 w-4 text-blue-600" />
+          <AlertTitle className="text-blue-800">Revised Document</AlertTitle>
+          <AlertDescription className="text-blue-700">
+            This is a revised version of the Statement of Work. Changes based on feedback are highlighted.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Work Areas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="list-disc pl-6 space-y-2">
-              {workAreas.map((area: any, index: number) => (
-                <li key={index} className="text-gray-700">
-                  {area.name}
-                  {area.additionalAreas && area.additionalAreas.length > 0 && (
-                    <ul className="list-circle pl-6 mt-1">
-                      {area.additionalAreas.map((subArea: any, subIndex: number) => (
-                        <li key={subIndex} className="text-gray-600 text-sm">
-                          {subArea.name}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Work Areas</h2>
+          {workAreas.length > 0 ? (
+            <div>{renderWorkAreas()}</div>
+          ) : (
+            <p className="text-gray-500">No work areas defined.</p>
+          )}
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Labor Requirements</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="list-disc pl-6 space-y-4">
-              {Object.entries(
-                laborItems.reduce((acc: any, item: any) => {
-                  if (!acc[item.category]) {
-                    acc[item.category] = [];
-                  }
-                  acc[item.category].push(item);
-                  return acc;
-                }, {})
-              ).map(([category, items]: [string, any]) => (
-                <li key={category}>
-                  <strong>{category}</strong>
-                  <ul className="list-circle pl-6 mt-2">
-                    {items.map((item: any, index: number) => (
-                      <li key={index} className="text-gray-600">
-                        {item.task}
-                        {item.rooms && item.rooms.length > 0 && (
-                          <ul className="list-none pl-4 mt-1">
-                            {item.rooms.map((room: any, roomIndex: number) => (
-                              <li key={roomIndex} className="text-sm text-gray-500">
-                                {room.name}: {room.notes}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Labor Requirements</h2>
+          {laborItems.length > 0 ? (
+            <div>{renderLaborItems()}</div>
+          ) : (
+            <p className="text-gray-500">No labor requirements defined.</p>
+          )}
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Material Requirements</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="list-disc pl-6 space-y-4">
-              {Object.entries(
-                materialItems.reduce((acc: any, item: any) => {
-                  if (!acc[item.category]) {
-                    acc[item.category] = [];
-                  }
-                  acc[item.category].push(item);
-                  return acc;
-                }, {})
-              ).map(([category, items]: [string, any]) => (
-                <li key={category}>
-                  <strong>{category}</strong>
-                  <ul className="list-circle pl-6 mt-2">
-                    {items.map((item: any, index: number) => (
-                      <li key={index} className="text-gray-600">
-                        {item.type}
-                        {/* Display specifications if they exist */}
-                        {item.specifications && Object.keys(item.specifications).length > 0 && (
-                          <div className="mt-1 ml-2 text-gray-500">
-                            {formatSpecifications(item.specifications)}
-                          </div>
-                        )}
-                        {item.rooms && item.rooms.length > 0 && (
-                          <ul className="list-none pl-4 mt-1">
-                            {item.rooms.map((room: any, roomIndex: number) => (
-                              <li key={roomIndex} className="text-sm text-gray-500">
-                                <span className="font-medium">{room.name}:</span> {room.notes}
-                                {/* Display specifications from the room if they exist */}
-                                {room.specifications && Object.keys(room.specifications).length > 0 && (
-                                  <div className="mt-1 ml-2">
-                                    {formatSpecifications(room.specifications)}
-                                  </div>
-                                )}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Material Requirements</h2>
+          {materialItems.length > 0 ? (
+            <div>{renderMaterialItems()}</div>
+          ) : (
+            <p className="text-gray-500">No material requirements defined.</p>
+          )}
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Bid Configuration</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <h4 className="font-medium mb-2">Bid Duration</h4>
-              <p className="text-gray-600">{bidConfiguration.bidDuration} days</p>
-            </div>
-            <div>
-              <h4 className="font-medium mb-2">Project Overview</h4>
-              <p className="text-gray-600">{bidConfiguration.projectDescription}</p>
-            </div>
-          </CardContent>
-        </Card>
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Bid Configuration</h2>
+          {renderBidConfiguration()}
+        </div>
       </div>
 
-      <Separator className="my-6" />
-
-      <div className="flex items-start space-x-2">
-        <Checkbox
-          id="review-confirm"
-          checked={confirmed}
-          onCheckedChange={(checked) => setConfirmed(checked as boolean)}
-        />
-        <Label
-          htmlFor="review-confirm"
-          className="text-sm leading-relaxed"
-        >
-          I confirm that I have reviewed all the information above and it accurately reflects the scope of work for this project.
-        </Label>
-      </div>
-
-      <div className="flex justify-end">
-        <Button 
-          onClick={handleSaveSOW} 
-          disabled={!confirmed || isSaving}
-        >
-          {isSaving ? 
-            "Saving..." : 
-            isRevision ? "Submit Revised SOW" : "Submit SOW"
-          }
-        </Button>
-      </div>
+      {onSave && (
+        <div className="mt-8 flex justify-end">
+          <Button
+            variant="outline"
+            className="mr-4"
+            onClick={() => onSave(false)}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={() => onSave(true)}
+          >
+            {isRevision ? "Submit Revised SOW" : "Submit SOW for Review"}
+          </Button>
+        </div>
+      )}
     </div>
   );
-}
+};

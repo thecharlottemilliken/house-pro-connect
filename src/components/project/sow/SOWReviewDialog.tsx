@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useProjectData } from "@/hooks/useProjectData";
 import { useActionItemsGenerator } from "@/hooks/useActionItemsGenerator";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { InfoCircledIcon, ReloadIcon } from "@radix-ui/react-icons";
 
 interface SOWReviewDialogProps {
   open: boolean;
@@ -23,6 +25,7 @@ interface SOWReviewDialogProps {
   projectId: string;
   sowId: string;
   onActionComplete?: () => void;
+  isRevision?: boolean;
 }
 
 const SOWReviewDialog = ({ 
@@ -30,7 +33,8 @@ const SOWReviewDialog = ({
   onOpenChange,
   projectId,
   sowId,
-  onActionComplete
+  onActionComplete,
+  isRevision = false
 }: SOWReviewDialogProps) => {
   const [activeTab, setActiveTab] = useState("review");
   const [feedback, setFeedback] = useState("");
@@ -110,12 +114,24 @@ const SOWReviewDialog = ({
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            Review Statement of Work
+            {isRevision ? "Review Revised Statement of Work" : "Review Statement of Work"}
           </DialogTitle>
           <DialogDescription>
-            Review the Statement of Work and either approve it or request revisions.
+            {isRevision 
+              ? "Review the revised Statement of Work that addresses your previous feedback." 
+              : "Review the Statement of Work and either approve it or request revisions."}
           </DialogDescription>
         </DialogHeader>
+        
+        {isRevision && (
+          <Alert className="bg-blue-50 border-blue-200 text-blue-800">
+            <InfoCircledIcon className="h-4 w-4" />
+            <AlertTitle>Revised Document</AlertTitle>
+            <AlertDescription>
+              This is a revised version of the Statement of Work. Areas that have been modified based on your feedback are highlighted.
+            </AlertDescription>
+          </Alert>
+        )}
         
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid grid-cols-2 mb-4">
@@ -145,7 +161,12 @@ const SOWReviewDialog = ({
                 onClick={handleApprove}
                 disabled={isSubmitting}
               >
-                {isSubmitting ? "Approving..." : "Approve SOW"}
+                {isSubmitting ? (
+                  <>
+                    <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
+                    Approving...
+                  </>
+                ) : "Approve SOW"}
               </Button>
             </DialogFooter>
           </TabsContent>
@@ -180,7 +201,12 @@ const SOWReviewDialog = ({
                 disabled={isSubmitting || !feedback.trim()}
                 variant="secondary"
               >
-                {isSubmitting ? "Requesting..." : "Request Revisions"}
+                {isSubmitting ? (
+                  <>
+                    <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
+                    Requesting...
+                  </>
+                ) : "Request Revisions"}
               </Button>
             </DialogFooter>
           </TabsContent>

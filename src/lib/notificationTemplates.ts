@@ -1,4 +1,3 @@
-
 import { NotificationTemplate } from "@/types/notifications";
 
 export const notificationTemplates: Record<string, NotificationTemplate> = {
@@ -27,6 +26,34 @@ export const notificationTemplates: Record<string, NotificationTemplate> = {
     },
     generateContent: () => {
       return 'To continue the project you will need to review the SOW.';
+    }
+  },
+  
+  sow_revised: {
+    type: 'sow_revised',
+    titleFormat: '{user} has submitted revised SOW for your review',
+    contentFormat: 'The Statement of Work has been updated with your requested changes.',
+    priority: 'high',
+    defaultActions: ['view_sow', 'mark_as_read'],
+    generateTitle: (data) => {
+      return `${data.user} has submitted revised SOW for your review`;
+    },
+    generateContent: () => {
+      return 'The Statement of Work has been updated with your requested changes.';
+    }
+  },
+  
+  sow_revision_requested: {
+    type: 'sow_revision_requested',
+    titleFormat: '{user} has requested changes to the SOW',
+    contentFormat: '{feedback}',
+    priority: 'high',
+    defaultActions: ['view_sow', 'mark_as_read'],
+    generateTitle: (data) => {
+      return `${data.user} has requested changes to the SOW`;
+    },
+    generateContent: (data) => {
+      return data.feedback || 'Please review the feedback and update the SOW.';
     }
   },
   
