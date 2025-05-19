@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Star, FileText, Briefcase } from "lucide-react";
+import { Plus, Star, FileText, Briefcase, Shield } from "lucide-react";
 import ServiceProNavbar from "@/components/service-pro/ServiceProNavbar";
 import { useAuth } from "@/contexts/AuthContext";
 import { Separator } from "@/components/ui/separator";
+import LicensesForm from "@/components/service-pro/LicensesForm";
 
 const ServiceProProfile = () => {
   const { profile, user } = useAuth();
@@ -82,6 +83,37 @@ const ServiceProProfile = () => {
               </CardContent>
             </Card>
             
+            {/* Licenses & Certifications Card */}
+            <Card className="border border-gray-200">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center">
+                  <Shield className="h-5 w-5 mr-2 text-orange-600" />
+                  Licenses & Certifications
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <LicensesForm />
+              </CardContent>
+            </Card>
+            
+            {/* Insurance Card */}
+            <Card className="border border-gray-200">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center">
+                  <Shield className="h-5 w-5 mr-2 text-orange-600" />
+                  Insurance
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <p className="text-gray-600 mb-4">
+                  No insurance provided. Add your insurance information to begin bidding on projects.
+                </p>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" /> Add Insurance
+                </Button>
+              </CardContent>
+            </Card>
+            
             {/* Stats Card */}
             <Card className="border border-gray-200">
               <CardContent className="p-6">
@@ -150,33 +182,6 @@ const ServiceProProfile = () => {
                 </div>
               </div>
             </div>
-            
-            {/* Licenses & Certifications */}
-            <Card className="border border-gray-200">
-              <CardHeader>
-                <CardTitle className="text-xl">Licenses & Certifications</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600 mb-4">
-                  No licenses or certifications listed. Add your insurance information to begin bidding on projects.
-                </p>
-              </CardContent>
-            </Card>
-            
-            {/* Insurance Information */}
-            <Card className="border border-gray-200">
-              <CardHeader>
-                <CardTitle className="text-xl">Insurance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600 mb-4">
-                  No insurance provided. Add your insurance information to begin bidding on projects.
-                </p>
-                <Button variant="outline">
-                  ADD LICENSE & INSURANCE
-                </Button>
-              </CardContent>
-            </Card>
             
             {/* Portfolio */}
             <div>
