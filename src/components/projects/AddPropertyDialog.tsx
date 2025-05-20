@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 import { 
@@ -110,49 +109,59 @@ const AddPropertyDialog = ({ open, onClose, onAddProperty }: AddPropertyDialogPr
   // Handle files uploaded via the new component
   const handleFilesUploaded = (files: FileWithPreview[]) => {
     console.log("Files uploaded:", files);
+    setPropertyFiles(files);
   };
 
   const handleSubmit = async () => {
-    // Extract image URLs from files
-    const imageUrls = propertyFiles
-      .filter(f => f.status === 'complete' && f.url && !f.type.includes('pdf'))
-      .map(f => f.url as string);
+    try {
+      // Extract image URLs from files
+      const imageUrls = propertyFiles
+        .filter(f => f.status === 'complete' && f.url && !f.type.includes('pdf'))
+        .map(f => f.url as string);
     
-    // Find blueprint URL if any
-    const blueprintUrl = propertyFiles.find(
-      f => f.status === 'complete' && f.url && 
-      (f.type.includes('pdf') || f.tags.includes('blueprint'))
-    )?.url;
+      // Find blueprint URL if any
+      const blueprintUrl = propertyFiles.find(
+        f => f.status === 'complete' && f.url && 
+        (f.type.includes('pdf') || f.tags.includes('blueprint'))
+      )?.url;
     
-    // Format file metadata for storage
-    const fileMetadata = propertyFiles.map(f => ({
-      name: f.name,
-      url: f.url,
-      type: f.type,
-      tags: f.tags
-    }));
-    
-    const newProperty = {
-      id: Date.now(),
-      type: propertyName,
-      image: imageUrls.length > 0 ? imageUrls[0] : "https://images.unsplash.com/photo-1493809842364-78817add7ffb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-      address: `${addressLine1}, ${city}, ${state} ${zipCode}`,
-      details: {
-        sqft,
-        homeType,
-        homePurpose,
-        bedrooms,
-        bathrooms,
-        exteriorAttributes: attributes,
-        interiorAttributes: attributes,
-        blueprintUrl,
-        images: imageUrls,
-        fileMetadata: fileMetadata
-      }
-    };
-    
-    onAddProperty(newProperty);
-    onClose();
+      // Format file metadata for storage
+      const fileMetadata = propertyFiles.map(f => ({
+        name: f.name,
+        url: f.url,
+        type: f.type,
+        tags: f.tags
+      }));
+      
+      const newProperty = {
+        id: Date.now(),
+        type: propertyName,
+        image: imageUrls.length > 0 ? imageUrls[0] : "https://images.unsplash.com/photo-1493809842364-78817add7ffb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
+        address: `${addressLine1}, ${city}, ${state} ${zipCode}`,
+        details: {
+          sqft,
+          homeType,
+          homePurpose,
+          bedrooms,
+          bathrooms,
+          exteriorAttributes: attributes,
+          interiorAttributes: attributes,
+          blueprintUrl,
+          images: imageUrls,
+          fileMetadata: fileMetadata
+        }
+      };
+      
+      onAddProperty(newProperty);
+      onClose();
+    } catch (error: any) {
+      console.error("Error adding property:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add property. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (

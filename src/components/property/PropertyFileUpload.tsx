@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 interface PropertyFileUploadProps {
   accept?: string;
   multiple?: boolean;
-  onFilesUploaded?: (urls: string[]) => void;
+  onFilesUploaded?: (files: FileWithPreview[]) => void; // Changed to accept FileWithPreview[] instead of urls string[]
   initialFiles?: FileWithPreview[];
   roomOptions?: RoomTagOption[];
   label?: string;
@@ -54,9 +54,6 @@ export function PropertyFileUpload({
 
   // Handle completed uploads
   const handleUploadComplete = (files: FileWithPreview[]) => {
-    // Extract URLs from FileWithPreview objects
-    const urls = extractUrls(files);
-    
     // Update our internal state with the new files
     setUploadedFiles(prev => {
       // Create a map of existing file IDs to avoid duplicates
@@ -69,9 +66,9 @@ export function PropertyFileUpload({
       return [...prev, ...newFiles];
     });
     
-    // Call the parent's callback with the URLs
-    if (onFilesUploaded && urls.length > 0) {
-      onFilesUploaded(urls);
+    // Call the parent's callback with the FileWithPreview objects
+    if (onFilesUploaded && files.length > 0) {
+      onFilesUploaded(files);
     }
   };
   
