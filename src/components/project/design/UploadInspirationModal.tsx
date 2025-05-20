@@ -29,8 +29,12 @@ const UploadInspirationModal: React.FC<UploadInspirationModalProps> = ({
 
   // Handle file upload completion from the FileUpload component
   const handleUploadComplete = (files: FileWithPreview[]) => {
+    // Debug logging for uploaded files
+    console.log("UploadInspirationModal - Files uploaded:", files);
+    
     // Extract URLs from the FileWithPreview objects
     const validUrls = extractUrls(files);
+    console.log("UploadInspirationModal - Valid URLs:", validUrls);
     
     if (validUrls.length > 0) {
       onUploadComplete(validUrls);

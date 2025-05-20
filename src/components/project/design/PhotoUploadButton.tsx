@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { EnhancedFileUpload, FileWithPreview } from "@/components/ui/file-upload";
+import { EnhancedFileUpload, FileWithPreview, extractUrls } from "@/components/ui/file-upload";
 import { cn } from "@/lib/utils";
 
 interface PhotoUploadButtonProps {
@@ -24,12 +24,10 @@ const PhotoUploadButton: React.FC<PhotoUploadButtonProps> = ({
     console.log("PhotoUploadButton - Files uploaded:", files);
     
     // Extract URLs from valid files
-    const validFiles = files.filter(file => file.status === 'complete' && file.url);
-    console.log("PhotoUploadButton - Valid files:", validFiles);
+    const urls = extractUrls(files);
+    console.log("PhotoUploadButton - Extracted URLs:", urls);
     
-    if (validFiles.length > 0) {
-      const urls = validFiles.map(file => file.url as string);
-      console.log("PhotoUploadButton - Extracted URLs:", urls);
+    if (urls.length > 0) {
       onUploadComplete(urls);
     }
   };
@@ -44,7 +42,7 @@ const PhotoUploadButton: React.FC<PhotoUploadButtonProps> = ({
       uploadedFiles={uploadedFiles}
       setUploadedFiles={setUploadedFiles}
       initialTags={["before"]} // Always tag uploads as "before" photos
-      roomOptions={[
+      roomTagOptions={[
         { value: "before", label: "Before" }
       ]}
       className={cn(variant === "outline" 

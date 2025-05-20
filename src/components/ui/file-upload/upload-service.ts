@@ -82,7 +82,7 @@ export const uploadFile = async (
   try {
     // Create a unique path for this file
     const fileExt = file.name.split('.').pop();
-    const fileName = `${uuidv4()}.${fileExt}`;
+    const fileName = `${Date.now()}-${uuidv4()}.${fileExt}`;
     const filePath = `uploads/${fileName}`;
     
     // Extract tags to metadata

@@ -76,19 +76,6 @@ export function PropertyFileUpload({
       onFilesUploaded(files);
     }
   };
-  
-  // Default room options if none provided
-  const defaultRoomOptions: RoomTagOption[] = [
-    { value: "livingRoom", label: "Living Room" },
-    { value: "kitchen", label: "Kitchen" },
-    { value: "bathroom", label: "Bathroom" },
-    { value: "bedroom", label: "Bedroom" },
-    { value: "office", label: "Office" },
-    { value: "exterior", label: "Exterior" },
-    { value: "blueprint", label: "Blueprint" },
-  ];
-
-  const roomTagOptions = roomOptions.length > 0 ? roomOptions : defaultRoomOptions;
 
   // Display authentication warning if not authenticated
   if (!isAuthenticated) {
@@ -117,7 +104,6 @@ export function PropertyFileUpload({
         label={label}
         description={description}
         initialTags={initialTags}
-        // Remove the roomTagOptions prop since it's not in the FileUpload props
       />
     </div>
   );

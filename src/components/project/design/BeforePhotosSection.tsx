@@ -1,5 +1,5 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import PhotoGrid from "./PhotoGrid";
 import EmptyPhotoState from "./EmptyPhotoState";
 import PhotoControls from "./PhotoControls";
@@ -29,9 +29,19 @@ const BeforePhotosSection: React.FC<BeforePhotosSectionProps> = ({
     return validPhotos.length > 0;
   }, [beforePhotos]);
 
-  console.log('BeforePhotosSection - area:', area); 
-  console.log('BeforePhotosSection - beforePhotos:', beforePhotos);
-  console.log('BeforePhotosSection - hasBeforePhotos:', hasBeforePhotos);
+  // Debug logging for beforePhotos
+  useEffect(() => {
+    console.log('BeforePhotosSection - area:', area); 
+    console.log('BeforePhotosSection - beforePhotos:', beforePhotos);
+    console.log('BeforePhotosSection - hasBeforePhotos:', hasBeforePhotos);
+    
+    // Detailed analysis of photos
+    if (beforePhotos && beforePhotos.length > 0) {
+      beforePhotos.forEach((url, index) => {
+        console.log(`Photo ${index}: ${url} (${typeof url}, valid: ${Boolean(url && typeof url === 'string')})`);
+      });
+    }
+  }, [area, beforePhotos, hasBeforePhotos]);
 
   if (!hasBeforePhotos) {
     return (
@@ -47,7 +57,7 @@ const BeforePhotosSection: React.FC<BeforePhotosSectionProps> = ({
   return (
     <div className="space-y-6">
       <PhotoGrid 
-        photos={beforePhotos} 
+        photos={beforePhotos.filter(url => url && typeof url === 'string')} 
         onRemovePhoto={onRemovePhoto} 
         onReorderPhotos={onReorderPhotos} 
       />
