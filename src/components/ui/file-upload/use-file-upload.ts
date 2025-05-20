@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { FileWithPreview } from "./types";
-import { processFiles } from "./upload-service";
+import { processFiles, uploadFile } from "./upload-service";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -32,59 +32,95 @@ export const useFileUpload = (
     if (files.length === 0) return;
 
     try {
+      // Check authentication first
+      const isAuthenticated = await checkAuthBeforeUpload();
+      if (!isAuthenticated) return;
+      
       setIsUploading(true);
 
-      // Process and upload files
-      const uploadProgress = (id: string, progress: number) => {
-        setUploadedFiles(prevFiles => 
-          prevFiles.map(file => 
-            file.id === id ? { ...file, progress } : file
-          )
-        );
-      };
-
-      // This will upload to Supabase storage and get permanent URLs
-      const processedFiles = await processFiles(files, uploadProgress);
+      console.log("Processing", files.length, "files");
       
-      // Update files state with processed files that have permanent URLs
+      // Process files for preview
+      const processedFiles = await processFiles(files);
+      
+      // Add files to state with 'uploading' status
       setUploadedFiles(prevFiles => [...prevFiles, ...processedFiles]);
       
-      // Filter completed files (with valid URLs) for the callback
-      const completedFiles = processedFiles.filter(file => file.status === 'complete' && file.url);
+      // Upload each file
+      const completedFiles: FileWithPreview[] = [];
       
-      // Call callback if provided with all successfully uploaded files
-      if (onUploadComplete && completedFiles.length > 0) {
+      for (const file of processedFiles) {
+        try {
+          if (!file.file) {
+            console.warn(`File object missing for ${file.name}`);
+            continue;
+          }
+          
+          // Update status to uploading
+          setUploadedFiles(prevFiles => 
+            prevFiles.map(f => 
+              f.id === file.id 
+                ? { ...f, status: 'uploading' as const, progress: 10 } 
+                : f
+            )
+          );
+          
+          // Upload to Supabase storage
+          const url = await uploadFile(file.file, 'property-files');
+          
+          // Update with permanent URL and complete status
+          const updatedFile = { 
+            ...file, 
+            url, 
+            status: 'complete' as const, 
+            progress: 100 
+          };
+          
+          // Update in state
+          setUploadedFiles(prevFiles => 
+            prevFiles.map(f => f.id === file.id ? updatedFile : f)
+          );
+          
+          completedFiles.push(updatedFile);
+          
+        } catch (error) {
+          console.error(`Error uploading ${file.name}:`, error);
+          
+          // Update with error status
+          setUploadedFiles(prevFiles => 
+            prevFiles.map(f => 
+              f.id === file.id 
+                ? { ...f, status: 'error' as const, errorMessage: 'Upload failed' } 
+                : f
+            )
+          );
+          
+          toast({
+            title: "Upload Error",
+            description: `Failed to upload ${file.name}`,
+            variant: "destructive"
+          });
+        }
+      }
+      
+      // Call the callback with completed files
+      if (completedFiles.length > 0 && onUploadComplete) {
         onUploadComplete(completedFiles);
       }
       
-      // Calculate success/error counts
-      const successCount = processedFiles.filter(file => file.status === 'complete').length;
-      const errorCount = processedFiles.filter(file => file.status === 'error').length;
-      
-      // Show appropriate toast
-      if (errorCount === 0) {
+      // Show success message
+      if (completedFiles.length > 0) {
         toast({
           title: "Upload Complete",
-          description: `Successfully uploaded ${successCount} file${successCount !== 1 ? 's' : ''}.`
-        });
-      } else if (successCount === 0) {
-        toast({
-          title: "Upload Failed",
-          description: `Failed to upload ${errorCount} file${errorCount !== 1 ? 's' : ''}.`,
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Upload Partially Complete",
-          description: `Uploaded ${successCount} file${successCount !== 1 ? 's' : ''}, ${errorCount} failed.`,
-          variant: "destructive"
+          description: `Successfully uploaded ${completedFiles.length} file${completedFiles.length !== 1 ? 's' : ''}`
         });
       }
+      
     } catch (error) {
       console.error("Error processing files:", error);
       toast({
         title: "Upload Error",
-        description: "An error occurred while uploading files.",
+        description: "An unexpected error occurred during file upload",
         variant: "destructive"
       });
     } finally {

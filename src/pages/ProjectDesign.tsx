@@ -195,7 +195,7 @@ const ProjectDesign = () => {
                   onAddBlueprints={handleAddBlueprints}
                   onSaveMeasurements={enhancedSaveMeasurements}
                   onSelectBeforePhotos={(area, photos) => handleSelectBeforePhotos(area, photos, designPreferences)}
-                  onUploadBeforePhotos={(area, photos) => handleUploadBeforePhotos(area, convertUrlsToFileObjects(photos), designPreferences)}
+                  onUploadBeforePhotos={(area, photos) => handleUploadBeforePhotos(area, photos, designPreferences)}
                   onAddProjectFiles={(area, files) => handleAddProjectFiles(area, files, designPreferences)}
                   onRemoveDesignAsset={(index) => handleRemoveDesignAsset(index, designPreferences)}
                   onUpdateAssetTags={enhancedUpdateAssetTags}

@@ -1,130 +1,111 @@
 
-// Import uuid as a regular dependency
-import { v4 as uuidv4 } from 'uuid';
-import { supabase } from "@/integrations/supabase/client";
 import { FileWithPreview } from "./types";
+import { createPreviewUrl } from "./utils";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
-/**
- * Formats file size to a human-readable string
- */
-export const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return "0 Bytes";
-  
-  const k = 1024;
-  const sizes = ["Bytes", "KB", "MB", "GB"];
-  
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+// Process files for preview and upload preparation
+export const processFiles = async (
+  files: FileList,
+  onProgress?: (id: string, progress: number) => void
+): Promise<FileWithPreview[]> => {
+  // Convert the FileList to an array of FileWithPreview objects
+  return Array.from(files).map((file) => {
+    const id = crypto.randomUUID();
+    const previewUrl = createPreviewUrl(file);
+    
+    return {
+      id,
+      file, // Keep the file for later upload
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      previewUrl,
+      progress: 0,
+      tags: [],
+      status: 'ready',
+    };
+  });
 };
 
-/**
- * Uploads a file to Supabase storage and returns the public URL
- */
-export const uploadFile = async (file: File): Promise<string> => {
+// Upload a single file to Supabase storage and return its URL
+export const uploadFile = async (
+  file: File, 
+  bucketName: string = 'property-files',
+  onProgress?: (progress: number) => void
+): Promise<string> => {
   try {
-    const session = await supabase.auth.getSession();
-    if (!session.data.session) {
-      throw new Error("User is not authenticated");
+    console.log(`Starting upload of ${file.name} to ${bucketName} bucket`);
+    
+    // First, check if the bucket exists and create it if it doesn't
+    const { data: buckets } = await supabase.storage.listBuckets();
+    const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
+    
+    if (!bucketExists) {
+      console.log(`Creating bucket: ${bucketName}`);
+      const { error: createBucketError } = await supabase.storage.createBucket(bucketName, {
+        public: true
+      });
+      
+      if (createBucketError) {
+        console.error(`Error creating bucket: ${createBucketError.message}`);
+        throw createBucketError;
+      }
     }
     
+    // Create a unique file path to prevent overwrites
+    const timestamp = new Date().getTime();
     const fileExt = file.name.split('.').pop();
-    const fileName = `${uuidv4()}.${fileExt}`;
-    const filePath = `${fileName}`;
-
+    const filePath = `${timestamp}-${crypto.randomUUID()}.${fileExt}`;
+    
+    // Upload the file
     const { data, error } = await supabase.storage
-      .from('properties')
+      .from(bucketName)
       .upload(filePath, file, {
         cacheControl: '3600',
         upsert: false
       });
-
+    
     if (error) {
-      console.error("Error uploading file:", error);
+      console.error(`Error uploading file: ${error.message}`);
       throw error;
     }
-
-    // Get the public URL for the uploaded file
-    const { data: { publicUrl } } = supabase.storage
-      .from('properties')
+    
+    console.log(`File uploaded successfully: ${data?.path}`);
+    
+    // Get the public URL
+    const { data: publicUrlData } = supabase.storage
+      .from(bucketName)
       .getPublicUrl(filePath);
-
-    return publicUrl;
+    
+    console.log(`Public URL generated: ${publicUrlData?.publicUrl}`);
+    
+    return publicUrlData.publicUrl;
   } catch (error) {
-    console.error("Upload service error:", error);
+    console.error('Error in uploadFile:', error);
     throw error;
   }
 };
 
-/**
- * Processes multiple files for upload
- */
-export const processFiles = async (
-  files: FileList,
-  onProgressUpdate?: (id: string, progress: number) => void
-): Promise<FileWithPreview[]> => {
-  const fileArray: FileWithPreview[] = [];
-
-  // Convert FileList to array
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    const id = uuidv4();
+// Upload multiple files and return their URLs
+export const uploadMultipleFiles = async (
+  files: File[],
+  bucketName: string = 'property-files',
+  onFileProgress?: (index: number, progress: number) => void
+): Promise<string[]> => {
+  try {
+    // Upload each file sequentially
+    const urls: string[] = [];
     
-    // Create preview URL for immediate display
-    const previewUrl = URL.createObjectURL(file);
+    for (let i = 0; i < files.length; i++) {
+      const url = await uploadFile(files[i], bucketName, 
+        (progress) => onFileProgress?.(i, progress));
+      urls.push(url);
+    }
     
-    fileArray.push({
-      id,
-      file,
-      name: file.name,
-      size: formatFileSize(file.size),
-      type: file.type,
-      previewUrl,
-      progress: 0,
-      status: 'uploading',
-      tags: []
-    });
+    return urls;
+  } catch (error) {
+    console.error('Error in uploadMultipleFiles:', error);
+    throw error;
   }
-
-  // Process uploads
-  const uploadedFiles = await Promise.all(
-    fileArray.map(async (fileItem, index) => {
-      const file = files[index];
-      
-      try {
-        // Report initial progress
-        if (onProgressUpdate) {
-          onProgressUpdate(fileItem.id, 10);
-        }
-        
-        // Upload to Supabase storage and get permanent URL
-        const url = await uploadFile(file);
-        
-        // Report progress updates
-        if (onProgressUpdate) {
-          onProgressUpdate(fileItem.id, 100);
-        }
-        
-        // Update fileItem with permanent URL
-        return {
-          ...fileItem,
-          url,
-          progress: 100,
-          status: 'complete' as const
-        };
-      } catch (error) {
-        console.error("Error uploading file:", error);
-        
-        // Update fileItem with error status
-        return {
-          ...fileItem,
-          progress: 0,
-          status: 'error' as const,
-          errorMessage: (error as Error).message
-        };
-      }
-    })
-  );
-
-  return uploadedFiles;
 };

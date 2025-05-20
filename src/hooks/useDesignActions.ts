@@ -163,7 +163,7 @@ export const useDesignActions = (projectId?: string) => {
   // Upload new before photos
   const handleUploadBeforePhotos = useCallback(async (
     area: string,
-    photos: FileWithPreview[],
+    photos: string[] | FileWithPreview[],
     designPreferences: any
   ) => {
     if (!projectId) {
@@ -178,10 +178,18 @@ export const useDesignActions = (projectId?: string) => {
     setIsSaving(true);
     
     try {
-      // Get urls from uploaded photos
-      const photoUrls = photos
-        .filter(p => p.status === 'complete' && p.url)
-        .map(p => p.url) as string[];
+      // Get urls from uploaded photos - handle both string[] and FileWithPreview[]
+      let photoUrls: string[];
+      
+      if (photos.length > 0 && typeof photos[0] === 'string') {
+        // If we received string[] directly, use them as URLs
+        photoUrls = photos as string[];
+      } else {
+        // If we received FileWithPreview[], extract URLs
+        photoUrls = (photos as FileWithPreview[])
+          .filter(p => p.status === 'complete' && p.url)
+          .map(p => p.url as string);
+      }
       
       // If no valid urls, do nothing
       if (photoUrls.length === 0) {
