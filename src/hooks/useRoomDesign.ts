@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
 import { type PinterestBoard } from "@/types/pinterest";
 import { toast } from "@/hooks/use-toast";
+import { normalizeAreaName } from "@/lib/utils";
 
 export interface RoomPreference {
   inspirationImages: string[];
@@ -16,7 +17,7 @@ export const useRoomDesign = (propertyId?: string) => {
     name: string;
   }[]>([]);
   const [roomPreferences, setRoomPreferences] = useState<Record<string, RoomPreference>>({});
-  const [defaultTab, setDefaultTab] = useState<string>("kitchen");
+  const [defaultTab, setDefaultTab] = useState<string>("");
 
   const fetchRoomDesignPreferences = useCallback(async (roomId: string) => {
     try {
@@ -99,7 +100,18 @@ export const useRoomDesign = (propertyId?: string) => {
   }, [createRoomIfNeeded]);
 
   const getRoomIdByName = useCallback((roomName: string) => {
-    const room = propertyRooms.find(r => r.name.toLowerCase() === roomName.toLowerCase());
+    if (!roomName) return undefined;
+    
+    // First try an exact match
+    let room = propertyRooms.find(r => r.name.toLowerCase() === roomName.toLowerCase());
+    
+    // If no exact match, try matching with normalized names
+    if (!room) {
+      const normalizedName = normalizeAreaName(roomName);
+      room = propertyRooms.find(r => normalizeAreaName(r.name) === normalizedName);
+    }
+    
+    console.log(`Looking up room ID for "${roomName}" - Found: ${room?.id || 'none'}`);
     return room?.id;
   }, [propertyRooms]);
 

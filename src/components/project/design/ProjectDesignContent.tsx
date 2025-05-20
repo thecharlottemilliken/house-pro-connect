@@ -44,13 +44,23 @@ const ProjectDesignContent: React.FC<ProjectDesignContentProps> = ({
   enhancedHandlers,
   handlers
 }) => {
-  const [activeTab, setActiveTab] = useState(defaultTab);
+  // Use normalized area names for consistent tab values
+  const normalizedDefaultTab = defaultTab ? normalizeAreaName(defaultTab) : '';
+  const [activeTab, setActiveTab] = useState(normalizedDefaultTab);
   
   useEffect(() => {
     if (defaultTab) {
-      setActiveTab(defaultTab);
+      const normalized = normalizeAreaName(defaultTab);
+      console.log(`Setting default tab to normalized value: ${normalized} (from ${defaultTab})`);
+      setActiveTab(normalized);
     }
   }, [defaultTab]);
+  
+  // Debug handler for tab changes
+  const handleTabChange = (value: string) => {
+    console.log(`Tab changed to: ${value}`);
+    setActiveTab(value);
+  };
   
   // Debugs to make sure we're getting the correct data
   useEffect(() => {
@@ -81,7 +91,7 @@ const ProjectDesignContent: React.FC<ProjectDesignContentProps> = ({
       return (
         <TabsTrigger
           key={area.area}
-          value={area.area.toLowerCase()}
+          value={normalizedArea} // Use normalized value for consistent matching
           className="capitalize px-4 py-2 text-lg"
         >
           {area.area}
@@ -110,7 +120,7 @@ const ProjectDesignContent: React.FC<ProjectDesignContentProps> = ({
       return (
         <TabsContent
           key={area.area}
-          value={area.area.toLowerCase()}
+          value={normalizedArea} // Use normalized value for consistent matching
           className="py-4"
           forceMount
         >
@@ -159,7 +169,7 @@ const ProjectDesignContent: React.FC<ProjectDesignContentProps> = ({
       </div>
       
       {renovationAreas.length > 0 ? (
-        <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab}>
+        <Tabs defaultValue={activeTab} value={activeTab} onValueChange={handleTabChange}>
           <TabsList className="mb-4 border border-gray-200 p-1 rounded-lg overflow-x-auto flex w-full bg-white">
             {generateTabs()}
           </TabsList>

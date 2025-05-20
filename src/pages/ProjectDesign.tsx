@@ -11,6 +11,7 @@ import ProjectDesignLoading from "@/components/project/design/ProjectDesignLoadi
 import ProjectDesignContent from "@/components/project/design/ProjectDesignContent";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import ProjectSidebar from "@/components/project/ProjectSidebar";
+import { normalizeAreaName } from "@/lib/utils";
 
 const ProjectDesign = () => {
   const location = useLocation();
@@ -84,7 +85,10 @@ const ProjectDesign = () => {
     if (projectData?.renovation_areas?.length > 0) {
       const firstArea = projectData.renovation_areas[0];
       if (firstArea?.area) {
-        setDefaultTab(firstArea.area.toLowerCase());
+        // Use normalized area name for consistent tab values
+        const normalizedArea = normalizeAreaName(firstArea.area);
+        console.log(`Setting default tab to normalized value: ${normalizedArea} (from ${firstArea.area})`);
+        setDefaultTab(normalizedArea);
       }
     }
   }, [projectData?.renovation_areas, setDefaultTab]);
