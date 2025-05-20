@@ -5,6 +5,7 @@ import EmptyPhotoState from "./EmptyPhotoState";
 import PhotoControls from "./PhotoControls";
 import { filterValidPhotoUrls } from '@/utils/BeforePhotosService';
 import { normalizeAreaName } from '@/lib/utils';
+import { Badge } from "@/components/ui/badge";
 
 interface BeforePhotosSectionProps {
   area: string;
@@ -34,6 +35,7 @@ const BeforePhotosSection: React.FC<BeforePhotosSectionProps> = ({
   }, [beforePhotos]);
 
   const hasBeforePhotos = validPhotos.length > 0;
+  const photoCount = validPhotos.length;
 
   // Enhanced handlers with loading states
   const handleSelectPhotos = async (photos: string[]) => {
@@ -83,10 +85,19 @@ const BeforePhotosSection: React.FC<BeforePhotosSectionProps> = ({
         </div>
       )}
       
+      <div className="flex items-center justify-between mb-2">
+        {photoCount > 0 && (
+          <Badge variant="outline" className="bg-gray-100 text-gray-700 font-normal">
+            {photoCount} {photoCount === 1 ? 'photo' : 'photos'}
+          </Badge>
+        )}
+      </div>
+      
       <PhotoGrid 
         photos={validPhotos} 
         onRemovePhoto={onRemovePhoto} 
-        onReorderPhotos={onReorderPhotos} 
+        onReorderPhotos={onReorderPhotos}
+        maxVisible={6}
       />
       
       <PhotoControls 

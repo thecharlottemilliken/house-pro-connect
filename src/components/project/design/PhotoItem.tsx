@@ -1,48 +1,52 @@
+
 import React from 'react';
-import { X, GripVertical } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
 
 interface PhotoItemProps {
   photo: string;
   index: number;
   onRemove: (index: number) => void;
-  onReorder: (fromIndex: number, toIndex: number) => void;
+  onReorder?: (fromIndex: number, toIndex: number) => void;
+  onClick?: () => void;
 }
 
-const PhotoItem: React.FC<PhotoItemProps> = ({ photo, index, onRemove, onReorder }) => {
+const PhotoItem: React.FC<PhotoItemProps> = ({ 
+  photo, 
+  index, 
+  onRemove,
+  onReorder,
+  onClick
+}) => {
   const handleRemove = (e: React.MouseEvent) => {
-    e.stopPropagation();
+    e.stopPropagation(); // Prevent triggering onClick
     onRemove(index);
   };
   
-  // We could add drag-and-drop functionality here for reordering
-  // but for now we'll keep it simple
-  
   return (
-    <div className="group relative aspect-square rounded-lg overflow-hidden">
+    <div 
+      className="relative overflow-hidden rounded-md border border-gray-200 shadow-sm aspect-square cursor-pointer"
+      onClick={onClick}
+    >
       <img 
         src={photo} 
-        alt={`Photo ${index + 1}`} 
-        className="w-full h-full object-cover" 
-        onError={(e) => {
-          e.currentTarget.src = 'https://via.placeholder.com/150?text=Error';
-          console.error("Failed to load image:", photo);
-        }}
+        alt={`Photo ${index + 1}`}
+        className="w-full h-full object-cover transition-transform duration-200 hover:scale-105"
       />
       
-      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200">
-        <Button 
-          variant="destructive"
-          size="icon"
-          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={handleRemove}
-        >
-          <X className="h-4 w-4" />
-        </Button>
-        
-        <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity cursor-move">
-          <GripVertical className="h-5 w-5 text-white" />
-        </div>
+      {/* Remove button */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="absolute top-1 right-1 h-6 w-6 rounded-full bg-black/60 text-white hover:bg-black/80 hover:text-white"
+        onClick={handleRemove}
+      >
+        <X className="h-4 w-4" />
+      </Button>
+      
+      {/* Photo number badge */}
+      <div className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
+        {index + 1}
       </div>
     </div>
   );
