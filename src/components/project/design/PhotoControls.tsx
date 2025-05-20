@@ -8,7 +8,6 @@ import PhotoUploadButton from './PhotoUploadButton';
 interface PhotoControlsProps {
   area?: string;
   propertyPhotos: string[];
-  propertyId?: string; // Added propertyId prop
   onSelectBeforePhotos: (photos: string[]) => void;
   onUploadBeforePhotos: (photos: string[]) => void;
   className?: string;
@@ -17,7 +16,6 @@ interface PhotoControlsProps {
 const PhotoControls: React.FC<PhotoControlsProps> = ({
   area = '',
   propertyPhotos,
-  propertyId, // Pass propertyId to child components
   onSelectBeforePhotos,
   onUploadBeforePhotos,
   className
@@ -37,17 +35,13 @@ const PhotoControls: React.FC<PhotoControlsProps> = ({
         
         <SelectPropertyPhotosDialog
           photos={propertyPhotos}
-          propertyId={propertyId}
           onSelect={onSelectBeforePhotos}
           open={isSelectDialogOpen}
           onOpenChange={setIsSelectDialogOpen}
         />
       </Dialog>
       
-      <PhotoUploadButton 
-        onUploadComplete={onUploadBeforePhotos} 
-        propertyId={propertyId}
-      />
+      <PhotoUploadButton onUploadComplete={onUploadBeforePhotos} />
     </div>
   );
 };

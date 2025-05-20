@@ -9,79 +9,10 @@ import { useRoomDesign } from "@/hooks/useRoomDesign";
 import { useDesignActions } from "@/hooks/useDesignActions";
 import ProjectDesignTabs from "@/components/project/design/ProjectDesignTabs";
 import { FileWithPreview } from "@/components/ui/file-upload";
-import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 
 // Helper function to normalize area names for consistent key formatting
 const normalizeAreaName = (area: string): string => {
   return area.toLowerCase().replace(/\s+/g, '_');
-};
-
-// Helper function to filter out invalid or temporary blob URLs
-const filterValidUrls = (urls: string[] | undefined): string[] => {
-  if (!urls || !Array.isArray(urls)) return [];
-  return urls.filter(url => url && typeof url === 'string' && !url.startsWith('blob:'));
-};
-
-// Helper to migrate blob URLs to permanent storage
-const migrateTempUrls = async (
-  projectId: string, 
-  propertyId: string, 
-  designPreferences: any
-): Promise<any> => {
-  // Skip if we don't have needed IDs
-  if (!projectId || !propertyId || !designPreferences) return designPreferences;
-  
-  let updated = false;
-  const updatedPrefs = { ...designPreferences };
-  
-  // Check for blob URLs in beforePhotos
-  if (updatedPrefs.beforePhotos) {
-    for (const area in updatedPrefs.beforePhotos) {
-      if (!updatedPrefs.beforePhotos[area]) continue;
-      
-      const photos = updatedPrefs.beforePhotos[area];
-      const blobUrls = photos.filter((url: string) => url && url.startsWith('blob:'));
-      
-      if (blobUrls.length > 0) {
-        console.log(`Found ${blobUrls.length} blob URLs to migrate for area ${area}`);
-        // We have blob URLs that need to be removed
-        updatedPrefs.beforePhotos[area] = filterValidUrls(photos);
-        updated = true;
-      }
-    }
-  }
-  
-  if (updated) {
-    try {
-      // Save the updated preferences to remove blob URLs
-      const { error } = await supabase
-        .from('projects')
-        .update({ 
-          design_preferences: updatedPrefs
-        })
-        .eq('id', projectId);
-      
-      if (error) {
-        console.error('Error updating design preferences:', error);
-        throw error;
-      }
-      
-      console.log('Successfully migrated temporary URLs');
-      
-      // Silently notify about cleanup
-      toast({
-        title: "Storage update",
-        description: "Temporary image references have been cleaned up",
-        duration: 3000
-      });
-    }
-    catch (error) {
-      console.error('Failed to migrate temporary URLs:', error);
-    }
-  }
-  
-  return updatedPrefs;
 };
 
 const ProjectDesign = () => {
@@ -93,7 +24,7 @@ const ProjectDesign = () => {
     projectData,
     propertyDetails,
     isLoading,
-    refreshProjectData
+    refreshProjectData // Make sure we're exposing this function from useProjectData
   } = useProjectData(params.projectId, location.state);
   
   const {
@@ -134,7 +65,7 @@ const ProjectDesign = () => {
     console.log("Photos being selected:", photos);
     
     // Filter out any invalid photo URLs
-    const validPhotos = filterValidUrls(photos);
+    const validPhotos = photos.filter(url => url && typeof url === 'string');
     console.log("Valid photos being selected:", validPhotos);
     
     // Call the original handler
@@ -154,13 +85,13 @@ const ProjectDesign = () => {
     return updatedPrefs;
   }, [handleSelectBeforePhotos, projectData?.design_preferences, refreshProjectData]);
 
-  // Enhanced upload before photos handler with improved validation and permanent storage
+  // Enhanced upload before photos handler with improved debugging and refresh mechanism
   const enhancedUploadBeforePhotos = useCallback(async (area: string, photos: string[]) => {
     console.log(`ProjectDesign: Uploading ${photos.length} before photos for area ${area}`);
     console.log("Photo URLs to upload:", photos);
     
-    // Filter out invalid blob URLs
-    const validPhotos = filterValidUrls(photos);
+    // Filter out any invalid photo URLs
+    const validPhotos = photos.filter(url => url && typeof url === 'string');
     console.log("Valid photos being uploaded:", validPhotos);
     
     if (validPhotos.length === 0) {
@@ -276,21 +207,6 @@ const ProjectDesign = () => {
     }
   }, [propertyDetails?.id, projectData?.renovation_areas, setupRooms]);
 
-  // Cleanup temporary blob URLs on component mount
-  useEffect(() => {
-    const cleanup = async () => {
-      if (projectData?.id && propertyDetails?.id && projectData?.design_preferences) {
-        await migrateTempUrls(
-          projectData.id,
-          propertyDetails.id,
-          projectData.design_preferences
-        );
-      }
-    };
-    
-    cleanup();
-  }, [projectData?.id, propertyDetails?.id, projectData?.design_preferences]);
-
   // Helper function to convert string URLs to FileWithPreview objects
   const convertUrlsToFileObjects = (urls: string[]): FileWithPreview[] => {
     if (!urls || !Array.isArray(urls)) return [];
@@ -333,7 +249,7 @@ const ProjectDesign = () => {
   }
 
   const renovationAreas = projectData.renovation_areas || [];
-  const propertyPhotos = filterValidUrls(propertyDetails?.home_photos || []);
+  const propertyPhotos = propertyDetails?.home_photos || [];
   const designPreferences = projectData.design_preferences || { hasDesigns: false };
 
   return (
@@ -361,7 +277,7 @@ const ProjectDesign = () => {
                   roomPreferences={roomPreferences}
                   propertyPhotos={propertyPhotos}
                   propertyBlueprint={propertyDetails?.blueprint_url || null}
-                  propertyId={propertyDetails?.id} // Pass propertyId to tabs
+                  propertyId={propertyDetails?.id}
                   projectId={projectData.id}
                   getRoomIdByName={getRoomIdByName}
                   onAddDesigner={handleAddDesigner}

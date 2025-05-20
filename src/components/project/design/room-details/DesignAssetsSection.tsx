@@ -14,7 +14,6 @@ interface DesignAssetsProps {
   onRemoveDesignAsset?: (index: number) => void;
   onUpdateAssetTags?: (assetIndex: number, tags: string[]) => void;
   projectId?: string;
-  propertyId?: string; // Add propertyId prop
   onSelectProjectFiles?: (files: string[]) => void;
 }
 
@@ -23,7 +22,6 @@ const DesignAssetsSection: React.FC<DesignAssetsProps> = ({
   onRemoveDesignAsset,
   onUpdateAssetTags,
   projectId,
-  propertyId,
   onSelectProjectFiles
 }) => {
   const {
@@ -40,7 +38,7 @@ const DesignAssetsSection: React.FC<DesignAssetsProps> = ({
     openFileSelector,
     openTagDialog,
     handleViewAsset
-  } = useDesignAssets(onSelectProjectFiles); // Fixed: removed extra propertyId argument
+  } = useDesignAssets(onSelectProjectFiles);
 
   const handleSaveTags = (tags: string[]) => {
     if (onUpdateAssetTags && selectedAssetIndex >= 0) {
@@ -52,7 +50,6 @@ const DesignAssetsSection: React.FC<DesignAssetsProps> = ({
 
   // Added debug console.log to verify component rendering with updated assets
   console.log("DesignAssetsSection rendering with assets:", designAssets);
-  console.log("DesignAssetsSection propertyId:", propertyId);
 
   return (
     <div className="pt-4 border-t border-gray-200">
@@ -108,7 +105,6 @@ const DesignAssetsSection: React.FC<DesignAssetsProps> = ({
           open={showProjectFilesDialog}
           onOpenChange={setShowProjectFilesDialog}
           projectId={projectId}
-          propertyId={propertyId}
           onSelect={(files) => {
             if (onSelectProjectFiles) {
               onSelectProjectFiles(files);

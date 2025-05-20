@@ -1,53 +1,60 @@
 
-import { useRef, useState, useCallback } from "react";
+import { useState, useRef } from 'react';
 
 export const useDesignAssets = (onSelectProjectFiles?: (files: string[]) => void) => {
-  // File input reference for uploads
+  // File input reference for direct uploads
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Preview state for assets
+  // Asset preview state
   const [previewAsset, setPreviewAsset] = useState<{ name: string; url: string } | null>(null);
   
-  // Dialog states
+  // Tag management dialog state
   const [tagDialogOpen, setTagDialogOpen] = useState(false);
+  const [selectedAssetIndex, setSelectedAssetIndex] = useState<number>(-1);
+  
+  // Project files dialog state
   const [showProjectFilesDialog, setShowProjectFilesDialog] = useState(false);
   
-  // Track which asset we're editing tags for
-  const [selectedAssetIndex, setSelectedAssetIndex] = useState<number>(-1);
-
-  // Handle file upload through file input element
-  const handleQuickUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle direct file upload
+  const handleQuickUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (files && files.length > 0) {
-      console.log("Files selected for upload:", files);
-      // Here you would handle the file upload
-      // For now, just log it
+    if (!files || files.length === 0) return;
+    
+    // Convert FileList to array of File objects
+    const fileArray = Array.from(files);
+    
+    // Upload files (this would typically use your upload service)
+    console.log("Files selected for upload:", fileArray);
+    
+    // Reset the input
+    if (event.target.value) {
+      event.target.value = '';
     }
-  }, []);
-
+  };
+  
   // Open file uploader
-  const openFileUploader = useCallback(() => {
+  const openFileUploader = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
-  }, []);
-
+  };
+  
   // Open file selector dialog
-  const openFileSelector = useCallback(() => {
+  const openFileSelector = () => {
     setShowProjectFilesDialog(true);
-  }, []);
-
+  };
+  
   // Open tag management dialog
-  const openTagDialog = useCallback((index: number) => {
+  const openTagDialog = (index: number) => {
     setSelectedAssetIndex(index);
     setTagDialogOpen(true);
-  }, []);
-
-  // View asset in preview dialog
-  const handleViewAsset = useCallback((asset: { name: string; url: string }) => {
+  };
+  
+  // View asset
+  const handleViewAsset = (asset: { name: string; url: string }) => {
     setPreviewAsset(asset);
-  }, []);
-
+  };
+  
   return {
     fileInputRef,
     previewAsset,
@@ -64,5 +71,3 @@ export const useDesignAssets = (onSelectProjectFiles?: (files: string[]) => void
     handleViewAsset
   };
 };
-
-export default useDesignAssets;
