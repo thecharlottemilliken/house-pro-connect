@@ -39,7 +39,34 @@ export const useRoomDesign = (propertyId?: string) => {
         
         // Ensure data properties are correctly formatted
         const inspirationImages = Array.isArray(data.inspiration_images) ? data.inspiration_images : [];
-        const pinterestBoards = Array.isArray(data.pinterest_boards) ? data.pinterest_boards : [];
+        
+        // Ensure pinterest_boards is properly transformed to PinterestBoard[]
+        const pinterestBoards: PinterestBoard[] = Array.isArray(data.pinterest_boards) 
+          ? data.pinterest_boards.map((board: Json) => {
+              // Make sure each board has the required fields of PinterestBoard
+              if (typeof board === 'object' && board !== null) {
+                return {
+                  id: String(board.id || ''),
+                  name: String(board.name || ''),
+                  url: String(board.url || ''),
+                  imageUrl: typeof board.imageUrl === 'string' ? board.imageUrl : undefined,
+                  pins: Array.isArray(board.pins) 
+                    ? board.pins.map((pin: any) => ({
+                        id: String(pin.id || ''),
+                        imageUrl: String(pin.imageUrl || ''),
+                        description: typeof pin.description === 'string' ? pin.description : undefined
+                      }))
+                    : undefined
+                };
+              }
+              // Fallback for unexpected data
+              return {
+                id: '',
+                name: '',
+                url: ''
+              };
+            })
+          : [];
         
         console.log(`Room ${roomId} has ${inspirationImages.length} inspiration images and ${pinterestBoards.length} Pinterest boards`);
         
