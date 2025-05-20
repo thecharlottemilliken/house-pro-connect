@@ -12,11 +12,6 @@ import { FileWithPreview } from "@/components/ui/file-upload";
 import { normalizeAreaName } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 
-// Helper function to normalize area names for consistent key formatting
-const normalizeAreaName = (area: string): string => {
-  return area.toLowerCase().replace(/\s+/g, '_');
-};
-
 const ProjectDesign = () => {
   const location = useLocation();
   const params = useParams();
