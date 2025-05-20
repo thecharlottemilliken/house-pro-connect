@@ -1,13 +1,13 @@
 
 import React, { useState, useEffect } from "react";
-import { FileWithPreview, RoomTagOption, FileUpload } from "@/components/ui/file-upload";
+import { FileWithPreview, RoomTagOption, FileUpload, extractUrls } from "@/components/ui/file-upload";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 interface PropertyFileUploadProps {
   accept?: string;
   multiple?: boolean;
-  onFilesUploaded?: (files: FileWithPreview[]) => void;
+  onFilesUploaded?: (urls: string[]) => void;
   initialFiles?: FileWithPreview[];
   roomOptions?: RoomTagOption[];
   label?: string;
@@ -54,6 +54,9 @@ export function PropertyFileUpload({
 
   // Handle completed uploads
   const handleUploadComplete = (files: FileWithPreview[]) => {
+    // Extract URLs from FileWithPreview objects
+    const urls = extractUrls(files);
+    
     // Update our internal state with the new files
     setUploadedFiles(prev => {
       // Create a map of existing file IDs to avoid duplicates
@@ -63,14 +66,12 @@ export function PropertyFileUpload({
       const newFiles = files.filter(file => !existingIds.has(file.id));
       
       // Combine existing files with new ones
-      const updatedFiles = [...prev, ...newFiles];
-      
-      return updatedFiles;
+      return [...prev, ...newFiles];
     });
     
-    // Call the parent's callback with all files
-    if (onFilesUploaded) {
-      onFilesUploaded(files);
+    // Call the parent's callback with the URLs
+    if (onFilesUploaded && urls.length > 0) {
+      onFilesUploaded(urls);
     }
   };
   

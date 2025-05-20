@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { toast } from "@/hooks/use-toast";
@@ -21,7 +22,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { PlusCircle, Trash2 } from "lucide-react";
-import { FileUpload } from "@/components/ui/file-upload";
+import { FileUpload, FileWithPreview, extractUrls } from "@/components/ui/file-upload";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -95,7 +96,8 @@ const LicensesForm = ({ onComplete }: LicensesFormProps) => {
     fetchLicenses();
   }, [user]);
   
-  const handleFileUpload = (urls: string[]) => {
+  const handleFileUpload = (files: FileWithPreview[]) => {
+    const urls = extractUrls(files);
     if (urls && urls.length > 0) {
       form.setValue("document_url", urls[0]);
     }
@@ -319,7 +321,7 @@ const LicensesForm = ({ onComplete }: LicensesFormProps) => {
                   ) : (
                     <FileUpload
                       accept=".pdf,.jpg,.jpeg,.png"
-                      maxFiles={1}
+                      multiple={false}
                       onUploadComplete={handleFileUpload}
                       label="Upload license document"
                       description="Upload your license or certification document (PDF or image)"
