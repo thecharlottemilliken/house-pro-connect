@@ -23,7 +23,7 @@ export const processFiles = async (
       type: file.type,
       previewUrl,
       progress: 0,
-      tags: initialTags,
+      tags: initialTags, // Initialize with provided tags
       status: 'ready',
     };
   });
@@ -58,7 +58,7 @@ export const uploadFile = async (
       .upload(filePath, file, {
         cacheControl: '3600',
         upsert: false,
-        // Use metadata (not fileMetadata) for adding tags and other information
+        // Use 'metadata' (not fileMetadata) for adding tags and other information
         metadata: {
           tags: tags.join(','),
           uploadedAt: new Date().toISOString(),
@@ -97,6 +97,15 @@ export const uploadFile = async (
   }
 };
 
+// Helper function to extract tags from FileWithPreview objects
+export const extractTags = (files: FileWithPreview[]): string[] => {
+  const allTags = new Set<string>();
+  files.forEach(file => {
+    file.tags.forEach(tag => allTags.add(tag));
+  });
+  return Array.from(allTags);
+};
+
 // Upload multiple files and return their URLs
 export const uploadMultipleFiles = async (
   files: File[],
@@ -119,13 +128,4 @@ export const uploadMultipleFiles = async (
     console.error('Error in uploadMultipleFiles:', error);
     throw error;
   }
-};
-
-// Helper function to extract tags from FileWithPreview objects
-export const extractTags = (files: FileWithPreview[]): string[] => {
-  const allTags = new Set<string>();
-  files.forEach(file => {
-    file.tags.forEach(tag => allTags.add(tag));
-  });
-  return Array.from(allTags);
 };

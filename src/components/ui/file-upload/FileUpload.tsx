@@ -15,7 +15,7 @@ export interface FileUploadProps {
   onUploadComplete: (files: FileWithPreview[]) => void;
   className?: string;
   children?: React.ReactNode;
-  initialTags?: string[]; // Added initialTags prop
+  initialTags?: string[]; // Properly defined initialTags prop
 }
 
 export const FileUpload: React.FC<FileUploadProps> = ({
@@ -28,7 +28,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   onUploadComplete,
   className = "",
   children,
-  initialTags = [] // Add default value
+  initialTags = [] // Default value
 }) => {
   const [isUploading, setIsUploading] = useState(false);
 
@@ -62,12 +62,11 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     // Start the upload process
     setIsUploading(true);
     try {
-      console.log("FileUpload: Processing", files.length, "files");
+      console.log("FileUpload: Processing", files.length, "files with initialTags:", initialTags);
       
       // Convert File objects to FileWithPreview objects
       const fileWithPreviewArray: FileWithPreview[] = Array.from(files).map(file => {
         const blobUrl = URL.createObjectURL(file);
-        console.log(`Created blob URL for ${file.name}:`, blobUrl);
         return {
           id: crypto.randomUUID(),
           name: file.name,
@@ -75,7 +74,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           type: file.type,
           url: blobUrl,
           progress: 100,
-          tags: initialTags, // Use initialTags instead of empty array
+          tags: initialTags, // Apply initial tags to all files
           status: 'complete'
         };
       });

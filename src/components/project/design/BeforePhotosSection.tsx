@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import PhotoGrid from "./PhotoGrid";
 import EmptyPhotoState from "./EmptyPhotoState";
 import PhotoControls from "./PhotoControls";
@@ -14,7 +14,7 @@ interface BeforePhotosSectionProps {
   onReorderPhotos: (fromIndex: number, toIndex: number) => void;
 }
 
-const BeforePhotosSection = ({
+const BeforePhotosSection: React.FC<BeforePhotosSectionProps> = ({
   area,
   beforePhotos,
   propertyPhotos,
@@ -22,39 +22,36 @@ const BeforePhotosSection = ({
   onUploadBeforePhotos,
   onRemovePhoto,
   onReorderPhotos
-}: BeforePhotosSectionProps) => {
-  const hasBeforePhotos = beforePhotos.length > 0;
+}) => {
+  const hasBeforePhotos = useMemo(() => beforePhotos.length > 0, [beforePhotos.length]);
 
-  // Debug logging of before photos
-  console.log(`BeforePhotosSection rendering for ${area} with ${beforePhotos.length} photos:`, beforePhotos);
+  if (!hasBeforePhotos) {
+    return (
+      <EmptyPhotoState 
+        area={area}
+        propertyPhotos={propertyPhotos}
+        onSelectBeforePhotos={onSelectBeforePhotos}
+        onUploadBeforePhotos={onUploadBeforePhotos}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {hasBeforePhotos ? (
-        <>
-          <PhotoGrid 
-            photos={beforePhotos} 
-            onRemovePhoto={onRemovePhoto} 
-            onReorderPhotos={onReorderPhotos} 
-          />
-          
-          <PhotoControls 
-            area={area}
-            propertyPhotos={propertyPhotos}
-            onSelectBeforePhotos={onSelectBeforePhotos}
-            onUploadBeforePhotos={onUploadBeforePhotos}
-          />
-        </>
-      ) : (
-        <EmptyPhotoState 
-          area={area}
-          propertyPhotos={propertyPhotos}
-          onSelectBeforePhotos={onSelectBeforePhotos}
-          onUploadBeforePhotos={onUploadBeforePhotos}
-        />
-      )}
+      <PhotoGrid 
+        photos={beforePhotos} 
+        onRemovePhoto={onRemovePhoto} 
+        onReorderPhotos={onReorderPhotos} 
+      />
+      
+      <PhotoControls 
+        area={area}
+        propertyPhotos={propertyPhotos}
+        onSelectBeforePhotos={onSelectBeforePhotos}
+        onUploadBeforePhotos={onUploadBeforePhotos}
+      />
     </div>
   );
 };
 
-export default BeforePhotosSection;
+export default React.memo(BeforePhotosSection);

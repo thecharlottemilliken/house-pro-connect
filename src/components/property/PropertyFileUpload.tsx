@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { FileWithPreview, RoomTagOption, FileUpload, extractUrls, extractTags } from "@/components/ui/file-upload";
+import { FileWithPreview, RoomTagOption, FileUpload } from "@/components/ui/file-upload";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -12,7 +12,7 @@ interface PropertyFileUploadProps {
   roomOptions?: RoomTagOption[];
   label?: string;
   description?: string;
-  initialTags?: string[]; // Add initialTags prop
+  initialTags?: string[]; // Properly define initialTags prop
 }
 
 export function PropertyFileUpload({ 

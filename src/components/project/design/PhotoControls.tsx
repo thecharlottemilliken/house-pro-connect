@@ -1,55 +1,29 @@
 
-import React, { useState } from 'react';
-import { EnhancedFileUpload, FileWithPreview } from "@/components/ui/file-upload";
-import SelectPropertyPhotosDialog from "./SelectPropertyPhotosDialog";
+import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import SelectPropertyPhotosDialog from "./SelectPropertyPhotosDialog";
+import PhotoUploadButton from './PhotoUploadButton';
 
 interface PhotoControlsProps {
-  area?: string; // Made area an optional prop
+  area?: string;
   propertyPhotos: string[];
   onSelectBeforePhotos: (photos: string[]) => void;
   onUploadBeforePhotos: (photos: string[]) => void;
+  className?: string;
 }
 
-const PhotoControls = ({
+const PhotoControls: React.FC<PhotoControlsProps> = ({
   area = '',
   propertyPhotos,
   onSelectBeforePhotos,
-  onUploadBeforePhotos
-}: PhotoControlsProps) => {
-  const [isSelectDialogOpen, setIsSelectDialogOpen] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState<FileWithPreview[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
-
-  // Handler to extract URLs from FileWithPreview objects and pass them to the parent component
-  const handleUploadComplete = (files: FileWithPreview[]) => {
-    console.log(`PhotoControls - handleUploadComplete called with ${files.length} files for area: ${area}`);
-    
-    // Extract only complete files with valid URLs
-    const validFiles = files.filter(file => file.status === 'complete' && file.url);
-    
-    if (validFiles.length > 0) {
-      // Extract URLs from valid files
-      const urls = validFiles.map(file => file.url as string);
-      console.log("PhotoControls - extracted URLs from uploaded files:", urls);
-      
-      // Pass the URLs to the parent component
-      onUploadBeforePhotos(urls);
-      
-      toast({
-        title: "Before Photos Added",
-        description: `Successfully added ${validFiles.length} before ${validFiles.length !== 1 ? 'photos' : 'photo'} for ${area}`
-      });
-    } else {
-      console.warn("No valid files to extract URLs from");
-    }
-  };
+  onUploadBeforePhotos,
+  className
+}) => {
+  const [isSelectDialogOpen, setIsSelectDialogOpen] = React.useState(false);
 
   return (
-    <div className="grid grid-cols-2 gap-4 mt-6">
+    <div className={`grid grid-cols-2 gap-4 ${className || ''}`}>
       <Dialog open={isSelectDialogOpen} onOpenChange={setIsSelectDialogOpen}>
         <Button
           variant="outline"
@@ -67,21 +41,9 @@ const PhotoControls = ({
         />
       </Dialog>
       
-      <EnhancedFileUpload
-        label="Upload"
-        description="Upload additional photos of the room's current state"
-        accept="image/*"
-        multiple={true}
-        onUploadComplete={handleUploadComplete}
-        uploadedFiles={uploadedFiles}
-        setUploadedFiles={setUploadedFiles}
-        initialTags={["before"]} // Always tag uploads as "before" photos
-        roomOptions={[
-          { value: "before", label: "Before" }
-        ]}
-      />
+      <PhotoUploadButton onUploadComplete={onUploadBeforePhotos} />
     </div>
   );
 };
 
-export default PhotoControls;
+export default React.memo(PhotoControls);

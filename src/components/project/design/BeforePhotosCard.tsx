@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import BeforePhotosSection from "./BeforePhotosSection";
@@ -12,28 +12,25 @@ interface BeforePhotosCardProps {
   onUploadBeforePhotos: (photos: string[]) => void;
 }
 
-const BeforePhotosCard = ({
+const BeforePhotosCard: React.FC<BeforePhotosCardProps> = ({
   area,
   beforePhotos,
   propertyPhotos,
   onSelectBeforePhotos,
   onUploadBeforePhotos,
-}: BeforePhotosCardProps) => {
-  console.log(`BeforePhotosCard - Rendering for area "${area}" with ${beforePhotos.length} photos`);
-  console.log(`BeforePhotosCard - Before photos:`, beforePhotos);
-  
-  const handleRemovePhoto = (index: number) => {
+}) => {
+  const handleRemovePhoto = useCallback((index: number) => {
     const updatedPhotos = [...beforePhotos];
     updatedPhotos.splice(index, 1);
     onSelectBeforePhotos(updatedPhotos);
-  };
+  }, [beforePhotos, onSelectBeforePhotos]);
 
-  const handleReorderPhotos = (fromIndex: number, toIndex: number) => {
+  const handleReorderPhotos = useCallback((fromIndex: number, toIndex: number) => {
     const updatedPhotos = [...beforePhotos];
     const [movedPhoto] = updatedPhotos.splice(fromIndex, 1);
     updatedPhotos.splice(toIndex, 0, movedPhoto);
     onSelectBeforePhotos(updatedPhotos);
-  };
+  }, [beforePhotos, onSelectBeforePhotos]);
 
   return (
     <Card className="overflow-hidden border border-gray-200 rounded-xl shadow-sm bg-white text-black h-full">
@@ -62,4 +59,4 @@ const BeforePhotosCard = ({
   );
 };
 
-export default BeforePhotosCard;
+export default React.memo(BeforePhotosCard);

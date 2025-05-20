@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
@@ -64,7 +63,7 @@ interface UseProjectDataResult {
   propertyDetails: PropertyDetails | null;
   isLoading: boolean;
   error: Error | null;
-  refreshProjectData: () => Promise<void>; // Added refreshProjectData method
+  refreshProjectData: () => Promise<void>; // Ensure this is properly exported
 }
 
 export const useProjectData = (projectId: string | undefined, locationState: any = null): UseProjectDataResult => {
@@ -264,6 +263,7 @@ export const useProjectData = (projectId: string | undefined, locationState: any
 
   // Create a refreshProjectData function that can be called from outside
   const refreshProjectData = useCallback(async () => {
+    console.log("Refreshing project data...");
     await fetchProjectData();
   }, [fetchProjectData]);
 
