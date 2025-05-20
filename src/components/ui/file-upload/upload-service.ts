@@ -58,8 +58,8 @@ export const uploadFile = async (
       .upload(filePath, file, {
         cacheControl: '3600',
         upsert: false,
-        // Add metadata including tags for better organization
-        fileMetadata: {
+        // Use metadata (not fileMetadata) for adding tags and other information
+        metadata: {
           tags: tags.join(','),
           uploadedAt: new Date().toISOString(),
           contentType: file.type

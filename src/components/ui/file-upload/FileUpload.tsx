@@ -15,6 +15,7 @@ export interface FileUploadProps {
   onUploadComplete: (files: FileWithPreview[]) => void;
   className?: string;
   children?: React.ReactNode;
+  initialTags?: string[]; // Added initialTags prop
 }
 
 export const FileUpload: React.FC<FileUploadProps> = ({
@@ -26,7 +27,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   maxFiles = 10,
   onUploadComplete,
   className = "",
-  children
+  children,
+  initialTags = [] // Add default value
 }) => {
   const [isUploading, setIsUploading] = useState(false);
 
@@ -73,7 +75,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           type: file.type,
           url: blobUrl,
           progress: 100,
-          tags: [],
+          tags: initialTags, // Use initialTags instead of empty array
           status: 'complete'
         };
       });
