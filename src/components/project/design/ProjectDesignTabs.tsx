@@ -1,32 +1,33 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RenovationArea, DesignPreferences } from "@/hooks/useProjectData";
-import RoomTabContent from "./RoomTabContent";
-import { RoomPreference } from "@/hooks/useRoomDesign";
+import RoomDetailsTab from "./room-details/RoomDetailsTab";
+import BeforePhotosCard from "./BeforePhotosCard";
+import MeasurementsCard from "./MeasurementsCard";
+import { normalizeAreaName } from "@/lib/utils";
 
 interface ProjectDesignTabsProps {
   defaultTab: string;
-  renovationAreas: RenovationArea[];
-  designPreferences: DesignPreferences;
-  roomPreferences: Record<string, RoomPreference>;
+  renovationAreas: any[];
+  designPreferences: any;
+  roomPreferences: any;
   propertyPhotos: string[];
   propertyBlueprint: string | null;
-  propertyId?: string;
+  propertyId?: string; // Add propertyId prop
   projectId: string;
   getRoomIdByName: (name: string) => string | undefined;
   onAddDesigner: () => void;
   onAddRenderings: () => void;
   onAddDrawings: () => void;
   onAddBlueprints: () => void;
-  onSaveMeasurements: (area: string, measurements: any) => void;
-  onSelectBeforePhotos: (area: string, photos: string[]) => void;
-  onUploadBeforePhotos: (area: string, photos: string[]) => void;
-  onAddProjectFiles: (area: string, files: string[]) => void;
-  onRemoveDesignAsset: (index: number) => void;
-  onUpdateAssetTags: (index: number, tags: string[]) => void;
-  onAddInspirationImages: (images: string[], roomId?: string) => void;
-  onAddPinterestBoards: (boards: any[], room: string, roomId?: string) => void;
+  onSaveMeasurements: (area: string, measurements: any) => Promise<any>;
+  onSelectBeforePhotos: (area: string, photos: string[]) => Promise<any>;
+  onUploadBeforePhotos: (area: string, photos: string[]) => Promise<any>;
+  onAddProjectFiles: (area: string, files: string[]) => Promise<any>;
+  onRemoveDesignAsset: (index: number) => Promise<any>;
+  onUpdateAssetTags: (index: number, tags: string[]) => Promise<any>;
+  onAddInspirationImages: (images: any[], roomId?: string) => Promise<any>;
+  onAddPinterestBoards: (boards: any[], roomName?: string, roomId?: string) => Promise<any>;
 }
 
 const ProjectDesignTabs: React.FC<ProjectDesignTabsProps> = ({
@@ -36,7 +37,7 @@ const ProjectDesignTabs: React.FC<ProjectDesignTabsProps> = ({
   roomPreferences,
   propertyPhotos,
   propertyBlueprint,
-  propertyId,
+  propertyId, // Accept propertyId
   projectId,
   getRoomIdByName,
   onAddDesigner,
@@ -52,89 +53,107 @@ const ProjectDesignTabs: React.FC<ProjectDesignTabsProps> = ({
   onAddInspirationImages,
   onAddPinterestBoards
 }) => {
-  // Helper function to normalize area names for consistent key formatting
-  const normalizeAreaName = (area: string): string => {
-    return area.toLowerCase().replace(/\s+/g, '_');
+  const [activeTab, setActiveTab] = useState<string>(defaultTab || "");
+  const [localTabs, setLocalTabs] = useState<{ area: string }[]>([]);
+
+  // Debug logs for propertyId
+  useEffect(() => {
+    console.log("ProjectDesignTabs - propertyId:", propertyId);
+  }, [propertyId]);
+
+  useEffect(() => {
+    if (renovationAreas && renovationAreas.length > 0) {
+      setLocalTabs(renovationAreas);
+      if (!activeTab) {
+        setActiveTab(renovationAreas[0].area.toLowerCase());
+      }
+    }
+  }, [renovationAreas, activeTab]);
+
+  const getMeasurements = (area: string) => {
+    const normalizedArea = normalizeAreaName(area);
+    if (designPreferences?.roomMeasurements && designPreferences.roomMeasurements[normalizedArea]) {
+      return designPreferences.roomMeasurements[normalizedArea];
+    }
+    return { length: '', width: '', height: '', unit: 'ft' };
   };
 
-  if (renovationAreas.length === 0) {
+  const getBeforePhotos = (area: string) => {
+    if (designPreferences?.beforePhotos && designPreferences.beforePhotos[area]) {
+      // Filter out invalid or blob URLs
+      return designPreferences.beforePhotos[area].filter(
+        (url: string) => url && typeof url === 'string' && !url.startsWith('blob:')
+      );
+    }
+    return [];
+  };
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+  };
+
+  // Create tab triggers for each renovation area
+  const tabTriggers = localTabs.map((tab, index) => (
+    <TabsTrigger key={`tab-${index}`} value={tab.area.toLowerCase()}>
+      {tab.area}
+    </TabsTrigger>
+  ));
+
+  const tabContent = localTabs.map((tab, index) => {
+    const roomName = tab.area;
+    const roomId = getRoomIdByName(roomName);
+    const lowerRoomName = roomName.toLowerCase();
+    
     return (
-      <div className="p-8 text-center bg-gray-50 rounded-lg">
-        <p className="text-gray-500">No renovation areas defined for this project.</p>
-      </div>
+      <TabsContent key={`content-${index}`} value={lowerRoomName} className="space-y-8">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {/* Before Photos Card */}
+          <BeforePhotosCard 
+            area={roomName}
+            beforePhotos={getBeforePhotos(roomName)}
+            propertyPhotos={propertyPhotos}
+            propertyId={propertyId} // Pass propertyId to BeforePhotosCard
+            onSelectBeforePhotos={(photos) => onSelectBeforePhotos(roomName, photos)}
+            onUploadBeforePhotos={(photos) => onUploadBeforePhotos(roomName, photos)}
+          />
+
+          {/* Measurements Card */}
+          <MeasurementsCard 
+            area={roomName}
+            measurements={getMeasurements(roomName)}
+            onSaveMeasurements={(measurements) => onSaveMeasurements(roomName, measurements)}
+          />
+          
+          {/* Room Details Card */}
+          <RoomDetailsTab
+            roomName={roomName}
+            roomId={roomId}
+            designPreferences={designPreferences}
+            roomPreferences={roomPreferences[roomId] || {}}
+            projectId={projectId}
+            propertyId={propertyId} // Pass propertyId to RoomDetailsTab
+            onAddProjectFiles={(files) => onAddProjectFiles(roomName, files)}
+            onUpdateAssetTags={onUpdateAssetTags}
+            onRemoveDesignAsset={onRemoveDesignAsset}
+            onAddInspirationImages={onAddInspirationImages}
+            onAddPinterestBoards={onAddPinterestBoards}
+          />
+        </div>
+      </TabsContent>
     );
-  }
+  });
 
   return (
-    <Tabs defaultValue={defaultTab} className="w-full">
-      <TabsList className="mb-6 bg-gray-100 p-1 rounded-lg h-auto flex overflow-x-auto">
-        {renovationAreas.map((area, index) => (
-          <TabsTrigger 
-            key={area.area} 
-            value={area.area.toLowerCase()} 
-            className="flex items-center gap-2 px-3 py-1 data-[state=active]:bg-[#174c65] data-[state=active]:text-white rounded"
-          >
-            <span className="inline-block">{area.area}</span>
-          </TabsTrigger>
-        ))}
+    <Tabs 
+      defaultValue={defaultTab} 
+      value={activeTab} 
+      onValueChange={handleTabChange}
+      className="w-full" 
+    >
+      <TabsList className="w-full overflow-x-auto flex flex-nowrap mb-6">
+        {tabTriggers}
       </TabsList>
-
-      {renovationAreas.map(area => {
-        const areaKey = normalizeAreaName(area.area);
-        console.log(`ProjectDesignTabs - Looking for measurements with normalized area key: "${areaKey}"`);
-        
-        // Debug measurements object
-        console.log("ProjectDesignTabs - Available roomMeasurements:", 
-          designPreferences.roomMeasurements ? 
-          Object.keys(designPreferences.roomMeasurements) : 
-          "No measurements found");
-        
-        const beforePhotos = designPreferences.beforePhotos?.[areaKey] || [];
-        const measurements = designPreferences.roomMeasurements?.[areaKey];
-        
-        // Debug measurements for this area
-        if (measurements) {
-          console.log(`ProjectDesignTabs - Found measurements for ${area.area}:`, JSON.stringify(measurements, null, 2));
-        } else {
-          console.log(`ProjectDesignTabs - No measurements found for ${area.area} with key ${areaKey}`);
-        }
-        
-        const roomId = getRoomIdByName(area.area);
-        const roomPrefs = roomId ? roomPreferences[roomId] : null;
-        
-        return (
-          <TabsContent key={area.area} value={area.area.toLowerCase()} className="w-full">
-            <RoomTabContent
-              area={area}
-              hasDesigns={designPreferences.hasDesigns}
-              hasRenderings={designPreferences.renderingImages && designPreferences.renderingImages.length > 0}
-              designers={designPreferences.designers || []}
-              designAssets={designPreferences.designAssets}
-              renderingImages={designPreferences.renderingImages}
-              beforePhotos={beforePhotos}
-              measurements={measurements}
-              roomId={roomId}
-              roomPreferences={roomPrefs || null}
-              propertyPhotos={propertyPhotos}
-              propertyBlueprint={propertyBlueprint}
-              propertyId={propertyId}
-              projectId={projectId}
-              onAddDesigner={onAddDesigner}
-              onAddRenderings={onAddRenderings}
-              onAddDrawings={onAddDrawings}
-              onAddBlueprints={onAddBlueprints}
-              onSaveMeasurements={(newMeasurements) => onSaveMeasurements(area.area, newMeasurements)}
-              onSelectBeforePhotos={(photos) => onSelectBeforePhotos(area.area, photos)}
-              onUploadBeforePhotos={(photos) => onUploadBeforePhotos(area.area, photos)}
-              onAddProjectFiles={(files) => onAddProjectFiles(area.area, files)}
-              onRemoveDesignAsset={onRemoveDesignAsset}
-              onUpdateAssetTags={onUpdateAssetTags}
-              onAddInspirationImages={onAddInspirationImages}
-              onAddPinterestBoards={onAddPinterestBoards}
-            />
-          </TabsContent>
-        );
-      })}
+      {tabContent}
     </Tabs>
   );
 };

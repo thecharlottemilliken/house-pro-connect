@@ -8,6 +8,7 @@ interface BeforePhotosCardProps {
   area: string;
   beforePhotos: string[];
   propertyPhotos: string[];
+  propertyId?: string; // Added propertyId prop
   onSelectBeforePhotos: (photos: string[]) => void;
   onUploadBeforePhotos: (photos: string[]) => void;
 }
@@ -16,6 +17,7 @@ const BeforePhotosCard: React.FC<BeforePhotosCardProps> = ({
   area,
   beforePhotos,
   propertyPhotos,
+  propertyId,
   onSelectBeforePhotos,
   onUploadBeforePhotos,
 }) => {
@@ -49,6 +51,7 @@ const BeforePhotosCard: React.FC<BeforePhotosCardProps> = ({
           area={area}
           beforePhotos={beforePhotos}
           propertyPhotos={propertyPhotos}
+          propertyId={propertyId}
           onSelectBeforePhotos={onSelectBeforePhotos}
           onUploadBeforePhotos={onUploadBeforePhotos}
           onRemovePhoto={handleRemovePhoto}
