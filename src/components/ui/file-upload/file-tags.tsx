@@ -2,14 +2,17 @@
 import React from "react";
 import { X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { RoomTagOption } from "./types";
 
 interface FileTagsProps {
   tags: string[];
   onRemoveTag?: (tag: string) => void;
   maxDisplay?: number;
+  roomOptions?: RoomTagOption[];
+  onAddTag?: (tag: string) => void;
 }
 
-export function FileTags({ tags, onRemoveTag, maxDisplay = 5 }: FileTagsProps) {
+export function FileTags({ tags, onRemoveTag, maxDisplay = 5, roomOptions, onAddTag }: FileTagsProps) {
   if (tags.length === 0) {
     return null;
   }
@@ -95,6 +98,15 @@ export function FileTags({ tags, onRemoveTag, maxDisplay = 5 }: FileTagsProps) {
         >
           +{extraTagsCount} more
         </Badge>
+      )}
+      
+      {onAddTag && roomOptions && (
+        <button
+          onClick={() => onAddTag('New Tag')}
+          className="h-6 py-0 px-2 border border-dashed rounded-md text-xs text-gray-500 hover:bg-gray-50 flex items-center"
+        >
+          + Add
+        </button>
       )}
     </div>
   );
