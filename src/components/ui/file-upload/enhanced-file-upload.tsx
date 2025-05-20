@@ -16,6 +16,7 @@ interface EnhancedFileUploadProps {
   allowUrlUpload?: boolean;
   roomOptions?: RoomTagOption[];
   className?: string;
+  initialTags?: string[]; // Added initialTags prop
 }
 
 export function EnhancedFileUpload({
@@ -29,6 +30,7 @@ export function EnhancedFileUpload({
   allowUrlUpload = false,
   roomOptions = [],
   className = "",
+  initialTags = [], // Default to empty array
 }: EnhancedFileUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -42,7 +44,8 @@ export function EnhancedFileUpload({
   } = useFileUpload(
     uploadedFiles, 
     setUploadedFiles,
-    onUploadComplete
+    onUploadComplete,
+    initialTags // Pass initialTags to useFileUpload
   );
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,6 +70,9 @@ export function EnhancedFileUpload({
       fileInputRef.current?.click();
     }
   };
+
+  // Debug logging
+  console.log(`EnhancedFileUpload rendering with initialTags:`, initialTags);
 
   return (
     <div className={`space-y-4 ${className}`}>

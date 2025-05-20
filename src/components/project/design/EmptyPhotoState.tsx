@@ -38,6 +38,9 @@ const EmptyPhotoState = ({
     }
   };
   
+  // Debug initial render
+  console.log(`EmptyPhotoState rendering for ${area}`);
+  
   return (
     <div className="flex flex-col items-center justify-center text-center py-6">
       <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
@@ -76,6 +79,7 @@ const EmptyPhotoState = ({
               roomOptions={[
                 { value: "before", label: "Before" }
               ]}
+              initialTags={["before"]} // Always tag uploads as "before" photos
             />
           </>
         ) : (
@@ -90,6 +94,7 @@ const EmptyPhotoState = ({
             roomOptions={[
               { value: "before", label: "Before" }
             ]}
+            initialTags={["before"]} // Always tag uploads as "before" photos
             className="col-span-2 w-full border-[#1A6985] border-2 text-[#1A6985] hover:bg-transparent hover:text-[#1A6985]/90 font-medium uppercase tracking-wider py-6"
           />
         )}

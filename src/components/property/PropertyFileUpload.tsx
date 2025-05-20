@@ -1,17 +1,18 @@
 
 import React, { useState, useEffect } from "react";
-import { FileWithPreview, RoomTagOption, FileUpload, extractUrls } from "@/components/ui/file-upload";
+import { FileWithPreview, RoomTagOption, FileUpload, extractUrls, extractTags } from "@/components/ui/file-upload";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 interface PropertyFileUploadProps {
   accept?: string;
   multiple?: boolean;
-  onFilesUploaded?: (files: FileWithPreview[]) => void; // Changed to accept FileWithPreview[] instead of urls string[]
+  onFilesUploaded?: (files: FileWithPreview[]) => void; 
   initialFiles?: FileWithPreview[];
   roomOptions?: RoomTagOption[];
   label?: string;
   description?: string;
+  initialTags?: string[]; // Add initialTags prop
 }
 
 export function PropertyFileUpload({ 
@@ -21,7 +22,8 @@ export function PropertyFileUpload({
   initialFiles = [],
   roomOptions = [],
   label = "Upload Files",
-  description = "Upload property photos, blueprints, or drawings"
+  description = "Upload property photos, blueprints, or drawings",
+  initialTags = [] // Default to empty array
 }: PropertyFileUploadProps) {
   const [uploadedFiles, setUploadedFiles] = useState<FileWithPreview[]>(initialFiles);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -54,6 +56,9 @@ export function PropertyFileUpload({
 
   // Handle completed uploads
   const handleUploadComplete = (files: FileWithPreview[]) => {
+    console.log("PropertyFileUpload - Files uploaded:", files);
+    console.log("PropertyFileUpload - Initial tags applied:", initialTags);
+    
     // Update our internal state with the new files
     setUploadedFiles(prev => {
       // Create a map of existing file IDs to avoid duplicates
@@ -111,6 +116,7 @@ export function PropertyFileUpload({
         onUploadComplete={handleUploadComplete}
         label={label}
         description={description}
+        initialTags={initialTags}
       />
     </div>
   );

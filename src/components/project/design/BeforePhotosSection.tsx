@@ -25,6 +25,9 @@ const BeforePhotosSection = ({
 }: BeforePhotosSectionProps) => {
   const hasBeforePhotos = beforePhotos.length > 0;
 
+  // Debug logging of before photos
+  console.log(`BeforePhotosSection rendering for ${area} with ${beforePhotos.length} photos:`, beforePhotos);
+
   return (
     <div className="space-y-6">
       {hasBeforePhotos ? (
@@ -36,6 +39,7 @@ const BeforePhotosSection = ({
           />
           
           <PhotoControls 
+            area={area}
             propertyPhotos={propertyPhotos}
             onSelectBeforePhotos={onSelectBeforePhotos}
             onUploadBeforePhotos={onUploadBeforePhotos}

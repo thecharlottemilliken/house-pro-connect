@@ -73,6 +73,19 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
   const handleAddDesignPlans = () => console.log("Add design plans clicked");
   const [showMeasuringDialog, setShowMeasuringDialog] = useState(false);
   const [measurementsState, setMeasurementsState] = useState(measurements);
+  // Add local state for before photos to better track updates
+  const [localBeforePhotos, setLocalBeforePhotos] = useState<string[]>(beforePhotos);
+  
+  // Enhanced update logging for before photos
+  useEffect(() => {
+    console.log("RoomTabContent - beforePhotos from props updated:", beforePhotos);
+    
+    // Only update if before photos actually changed
+    if (JSON.stringify(beforePhotos) !== JSON.stringify(localBeforePhotos)) {
+      console.log("RoomTabContent - Updating local before photos state");
+      setLocalBeforePhotos(beforePhotos);
+    }
+  }, [beforePhotos]);
   
   // Improved update logic for local state when measurements change
   useEffect(() => {
@@ -99,6 +112,21 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
       });
     }
   }, [measurements]);
+
+  // Create enhanced handlers for before photo management
+  const handleSelectBeforePhotos = (photos: string[]) => {
+    console.log(`RoomTabContent - handleSelectBeforePhotos called with ${photos.length} photos`);
+    onSelectBeforePhotos(photos);
+    // Update local state for immediate UI feedback
+    setLocalBeforePhotos(photos);
+  };
+
+  const handleUploadBeforePhotos = (photos: string[]) => {
+    console.log(`RoomTabContent - handleUploadBeforePhotos called with ${photos.length} photos`);
+    onUploadBeforePhotos(photos);
+    // Update local state for immediate UI feedback - combine with existing photos
+    setLocalBeforePhotos(prevPhotos => [...prevPhotos, ...photos]);
+  };
 
   // Filter design assets for the current room
   const roomDesignAssets = React.useMemo(() => {
@@ -135,7 +163,9 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
     console.log("All design assets:", designAssets);
     console.log("Room ID:", roomId);
     console.log("Room preferences:", roomPreferences);
-  }, [area.area, roomDesignAssets, designAssets, roomId, roomPreferences]);
+    console.log("Before photos count:", localBeforePhotos.length);
+    console.log("Before photos:", localBeforePhotos);
+  }, [area.area, roomDesignAssets, designAssets, roomId, roomPreferences, localBeforePhotos]);
   
   // Enhanced check for measurements presence with better type checking
   const hasMeasurements = Boolean(
@@ -187,8 +217,8 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
           hasMeasurements={hasMeasurements}
           onAddDesigner={onAddDesigner}
           onSaveMeasurements={handleSaveMeasurements}
-          onSelectBeforePhotos={onSelectBeforePhotos}
-          onUploadBeforePhotos={onUploadBeforePhotos}
+          onSelectBeforePhotos={handleSelectBeforePhotos}
+          onUploadBeforePhotos={handleUploadBeforePhotos}
           onAddProjectFiles={onAddProjectFiles}
           onRemoveDesignAsset={(index) => {
             // Find the original index in the full designAssets array
@@ -215,7 +245,7 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
             }
           }}
           onMeasureRoom={() => setShowMeasuringDialog(true)}
-          beforePhotos={beforePhotos}
+          beforePhotos={localBeforePhotos}
           propertyPhotos={propertyPhotos}
         />
       </div>

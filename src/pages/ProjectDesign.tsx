@@ -23,7 +23,8 @@ const ProjectDesign = () => {
   const {
     projectData,
     propertyDetails,
-    isLoading
+    isLoading,
+    refreshProjectData // Make sure we're exposing this function from useProjectData
   } = useProjectData(params.projectId, location.state);
   
   const {
@@ -58,6 +59,49 @@ const ProjectDesign = () => {
   const handleAddDrawings = useCallback(() => console.log("Add drawings clicked"), []);
   const handleAddBlueprints = useCallback(() => console.log("Add blueprints clicked"), []);
 
+  // Enhanced select before photos handler with improved debugging and refresh mechanism
+  const enhancedSelectBeforePhotos = useCallback(async (area: string, photos: string[]) => {
+    console.log(`ProjectDesign: Selecting ${photos.length} before photos for area ${area}`);
+    
+    // Call the original handler
+    const updatedPrefs = await handleSelectBeforePhotos(area, photos, projectData?.design_preferences || {});
+    
+    if (updatedPrefs) {
+      console.log("ProjectDesign: Before photos updated successfully, triggering UI refresh");
+      // Force a UI refresh after successful update
+      setRefreshTrigger(prev => prev + 1);
+      
+      // Also trigger a project data refresh to ensure we have the latest data
+      if (refreshProjectData) {
+        setTimeout(() => refreshProjectData(), 300);
+      }
+    }
+    
+    return updatedPrefs;
+  }, [handleSelectBeforePhotos, projectData?.design_preferences, refreshProjectData]);
+
+  // Enhanced upload before photos handler with improved debugging and refresh mechanism
+  const enhancedUploadBeforePhotos = useCallback(async (area: string, photos: string[]) => {
+    console.log(`ProjectDesign: Uploading ${photos.length} before photos for area ${area}`);
+    console.log("Photo URLs:", photos);
+    
+    // Call the original handler
+    const updatedPrefs = await handleUploadBeforePhotos(area, photos, projectData?.design_preferences || {});
+    
+    if (updatedPrefs) {
+      console.log("ProjectDesign: Before photos uploaded successfully, triggering UI refresh");
+      // Force a UI refresh after successful upload
+      setRefreshTrigger(prev => prev + 1);
+      
+      // Also trigger a project data refresh to ensure we have the latest data
+      if (refreshProjectData) {
+        setTimeout(() => refreshProjectData(), 300);
+      }
+    }
+    
+    return updatedPrefs;
+  }, [handleUploadBeforePhotos, projectData?.design_preferences, refreshProjectData]);
+
   // Enhanced tag update handler to trigger UI refresh
   const enhancedUpdateAssetTags = useCallback(async (index: number, tags: string[]) => {
     console.log("ProjectDesign: Updating tags for asset at index", index, "with tags", tags);
@@ -65,12 +109,14 @@ const ProjectDesign = () => {
     if (updatedPrefs) {
       // Force a UI refresh after successful tag update
       setRefreshTrigger(prev => prev + 1);
-      // Force a re-render by updating projectData in some way (this would ideally be done with a proper state management solution)
-      if (projectData) {
-        console.log("Tags updated successfully, triggering UI refresh");
+      
+      // Also trigger a project data refresh to ensure we have the latest data
+      if (refreshProjectData) {
+        setTimeout(() => refreshProjectData(), 300);
       }
     }
-  }, [handleUpdateAssetTags, projectData]);
+    return updatedPrefs;
+  }, [handleUpdateAssetTags, projectData?.design_preferences, refreshProjectData]);
 
   // Enhanced measurements save handler with immediate state update and better type checking
   const enhancedSaveMeasurements = useCallback(async (area: string, measurements: any) => {
@@ -91,14 +137,37 @@ const ProjectDesign = () => {
     
     if (updatedPrefs) {
       console.log("ProjectDesign: Measurements saved successfully, updating UI");
-      // Force a UI refresh after successful measurements update with slight delay to ensure DB consistency
-      setTimeout(() => {
-        setRefreshTrigger(prev => prev + 1);
-      }, 100);
+      // Force a UI refresh after successful measurements update
+      setRefreshTrigger(prev => prev + 1);
+      
+      // Also trigger a project data refresh to ensure we have the latest data
+      if (refreshProjectData) {
+        setTimeout(() => refreshProjectData(), 300);
+      }
     }
     
     return updatedPrefs;
-  }, [handleSaveMeasurements, projectData]);
+  }, [handleSaveMeasurements, projectData?.design_preferences, refreshProjectData]);
+
+  // Enhanced project files handler that properly triggers UI updates
+  const enhancedAddProjectFiles = useCallback(async (area: string, files: string[]) => {
+    console.log(`ProjectDesign: Adding ${files.length} project files for area ${area}`);
+    
+    const updatedPrefs = await handleAddProjectFiles(area, files, projectData?.design_preferences || {});
+    
+    if (updatedPrefs) {
+      console.log("ProjectDesign: Project files added successfully, triggering UI refresh");
+      // Force a UI refresh after successful file addition
+      setRefreshTrigger(prev => prev + 1);
+      
+      // Also trigger a project data refresh to ensure we have the latest data
+      if (refreshProjectData) {
+        setTimeout(() => refreshProjectData(), 300);
+      }
+    }
+    
+    return updatedPrefs;
+  }, [handleAddProjectFiles, projectData?.design_preferences, refreshProjectData]);
 
   // Set default tab based on renovation areas
   useEffect(() => {
@@ -157,6 +226,14 @@ const ProjectDesign = () => {
       </div>;
   }
 
+  // Debug log to check for before photos in design preferences
+  console.log("ProjectDesign - Design preferences:", projectData.design_preferences);
+  if (projectData.design_preferences?.beforePhotos) {
+    console.log("ProjectDesign - Before photos in design preferences:", projectData.design_preferences.beforePhotos);
+  } else {
+    console.log("ProjectDesign - No before photos found in design preferences");
+  }
+
   const renovationAreas = projectData.renovation_areas || [];
   const propertyPhotos = propertyDetails?.home_photos || [];
   const designPreferences = projectData.design_preferences || { hasDesigns: false };
@@ -179,7 +256,7 @@ const ProjectDesign = () => {
                 <h2 className="text-lg font-medium mb-3">Select a room</h2>
                 
                 <ProjectDesignTabs 
-                  key={`design-tabs-${refreshTrigger}`} // Force re-render on measurements updates
+                  key={`design-tabs-${refreshTrigger}`} // Force re-render on updates
                   defaultTab={defaultTab}
                   renovationAreas={renovationAreas}
                   designPreferences={designPreferences}
@@ -194,9 +271,9 @@ const ProjectDesign = () => {
                   onAddDrawings={handleAddDrawings}
                   onAddBlueprints={handleAddBlueprints}
                   onSaveMeasurements={enhancedSaveMeasurements}
-                  onSelectBeforePhotos={(area, photos) => handleSelectBeforePhotos(area, photos, designPreferences)}
-                  onUploadBeforePhotos={(area, photos) => handleUploadBeforePhotos(area, photos, designPreferences)}
-                  onAddProjectFiles={(area, files) => handleAddProjectFiles(area, files, designPreferences)}
+                  onSelectBeforePhotos={(area, photos) => enhancedSelectBeforePhotos(area, photos)}
+                  onUploadBeforePhotos={(area, photos) => enhancedUploadBeforePhotos(area, photos)}
+                  onAddProjectFiles={(area, files) => enhancedAddProjectFiles(area, files)}
                   onRemoveDesignAsset={(index) => handleRemoveDesignAsset(index, designPreferences)}
                   onUpdateAssetTags={enhancedUpdateAssetTags}
                   onAddInspirationImages={(images, roomId) => {

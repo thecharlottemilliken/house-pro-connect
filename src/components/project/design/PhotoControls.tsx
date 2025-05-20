@@ -8,12 +8,14 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 interface PhotoControlsProps {
+  area?: string; // Made area an optional prop
   propertyPhotos: string[];
   onSelectBeforePhotos: (photos: string[]) => void;
   onUploadBeforePhotos: (photos: string[]) => void;
 }
 
 const PhotoControls = ({
+  area = '',
   propertyPhotos,
   onSelectBeforePhotos,
   onUploadBeforePhotos
@@ -24,7 +26,7 @@ const PhotoControls = ({
 
   // Handler to extract URLs from FileWithPreview objects and pass them to the parent component
   const handleUploadComplete = (files: FileWithPreview[]) => {
-    console.log("PhotoControls - handleUploadComplete called with files:", files);
+    console.log(`PhotoControls - handleUploadComplete called with ${files.length} files for area: ${area}`);
     
     // Extract only complete files with valid URLs
     const validFiles = files.filter(file => file.status === 'complete' && file.url);
@@ -38,8 +40,8 @@ const PhotoControls = ({
       onUploadBeforePhotos(urls);
       
       toast({
-        title: "Upload Complete",
-        description: `Successfully uploaded ${validFiles.length} file${validFiles.length !== 1 ? 's' : ''}`
+        title: "Before Photos Added",
+        description: `Successfully added ${validFiles.length} before ${validFiles.length !== 1 ? 'photos' : 'photo'} for ${area}`
       });
     } else {
       console.warn("No valid files to extract URLs from");
@@ -73,6 +75,7 @@ const PhotoControls = ({
         onUploadComplete={handleUploadComplete}
         uploadedFiles={uploadedFiles}
         setUploadedFiles={setUploadedFiles}
+        initialTags={["before"]} // Always tag uploads as "before" photos
         roomOptions={[
           { value: "before", label: "Before" }
         ]}

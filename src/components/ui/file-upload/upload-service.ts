@@ -7,6 +7,7 @@ import { toast } from "@/hooks/use-toast";
 // Process files for preview and upload preparation
 export const processFiles = async (
   files: FileList,
+  initialTags: string[] = [],
   onProgress?: (id: string, progress: number) => void
 ): Promise<FileWithPreview[]> => {
   // Convert the FileList to an array of FileWithPreview objects
@@ -22,7 +23,7 @@ export const processFiles = async (
       type: file.type,
       previewUrl,
       progress: 0,
-      tags: [],
+      tags: initialTags,
       status: 'ready',
     };
   });
@@ -32,10 +33,11 @@ export const processFiles = async (
 export const uploadFile = async (
   file: File, 
   bucketName: string = 'property-files',
+  tags: string[] = [],
   onProgress?: (progress: number) => void
 ): Promise<string> => {
   try {
-    console.log(`Starting upload of ${file.name} to ${bucketName} bucket`);
+    console.log(`Starting upload of ${file.name} to ${bucketName} bucket with tags: ${tags.join(', ')}`);
     
     // Check authentication status first
     const { data: authData } = await supabase.auth.getSession();
@@ -55,7 +57,13 @@ export const uploadFile = async (
       .from(bucketName)
       .upload(filePath, file, {
         cacheControl: '3600',
-        upsert: false
+        upsert: false,
+        // Add metadata including tags for better organization
+        fileMetadata: {
+          tags: tags.join(','),
+          uploadedAt: new Date().toISOString(),
+          contentType: file.type
+        }
       });
     
     if (error) {
@@ -93,6 +101,7 @@ export const uploadFile = async (
 export const uploadMultipleFiles = async (
   files: File[],
   bucketName: string = 'property-files',
+  tags: string[] = [],
   onFileProgress?: (index: number, progress: number) => void
 ): Promise<string[]> => {
   try {
@@ -100,7 +109,7 @@ export const uploadMultipleFiles = async (
     const urls: string[] = [];
     
     for (let i = 0; i < files.length; i++) {
-      const url = await uploadFile(files[i], bucketName, 
+      const url = await uploadFile(files[i], bucketName, tags,
         (progress) => onFileProgress?.(i, progress));
       urls.push(url);
     }
@@ -110,4 +119,13 @@ export const uploadMultipleFiles = async (
     console.error('Error in uploadMultipleFiles:', error);
     throw error;
   }
+};
+
+// Helper function to extract tags from FileWithPreview objects
+export const extractTags = (files: FileWithPreview[]): string[] => {
+  const allTags = new Set<string>();
+  files.forEach(file => {
+    file.tags.forEach(tag => allTags.add(tag));
+  });
+  return Array.from(allTags);
 };

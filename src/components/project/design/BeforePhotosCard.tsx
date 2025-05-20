@@ -19,6 +19,9 @@ const BeforePhotosCard = ({
   onSelectBeforePhotos,
   onUploadBeforePhotos,
 }: BeforePhotosCardProps) => {
+  console.log(`BeforePhotosCard - Rendering for area "${area}" with ${beforePhotos.length} photos`);
+  console.log(`BeforePhotosCard - Before photos:`, beforePhotos);
+  
   const handleRemovePhoto = (index: number) => {
     const updatedPhotos = [...beforePhotos];
     updatedPhotos.splice(index, 1);

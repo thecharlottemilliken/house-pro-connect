@@ -1,14 +1,15 @@
 
 import { useState, useCallback } from "react";
 import { FileWithPreview } from "./types";
-import { processFiles, uploadFile } from "./upload-service";
+import { processFiles, uploadFile, extractTags } from "./upload-service";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 export const useFileUpload = (
   uploadedFiles: FileWithPreview[],
   setUploadedFiles: React.Dispatch<React.SetStateAction<FileWithPreview[]>>,
-  onUploadComplete?: (files: FileWithPreview[]) => void
+  onUploadComplete?: (files: FileWithPreview[]) => void,
+  initialTags: string[] = []
 ) => {
   const [isUploading, setIsUploading] = useState(false);
 
@@ -38,10 +39,10 @@ export const useFileUpload = (
       
       setIsUploading(true);
 
-      console.log("Processing", files.length, "files");
+      console.log("Processing", files.length, "files with initial tags:", initialTags);
       
-      // Process files for preview
-      const processedFiles = await processFiles(files);
+      // Process files for preview, passing initial tags
+      const processedFiles = await processFiles(files, initialTags);
       
       // Add files to state with 'uploading' status
       setUploadedFiles(prevFiles => [...prevFiles, ...processedFiles]);
@@ -65,8 +66,8 @@ export const useFileUpload = (
             )
           );
           
-          // Upload to Supabase storage
-          const url = await uploadFile(file.file, 'property-files');
+          // Upload to Supabase storage with tags
+          const url = await uploadFile(file.file, 'property-files', file.tags);
           
           // Update with permanent URL and complete status
           const updatedFile = { 
@@ -83,6 +84,7 @@ export const useFileUpload = (
           
           completedFiles.push(updatedFile);
           
+          console.log(`Uploaded file ${file.name} with tags: ${file.tags.join(', ')}`);
         } catch (error) {
           console.error(`Error uploading ${file.name}:`, error);
           
