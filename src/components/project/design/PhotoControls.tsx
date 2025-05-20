@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { EnhancedFileUpload, FileWithPreview, extractUrls } from "@/components/ui/file-upload";
+import { EnhancedFileUpload, FileWithPreview } from "@/components/ui/file-upload";
 import SelectPropertyPhotosDialog from "./SelectPropertyPhotosDialog";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
@@ -24,43 +24,26 @@ const PhotoControls = ({
 
   // Handler to extract URLs from FileWithPreview objects and pass them to the parent component
   const handleUploadComplete = (files: FileWithPreview[]) => {
+    console.log("PhotoControls - handleUploadComplete called with files:", files);
+    
     // Extract only complete files with valid URLs
     const validFiles = files.filter(file => file.status === 'complete' && file.url);
     
     if (validFiles.length > 0) {
       // Extract URLs from valid files
       const urls = validFiles.map(file => file.url as string);
-      console.log("Extracted URLs from uploaded files:", urls);
+      console.log("PhotoControls - extracted URLs from uploaded files:", urls);
       
       // Pass the URLs to the parent component
       onUploadBeforePhotos(urls);
+      
+      toast({
+        title: "Upload Complete",
+        description: `Successfully uploaded ${validFiles.length} file${validFiles.length !== 1 ? 's' : ''}`
+      });
     } else {
       console.warn("No valid files to extract URLs from");
     }
-  };
-
-  // Check authentication before proceeding with upload
-  const checkAuthBeforeUpload = async (): Promise<boolean> => {
-    const { data } = await supabase.auth.getSession();
-    const isAuthenticated = !!data.session;
-    
-    if (!isAuthenticated) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to upload photos.",
-        variant: "destructive"
-      });
-      return false;
-    }
-    
-    return true;
-  };
-
-  // Callback for FileUpload component when files are processed
-  const handleFilesProcessed = async (files: FileWithPreview[]) => {
-    // We already have the files in state from the EnhancedFileUpload component
-    // Just need to pass their URLs to the parent
-    handleUploadComplete(files);
   };
 
   return (
@@ -87,7 +70,7 @@ const PhotoControls = ({
         description="Upload additional photos of the room's current state"
         accept="image/*"
         multiple={true}
-        onUploadComplete={handleFilesProcessed}
+        onUploadComplete={handleUploadComplete}
         uploadedFiles={uploadedFiles}
         setUploadedFiles={setUploadedFiles}
         roomOptions={[

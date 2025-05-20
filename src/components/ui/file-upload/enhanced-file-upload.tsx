@@ -15,6 +15,7 @@ interface EnhancedFileUploadProps {
   setUploadedFiles: React.Dispatch<React.SetStateAction<FileWithPreview[]>>;
   allowUrlUpload?: boolean;
   roomOptions?: RoomTagOption[];
+  className?: string;
 }
 
 export function EnhancedFileUpload({
@@ -27,6 +28,7 @@ export function EnhancedFileUpload({
   setUploadedFiles,
   allowUrlUpload = false,
   roomOptions = [],
+  className = "",
 }: EnhancedFileUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -67,7 +69,7 @@ export function EnhancedFileUpload({
   };
 
   return (
-    <div className="space-y-4">
+    <div className={`space-y-4 ${className}`}>
       <DropZone 
         label={label}
         description={description}

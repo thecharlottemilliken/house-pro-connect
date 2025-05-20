@@ -37,6 +37,13 @@ export const uploadFile = async (
   try {
     console.log(`Starting upload of ${file.name} to ${bucketName} bucket`);
     
+    // Check authentication status first
+    const { data: authData } = await supabase.auth.getSession();
+    if (!authData.session) {
+      console.error('User not authenticated');
+      throw new Error('Authentication required to upload files');
+    }
+    
     // First, check if the bucket exists and create it if it doesn't
     const { data: buckets } = await supabase.storage.listBuckets();
     const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
@@ -44,7 +51,7 @@ export const uploadFile = async (
     if (!bucketExists) {
       console.log(`Creating bucket: ${bucketName}`);
       const { error: createBucketError } = await supabase.storage.createBucket(bucketName, {
-        public: true
+        public: false // Changed to false for better security
       });
       
       if (createBucketError) {
@@ -78,11 +85,21 @@ export const uploadFile = async (
       .from(bucketName)
       .getPublicUrl(filePath);
     
-    console.log(`Public URL generated: ${publicUrlData?.publicUrl}`);
+    const publicUrl = publicUrlData?.publicUrl;
+    console.log(`Public URL generated: ${publicUrl}`);
     
-    return publicUrlData.publicUrl;
-  } catch (error) {
+    if (!publicUrl) {
+      throw new Error('Failed to generate public URL for uploaded file');
+    }
+    
+    return publicUrl;
+  } catch (error: any) {
     console.error('Error in uploadFile:', error);
+    toast({
+      title: "Upload Error",
+      description: error.message || "Failed to upload file",
+      variant: "destructive"
+    });
     throw error;
   }
 };

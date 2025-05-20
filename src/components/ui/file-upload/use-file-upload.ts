@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { FileWithPreview } from "./types";
 import { processFiles, uploadFile } from "./upload-service";
 import { toast } from "@/hooks/use-toast";
@@ -105,6 +105,7 @@ export const useFileUpload = (
       
       // Call the callback with completed files
       if (completedFiles.length > 0 && onUploadComplete) {
+        console.log("Calling onUploadComplete with completed files:", completedFiles);
         onUploadComplete(completedFiles);
       }
       

@@ -1,8 +1,8 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
-import { FileUpload, FileWithPreview, extractUrls } from "@/components/ui/file-upload";
+import { EnhancedFileUpload, FileWithPreview } from "@/components/ui/file-upload";
 import SelectPropertyPhotosDialog from "./SelectPropertyPhotosDialog";
 import { Dialog } from "@/components/ui/dialog";
 
@@ -19,11 +19,23 @@ const EmptyPhotoState = ({
   onSelectBeforePhotos,
   onUploadBeforePhotos
 }: EmptyPhotoStateProps) => {
+  // State to manage uploaded files
+  const [uploadedFiles, setUploadedFiles] = useState<FileWithPreview[]>([]);
   
-  // Convert FileWithPreview[] to string[] for the parent component
+  // Handle upload complete event with proper URL extraction
   const handleUploadComplete = (files: FileWithPreview[]) => {
-    const urls = extractUrls(files);
-    onUploadBeforePhotos(urls);
+    console.log("EmptyPhotoState - handleUploadComplete called with files:", files);
+    
+    // Extract only URLs from completed files
+    const urls = files
+      .filter(file => file.status === 'complete' && file.url)
+      .map(file => file.url as string);
+    
+    console.log("EmptyPhotoState - extracted URLs:", urls);
+    
+    if (urls.length > 0) {
+      onUploadBeforePhotos(urls);
+    }
   };
   
   return (
@@ -53,22 +65,31 @@ const EmptyPhotoState = ({
                 }
               />
             </Dialog>
-            <FileUpload
+            <EnhancedFileUpload
               label="Upload"
               description="Upload photos of the room's current state"
               accept="image/*"
               multiple={true}
               onUploadComplete={handleUploadComplete}
-              className="w-full border-[#1A6985] border-2 text-[#1A6985] hover:bg-transparent hover:text-[#1A6985]/90 font-medium uppercase tracking-wider py-6"
+              uploadedFiles={uploadedFiles}
+              setUploadedFiles={setUploadedFiles}
+              roomOptions={[
+                { value: "before", label: "Before" }
+              ]}
             />
           </>
         ) : (
-          <FileUpload
+          <EnhancedFileUpload
             label="Upload"
             description="Upload photos of the room's current state"
             accept="image/*"
             multiple={true}
             onUploadComplete={handleUploadComplete}
+            uploadedFiles={uploadedFiles}
+            setUploadedFiles={setUploadedFiles}
+            roomOptions={[
+              { value: "before", label: "Before" }
+            ]}
             className="col-span-2 w-full border-[#1A6985] border-2 text-[#1A6985] hover:bg-transparent hover:text-[#1A6985]/90 font-medium uppercase tracking-wider py-6"
           />
         )}
