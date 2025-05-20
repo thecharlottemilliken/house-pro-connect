@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { ChevronDown, ChevronUp } from "lucide-react";
@@ -69,6 +70,7 @@ export function MaterialRequirementsForm({
   const [selectedCategory, setSelectedCategory] = useState<string>("Finishes");
   const [selectedItems, setSelectedItems] = useState<MaterialItem[]>([]);
   const [openCategory, setOpenCategory] = useState<string | null>(null);
+  const [modifiedItems, setModifiedItems] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (initialData && initialData.length > 0) {
@@ -76,7 +78,18 @@ export function MaterialRequirementsForm({
     } else if (materialItems && materialItems.length > 0) {
       setSelectedItems(materialItems);
     }
-  }, [initialData, materialItems]);
+    
+    // If in revision mode, track initial items for change highlighting
+    if (isRevision) {
+      const initialItemMap: Record<string, boolean> = {};
+      const itemsToTrack = initialData.length > 0 ? initialData : materialItems;
+      itemsToTrack.forEach(item => {
+        const key = `${item.category}-${item.type}`;
+        initialItemMap[key] = true;
+      });
+      setModifiedItems(initialItemMap);
+    }
+  }, [initialData, materialItems, isRevision]);
 
   const getItemsByCategory = (category: string) => {
     return [...materialCategories.interior, ...materialCategories.exterior]
@@ -84,21 +97,42 @@ export function MaterialRequirementsForm({
   };
 
   const handleCheckItem = (category: string, type: string) => {
+    const itemKey = `${category}-${type}`;
     const exists = selectedItems.some(
       item => item.category === category && item.type === type
     );
 
     if (exists) {
+      // Removing an item
       setSelectedItems(selectedItems.filter(
         item => !(item.category === category && item.type === type)
       ));
+      
+      // Track item modification if in revision mode
+      if (isRevision) {
+        console.log(`Removing material item in revision mode: ${itemKey}`);
+        setModifiedItems(prev => ({
+          ...prev,
+          [itemKey]: !prev[itemKey] // Toggle modification state
+        }));
+      }
     } else {
+      // Adding an item
       setSelectedItems([...selectedItems, { 
         category, 
         type, 
         rooms: [],
         specifications: {}
       }]);
+      
+      // Track item modification if in revision mode
+      if (isRevision) {
+        console.log(`Adding material item in revision mode: ${itemKey}`);
+        setModifiedItems(prev => ({
+          ...prev,
+          [itemKey]: !prev[itemKey] // Toggle modification state
+        }));
+      }
     }
   };
 
@@ -109,6 +143,18 @@ export function MaterialRequirementsForm({
       title: "Material requirements saved",
       description: "Your material selections have been saved successfully."
     });
+  };
+
+  // Determine if an item should be highlighted in revision mode
+  const isItemHighlighted = (category: string, type: string): boolean => {
+    if (!isRevision) return false;
+    
+    const itemKey = `${category}-${type}`;
+    // Item is highlighted if it's in changedMaterialItems or was modified in this session
+    return (
+      (changedMaterialItems[itemKey] === true) || 
+      (modifiedItems[itemKey] !== undefined && initialData.some(item => item.category === category && item.type === type) !== selectedItems.some(item => item.category === category && item.type === type))
+    );
   };
 
   return (
@@ -129,23 +175,28 @@ export function MaterialRequirementsForm({
           </Select>
 
           <div className="mt-6 space-y-2">
-            {getItemsByCategory(selectedCategory).map((item) => (
-              <div key={item} className="flex items-center space-x-2">
-                <Checkbox
-                  id={item}
-                  checked={selectedItems.some(
-                    si => si.category === selectedCategory && si.type === item
-                  )}
-                  onCheckedChange={() => handleCheckItem(selectedCategory, item)}
-                />
-                <Label
-                  htmlFor={item}
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  {item}
-                </Label>
-              </div>
-            ))}
+            {getItemsByCategory(selectedCategory).map((item) => {
+              const isSelected = selectedItems.some(
+                si => si.category === selectedCategory && si.type === item
+              );
+              const isHighlighted = isItemHighlighted(selectedCategory, item);
+              
+              return (
+                <div key={item} className={`flex items-center space-x-2 p-1 rounded-md ${isHighlighted ? 'bg-yellow-50' : ''}`}>
+                  <Checkbox
+                    id={item}
+                    checked={isSelected}
+                    onCheckedChange={() => handleCheckItem(selectedCategory, item)}
+                  />
+                  <Label
+                    htmlFor={item}
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    {item} {isHighlighted && isRevision && <span className="text-xs text-yellow-600">(modified)</span>}
+                  </Label>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -179,7 +230,7 @@ export function MaterialRequirementsForm({
               
               {openCategory === category && items.map((item, itemIndex) => {
                 const itemKey = `${item.category}-${item.type}`;
-                const isHighlighted = isRevision && changedMaterialItems[itemKey] === true;
+                const isHighlighted = isRevision && (changedMaterialItems[itemKey] === true || modifiedItems[itemKey] !== undefined);
                 
                 return (
                   <div 
@@ -189,6 +240,7 @@ export function MaterialRequirementsForm({
                     <div className="px-6 py-4 bg-gray-50">
                       <h4 className="text-lg font-medium text-gray-700">
                         {item.type} in {category}
+                        {isHighlighted && <span className="ml-2 text-xs text-yellow-600">(modified)</span>}
                       </h4>
                     </div>
                     <MaterialItemAccordion
@@ -203,6 +255,14 @@ export function MaterialRequirementsForm({
                         );
                         updatedItems[index] = { ...updatedItems[index], rooms };
                         setSelectedItems(updatedItems);
+                        
+                        // Track modification in revision mode
+                        if (isRevision) {
+                          setModifiedItems(prev => ({
+                            ...prev,
+                            [itemKey]: true
+                          }));
+                        }
                       }}
                       onUpdateSpecifications={(specs) => {
                         console.log("Updating specifications for", item.type, ":", specs);
@@ -215,6 +275,14 @@ export function MaterialRequirementsForm({
                           specifications: specs 
                         };
                         setSelectedItems(updatedItems);
+                        
+                        // Track modification in revision mode
+                        if (isRevision) {
+                          setModifiedItems(prev => ({
+                            ...prev,
+                            [itemKey]: true
+                          }));
+                        }
                       }}
                     />
                   </div>
@@ -227,7 +295,7 @@ export function MaterialRequirementsForm({
 
       <div className="flex justify-end mt-6 pt-6 border-t">
         <Button onClick={handleSave}>
-          Save Material Requirements
+          {isRevision ? "Save Revised Material Requirements" : "Save Material Requirements"}
         </Button>
       </div>
     </div>

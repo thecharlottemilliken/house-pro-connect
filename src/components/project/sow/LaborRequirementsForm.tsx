@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { ChevronDown, ChevronUp } from "lucide-react";
@@ -67,6 +68,7 @@ export function LaborRequirementsForm({
   const [selectedCategory, setSelectedCategory] = useState<string>("Carpentry");
   const [selectedItems, setSelectedItems] = useState<LaborItem[]>([]);
   const [openCategory, setOpenCategory] = useState<string | null>(null);
+  const [modifiedItems, setModifiedItems] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (initialData && initialData.length > 0) {
@@ -74,7 +76,18 @@ export function LaborRequirementsForm({
     } else if (laborItems && laborItems.length > 0) {
       setSelectedItems(laborItems);
     }
-  }, [initialData, laborItems]);
+
+    // If in revision mode, track initial items for change highlighting
+    if (isRevision) {
+      const initialItemMap: Record<string, boolean> = {};
+      const itemsToTrack = initialData.length > 0 ? initialData : laborItems;
+      itemsToTrack.forEach(item => {
+        const key = `${item.category}-${item.type}`;
+        initialItemMap[key] = true;
+      });
+      setModifiedItems(initialItemMap);
+    }
+  }, [initialData, laborItems, isRevision]);
 
   const getItemsByCategory = (category: string) => {
     return [...laborCategories.general, ...laborCategories.specialized]
@@ -82,20 +95,41 @@ export function LaborRequirementsForm({
   };
 
   const handleCheckItem = (category: string, type: string) => {
+    const itemKey = `${category}-${type}`;
     const exists = selectedItems.some(
       item => item.category === category && item.type === type
     );
 
     if (exists) {
+      // Removing an item
       setSelectedItems(selectedItems.filter(
         item => !(item.category === category && item.type === type)
       ));
+      
+      // Track item modification if in revision mode
+      if (isRevision) {
+        console.log(`Removing labor item in revision mode: ${itemKey}`);
+        setModifiedItems(prev => ({
+          ...prev,
+          [itemKey]: !prev[itemKey] // Toggle modification state
+        }));
+      }
     } else {
+      // Adding an item
       setSelectedItems([...selectedItems, { 
         category, 
         type, 
         rooms: []
       }]);
+      
+      // Track item modification if in revision mode
+      if (isRevision) {
+        console.log(`Adding labor item in revision mode: ${itemKey}`);
+        setModifiedItems(prev => ({
+          ...prev,
+          [itemKey]: !prev[itemKey] // Toggle modification state
+        }));
+      }
     }
   };
 
@@ -106,6 +140,18 @@ export function LaborRequirementsForm({
       title: "Labor requirements saved",
       description: "Your labor selections have been saved successfully."
     });
+  };
+
+  // Determine if an item should be highlighted in revision mode
+  const isItemHighlighted = (category: string, type: string): boolean => {
+    if (!isRevision) return false;
+    
+    const itemKey = `${category}-${type}`;
+    // Item is highlighted if it's in changedLaborItems or was modified in this session
+    return (
+      (changedLaborItems[itemKey] === true) || 
+      (modifiedItems[itemKey] !== undefined && initialData.some(item => item.category === category && item.type === type) !== selectedItems.some(item => item.category === category && item.type === type))
+    );
   };
 
   return (
@@ -126,23 +172,28 @@ export function LaborRequirementsForm({
           </Select>
 
           <div className="mt-6 space-y-2">
-            {getItemsByCategory(selectedCategory).map((item) => (
-              <div key={item} className="flex items-center space-x-2">
-                <Checkbox
-                  id={item}
-                  checked={selectedItems.some(
-                    si => si.category === selectedCategory && si.type === item
-                  )}
-                  onCheckedChange={() => handleCheckItem(selectedCategory, item)}
-                />
-                <Label
-                  htmlFor={item}
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  {item}
-                </Label>
-              </div>
-            ))}
+            {getItemsByCategory(selectedCategory).map((item) => {
+              const isSelected = selectedItems.some(
+                si => si.category === selectedCategory && si.type === item
+              );
+              const isHighlighted = isItemHighlighted(selectedCategory, item);
+              
+              return (
+                <div key={item} className={`flex items-center space-x-2 p-1 rounded-md ${isHighlighted ? 'bg-yellow-50' : ''}`}>
+                  <Checkbox
+                    id={item}
+                    checked={isSelected}
+                    onCheckedChange={() => handleCheckItem(selectedCategory, item)}
+                  />
+                  <Label
+                    htmlFor={item}
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    {item} {isHighlighted && isRevision && <span className="text-xs text-yellow-600">(modified)</span>}
+                  </Label>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -176,7 +227,7 @@ export function LaborRequirementsForm({
               
               {openCategory === category && items.map((item, itemIndex) => {
                 const itemKey = `${item.category}-${item.type}`;
-                const isHighlighted = isRevision && changedLaborItems[itemKey] === true;
+                const isHighlighted = isRevision && (changedLaborItems[itemKey] === true || modifiedItems[itemKey] !== undefined);
                 
                 return (
                   <div 
@@ -186,6 +237,7 @@ export function LaborRequirementsForm({
                     <div className="px-6 py-4 bg-gray-50">
                       <h4 className="text-lg font-medium text-gray-700">
                         {item.type} in {category}
+                        {isHighlighted && <span className="ml-2 text-xs text-yellow-600">(modified)</span>}
                       </h4>
                     </div>
                     <LaborItemAccordion
@@ -200,6 +252,14 @@ export function LaborRequirementsForm({
                         );
                         updatedItems[index] = { ...updatedItems[index], rooms };
                         setSelectedItems(updatedItems);
+                        
+                        // Track modification in revision mode
+                        if (isRevision) {
+                          setModifiedItems(prev => ({
+                            ...prev,
+                            [itemKey]: true
+                          }));
+                        }
                       }}
                     />
                   </div>
@@ -212,7 +272,7 @@ export function LaborRequirementsForm({
 
       <div className="flex justify-end mt-6 pt-6 border-t">
         <Button onClick={handleSave}>
-          Save Labor Requirements
+          {isRevision ? "Save Revised Labor Requirements" : "Save Labor Requirements"}
         </Button>
       </div>
     </div>

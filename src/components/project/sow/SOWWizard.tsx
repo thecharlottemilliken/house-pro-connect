@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -85,33 +86,54 @@ export function SOWWizard({ isRevision = false }: SOWWizardProps) {
       if (!projectId || !isPendingRevision) return;
 
       try {
-        // We're assuming you're storing historical SOW versions
-        // If you don't have this feature yet, this would just use the current data
-        // and highlight based on feedback instead
-        const { data, error } = await supabase
+        console.log("Fetching original SOW version for comparison...");
+        
+        // Get the revision history to find the last approved version
+        const { data: historyData, error: historyError } = await supabase
           .from('statement_of_work')
           .select('*')
           .eq('project_id', projectId)
-          .single();
+          .order('updated_at', { ascending: false })
+          .limit(10);
           
-        if (error) throw error;
+        if (historyError) throw historyError;
         
-        if (data) {
-          // Parse JSON fields
-          const parsedData = {
-            ...data,
-            work_areas: parseJsonField(data.work_areas, []),
-            labor_items: parseJsonField(data.labor_items, []),
-            material_items: parseJsonField(data.material_items, []),
-            bid_configuration: parseJsonField(data.bid_configuration, { bidDuration: '', projectDescription: '' }),
-          };
+        if (historyData && historyData.length > 0) {
+          console.log("SOW history versions:", historyData.map(v => ({ 
+            id: v.id,
+            status: v.status,
+            updated_at: v.updated_at
+          })));
           
-          setOriginalSowData(parsedData);
+          // Find the most recent version that was not pending revision
+          // (This should be the version that was reviewed/rejected)
+          const lastApprovedIndex = historyData.findIndex((item, idx) => 
+            idx > 0 && item.status !== 'pending revision'
+          );
           
-          // Track changes between versions
-          if (sowData) {
-            const changesDetected = trackChanges(parsedData, sowData);
-            setChanges(changesDetected);
+          if (lastApprovedIndex !== -1) {
+            const originalData = historyData[lastApprovedIndex];
+            console.log("Found original version:", originalData.id, "with status:", originalData.status);
+            
+            // Parse JSON fields
+            const parsedData = {
+              ...originalData,
+              work_areas: parseJsonField(originalData.work_areas, []),
+              labor_items: parseJsonField(originalData.labor_items, []),
+              material_items: parseJsonField(originalData.material_items, []),
+              bid_configuration: parseJsonField(originalData.bid_configuration, { bidDuration: '', projectDescription: '' }),
+            };
+            
+            setOriginalSowData(parsedData);
+            
+            // Track changes between versions
+            if (sowData) {
+              console.log("Tracking changes between original and current version");
+              const changesDetected = trackChanges(parsedData, sowData);
+              setChanges(changesDetected);
+            }
+          } else {
+            console.log("No suitable original version found in history");
           }
         }
       } catch (error) {
@@ -329,14 +351,11 @@ export function SOWWizard({ isRevision = false }: SOWWizardProps) {
             projectId={projectId || ''}
             isRevision={isPendingRevision}
             userRole={userRole}
-            // Update the onSave prop to match the updated interface
-            onSave={(confirmed) => {
-              if (confirmed) {
-                if (isPendingRevision) {
-                  handleSubmitRevisions();
-                } else {
-                  navigate(`/project-dashboard/${projectId}`);
-                }
+            onSave={() => {
+              if (isPendingRevision) {
+                handleSubmitRevisions();
+              } else {
+                navigate(`/project-dashboard/${projectId}`);
               }
             }}
             changes={changes}

@@ -1,3 +1,4 @@
+
 import { useParams, useLocation, useSearchParams, useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -64,7 +65,9 @@ const ProjectSOW = () => {
       if (!params.projectId) return;
 
       try {
-        const { data, error } = await supabase
+        setIsLoading(true);
+        
+        const { data: currentVersion, error } = await supabase
           .from('statement_of_work')
           .select('*')
           .eq('project_id', params.projectId)
@@ -72,34 +75,55 @@ const ProjectSOW = () => {
 
         if (error) throw error;
         
-        if (data) {
-          // Parse JSON fields
-          const parsedData = {
-            ...data,
-            work_areas: parseJsonField(data.work_areas, []),
-            labor_items: parseJsonField(data.labor_items, []),
-            material_items: parseJsonField(data.material_items, []),
-            bid_configuration: parseJsonField(data.bid_configuration, { bidDuration: '', projectDescription: '' }),
+        if (currentVersion) {
+          // Parse JSON fields for current version
+          const parsedCurrentData = {
+            ...currentVersion,
+            work_areas: parseJsonField(currentVersion.work_areas, []),
+            labor_items: parseJsonField(currentVersion.labor_items, []),
+            material_items: parseJsonField(currentVersion.material_items, []),
+            bid_configuration: parseJsonField(currentVersion.bid_configuration, { bidDuration: '', projectDescription: '' }),
           };
           
-          setSOWData(parsedData);
+          setSOWData(parsedCurrentData);
           
           // Check if this is a revision based on the status and URL param
-          if ((data.status === "ready for review" && isRevised) || data.status === "pending revision") {
+          const isRevisionCondition = (currentVersion.status === "ready for review" && isRevised) || 
+                                      currentVersion.status === "pending revision";
+          
+          if (isRevisionCondition) {
+            console.log("This is a revision. Fetching original version for comparison.");
             setIsRevision(true);
             
-            // For revisions, fetch original version to compare changes
-            if (data.status === "pending revision") {
-              try {
-                const { data: historyData } = await supabase
-                  .from('statement_of_work')
-                  .select('*')
-                  .eq('project_id', params.projectId)
-                  .order('updated_at', { ascending: false })
-                  .limit(2);
+            try {
+              // For revisions, fetch revision history to get the original version
+              const { data: historyData, error: historyError } = await supabase
+                .from('statement_of_work')
+                .select('*')
+                .eq('project_id', params.projectId)
+                .order('updated_at', { ascending: false })
+                .limit(10); // Get more records to increase chance of finding the right one
+              
+              if (historyError) throw historyError;
+              
+              if (historyData && historyData.length > 1) {
+                console.log("SOW history data:", historyData.map(v => ({ 
+                  id: v.id,
+                  status: v.status,
+                  updated_at: v.updated_at
+                })));
                 
-                if (historyData && historyData.length > 1) {
-                  const originalData = historyData[1];
+                // Find the last version that was not "pending revision" or the current version
+                const originalVersionIndex = historyData.findIndex((item, idx) => 
+                  idx > 0 && // Not the current version (which is at index 0)
+                  item.status !== 'pending revision' && // Not pending revision 
+                  item.status !== currentVersion.status // Different status from current
+                );
+                
+                if (originalVersionIndex !== -1) {
+                  const originalData = historyData[originalVersionIndex];
+                  
+                  // Parse JSON fields for original version
                   const parsedOriginalData = {
                     ...originalData,
                     work_areas: parseJsonField(originalData.work_areas, []),
@@ -108,15 +132,20 @@ const ProjectSOW = () => {
                     bid_configuration: parseJsonField(originalData.bid_configuration, { bidDuration: '', projectDescription: '' }),
                   };
                   
+                  console.log("Found original version for comparison:", originalData.id);
                   setOriginalSowData(parsedOriginalData);
                   
                   // Track changes between the original and current version
-                  const changesDetected = trackChanges(parsedOriginalData, parsedData);
+                  const changesDetected = trackChanges(parsedOriginalData, parsedCurrentData);
                   setChanges(changesDetected);
+                } else {
+                  console.log("No suitable original version found for comparison");
                 }
-              } catch (error) {
-                console.error("Failed to fetch revision history:", error);
+              } else {
+                console.log("Insufficient history data for comparison");
               }
+            } catch (error) {
+              console.error("Failed to fetch revision history:", error);
             }
           }
         }
