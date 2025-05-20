@@ -1,3 +1,4 @@
+
 import { useParams, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -39,7 +40,7 @@ const ProjectDesign = () => {
     handleRemoveDesignAsset: originalHandleRemoveDesignAsset,
     handleUpdateAssetTags,
     handleAddPinterestBoards,
-    handleAddInspirationImages,
+    handleAddInspirationImages: originalHandleAddInspirationImages,
     handleAddRoomInspirationImages,
     handleAddRoomPinterestBoards
   } = useDesignActions(projectData?.id);
@@ -54,6 +55,16 @@ const ProjectDesign = () => {
   const handleRemoveDesignAsset = useCallback((index: number) => {
     return originalHandleRemoveDesignAsset(index, projectData?.design_preferences || {});
   }, [originalHandleRemoveDesignAsset, projectData?.design_preferences]);
+
+  // Create a wrapper for handleAddInspirationImages that matches the expected signature
+  const handleAddInspirationImages = useCallback((images: string[]) => {
+    return originalHandleAddInspirationImages(images, projectData?.design_preferences || {});
+  }, [originalHandleAddInspirationImages, projectData?.design_preferences]);
+
+  // Create a wrapper for handleAddPinterestBoards that matches the expected signature
+  const handleAddPinterestBoards = useCallback((boards: any[], room: string) => {
+    return handleAddPinterestBoards(boards, projectData?.design_preferences || {});
+  }, [handleAddPinterestBoards, projectData?.design_preferences]);
 
   // Use the enhanced actions hook
   const enhancedActions = useEnhancedDesignActions(
