@@ -32,6 +32,9 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
   useEffect(() => {
     console.log(`PinterestInspirationSection - Room: ${currentRoom}, RoomId: ${roomId}`);
     console.log(`PinterestInspirationSection - Inspiration images count: ${inspirationImages?.length || 0}`);
+    if (inspirationImages && inspirationImages.length > 0) {
+      console.log("First few inspiration images:", inspirationImages.slice(0, 3));
+    }
     console.log(`PinterestInspirationSection - Pinterest boards count: ${pinterestBoards?.length || 0}`);
   }, [currentRoom, roomId, inspirationImages, pinterestBoards]);
 
@@ -39,6 +42,7 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
     if (urls.length > 0) {
       console.log(`Uploading inspiration images for room: ${currentRoom}, roomId: ${roomId || 'undefined'}`);
       console.log(`Number of images being uploaded: ${urls.length}`);
+      console.log("Image URLs being uploaded:", urls);
       onAddInspiration(urls, roomId);
     }
   };

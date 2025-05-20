@@ -17,6 +17,7 @@ interface ProjectDesignContentProps {
   designPreferences: any;
   propertyPhotos: string[];
   getRoomIdByName: (roomName: string) => string | undefined;
+  refreshRoomPreferences: (roomId?: string) => Promise<void>;
   enhancedHandlers: any;
   handlers: {
     handleAddDesigner: () => void;
@@ -41,12 +42,14 @@ const ProjectDesignContent: React.FC<ProjectDesignContentProps> = ({
   designPreferences,
   propertyPhotos,
   getRoomIdByName,
+  refreshRoomPreferences,
   enhancedHandlers,
   handlers
 }) => {
   // Use normalized area names for consistent tab values
   const normalizedDefaultTab = defaultTab ? normalizeAreaName(defaultTab) : '';
   const [activeTab, setActiveTab] = useState<string>(normalizedDefaultTab);
+  const [activeRoomId, setActiveRoomId] = useState<string | undefined>(undefined);
   
   // Ensure activeTab is set whenever defaultTab changes
   useEffect(() => {
@@ -54,19 +57,81 @@ const ProjectDesignContent: React.FC<ProjectDesignContentProps> = ({
       const normalized = normalizeAreaName(defaultTab);
       console.log(`Setting active tab to normalized value: ${normalized} (from ${defaultTab})`);
       setActiveTab(normalized);
+      
+      // Set the initial active room ID
+      const roomId = getRoomIdByName(defaultTab);
+      if (roomId) {
+        console.log(`Setting initial active room ID: ${roomId}`);
+        setActiveRoomId(roomId);
+      }
     } else if (renovationAreas.length > 0) {
       // Fallback to first area if no default tab
       const firstAreaNormalized = normalizeAreaName(renovationAreas[0].area);
       console.log(`No default tab, falling back to first area: ${firstAreaNormalized}`);
       setActiveTab(firstAreaNormalized);
+      
+      // Set active room ID based on the first area
+      const roomId = getRoomIdByName(renovationAreas[0].area);
+      if (roomId) {
+        console.log(`Setting fallback active room ID: ${roomId}`);
+        setActiveRoomId(roomId);
+      }
     }
-  }, [defaultTab, renovationAreas]);
+  }, [defaultTab, renovationAreas, getRoomIdByName]);
   
   // Debug handler for tab changes
   const handleTabChange = (value: string) => {
     console.log(`Tab changed to: ${value}`);
     setActiveTab(value);
+    
+    // Find the area that corresponds to this tab value
+    const selectedArea = renovationAreas.find(
+      area => normalizeAreaName(area.area) === value
+    );
+    
+    if (selectedArea) {
+      // Get the room ID for the selected area
+      const newRoomId = getRoomIdByName(selectedArea.area);
+      console.log(`Tab change: Found room ID ${newRoomId} for area ${selectedArea.area}`);
+      
+      // Update the active room ID and refresh room preferences
+      if (newRoomId) {
+        setActiveRoomId(newRoomId);
+        
+        // Refresh room preferences for the newly selected room
+        console.log(`Refreshing preferences for room ID: ${newRoomId}`);
+        refreshRoomPreferences(newRoomId).catch(error => {
+          console.error(`Failed to refresh room preferences for ${newRoomId}:`, error);
+        });
+      } else {
+        console.warn(`No room ID found for area: ${selectedArea.area}`);
+      }
+    } else {
+      console.warn(`No area found for tab value: ${value}`);
+    }
   };
+  
+  // Effect to refresh room preferences when active room ID changes
+  useEffect(() => {
+    if (activeRoomId) {
+      console.log(`Active room ID changed to: ${activeRoomId}, refreshing data...`);
+      refreshRoomPreferences(activeRoomId).catch(error => {
+        console.error(`Failed to refresh room preferences for ${activeRoomId}:`, error);
+      });
+    }
+  }, [activeRoomId, refreshRoomPreferences]);
+  
+  // Debug to check room preferences changes
+  useEffect(() => {
+    console.log("Room preferences updated:", Object.keys(roomPreferences).length);
+    if (activeRoomId && roomPreferences[activeRoomId]) {
+      const prefs = roomPreferences[activeRoomId];
+      console.log(`Active room ${activeRoomId} has:`, {
+        inspirationImages: prefs?.inspirationImages?.length || 0,
+        pinterestBoards: prefs?.pinterestBoards?.length || 0
+      });
+    }
+  }, [roomPreferences, activeRoomId]);
   
   // Debugs to make sure we're getting the correct data
   useEffect(() => {

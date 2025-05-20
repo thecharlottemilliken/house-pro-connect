@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
@@ -18,10 +19,17 @@ export const useRoomDesign = (propertyId?: string) => {
   const [roomPreferences, setRoomPreferences] = useState<Record<string, RoomPreference>>({});
   const [defaultTab, setDefaultTab] = useState<string>("");
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [lastRefreshedRoomId, setLastRefreshedRoomId] = useState<string | undefined>(undefined);
 
   const fetchRoomDesignPreferences = useCallback(async (roomId: string) => {
+    if (!roomId) {
+      console.warn("Tried to fetch room design preferences without a valid room ID");
+      return;
+    }
+    
     try {
       console.log(`Fetching room design preferences for room ID: ${roomId}`);
+      setIsRefreshing(true);
       
       const {
         data,
@@ -30,6 +38,11 @@ export const useRoomDesign = (propertyId?: string) => {
       
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching room design preferences:', error);
+        toast({
+          title: "Error loading room design data",
+          description: "There was a problem loading your design preferences.",
+          variant: "destructive"
+        });
         return;
       }
       
@@ -69,13 +82,22 @@ export const useRoomDesign = (propertyId?: string) => {
         
         console.log(`Room ${roomId} has ${inspirationImages.length} inspiration images and ${pinterestBoards.length} Pinterest boards`);
         
-        setRoomPreferences(prev => ({
-          ...prev,
-          [roomId]: {
-            inspirationImages: inspirationImages,
-            pinterestBoards: pinterestBoards
-          }
-        }));
+        // Update room preferences state
+        setRoomPreferences(prev => {
+          const updatedPreferences = {
+            ...prev,
+            [roomId]: {
+              inspirationImages: inspirationImages,
+              pinterestBoards: pinterestBoards
+            }
+          };
+          
+          console.log(`Updated room preferences state for roomId ${roomId}:`, updatedPreferences[roomId]);
+          return updatedPreferences;
+        });
+        
+        // Set the last refreshed room ID
+        setLastRefreshedRoomId(roomId);
       } else {
         console.log(`No room design preferences found for room ID: ${roomId}`);
         
@@ -87,9 +109,19 @@ export const useRoomDesign = (propertyId?: string) => {
             pinterestBoards: []
           }
         }));
+        
+        // Set the last refreshed room ID
+        setLastRefreshedRoomId(roomId);
       }
     } catch (error) {
       console.error('Error fetching room design preferences:', error);
+      toast({
+        title: "Error loading room data",
+        description: "There was a problem loading your design preferences.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRefreshing(false);
     }
   }, []);
 
@@ -147,15 +179,28 @@ export const useRoomDesign = (propertyId?: string) => {
       }
     } catch (error) {
       console.error('Error fetching property rooms:', error);
+      toast({
+        title: "Error fetching rooms",
+        description: "There was a problem loading rooms for this property.",
+        variant: "destructive"
+      });
     }
   }, [fetchRoomDesignPreferences]);
 
   const refreshRoomPreferences = useCallback(async (roomId?: string) => {
-    if (!roomId) return;
+    if (!roomId) {
+      console.warn("Cannot refresh room preferences without a room ID");
+      return;
+    }
     
+    console.log(`Manually refreshing room preferences for room ID: ${roomId}`);
     setIsRefreshing(true);
+    
     try {
       await fetchRoomDesignPreferences(roomId);
+      console.log(`Successfully refreshed room preferences for room ID: ${roomId}`);
+    } catch (error) {
+      console.error(`Error refreshing room preferences for room ID: ${roomId}:`, error);
     } finally {
       setIsRefreshing(false);
     }
@@ -191,6 +236,14 @@ export const useRoomDesign = (propertyId?: string) => {
     return room?.id;
   }, [propertyRooms]);
 
+  // Debug effect to log when the last refreshed room ID changes
+  useEffect(() => {
+    if (lastRefreshedRoomId) {
+      console.log(`Last refreshed room ID: ${lastRefreshedRoomId}`);
+      console.log(`Room preferences for refreshed room:`, roomPreferences[lastRefreshedRoomId]);
+    }
+  }, [lastRefreshedRoomId, roomPreferences]);
+
   return {
     propertyRooms,
     roomPreferences,
@@ -201,6 +254,7 @@ export const useRoomDesign = (propertyId?: string) => {
     getRoomIdByName,
     createRoomIfNeeded,
     refreshRoomPreferences,
-    isRefreshing
+    isRefreshing,
+    lastRefreshedRoomId
   };
 };

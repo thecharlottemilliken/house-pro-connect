@@ -37,7 +37,9 @@ const ProjectDesign = () => {
     fetchPropertyRooms,
     setupRooms,
     getRoomIdByName,
-    refreshRoomPreferences
+    refreshRoomPreferences,
+    isRefreshing,
+    lastRefreshedRoomId
   } = useRoomDesign(propertyDetails?.id);
   
   const {
@@ -89,9 +91,16 @@ const ProjectDesign = () => {
     
     try {
       await handleAddRoomInspirationImages(images, roomId);
+      console.log(`Successfully added images, now refreshing room ID: ${roomId}`);
+      setActiveRoomId(roomId); // Update active room ID to trigger refresh
       await refreshRoomPreferences(roomId);
     } catch (error) {
       console.error("Error adding inspiration images:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save inspiration images. Please try again.",
+        variant: "destructive"
+      });
     }
   }, [handleAddRoomInspirationImages, refreshRoomPreferences]);
 
@@ -110,9 +119,16 @@ const ProjectDesign = () => {
     
     try {
       await handleAddRoomPinterestBoards(boards, room, roomId);
+      console.log(`Successfully added Pinterest boards, now refreshing room ID: ${roomId}`);
+      setActiveRoomId(roomId); // Update active room ID to trigger refresh
       await refreshRoomPreferences(roomId);
     } catch (error) {
       console.error("Error adding Pinterest boards:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save Pinterest boards. Please try again.",
+        variant: "destructive"
+      });
     }
   }, [handleAddRoomPinterestBoards, refreshRoomPreferences]);
 
@@ -140,6 +156,7 @@ const ProjectDesign = () => {
         // Set active room ID based on the first area
         const roomId = getRoomIdByName(firstArea.area);
         if (roomId) {
+          console.log(`Setting initial active room ID: ${roomId}`);
           setActiveRoomId(roomId);
         }
       }
@@ -160,6 +177,14 @@ const ProjectDesign = () => {
     }
   }, [propertyDetails?.id, projectData?.renovation_areas, setupRooms]);
 
+  // Monitor refreshing state
+  useEffect(() => {
+    console.log(`Room data refreshing state: ${isRefreshing ? 'refreshing' : 'idle'}`);
+    if (lastRefreshedRoomId) {
+      console.log(`Last refreshed room: ${lastRefreshedRoomId}`);
+    }
+  }, [isRefreshing, lastRefreshedRoomId]);
+
   // Added logging to track data flow
   useEffect(() => {
     if (projectData?.design_preferences?.roomMeasurements) {
@@ -167,7 +192,18 @@ const ProjectDesign = () => {
       console.log("Available measurement keys:", Object.keys(projectData.design_preferences.roomMeasurements));
       console.log("Current default tab:", defaultTab);
     }
-  }, [projectData, enhancedActions.refreshTrigger, defaultTab]);
+    
+    // Log room preferences data
+    console.log("Current room preferences:", roomPreferences);
+    if (activeRoomId && roomPreferences[activeRoomId]) {
+      console.log(`Active room ${activeRoomId} data:`, roomPreferences[activeRoomId]);
+      const inspirationImages = roomPreferences[activeRoomId]?.inspirationImages || [];
+      console.log(`Inspiration images count: ${inspirationImages.length}`);
+      if (inspirationImages.length > 0) {
+        console.log("First few inspiration images:", inspirationImages.slice(0, 3));
+      }
+    }
+  }, [projectData, enhancedActions.refreshTrigger, defaultTab, roomPreferences, activeRoomId]);
 
   if (isLoading || !projectData) {
     return <ProjectDesignLoading />;
@@ -210,6 +246,7 @@ const ProjectDesign = () => {
               roomPreferences={roomPreferences}
               propertyPhotos={propertyPhotos}
               getRoomIdByName={getRoomIdByName}
+              refreshRoomPreferences={refreshRoomPreferences}
               enhancedHandlers={enhancedActions}
               handlers={eventHandlers}
             />
