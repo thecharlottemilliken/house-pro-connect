@@ -14,7 +14,7 @@ interface EnhancedFileUploadProps {
   uploadedFiles: FileWithPreview[];
   setUploadedFiles: React.Dispatch<React.SetStateAction<FileWithPreview[]>>;
   allowUrlUpload?: boolean;
-  roomOptions?: RoomTagOption[];
+  roomOptions?: RoomTagOption[];  // Changed from roomTagOptions to roomOptions
   className?: string;
   initialTags?: string[]; // Added initialTags prop
 }
@@ -28,7 +28,7 @@ export function EnhancedFileUpload({
   uploadedFiles,
   setUploadedFiles,
   allowUrlUpload = false,
-  roomOptions = [],
+  roomOptions = [],  // Changed from roomTagOptions to roomOptions
   className = "",
   initialTags = [], // Default to empty array
 }: EnhancedFileUploadProps) {
@@ -103,7 +103,7 @@ export function EnhancedFileUpload({
         onRemoveFile={removeFile}
         onAddTag={addTag}
         onRemoveTag={removeTag}
-        roomOptions={roomOptions}
+        roomOptions={roomOptions}  // Changed from roomTagOptions to roomOptions
       />
     </div>
   );

@@ -14,6 +14,7 @@ export interface FileWithPreview {
   tags: string[];
   previewUrl?: string;
   status: 'uploading' | 'complete' | 'error' | 'ready';
+  errorMessage?: string; // Add this property to support error messages
 }
 
 export type RoomTagOption = {

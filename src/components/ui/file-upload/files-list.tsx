@@ -8,22 +8,20 @@ interface FilesListProps {
   onRemoveFile: (id: string) => void;
   onAddTag: (id: string, tag: string) => void;
   onRemoveTag: (id: string, tag: string) => void;
-  roomOptions?: RoomTagOption[];
+  roomOptions?: RoomTagOption[]; // Changed from roomTagOptions to roomOptions
 }
 
-export function FilesList({
+export const FilesList = ({
   files,
   onRemoveFile,
   onAddTag,
   onRemoveTag,
-  roomOptions = []
-}: FilesListProps) {
-  if (files.length === 0) {
-    return null;
-  }
+  roomOptions = [], // Changed from roomTagOptions to roomOptions
+}: FilesListProps) => {
+  if (files.length === 0) return null;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {files.map((file) => (
         <FileItem
           key={file.id}
@@ -31,9 +29,9 @@ export function FilesList({
           onRemove={() => onRemoveFile(file.id)}
           onAddTag={(tag) => onAddTag(file.id, tag)}
           onRemoveTag={(tag) => onRemoveTag(file.id, tag)}
-          availableTags={roomOptions}
+          roomOptions={roomOptions} // Changed from roomTagOptions to roomOptions
         />
       ))}
     </div>
   );
-}
+};

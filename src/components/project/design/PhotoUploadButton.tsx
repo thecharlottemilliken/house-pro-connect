@@ -42,7 +42,7 @@ const PhotoUploadButton: React.FC<PhotoUploadButtonProps> = ({
       uploadedFiles={uploadedFiles}
       setUploadedFiles={setUploadedFiles}
       initialTags={["before"]} // Always tag uploads as "before" photos
-      roomTagOptions={[
+      roomOptions={[
         { value: "before", label: "Before" }
       ]}
       className={cn(variant === "outline" 
