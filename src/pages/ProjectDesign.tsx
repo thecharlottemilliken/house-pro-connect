@@ -1,4 +1,3 @@
-
 import { useParams, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -11,7 +10,7 @@ import ProjectDesignLoading from "@/components/project/design/ProjectDesignLoadi
 import ProjectDesignContent from "@/components/project/design/ProjectDesignContent";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import ProjectSidebar from "@/components/project/ProjectSidebar";
-import { normalizeAreaName } from "@/lib/utils";
+import { normalizeAreaName } from '@/lib/utils';
 
 const ProjectDesign = () => {
   const location = useLocation();
@@ -112,8 +111,9 @@ const ProjectDesign = () => {
     if (projectData?.design_preferences?.roomMeasurements) {
       console.log("Project room measurements:", projectData.design_preferences.roomMeasurements);
       console.log("Available measurement keys:", Object.keys(projectData.design_preferences.roomMeasurements));
+      console.log("Current default tab:", defaultTab);
     }
-  }, [projectData, enhancedActions.refreshTrigger]);
+  }, [projectData, enhancedActions.refreshTrigger, defaultTab]);
 
   if (isLoading || !projectData) {
     return <ProjectDesignLoading />;

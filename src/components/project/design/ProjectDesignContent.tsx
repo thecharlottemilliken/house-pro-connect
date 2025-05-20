@@ -46,15 +46,21 @@ const ProjectDesignContent: React.FC<ProjectDesignContentProps> = ({
 }) => {
   // Use normalized area names for consistent tab values
   const normalizedDefaultTab = defaultTab ? normalizeAreaName(defaultTab) : '';
-  const [activeTab, setActiveTab] = useState(normalizedDefaultTab);
+  const [activeTab, setActiveTab] = useState<string>(normalizedDefaultTab);
   
+  // Ensure activeTab is set whenever defaultTab changes
   useEffect(() => {
     if (defaultTab) {
       const normalized = normalizeAreaName(defaultTab);
-      console.log(`Setting default tab to normalized value: ${normalized} (from ${defaultTab})`);
+      console.log(`Setting active tab to normalized value: ${normalized} (from ${defaultTab})`);
       setActiveTab(normalized);
+    } else if (renovationAreas.length > 0) {
+      // Fallback to first area if no default tab
+      const firstAreaNormalized = normalizeAreaName(renovationAreas[0].area);
+      console.log(`No default tab, falling back to first area: ${firstAreaNormalized}`);
+      setActiveTab(firstAreaNormalized);
     }
-  }, [defaultTab]);
+  }, [defaultTab, renovationAreas]);
   
   // Debug handler for tab changes
   const handleTabChange = (value: string) => {
@@ -82,16 +88,13 @@ const ProjectDesignContent: React.FC<ProjectDesignContentProps> = ({
   const generateTabs = () => {
     return renovationAreas.map((area) => {
       const normalizedArea = normalizeAreaName(area.area); 
-      const beforePhotos = projectData?.design_preferences?.beforePhotos?.[normalizedArea] || [];
-      const roomId = getRoomIdByName(area.area);
       
-      // Log room-specific data for debugging
-      console.log(`Tab ${area.area} - Normalized: ${normalizedArea}, Room ID: ${roomId || 'none'}, Before Photos: ${beforePhotos.length}`);
+      console.log(`TabsTrigger ${area.area} - value: ${normalizedArea}`);
       
       return (
         <TabsTrigger
           key={area.area}
-          value={normalizedArea} // Use normalized value for consistent matching
+          value={normalizedArea} 
           className="capitalize px-4 py-2 text-lg"
         >
           {area.area}
@@ -115,14 +118,13 @@ const ProjectDesignContent: React.FC<ProjectDesignContentProps> = ({
       const roomId = getRoomIdByName(area.area);
       const roomPreference = roomPreferences[roomId || ''] || null;
       
-      console.log(`Content for ${area.area} - Room ID: ${roomId || 'none'}, Before Photos: ${beforePhotos.length}`);
+      console.log(`TabsContent ${area.area} - value: ${normalizedArea}, forceMount: true`);
       
       return (
         <TabsContent
           key={area.area}
-          value={normalizedArea} // Use normalized value for consistent matching
+          value={normalizedArea}
           className="py-4"
-          forceMount
         >
           <RoomTabContent
             area={area}
@@ -157,6 +159,8 @@ const ProjectDesignContent: React.FC<ProjectDesignContentProps> = ({
     });
   };
   
+  console.log(`Current active tab: ${activeTab}`);
+  
   return (
     <div className="max-w-[1400px] mx-auto pt-16 pb-12 px-4">
       <div className="mb-8">
@@ -169,7 +173,12 @@ const ProjectDesignContent: React.FC<ProjectDesignContentProps> = ({
       </div>
       
       {renovationAreas.length > 0 ? (
-        <Tabs defaultValue={activeTab} value={activeTab} onValueChange={handleTabChange}>
+        <Tabs 
+          defaultValue={activeTab} 
+          value={activeTab} 
+          onValueChange={handleTabChange} 
+          className="w-full"
+        >
           <TabsList className="mb-4 border border-gray-200 p-1 rounded-lg overflow-x-auto flex w-full bg-white">
             {generateTabs()}
           </TabsList>
