@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FormattedTask, RenovationArea } from "@/hooks/useProjectData";
-import { PropertyDetails } from "@/hooks/usePropertyData";
+import { RenovationArea } from "@/hooks/useProjectData";
+import { PropertyDetails } from "@/hooks/useProjectData";
 import { RoomPreference } from "@/hooks/useRoomDesign";
 import RoomTabContent from "./RoomTabContent";
 import ProjectOverviewTab from "./ProjectOverviewTab";

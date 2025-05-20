@@ -1,4 +1,3 @@
-
 import { useParams, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -37,7 +36,7 @@ const ProjectDesign = () => {
     handleSelectBeforePhotos,
     handleUploadBeforePhotos,
     handleAddProjectFiles,
-    handleRemoveDesignAsset,
+    handleRemoveDesignAsset: originalHandleRemoveDesignAsset,
     handleUpdateAssetTags,
     handleAddPinterestBoards,
     handleAddInspirationImages,
@@ -50,6 +49,11 @@ const ProjectDesign = () => {
   const handleAddRenderings = useCallback(() => console.log("Add renderings clicked"), []);
   const handleAddDrawings = useCallback(() => console.log("Add drawings clicked"), []);
   const handleAddBlueprints = useCallback(() => console.log("Add blueprints clicked"), []);
+  
+  // Create a wrapper for handleRemoveDesignAsset that matches the expected signature
+  const handleRemoveDesignAsset = useCallback((index: number) => {
+    return originalHandleRemoveDesignAsset(index, projectData?.design_preferences || {});
+  }, [originalHandleRemoveDesignAsset, projectData?.design_preferences]);
 
   // Use the enhanced actions hook
   const enhancedActions = useEnhancedDesignActions(
