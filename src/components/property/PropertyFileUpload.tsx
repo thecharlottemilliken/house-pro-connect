@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { FileWithPreview, RoomTagOption, EnhancedFileUpload } from "@/components/ui/file-upload";
+import { FileWithPreview, RoomTagOption, FileUpload } from "@/components/ui/file-upload";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -107,15 +107,12 @@ export function PropertyFileUpload({
 
   return (
     <div className="space-y-4">
-      <EnhancedFileUpload
+      <FileUpload
         accept={accept}
         multiple={multiple}
+        onUploadComplete={handleUploadComplete}
         label={label}
         description={description}
-        uploadedFiles={uploadedFiles}
-        setUploadedFiles={setUploadedFiles}
-        onUploadComplete={handleUploadComplete}
-        roomOptions={roomTagOptions}
       />
     </div>
   );

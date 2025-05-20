@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { FileUpload } from "@/components/ui/file-upload";
+import { FileUpload, FileWithPreview, extractUrls } from "@/components/ui/file-upload";
 import { Plus, Upload } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -17,6 +17,12 @@ const AfterPhotosSection = ({
   onUploadPhotos
 }: AfterPhotosSectionProps) => {
   const hasPhotos = photos.length > 0;
+  
+  // Convert FileWithPreview[] to string[] for the parent component
+  const handleUploadComplete = (files: FileWithPreview[]) => {
+    const urls = extractUrls(files);
+    onUploadPhotos(urls);
+  };
 
   return (
     <Card className="overflow-hidden border-0 shadow-none h-full bg-[#e9f1f4]">
@@ -60,11 +66,9 @@ const AfterPhotosSection = ({
                   description="Upload photos of your completed milestone"
                   accept="image/*"
                   multiple={true}
-                  onUploadComplete={onUploadPhotos}
+                  onUploadComplete={handleUploadComplete}
                   className="bg-[#b8d1db] text-gray-800 hover:bg-[#a7c0ca] border-0 px-4 py-2 text-sm font-medium"
-                >
-                  UPLOAD PHOTOS
-                </FileUpload>
+                />
               </div>
             </div>
           </div>

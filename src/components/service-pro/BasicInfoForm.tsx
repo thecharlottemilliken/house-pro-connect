@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "@/hooks/use-toast";
@@ -5,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { FileUpload } from "@/components/ui/file-upload";
+import { FileUpload, FileWithPreview, extractUrls } from "@/components/ui/file-upload";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -75,7 +76,8 @@ const BasicInfoForm = ({ onComplete }: BasicInfoFormProps) => {
     fetchProfileData();
   }, [user, form]);
   
-  const handlePhotoUpload = (urls: string[]) => {
+  const handlePhotoUpload = (files: FileWithPreview[]) => {
+    const urls = extractUrls(files);
     if (urls && urls.length > 0) {
       form.setValue("photo_url", urls[0]);
     }
@@ -164,7 +166,7 @@ const BasicInfoForm = ({ onComplete }: BasicInfoFormProps) => {
           ) : (
             <FileUpload
               accept="image/*"
-              maxFiles={1}
+              multiple={false}
               onUploadComplete={handlePhotoUpload}
               label="Upload profile photo"
               description="Upload a professional photo for your profile"

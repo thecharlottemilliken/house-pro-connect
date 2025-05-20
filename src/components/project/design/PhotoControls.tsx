@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { FileUpload } from "@/components/ui/file-upload";
+import { FileUpload, FileWithPreview, extractUrls } from "@/components/ui/file-upload";
 import SelectPropertyPhotosDialog from "./SelectPropertyPhotosDialog";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
@@ -17,6 +17,12 @@ const PhotoControls = ({
   onUploadBeforePhotos
 }: PhotoControlsProps) => {
   const [isSelectDialogOpen, setIsSelectDialogOpen] = useState(false);
+
+  // Handler to extract URLs from FileWithPreview objects and pass them to the parent component
+  const handleUploadComplete = (files: FileWithPreview[]) => {
+    const urls = extractUrls(files);
+    onUploadBeforePhotos(urls);
+  };
 
   return (
     <div className="grid grid-cols-2 gap-4 mt-6">
@@ -42,17 +48,9 @@ const PhotoControls = ({
         description="Upload additional photos of the room's current state"
         accept="image/*"
         multiple={true}
-        onUploadComplete={(files) => {
-          // Extract URLs from the uploaded files
-          const urls = Array.isArray(files) 
-            ? files.map(file => file.url).filter(Boolean) as string[]
-            : [];
-          onUploadBeforePhotos(urls);
-        }}
+        onUploadComplete={handleUploadComplete}
         className="w-full border-[#1A6985] border-2 text-[#1A6985] hover:bg-transparent hover:text-[#1A6985]/90 font-medium uppercase tracking-wider py-6"
-      >
-        Upload
-      </FileUpload>
+      />
     </div>
   );
 };

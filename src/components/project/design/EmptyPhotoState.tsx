@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
-import { FileUpload } from "@/components/ui/file-upload";
+import { FileUpload, FileWithPreview, extractUrls } from "@/components/ui/file-upload";
 import SelectPropertyPhotosDialog from "./SelectPropertyPhotosDialog";
 import { Dialog } from "@/components/ui/dialog";
 
@@ -19,6 +19,13 @@ const EmptyPhotoState = ({
   onSelectBeforePhotos,
   onUploadBeforePhotos
 }: EmptyPhotoStateProps) => {
+  
+  // Convert FileWithPreview[] to string[] for the parent component
+  const handleUploadComplete = (files: FileWithPreview[]) => {
+    const urls = extractUrls(files);
+    onUploadBeforePhotos(urls);
+  };
+  
   return (
     <div className="flex flex-col items-center justify-center text-center py-6">
       <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
@@ -51,11 +58,9 @@ const EmptyPhotoState = ({
               description="Upload photos of the room's current state"
               accept="image/*"
               multiple={true}
-              onUploadComplete={onUploadBeforePhotos}
+              onUploadComplete={handleUploadComplete}
               className="w-full border-[#1A6985] border-2 text-[#1A6985] hover:bg-transparent hover:text-[#1A6985]/90 font-medium uppercase tracking-wider py-6"
-            >
-              Upload
-            </FileUpload>
+            />
           </>
         ) : (
           <FileUpload
@@ -63,11 +68,9 @@ const EmptyPhotoState = ({
             description="Upload photos of the room's current state"
             accept="image/*"
             multiple={true}
-            onUploadComplete={onUploadBeforePhotos}
+            onUploadComplete={handleUploadComplete}
             className="col-span-2 w-full border-[#1A6985] border-2 text-[#1A6985] hover:bg-transparent hover:text-[#1A6985]/90 font-medium uppercase tracking-wider py-6"
-          >
-            Upload
-          </FileUpload>
+          />
         )}
       </div>
     </div>

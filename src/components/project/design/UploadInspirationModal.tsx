@@ -7,7 +7,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { FileUpload } from "@/components/ui/file-upload";
+import { FileUpload, FileWithPreview, extractUrls } from "@/components/ui/file-upload";
 import { toast } from "@/hooks/use-toast";
 import { uploadFile } from "@/components/ui/file-upload/upload-service";
 
@@ -26,93 +26,24 @@ const UploadInspirationModal: React.FC<UploadInspirationModalProps> = ({
 }) => {
   const [isUploading, setIsUploading] = useState(false);
 
-  // Handle file upload completion
-  const handleUploadComplete = async (files: Array<string>) => {
-    setIsUploading(true);
+  // Handle file upload completion from the FileUpload component
+  const handleUploadComplete = (files: FileWithPreview[]) => {
+    // Extract URLs from the FileWithPreview objects
+    const validUrls = extractUrls(files);
     
-    try {
-      console.log("UploadInspirationModal: Processing", files.length, "files");
-      // For blob URLs, we need to convert them to actual files and upload to Supabase
-      const validUrls: string[] = [];
-      
-      for (const fileUrl of files) {
-        // Skip empty URLs
-        if (!fileUrl) continue;
-        
-        // If it's already a proper URL (from cloud storage), use it directly
-        if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
-          validUrls.push(fileUrl);
-          continue;
-        }
-        
-        // For blob URLs, fetch the file and upload to Supabase
-        if (fileUrl.startsWith('blob:')) {
-          try {
-            console.log("Processing blob URL:", fileUrl);
-            // Fetch the file data from the blob URL
-            const response = await fetch(fileUrl);
-            if (!response.ok) {
-              console.error("Failed to fetch blob:", response);
-              continue;
-            }
-            
-            const blob = await response.blob();
-            
-            // Create a File object from the blob
-            const fileName = `inspiration-${Date.now()}.${blob.type.split('/')[1] || 'jpg'}`;
-            const file = new File([blob], fileName, { type: blob.type });
-            
-            console.log("Created file from blob:", file.name, file.type, file.size);
-            
-            // Upload to Supabase
-            const { url, error } = await uploadFile(file);
-            
-            if (error) {
-              console.error("Error uploading file:", error);
-              toast({
-                title: "Upload Error",
-                description: `Failed to upload ${fileName}`,
-                variant: "destructive"
-              });
-              continue;
-            }
-            
-            if (url) {
-              console.log("Successfully uploaded file, got URL:", url);
-              validUrls.push(url);
-            }
-          } catch (error) {
-            console.error("Error processing blob URL:", error);
-          }
-        }
-      }
-
-      console.log("Final valid URLs to add:", validUrls);
-      
-      // If we have valid URLs, pass them to the parent component
-      if (validUrls.length > 0) {
-        onUploadComplete(validUrls);
-        toast({
-          title: "Upload Complete",
-          description: `Added ${validUrls.length} inspiration ${validUrls.length === 1 ? 'image' : 'images'} to ${roomName}`,
-        });
-        onClose(); // Close the modal after successful upload
-      } else {
-        toast({
-          title: "Upload Failed",
-          description: "No valid images were uploaded",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      console.error("Error processing uploads:", error);
+    if (validUrls.length > 0) {
+      onUploadComplete(validUrls);
       toast({
-        title: "Upload Error",
-        description: "An unexpected error occurred during upload",
+        title: "Upload Complete",
+        description: `Added ${validUrls.length} inspiration ${validUrls.length === 1 ? 'image' : 'images'} to ${roomName}`,
+      });
+      onClose(); // Close the modal after successful upload
+    } else {
+      toast({
+        title: "Upload Failed",
+        description: "No valid images were uploaded",
         variant: "destructive"
       });
-    } finally {
-      setIsUploading(false);
     }
   };
 

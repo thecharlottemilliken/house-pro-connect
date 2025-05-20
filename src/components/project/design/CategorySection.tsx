@@ -3,13 +3,13 @@ import React, { useState } from "react";
 import { Upload, FileSearch, Tag as TagIcon, Eye, Trash, Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { FileUpload } from "@/components/ui/file-upload";
+import { FileUpload, FileWithPreview, extractUrls, createFilesFromUrls } from "@/components/ui/file-upload";
 import SelectPropertyPhotosDialog from "./SelectPropertyPhotosDialog";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import TagsDialogContent from "./room-details/TagsDialogContent";
-import { FileTags } from "@/components/ui/file-upload/file-tags";
+import { FileTags } from "@/components/ui/file-upload";
 
 interface CategorySectionProps {
   title: string;
@@ -36,6 +36,9 @@ const CategorySection = ({
   const [showSelectDialog, setShowSelectDialog] = useState(false);
   const [selectedFileIndex, setSelectedFileIndex] = useState<number | null>(null);
   const [showTagsDialog, setShowTagsDialog] = useState(false);
+  
+  // State for managing files during upload
+  const [uploadedFiles, setUploadedFiles] = useState<FileWithPreview[]>([]);
 
   // Common tag suggestions based on room categories
   const getTagSuggestions = () => {
@@ -81,6 +84,13 @@ const CategorySection = ({
       setShowTagsDialog(false);
       setSelectedFileIndex(null);
     }
+  };
+  
+  // Handle file upload completion
+  const handleUploadComplete = (files: FileWithPreview[]) => {
+    const urls = extractUrls(files);
+    onUpload(urls, roomId);
+    setShowUploadDialog(false);
   };
 
   // Filter files to only show those associated with the current room
@@ -210,12 +220,8 @@ const CategorySection = ({
           
           <FileUpload
             accept={getAcceptedFileTypes()}
-            multiple={false}
-            onUploadComplete={(urls) => {
-              // Pass the roomId to associate uploads with specific room
-              onUpload(urls, roomId);
-              setShowUploadDialog(false);
-            }}
+            multiple={true}
+            onUploadComplete={handleUploadComplete}
             label={`${title} File`}
             description={`Upload your ${title.toLowerCase()} file${currentRoom ? ` for ${currentRoom}` : ''}`}
           />
