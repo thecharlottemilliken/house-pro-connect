@@ -18,7 +18,7 @@ const AfterPhotosSection = ({
 }: AfterPhotosSectionProps) => {
   const hasPhotos = photos.length > 0;
   
-  // Convert FileWithPreview[] to string[] for the parent component
+  // Handle FileWithPreview objects from FileUpload and convert to string[]
   const handleUploadComplete = (files: FileWithPreview[]) => {
     const urls = extractUrls(files);
     onUploadPhotos(urls);

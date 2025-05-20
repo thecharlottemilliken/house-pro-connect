@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
+import { FileWithPreview } from "./types";
+import { extractUrls } from "./utils";
 
 export interface FileUploadProps {
   label: string;
@@ -10,7 +12,7 @@ export interface FileUploadProps {
   multiple?: boolean;
   maxFileSize?: number;
   maxFiles?: number;
-  onUploadComplete: (uploadedUrls: string[]) => void;
+  onUploadComplete: (files: FileWithPreview[]) => void;
   className?: string;
   children?: React.ReactNode;
 }
@@ -60,15 +62,24 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     try {
       console.log("FileUpload: Processing", files.length, "files");
       
-      // Generate temporary blob URLs for the files
-      const blobUrls = Array.from(files).map(file => {
+      // Convert File objects to FileWithPreview objects
+      const fileWithPreviewArray: FileWithPreview[] = Array.from(files).map(file => {
         const blobUrl = URL.createObjectURL(file);
         console.log(`Created blob URL for ${file.name}:`, blobUrl);
-        return blobUrl;
+        return {
+          id: crypto.randomUUID(),
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          url: blobUrl,
+          progress: 100,
+          tags: [],
+          status: 'complete'
+        };
       });
       
-      // Pass blob URLs up to parent component
-      onUploadComplete(blobUrls);
+      // Pass FileWithPreview objects up to parent component
+      onUploadComplete(fileWithPreviewArray);
       e.target.value = ""; // Reset input
       
       toast({

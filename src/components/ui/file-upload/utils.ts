@@ -23,7 +23,9 @@ export const createPreviewUrl = (file: File): string => {
   return URL.createObjectURL(file);
 };
 
-// Helper function to extract URLs from FileWithPreview objects
+/**
+ * Helper function to extract URLs from FileWithPreview objects
+ */
 export const extractUrls = (files: FileWithPreview[]): string[] => {
   if (!files || !Array.isArray(files)) {
     return [];
@@ -34,7 +36,9 @@ export const extractUrls = (files: FileWithPreview[]): string[] => {
     .map(file => file.url as string);
 };
 
-// Helper function to create FileWithPreview objects from string URLs
+/**
+ * Helper function to create FileWithPreview objects from string URLs
+ */
 export const createFilesFromUrls = (urls: string[]): FileWithPreview[] => {
   if (!urls || !Array.isArray(urls)) {
     return [];
@@ -52,7 +56,9 @@ export const createFilesFromUrls = (urls: string[]): FileWithPreview[] => {
   }));
 };
 
-// Update existing function
+/**
+ * Update file status
+ */
 export const updateFileStatus = (
   file: FileWithPreview,
   status: 'uploading' | 'complete' | 'error',

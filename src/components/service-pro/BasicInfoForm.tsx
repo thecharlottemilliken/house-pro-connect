@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "@/hooks/use-toast";
@@ -134,7 +133,9 @@ const BasicInfoForm = ({ onComplete }: BasicInfoFormProps) => {
   }
 
   return (
+    
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      
       <div>
         <Label htmlFor="company_name">Company Name</Label>
         <Input
@@ -174,6 +175,7 @@ const BasicInfoForm = ({ onComplete }: BasicInfoFormProps) => {
           )}
         </div>
       </div>
+      
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
@@ -229,6 +231,7 @@ const BasicInfoForm = ({ onComplete }: BasicInfoFormProps) => {
         </Button>
       </div>
     </form>
+    
   );
 };
 
