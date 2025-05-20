@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import PhotoItem from './PhotoItem';
 import { filterValidPhotoUrls } from '@/utils/BeforePhotosService';
 import { Button } from "@/components/ui/button";
-import { Gallery } from "lucide-react";
+import { Images } from "lucide-react";
 import PhotoGalleryDialog from './PhotoGalleryDialog';
 
 interface PhotoGridProps {
@@ -75,7 +75,7 @@ const PhotoGrid: React.FC<PhotoGridProps> = ({
             className="relative cursor-pointer overflow-hidden rounded-md border border-gray-200 shadow-sm bg-gray-100 aspect-square flex flex-col items-center justify-center"
             onClick={() => setIsGalleryOpen(true)}
           >
-            <Gallery size={32} className="text-gray-500 mb-2" />
+            <Images size={32} className="text-gray-500 mb-2" />
             <p className="text-sm font-medium text-gray-700">
               View All
             </p>

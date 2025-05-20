@@ -55,7 +55,6 @@ const PhotoGalleryDialog: React.FC<PhotoGalleryDialogProps> = ({
         <div className="h-full flex items-center justify-center py-16">
           <Carousel 
             className="w-full max-h-[80vh]"
-            defaultSlide={initialIndex}
             opts={{
               loop: true,
               startIndex: initialIndex

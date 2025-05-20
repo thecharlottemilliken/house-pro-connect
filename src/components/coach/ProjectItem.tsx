@@ -46,7 +46,7 @@ const ProjectItem = ({ project, onMessageClick }: ProjectItemProps) => {
         </div>
       </TableCell>
       <TableCell>
-        <Badge variant={project.state === 'active' ? 'success' : 'default'}>
+        <Badge variant={project.state === 'active' ? 'secondary' : 'default'}>
           {project.state}
         </Badge>
       </TableCell>
@@ -70,4 +70,3 @@ const ProjectItem = ({ project, onMessageClick }: ProjectItemProps) => {
 };
 
 export default ProjectItem;
-
