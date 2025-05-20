@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
@@ -42,7 +41,7 @@ export const useRoomDesign = (propertyId?: string) => {
         
         // Ensure pinterest_boards is properly transformed to PinterestBoard[]
         const pinterestBoards: PinterestBoard[] = Array.isArray(data.pinterest_boards) 
-          ? data.pinterest_boards.map((board: Json) => {
+          ? data.pinterest_boards.map((board: any) => {
               // Make sure each board has the required fields of PinterestBoard
               if (typeof board === 'object' && board !== null) {
                 return {
