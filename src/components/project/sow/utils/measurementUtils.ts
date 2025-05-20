@@ -5,15 +5,32 @@
 export function convertMeasurements(roomMeasurements: any) {
   if (!roomMeasurements) return null;
   
-  // Handle cases where measurements might be in ft or m
-  const multiplier = roomMeasurements.unit === 'ft' ? 12 : 39.37; // Convert to inches
+  console.log('Converting measurements:', roomMeasurements);
   
-  return {
-    length: roomMeasurements.length ? String(Math.round(roomMeasurements.length * multiplier)) : '',
-    width: roomMeasurements.width ? String(Math.round(roomMeasurements.width * multiplier)) : '',
-    height: roomMeasurements.height ? String(Math.round(roomMeasurements.height * multiplier)) : '',
-    totalSqft: roomMeasurements.length && roomMeasurements.width 
-      ? String(Math.round(roomMeasurements.length * roomMeasurements.width)) 
-      : ''
+  // Handle cases where measurements might be in ft or m
+  const unit = roomMeasurements.unit || 'ft';
+  const multiplier = unit === 'ft' ? 12 : 39.37; // Convert to inches
+  
+  // Extract values ensuring they are numbers
+  const length = typeof roomMeasurements.length === 'number' ? roomMeasurements.length : 
+                 parseFloat(roomMeasurements.length) || 0;
+  const width = typeof roomMeasurements.width === 'number' ? roomMeasurements.width : 
+                parseFloat(roomMeasurements.width) || 0;
+  const height = typeof roomMeasurements.height === 'number' ? roomMeasurements.height : 
+                 parseFloat(roomMeasurements.height) || 0;
+  
+  // Calculate total square feet
+  const totalSqft = length && width ? length * width : 0;
+  
+  // Create standardized measurements object
+  const convertedMeasurements = {
+    length: length ? String(Math.round(length * multiplier)) : '',
+    width: width ? String(Math.round(width * multiplier)) : '',
+    height: height ? String(Math.round(height * multiplier)) : '',
+    totalSqft: totalSqft ? String(Math.round(totalSqft)) : ''
   };
+  
+  console.log('Converted measurements result:', convertedMeasurements);
+  
+  return convertedMeasurements;
 }

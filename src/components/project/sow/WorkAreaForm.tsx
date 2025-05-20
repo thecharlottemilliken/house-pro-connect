@@ -162,10 +162,31 @@ export function WorkAreaForm({
     const selectedRoom = propertyRooms.find(room => room.id === roomId);
     if (!selectedRoom) return;
     
-    // Get room measurements from design preferences
-    const roomMeasurements = projectData?.design_preferences?.roomMeasurements?.[selectedRoom.name];
-    const convertedMeasurements = convertMeasurements(roomMeasurements);
+    console.log(`Selected room for SOW: ${selectedRoom.name} (ID: ${selectedRoom.id})`);
     
+    // First check if measurements exist directly in design_preferences.roomMeasurements
+    let roomMeasurements = projectData?.design_preferences?.roomMeasurements?.[selectedRoom.name];
+    
+    // If not found with exact name, try with normalized name (e.g., "bathroom_1")
+    if (!roomMeasurements) {
+      const normalizedRoomName = selectedRoom.name.toLowerCase().replace(/\s+/g, '_');
+      roomMeasurements = projectData?.design_preferences?.roomMeasurements?.[normalizedRoomName];
+      
+      if (roomMeasurements) {
+        console.log(`Found measurements using normalized name: ${normalizedRoomName}`, roomMeasurements);
+      }
+    } else {
+      console.log(`Found measurements using exact name: ${selectedRoom.name}`, roomMeasurements);
+    }
+    
+    // Convert measurements if they exist
+    const convertedMeasurements = roomMeasurements ? convertMeasurements(roomMeasurements) : null;
+    
+    // Debug measurements conversion
+    console.log('Room measurements from design preferences:', roomMeasurements);
+    console.log('Converted measurements for SOW:', convertedMeasurements);
+    
+    // Set the current area with room data and measurements
     setCurrentArea({
       name: selectedRoom.name,
       notes: '',
