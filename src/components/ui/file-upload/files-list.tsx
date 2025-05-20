@@ -9,6 +9,7 @@ interface FilesListProps {
   onAddTag: (id: string, tag: string) => void;
   onRemoveTag: (id: string, tag: string) => void;
   roomOptions?: RoomTagOption[]; // Changed from roomTagOptions to roomOptions
+  disabled?: boolean; // Add the disabled property which was missing
 }
 
 export const FilesList = ({
@@ -17,6 +18,7 @@ export const FilesList = ({
   onAddTag,
   onRemoveTag,
   roomOptions = [], // Changed from roomTagOptions to roomOptions
+  disabled = false, // Set a default value of false
 }: FilesListProps) => {
   if (files.length === 0) return null;
 
@@ -30,6 +32,7 @@ export const FilesList = ({
           onAddTag={(tag) => onAddTag(file.id, tag)}
           onRemoveTag={(tag) => onRemoveTag(file.id, tag)}
           roomOptions={roomOptions} // Changed from roomTagOptions to roomOptions
+          disabled={disabled} // Pass the disabled prop down to FileItem
         />
       ))}
     </div>
