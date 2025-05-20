@@ -7,7 +7,7 @@ export type { FileWithPreview, RoomTagOption } from './file-upload/types';
 
 // Re-export components and functions
 export { 
-  EnhancedFileUpload,
+  EnhancedFileUpload as FileUpload, // Change the default export to be EnhancedFileUpload
   FileItem,
   FileTags,
   FileThumbnail,
@@ -19,6 +19,6 @@ export {
 // Export processFiles and uploadFile from upload-service
 export { processFiles, uploadFile } from './file-upload/upload-service';
 
-// Re-export the original FileUpload component
-import { FileUpload } from './file-upload/FileUpload';
-export { FileUpload };
+// Re-export the original FileUpload component as OriginalFileUpload if needed
+import { FileUpload as OriginalFileUpload } from './file-upload/FileUpload';
+export { OriginalFileUpload };

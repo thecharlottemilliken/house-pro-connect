@@ -19,9 +19,9 @@ export const formatFileSize = (bytes: number): string => {
 };
 
 /**
- * Uploads a file to Supabase storage
+ * Uploads a file to Supabase storage and returns the public URL
  */
-export const uploadFile = async (file: File): Promise<{ url: string; error: Error | null }> => {
+export const uploadFile = async (file: File): Promise<string> => {
   try {
     const session = await supabase.auth.getSession();
     if (!session.data.session) {
@@ -49,10 +49,10 @@ export const uploadFile = async (file: File): Promise<{ url: string; error: Erro
       .from('properties')
       .getPublicUrl(filePath);
 
-    return { url: publicUrl, error: null };
+    return publicUrl;
   } catch (error) {
     console.error("Upload service error:", error);
-    return { url: "", error: error as Error };
+    throw error;
   }
 };
 
@@ -70,11 +70,12 @@ export const processFiles = async (
     const file = files[i];
     const id = uuidv4();
     
-    // Create preview URL
+    // Create preview URL for immediate display
     const previewUrl = URL.createObjectURL(file);
     
     fileArray.push({
       id,
+      file,
       name: file.name,
       size: formatFileSize(file.size),
       type: file.type,
@@ -96,19 +97,15 @@ export const processFiles = async (
           onProgressUpdate(fileItem.id, 10);
         }
         
-        // Start upload
-        const { url, error } = await uploadFile(file);
+        // Upload to Supabase storage and get permanent URL
+        const url = await uploadFile(file);
         
         // Report progress updates
         if (onProgressUpdate) {
           onProgressUpdate(fileItem.id, 100);
         }
         
-        if (error) {
-          throw error;
-        }
-        
-        // Update fileItem with URL and status
+        // Update fileItem with permanent URL
         return {
           ...fileItem,
           url,

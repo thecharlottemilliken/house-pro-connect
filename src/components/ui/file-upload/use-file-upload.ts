@@ -43,14 +43,18 @@ export const useFileUpload = (
         );
       };
 
+      // This will upload to Supabase storage and get permanent URLs
       const processedFiles = await processFiles(files, uploadProgress);
       
-      // Update files state with processed files
+      // Update files state with processed files that have permanent URLs
       setUploadedFiles(prevFiles => [...prevFiles, ...processedFiles]);
       
-      // Call callback if provided with all files
-      if (onUploadComplete) {
-        onUploadComplete([...uploadedFiles, ...processedFiles]);
+      // Filter completed files (with valid URLs) for the callback
+      const completedFiles = processedFiles.filter(file => file.status === 'complete' && file.url);
+      
+      // Call callback if provided with all successfully uploaded files
+      if (onUploadComplete && completedFiles.length > 0) {
+        onUploadComplete(completedFiles);
       }
       
       // Calculate success/error counts
@@ -70,7 +74,6 @@ export const useFileUpload = (
           variant: "destructive"
         });
       } else {
-        // Changed from "warning" to "destructive" as warning is not a valid variant
         toast({
           title: "Upload Partially Complete",
           description: `Uploaded ${successCount} file${successCount !== 1 ? 's' : ''}, ${errorCount} failed.`,
