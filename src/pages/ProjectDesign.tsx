@@ -9,6 +9,8 @@ import { useEffect, useCallback } from "react";
 import { useEnhancedDesignActions } from "@/hooks/useEnhancedDesignActions";
 import ProjectDesignLoading from "@/components/project/design/ProjectDesignLoading";
 import ProjectDesignContent from "@/components/project/design/ProjectDesignContent";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import ProjectSidebar from "@/components/project/ProjectSidebar";
 
 const ProjectDesign = () => {
   const location = useLocation();
@@ -132,19 +134,30 @@ const ProjectDesign = () => {
   return (
     <>
       <DashboardNavbar />
-      <ProjectDesignContent
-        projectData={projectData}
-        propertyDetails={propertyDetails}
-        isMobile={isMobile}
-        defaultTab={defaultTab}
-        renovationAreas={renovationAreas}
-        designPreferences={designPreferences}
-        roomPreferences={roomPreferences}
-        propertyPhotos={propertyPhotos}
-        getRoomIdByName={getRoomIdByName}
-        enhancedHandlers={enhancedActions}
-        handlers={eventHandlers}
-      />
+      <SidebarProvider>
+        <div className="flex w-full">
+          <ProjectSidebar 
+            projectId={params.projectId || ''} 
+            projectTitle={propertyDetails?.property_name || 'Project'} 
+            activePage="design" 
+          />
+          <div className="flex-1">
+            <ProjectDesignContent
+              projectData={projectData}
+              propertyDetails={propertyDetails}
+              isMobile={isMobile}
+              defaultTab={defaultTab}
+              renovationAreas={renovationAreas}
+              designPreferences={designPreferences}
+              roomPreferences={roomPreferences}
+              propertyPhotos={propertyPhotos}
+              getRoomIdByName={getRoomIdByName}
+              enhancedHandlers={enhancedActions}
+              handlers={eventHandlers}
+            />
+          </div>
+        </div>
+      </SidebarProvider>
     </>
   );
 };

@@ -5,7 +5,6 @@ import { RenovationArea } from "@/hooks/useProjectData";
 import { PropertyDetails } from "@/hooks/useProjectData";
 import { RoomPreference } from "@/hooks/useRoomDesign";
 import RoomTabContent from "./RoomTabContent";
-import ProjectOverviewTab from "./ProjectOverviewTab";
 import { normalizeAreaName } from '@/lib/utils';
 
 interface ProjectDesignContentProps {
@@ -162,23 +161,8 @@ const ProjectDesignContent: React.FC<ProjectDesignContentProps> = ({
       {renovationAreas.length > 0 ? (
         <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4 border border-gray-200 p-1 rounded-lg overflow-x-auto flex w-full bg-white">
-            <TabsTrigger
-              value="overview"
-              className="capitalize px-4 py-2 text-lg"
-            >
-              Overview
-            </TabsTrigger>
             {generateTabs()}
           </TabsList>
-          
-          <TabsContent value="overview" className="py-4">
-            <ProjectOverviewTab 
-              projectData={projectData}
-              propertyDetails={propertyDetails}
-              isMobile={isMobile}
-              renovationAreas={renovationAreas}
-            />
-          </TabsContent>
           
           {generateTabsContent()}
         </Tabs>
