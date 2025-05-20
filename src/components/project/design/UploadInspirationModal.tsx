@@ -9,7 +9,8 @@ import {
 } from "@/components/ui/dialog";
 import { FileUpload, FileWithPreview, extractUrls } from "@/components/ui/file-upload";
 import { toast } from "@/hooks/use-toast";
-import { uploadFile } from "@/components/ui/file-upload/upload-service";
+// Remove incorrect import
+// import { uploadFile } from "@/components/ui/file-upload/upload-service";
 
 interface UploadInspirationModalProps {
   isOpen: boolean;

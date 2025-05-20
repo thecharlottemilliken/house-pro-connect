@@ -12,7 +12,7 @@ interface PropertyFileUploadProps {
   roomOptions?: RoomTagOption[];
   label?: string;
   description?: string;
-  initialTags?: string[]; // Properly define initialTags prop
+  initialTags?: string[];
 }
 
 export function PropertyFileUpload({ 
@@ -23,7 +23,7 @@ export function PropertyFileUpload({
   roomOptions = [],
   label = "Upload Files",
   description = "Upload property photos, blueprints, or drawings",
-  initialTags = [] // Default to empty array
+  initialTags = []
 }: PropertyFileUploadProps) {
   const [uploadedFiles, setUploadedFiles] = useState<FileWithPreview[]>(initialFiles);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -117,7 +117,7 @@ export function PropertyFileUpload({
         label={label}
         description={description}
         initialTags={initialTags}
-        roomTagOptions={roomTagOptions}
+        // Remove the roomTagOptions prop since it's not in the FileUpload props
       />
     </div>
   );
