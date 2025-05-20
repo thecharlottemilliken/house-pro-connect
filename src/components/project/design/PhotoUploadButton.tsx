@@ -1,52 +1,71 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { EnhancedFileUpload, FileWithPreview, extractUrls } from "@/components/ui/file-upload";
+import { EnhancedFileUpload, FileWithPreview } from "@/components/ui/file-upload";
 import { cn } from "@/lib/utils";
+import { filterValidPhotoUrls } from '@/utils/BeforePhotosService';
 
 interface PhotoUploadButtonProps {
   onUploadComplete: (photoUrls: string[]) => void;
   className?: string;
   variant?: "default" | "outline";
   label?: string;
+  disabled?: boolean;
 }
 
 const PhotoUploadButton: React.FC<PhotoUploadButtonProps> = ({
   onUploadComplete,
   className,
   variant = "outline",
-  label = "Upload"
+  label = "Upload",
+  disabled = false
 }) => {
   const [uploadedFiles, setUploadedFiles] = useState<FileWithPreview[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
   const handleUploadComplete = (files: FileWithPreview[]) => {
-    // Debug logging for uploaded files
-    console.log("PhotoUploadButton - Files uploaded:", files);
+    setIsUploading(true);
     
-    // Make sure we're only working with successfully uploaded files with permanent URLs
-    const validFiles = files.filter(file => file.status === 'complete' && file.url && !file.url.startsWith('blob:'));
-    
-    if (validFiles.length === 0) {
-      console.warn("PhotoUploadButton - No valid permanent URLs found in uploaded files");
-      return;
-    }
-    
-    // Extract URLs from valid files
-    const urls = validFiles.map(file => file.url as string);
-    console.log("PhotoUploadButton - Extracted permanent URLs:", urls);
-    
-    if (urls.length > 0) {
-      onUploadComplete(urls);
+    try {
+      // Debug logging for uploaded files
+      console.log("PhotoUploadButton - Files uploaded:", files);
       
-      // Clear uploaded files after successful upload
-      setUploadedFiles([]);
+      // Make sure we're only working with successfully uploaded files with permanent URLs
+      const validFiles = files.filter(file => 
+        file.status === 'complete' && 
+        file.url && 
+        !file.url.toString().startsWith('blob:')
+      );
+      
+      if (validFiles.length === 0) {
+        console.warn("PhotoUploadButton - No valid permanent URLs found in uploaded files");
+        return;
+      }
+      
+      // Extract URLs from valid files
+      const urls = validFiles.map(file => file.url as string);
+      console.log("PhotoUploadButton - Extracted permanent URLs:", urls);
+      
+      // Filter out any invalid URLs
+      const validUrls = filterValidPhotoUrls(urls);
+      
+      if (validUrls.length > 0) {
+        console.log("PhotoUploadButton - Passing valid URLs to parent:", validUrls);
+        onUploadComplete(validUrls);
+        
+        // Clear uploaded files after successful upload
+        setUploadedFiles([]);
+      }
+    } catch (error) {
+      console.error("Error handling upload complete:", error);
+    } finally {
+      setIsUploading(false);
     }
   };
 
   return (
     <EnhancedFileUpload
-      label={label}
+      label={isUploading || disabled ? "Processing..." : label}
       description="Upload photos of the room's current state"
       accept="image/*"
       multiple={true}
@@ -62,6 +81,7 @@ const PhotoUploadButton: React.FC<PhotoUploadButtonProps> = ({
         : "", 
         "font-medium uppercase tracking-wider py-6 w-full", 
         className)}
+      disabled={isUploading || disabled}
     />
   );
 };

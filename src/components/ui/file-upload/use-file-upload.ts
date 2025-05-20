@@ -9,7 +9,8 @@ export const useFileUpload = (
   uploadedFiles: FileWithPreview[],
   setUploadedFiles: React.Dispatch<React.SetStateAction<FileWithPreview[]>>,
   onUploadComplete?: (files: FileWithPreview[]) => void,
-  initialTags: string[] = []
+  initialTags: string[] = [],
+  disabled: boolean = false
 ) => {
   const [isUploading, setIsUploading] = useState(false);
 
@@ -30,7 +31,7 @@ export const useFileUpload = (
   };
 
   const handleProcessFiles = async (files: FileList) => {
-    if (files.length === 0) return;
+    if (files.length === 0 || disabled) return;
 
     try {
       // Check authentication first
@@ -132,10 +133,12 @@ export const useFileUpload = (
   };
 
   const removeFile = (fileId: string) => {
+    if (disabled) return;
     setUploadedFiles(prevFiles => prevFiles.filter(file => file.id !== fileId));
   };
 
   const addTag = (fileId: string, tag: string) => {
+    if (disabled) return;
     setUploadedFiles(prevFiles =>
       prevFiles.map(file =>
         file.id === fileId
@@ -146,6 +149,7 @@ export const useFileUpload = (
   };
 
   const removeTag = (fileId: string, tag: string) => {
+    if (disabled) return;
     setUploadedFiles(prevFiles =>
       prevFiles.map(file =>
         file.id === fileId

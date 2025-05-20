@@ -1,40 +1,44 @@
 
 import React from 'react';
-import { Upload } from "lucide-react";
-import PhotoControls from "./PhotoControls";
+import PhotoControls from './PhotoControls';
 
 interface EmptyPhotoStateProps {
-  area?: string;
+  area: string;
   propertyPhotos: string[];
   onSelectBeforePhotos: (photos: string[]) => void;
   onUploadBeforePhotos: (photos: string[]) => void;
+  isLoading?: boolean;
 }
 
 const EmptyPhotoState: React.FC<EmptyPhotoStateProps> = ({
-  area = '',
+  area,
   propertyPhotos,
   onSelectBeforePhotos,
-  onUploadBeforePhotos
+  onUploadBeforePhotos,
+  isLoading = false
 }) => {
   return (
-    <div className="flex flex-col items-center justify-center text-center py-6 space-y-6">
-      <div>
-        <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3 mx-auto">
-          <Upload className="h-6 w-6 text-gray-500" />
-        </div>
-        <h4 className="font-semibold text-gray-900">No before photos added yet</h4>
-        <p className="text-gray-500 max-w-md mt-1 mb-4">
-          Upload photos of your {area.toLowerCase()} before renovation to document the transformation
+    <div className="space-y-6">
+      <div className="bg-gray-50 border border-gray-200 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-center">
+        <h3 className="text-lg font-medium text-gray-700 mb-2">No photos yet</h3>
+        <p className="text-sm text-gray-500 mb-6">
+          Add photos to help designers understand the current state of your {area.toLowerCase()}
         </p>
+        
+        {isLoading ? (
+          <div className="py-2 text-sm text-gray-500 animate-pulse">
+            Processing...
+          </div>
+        ) : (
+          <PhotoControls
+            area={area}
+            propertyPhotos={propertyPhotos}
+            onSelectBeforePhotos={onSelectBeforePhotos}
+            onUploadBeforePhotos={onUploadBeforePhotos}
+            className="max-w-md mx-auto"
+          />
+        )}
       </div>
-      
-      <PhotoControls
-        area={area}
-        propertyPhotos={propertyPhotos}
-        onSelectBeforePhotos={onSelectBeforePhotos}
-        onUploadBeforePhotos={onUploadBeforePhotos}
-        className="w-full"
-      />
     </div>
   );
 };

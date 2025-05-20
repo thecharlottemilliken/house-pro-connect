@@ -14,9 +14,10 @@ interface EnhancedFileUploadProps {
   uploadedFiles: FileWithPreview[];
   setUploadedFiles: React.Dispatch<React.SetStateAction<FileWithPreview[]>>;
   allowUrlUpload?: boolean;
-  roomOptions?: RoomTagOption[];  // Changed from roomTagOptions to roomOptions
+  roomOptions?: RoomTagOption[];
   className?: string;
-  initialTags?: string[]; // Added initialTags prop
+  initialTags?: string[];
+  disabled?: boolean;
 }
 
 export function EnhancedFileUpload({
@@ -28,9 +29,10 @@ export function EnhancedFileUpload({
   uploadedFiles,
   setUploadedFiles,
   allowUrlUpload = false,
-  roomOptions = [],  // Changed from roomTagOptions to roomOptions
+  roomOptions = [],
   className = "",
-  initialTags = [], // Default to empty array
+  initialTags = [],
+  disabled = false,
 }: EnhancedFileUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -45,10 +47,13 @@ export function EnhancedFileUpload({
     uploadedFiles, 
     setUploadedFiles,
     onUploadComplete,
-    initialTags // Pass initialTags to useFileUpload
+    initialTags,
+    disabled
   );
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (disabled) return;
+    
     const files = event.target.files;
     if (files && files.length > 0) {
       await handleProcessFiles(files);
@@ -60,27 +65,29 @@ export function EnhancedFileUpload({
   };
 
   const handleDrop = async (files: FileList) => {
+    if (disabled) return;
+    
     if (await checkAuthBeforeUpload()) {
       handleProcessFiles(files);
     }
   };
 
   const handleBoxClick = async () => {
+    if (disabled) return;
+    
     if (await checkAuthBeforeUpload()) {
       fileInputRef.current?.click();
     }
   };
 
-  // Debug logging
-  console.log(`EnhancedFileUpload rendering with initialTags:`, initialTags);
-
   return (
     <div className={`space-y-4 ${className}`}>
       <DropZone 
-        label={label}
+        label={disabled ? "Processing..." : label}
         description={description}
         onDrop={handleDrop}
         onClick={handleBoxClick}
+        disabled={disabled || isUploading}
       />
 
       <input
@@ -90,6 +97,7 @@ export function EnhancedFileUpload({
         multiple={multiple}
         onChange={handleFileChange}
         className="hidden"
+        disabled={disabled || isUploading}
       />
 
       {isUploading && (
@@ -103,7 +111,8 @@ export function EnhancedFileUpload({
         onRemoveFile={removeFile}
         onAddTag={addTag}
         onRemoveTag={removeTag}
-        roomOptions={roomOptions}  // Changed from roomTagOptions to roomOptions
+        roomOptions={roomOptions}
+        disabled={disabled}
       />
     </div>
   );

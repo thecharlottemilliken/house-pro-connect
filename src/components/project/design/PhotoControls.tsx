@@ -11,6 +11,7 @@ interface PhotoControlsProps {
   onSelectBeforePhotos: (photos: string[]) => void;
   onUploadBeforePhotos: (photos: string[]) => void;
   className?: string;
+  disabled?: boolean;
 }
 
 const PhotoControls: React.FC<PhotoControlsProps> = ({
@@ -18,7 +19,8 @@ const PhotoControls: React.FC<PhotoControlsProps> = ({
   propertyPhotos,
   onSelectBeforePhotos,
   onUploadBeforePhotos,
-  className
+  className,
+  disabled = false
 }) => {
   const [isSelectDialogOpen, setIsSelectDialogOpen] = React.useState(false);
 
@@ -29,19 +31,26 @@ const PhotoControls: React.FC<PhotoControlsProps> = ({
           variant="outline"
           onClick={() => setIsSelectDialogOpen(true)}
           className="w-full border-[#1A6985] border-2 text-[#1A6985] hover:bg-transparent hover:text-[#1A6985]/90 font-medium uppercase tracking-wider py-6"
+          disabled={disabled}
         >
-          Select from files
+          {disabled ? "Processing..." : "Select from files"}
         </Button>
         
         <SelectPropertyPhotosDialog
           photos={propertyPhotos}
-          onSelect={onSelectBeforePhotos}
+          onSelect={(photos) => {
+            onSelectBeforePhotos(photos);
+            setIsSelectDialogOpen(false);
+          }}
           open={isSelectDialogOpen}
           onOpenChange={setIsSelectDialogOpen}
         />
       </Dialog>
       
-      <PhotoUploadButton onUploadComplete={onUploadBeforePhotos} />
+      <PhotoUploadButton 
+        onUploadComplete={onUploadBeforePhotos} 
+        disabled={disabled} 
+      />
     </div>
   );
 };

@@ -1,9 +1,16 @@
 
 import { useCallback, useState } from 'react';
 import { toast } from '@/hooks/use-toast';
-import { normalizeAreaName } from '@/lib/utils';
-import { FileWithPreview } from '@/components/ui/file-upload';
+import { 
+  selectBeforePhotos, 
+  addBeforePhotosToPreferences, 
+  saveBeforePhotos
+} from '@/utils/BeforePhotosService';
 
+/**
+ * Custom hook that provides enhanced design action handlers with improved 
+ * error handling and state management
+ */
 export const useEnhancedDesignActions = (
   handleSaveMeasurements: any,
   handleSelectBeforePhotos: any,
@@ -18,14 +25,23 @@ export const useEnhancedDesignActions = (
   // Enhanced select before photos handler with improved debugging and refresh mechanism
   const enhancedSelectBeforePhotos = useCallback(async (area: string, photos: string[]) => {
     console.log(`ProjectDesign: Selecting ${photos.length} before photos for area ${area}`);
-    console.log("Photos being selected:", photos);
     
-    // Filter out any invalid photo URLs
-    const validPhotos = photos.filter(url => url && typeof url === 'string');
-    console.log("Valid photos being selected:", validPhotos);
+    if (!projectData?.id) {
+      toast({
+        title: "Error",
+        description: "Project ID is required to save photos",
+        variant: "destructive"
+      });
+      return null;
+    }
     
-    // Call the original handler
-    const updatedPrefs = await handleSelectBeforePhotos(area, validPhotos, projectData?.design_preferences || {});
+    // Use our new service function
+    const updatedPrefs = await selectBeforePhotos(
+      area, 
+      photos, 
+      projectData.id, 
+      projectData?.design_preferences || {}
+    );
     
     if (updatedPrefs) {
       console.log("ProjectDesign: Before photos updated successfully, triggering UI refresh");
@@ -39,26 +55,36 @@ export const useEnhancedDesignActions = (
     }
     
     return updatedPrefs;
-  }, [handleSelectBeforePhotos, projectData?.design_preferences, refreshProjectData]);
+  }, [projectData?.id, projectData?.design_preferences, refreshProjectData]);
 
-  // Enhanced upload before photos handler with improved debugging and refresh mechanism
+  // Enhanced upload before photos handler with improved error handling
   const enhancedUploadBeforePhotos = useCallback(async (area: string, photos: string[]) => {
     console.log(`ProjectDesign: Uploading ${photos.length} before photos for area ${area}`);
-    console.log("Photo URLs to upload:", photos);
     
-    // Filter out any invalid photo URLs
-    const validPhotos = photos.filter(url => url && typeof url === 'string');
-    console.log("Valid photos being uploaded:", validPhotos);
-    
-    if (validPhotos.length === 0) {
-      console.warn("No valid photos to upload");
+    if (!projectData?.id) {
+      toast({
+        title: "Error",
+        description: "Project ID is required to save photos",
+        variant: "destructive"
+      });
       return null;
     }
     
-    // Call the original handler
-    const updatedPrefs = await handleUploadBeforePhotos(area, validPhotos, projectData?.design_preferences || {});
+    // Use our new service functions
+    const updatedPrefs = addBeforePhotosToPreferences(
+      area, 
+      photos, 
+      projectData?.design_preferences || {}
+    );
     
-    if (updatedPrefs) {
+    const success = await saveBeforePhotos(projectData.id, updatedPrefs);
+    
+    if (success) {
+      toast({
+        title: "Success",
+        description: `Photos added to ${area}`
+      });
+      
       console.log("ProjectDesign: Before photos uploaded successfully, triggering UI refresh");
       // Force a UI refresh after successful upload
       setRefreshTrigger(prev => prev + 1);
@@ -67,17 +93,37 @@ export const useEnhancedDesignActions = (
       if (refreshProjectData) {
         setTimeout(() => refreshProjectData(), 300);
       }
+      
+      return updatedPrefs;
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to save uploaded photos",
+        variant: "destructive"
+      });
+      return null;
     }
-    
-    return updatedPrefs;
-  }, [handleUploadBeforePhotos, projectData?.design_preferences, refreshProjectData]);
+  }, [projectData?.id, projectData?.design_preferences, refreshProjectData]);
 
   // Enhanced tag update handler to trigger UI refresh
   const enhancedUpdateAssetTags = useCallback(async (index: number, tags: string[]) => {
     console.log("ProjectDesign: Updating tags for asset at index", index, "with tags", tags);
+    
+    if (!projectData?.id) {
+      toast({
+        title: "Error",
+        description: "Project ID is required to update tags",
+        variant: "destructive"
+      });
+      return null;
+    }
+    
+    // Call the original handler
     const updatedPrefs = await handleUpdateAssetTags(index, tags, projectData?.design_preferences || {});
+    
     if (updatedPrefs) {
-      // Force a UI refresh after successful tag update
+      console.log("ProjectDesign: Asset tags updated successfully, triggering UI refresh");
+      // Force a UI refresh after successful update
       setRefreshTrigger(prev => prev + 1);
       
       // Also trigger a project data refresh to ensure we have the latest data
@@ -85,29 +131,29 @@ export const useEnhancedDesignActions = (
         setTimeout(() => refreshProjectData(), 300);
       }
     }
+    
     return updatedPrefs;
-  }, [handleUpdateAssetTags, projectData?.design_preferences, refreshProjectData]);
+  }, [handleUpdateAssetTags, projectData?.id, projectData?.design_preferences, refreshProjectData]);
 
-  // Enhanced measurements save handler with immediate state update and better type checking
+  // Enhanced save measurements handler
   const enhancedSaveMeasurements = useCallback(async (area: string, measurements: any) => {
-    console.log("ProjectDesign: Saving measurements for area", area, JSON.stringify(measurements, null, 2));
+    console.log("ProjectDesign: Saving measurements for area", area);
     
-    // Ensure all numeric values are actually numbers
-    const normalizedMeasurements = {
-      ...measurements,
-      length: typeof measurements.length === 'string' ? parseFloat(measurements.length) || undefined : measurements.length,
-      width: typeof measurements.width === 'string' ? parseFloat(measurements.width) || undefined : measurements.width,
-      height: typeof measurements.height === 'string' ? parseFloat(measurements.height) || undefined : measurements.height,
-      unit: measurements.unit || 'ft'
-    };
+    if (!projectData?.id) {
+      toast({
+        title: "Error",
+        description: "Project ID is required to save measurements",
+        variant: "destructive"
+      });
+      return null;
+    }
     
-    console.log("ProjectDesign: Normalized measurements:", JSON.stringify(normalizedMeasurements, null, 2));
-    
-    const updatedPrefs = await handleSaveMeasurements(area, normalizedMeasurements, projectData?.design_preferences || {});
+    // Call the original handler
+    const updatedPrefs = await handleSaveMeasurements(area, measurements, projectData?.design_preferences || {});
     
     if (updatedPrefs) {
-      console.log("ProjectDesign: Measurements saved successfully, updating UI");
-      // Force a UI refresh after successful measurements update
+      console.log("ProjectDesign: Measurements saved successfully, triggering UI refresh");
+      // Force a UI refresh after successful update
       setRefreshTrigger(prev => prev + 1);
       
       // Also trigger a project data refresh to ensure we have the latest data
@@ -117,17 +163,27 @@ export const useEnhancedDesignActions = (
     }
     
     return updatedPrefs;
-  }, [handleSaveMeasurements, projectData?.design_preferences, refreshProjectData]);
+  }, [handleSaveMeasurements, projectData?.id, projectData?.design_preferences, refreshProjectData]);
 
-  // Enhanced project files handler that properly triggers UI updates
+  // Enhanced add project files handler
   const enhancedAddProjectFiles = useCallback(async (area: string, files: string[]) => {
     console.log(`ProjectDesign: Adding ${files.length} project files for area ${area}`);
     
+    if (!projectData?.id) {
+      toast({
+        title: "Error",
+        description: "Project ID is required to add files",
+        variant: "destructive"
+      });
+      return null;
+    }
+    
+    // Call the original handler
     const updatedPrefs = await handleAddProjectFiles(area, files, projectData?.design_preferences || {});
     
     if (updatedPrefs) {
       console.log("ProjectDesign: Project files added successfully, triggering UI refresh");
-      // Force a UI refresh after successful file addition
+      // Force a UI refresh after successful update
       setRefreshTrigger(prev => prev + 1);
       
       // Also trigger a project data refresh to ensure we have the latest data
@@ -137,7 +193,7 @@ export const useEnhancedDesignActions = (
     }
     
     return updatedPrefs;
-  }, [handleAddProjectFiles, projectData?.design_preferences, refreshProjectData]);
+  }, [handleAddProjectFiles, projectData?.id, projectData?.design_preferences, refreshProjectData]);
 
   return {
     enhancedSelectBeforePhotos,

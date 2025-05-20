@@ -2,6 +2,7 @@
 import React, { useMemo } from 'react';
 import { cn } from "@/lib/utils";
 import PhotoItem from './PhotoItem';
+import { filterValidPhotoUrls } from '@/utils/BeforePhotosService';
 
 interface PhotoGridProps {
   photos: string[];
@@ -18,14 +19,10 @@ const PhotoGrid: React.FC<PhotoGridProps> = ({
 }) => {
   // Filter out any invalid photo URLs
   const validPhotos = useMemo(() => {
-    return photos.filter(photo => photo && typeof photo === 'string');
+    return filterValidPhotoUrls(photos);
   }, [photos]);
-
-  // Debug logging for photos array
-  console.log('PhotoGrid - validPhotos:', validPhotos);
   
   if (!validPhotos || validPhotos.length === 0) {
-    console.log('PhotoGrid - No valid photos to display');
     return null;
   }
 
