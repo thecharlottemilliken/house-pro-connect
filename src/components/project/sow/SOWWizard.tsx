@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -23,6 +22,7 @@ import { BidConfigurationForm } from "./BidConfigurationForm";
 import { ProjectReviewForm } from "./ProjectReviewForm";
 import { toast } from "@/hooks/use-toast";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+import { useAuth } from "@/contexts/AuthContext";
 import { 
   trackChanges, 
   initializeChangeTracker, 
@@ -55,9 +55,29 @@ export function SOWWizard({ isRevision = false }: SOWWizardProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [originalSowData, setOriginalSowData] = useState<any>(null);
   const [changes, setChanges] = useState<ChangeTracker>(initializeChangeTracker());
+  const { profile } = useAuth();
   
   const isLoading = projectLoading || sowLoading;
   const isPendingRevision = sowData?.status === 'pending revision';
+
+  // Determine user role
+  const [userRole, setUserRole] = useState<'owner' | 'coach' | 'pro' | ''>('');
+
+  useEffect(() => {
+    if (profile && projectData) {
+      // Check if the current user is the property owner
+      if (projectData.user_id === profile.id) {
+        setUserRole('owner');
+      } else if (profile.user_metadata?.role === 'coach') {
+        setUserRole('coach');
+      } else if (profile.user_metadata?.role === 'service_provider') {
+        setUserRole('pro');
+      } else {
+        setUserRole('');
+      }
+      console.log('User role determined:', userRole);
+    }
+  }, [profile, projectData]);
 
   // Fetch the original version for comparison if this is a revision
   useEffect(() => {
@@ -308,6 +328,7 @@ export function SOWWizard({ isRevision = false }: SOWWizardProps) {
             bidConfiguration={sowData.bid_configuration}
             projectId={projectId || ''}
             isRevision={isPendingRevision}
+            userRole={userRole}
             // Update the onSave prop to match the updated interface
             onSave={(confirmed) => {
               if (confirmed) {

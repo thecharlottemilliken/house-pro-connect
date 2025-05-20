@@ -1,4 +1,3 @@
-
 import { useParams, useLocation, useSearchParams, useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -37,9 +36,27 @@ const ProjectSOW = () => {
   const [showReviewDialog, setShowReviewDialog] = useState(false);
   const [isRevision, setIsRevision] = useState(false);
   const [changes, setChanges] = useState(initializeChangeTracker());
+  const [userRole, setUserRole] = useState<'owner' | 'coach' | 'pro' | ''>('');
 
   const { profile } = useAuth();
   const { generateActionItems, isGenerating } = useActionItemsGenerator();
+
+  // Determine user role
+  useEffect(() => {
+    if (profile && projectData) {
+      // Check if the current user is the property owner
+      if (projectData.user_id === profile.id) {
+        setUserRole('owner');
+      } else if (profile.user_metadata?.role === 'coach') {
+        setUserRole('coach');
+      } else if (profile.user_metadata?.role === 'service_provider') {
+        setUserRole('pro');
+      } else {
+        setUserRole('');
+      }
+      console.log('User role in SOW view:', userRole);
+    }
+  }, [profile, projectData]);
 
   // Fetch SOW data from statement_of_work table
   useEffect(() => {
@@ -200,7 +217,7 @@ const ProjectSOW = () => {
             {isRevision ? "Revised Statement of Work" : "Statement of Work"}
           </h2>
           
-          {isReviewMode && sowData?.status === 'ready for review' && (
+          {isReviewMode && sowData?.status === 'ready for review' && userRole === 'owner' && (
             <Button onClick={() => setShowReviewDialog(true)}>
               Review & Approve
             </Button>
@@ -216,6 +233,7 @@ const ProjectSOW = () => {
           onSave={() => {}}
           isRevision={isRevision}
           changes={changes}
+          userRole={userRole}
         />
       </div>
     );

@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +19,7 @@ interface ProjectReviewFormProps {
   onSave: (confirmed?: boolean) => void;
   isRevision?: boolean;
   changes?: any;
+  userRole?: 'owner' | 'coach' | 'pro' | '';
 }
 
 export function ProjectReviewForm({
@@ -30,7 +30,8 @@ export function ProjectReviewForm({
   projectId,
   onSave,
   isRevision = false,
-  changes = null
+  changes = null,
+  userRole = 'owner'
 }: ProjectReviewFormProps) {
   const navigate = useNavigate();
   const [feedback, setFeedback] = useState("");
@@ -152,6 +153,32 @@ export function ProjectReviewForm({
     } catch (error) {
       console.error("Error requesting revision:", error);
       toast.error("Failed to request revision");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('statement_of_work')
+        .update({ 
+          status: 'ready for review',
+        })
+        .eq('project_id', projectId);
+      
+      if (error) throw error;
+      
+      toast.success("Statement of Work submitted for review");
+      // Call onSave callback
+      onSave(true);
+      
+      // Redirect back to project
+      navigate(`/project-dashboard/${projectId}`);
+    } catch (error) {
+      console.error("Error submitting SOW:", error);
+      toast.error("Failed to submit the Statement of Work");
     } finally {
       setIsSubmitting(false);
     }
@@ -406,19 +433,30 @@ export function ProjectReviewForm({
           </div>
           
           <div className="flex justify-end space-x-4">
-            <Button
-              variant="outline"
-              onClick={handleRequestRevision}
-              disabled={isSubmitting}
-            >
-              Request Revision
-            </Button>
-            <Button 
-              onClick={handleApprove}
-              disabled={isSubmitting}
-            >
-              Approve
-            </Button>
+            {userRole === 'owner' ? (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={handleRequestRevision}
+                  disabled={isSubmitting}
+                >
+                  Request Revision
+                </Button>
+                <Button 
+                  onClick={handleApprove}
+                  disabled={isSubmitting}
+                >
+                  Approve
+                </Button>
+              </>
+            ) : (
+              <Button 
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+              >
+                Submit for Review
+              </Button>
+            )}
           </div>
         </div>
       </div>
