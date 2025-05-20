@@ -11,6 +11,7 @@ interface FileTagsProps {
   options?: RoomTagOption[];
   onAddTag?: (tag: string) => void;
   onRemoveTag?: (tag: string) => void;
+  maxDisplay?: number; // Add the maxDisplay property
 }
 
 export const FileTags = ({
@@ -18,10 +19,21 @@ export const FileTags = ({
   options = [],
   onAddTag,
   onRemoveTag,
+  maxDisplay, // Include in destructuring
 }: FileTagsProps) => {
+  // If maxDisplay is provided and there are more tags than the limit, only show limited tags
+  const displayedTags = maxDisplay && tags.length > maxDisplay 
+    ? tags.slice(0, maxDisplay) 
+    : tags;
+  
+  // Calculate if there are additional tags that aren't being displayed
+  const additionalTagsCount = maxDisplay && tags.length > maxDisplay 
+    ? tags.length - maxDisplay 
+    : 0;
+
   return (
     <div className="flex flex-wrap items-center gap-1 mt-2">
-      {tags.map((tag) => (
+      {displayedTags.map((tag) => (
         <Badge
           key={tag}
           variant="secondary"
@@ -39,6 +51,16 @@ export const FileTags = ({
           )}
         </Badge>
       ))}
+      
+      {/* Show badge with count if there are additional hidden tags */}
+      {additionalTagsCount > 0 && (
+        <Badge
+          variant="outline"
+          className="text-xs py-0 h-5"
+        >
+          +{additionalTagsCount} more
+        </Badge>
+      )}
       
       {onAddTag && options.length > 0 && (
         <Popover>
