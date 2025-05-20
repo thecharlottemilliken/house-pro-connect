@@ -44,28 +44,13 @@ export const uploadFile = async (
       throw new Error('Authentication required to upload files');
     }
     
-    // First, check if the bucket exists and create it if it doesn't
-    const { data: buckets } = await supabase.storage.listBuckets();
-    const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
-    
-    if (!bucketExists) {
-      console.log(`Creating bucket: ${bucketName}`);
-      const { error: createBucketError } = await supabase.storage.createBucket(bucketName, {
-        public: false // Changed to false for better security
-      });
-      
-      if (createBucketError) {
-        console.error(`Error creating bucket: ${createBucketError.message}`);
-        throw createBucketError;
-      }
-    }
-    
     // Create a unique file path to prevent overwrites
     const timestamp = new Date().getTime();
     const fileExt = file.name.split('.').pop();
     const filePath = `${timestamp}-${crypto.randomUUID()}.${fileExt}`;
     
-    // Upload the file
+    // Upload the file directly without attempting to create the bucket
+    // The bucket should already exist with proper RLS policies
     const { data, error } = await supabase.storage
       .from(bucketName)
       .upload(filePath, file, {
