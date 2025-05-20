@@ -39,7 +39,7 @@ const ProjectDesign = () => {
     handleAddProjectFiles,
     handleRemoveDesignAsset: originalHandleRemoveDesignAsset,
     handleUpdateAssetTags,
-    handleAddPinterestBoards,
+    handleAddPinterestBoards: originalHandleAddPinterestBoards,
     handleAddInspirationImages: originalHandleAddInspirationImages,
     handleAddRoomInspirationImages,
     handleAddRoomPinterestBoards
@@ -63,8 +63,8 @@ const ProjectDesign = () => {
 
   // Create a wrapper for handleAddPinterestBoards that matches the expected signature
   const handleAddPinterestBoards = useCallback((boards: any[], room: string) => {
-    return handleAddPinterestBoards(boards, projectData?.design_preferences || {});
-  }, [handleAddPinterestBoards, projectData?.design_preferences]);
+    return originalHandleAddPinterestBoards(boards, projectData?.design_preferences || {});
+  }, [originalHandleAddPinterestBoards, projectData?.design_preferences]);
 
   // Use the enhanced actions hook
   const enhancedActions = useEnhancedDesignActions(
