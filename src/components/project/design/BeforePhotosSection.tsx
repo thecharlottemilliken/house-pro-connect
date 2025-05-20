@@ -4,6 +4,7 @@ import PhotoGrid from "./PhotoGrid";
 import EmptyPhotoState from "./EmptyPhotoState";
 import PhotoControls from "./PhotoControls";
 import { filterValidPhotoUrls } from '@/utils/BeforePhotosService';
+import { normalizeAreaName } from '@/lib/utils';
 
 interface BeforePhotosSectionProps {
   area: string;
@@ -55,7 +56,9 @@ const BeforePhotosSection: React.FC<BeforePhotosSectionProps> = ({
 
   // Debug logging
   useEffect(() => {
+    const normalizedArea = normalizeAreaName(area);
     console.log('BeforePhotosSection - area:', area); 
+    console.log('BeforePhotosSection - normalized area:', normalizedArea);
     console.log('BeforePhotosSection - beforePhotos:', beforePhotos);
     console.log('BeforePhotosSection - valid photos count:', validPhotos.length);
   }, [area, beforePhotos, validPhotos]);

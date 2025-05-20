@@ -1,16 +1,16 @@
 
-import { useCallback, useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useDesignActions } from '@/hooks/useDesignActions';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { 
-  selectBeforePhotos, 
-  addBeforePhotosToPreferences, 
-  saveBeforePhotos
+  getBeforePhotos, 
+  removeBeforePhoto, 
+  reorderBeforePhotos, 
+  migrateBeforePhotosKeys 
 } from '@/utils/BeforePhotosService';
+import { normalizeAreaName } from '@/lib/utils';
 
-/**
- * Custom hook that provides enhanced design action handlers with improved 
- * error handling and state management
- */
 export const useEnhancedDesignActions = (
   handleSaveMeasurements: any,
   handleSelectBeforePhotos: any,
@@ -18,189 +18,275 @@ export const useEnhancedDesignActions = (
   handleAddProjectFiles: any,
   handleUpdateAssetTags: any,
   projectData: any,
-  refreshProjectData: () => Promise<void>
+  refreshProjectData: any
 ) => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [isUpdatingBeforePhotos, setIsUpdatingBeforePhotos] = useState(false);
 
-  // Enhanced select before photos handler with improved debugging and refresh mechanism
-  const enhancedSelectBeforePhotos = useCallback(async (area: string, photos: string[]) => {
-    console.log(`ProjectDesign: Selecting ${photos.length} before photos for area ${area}`);
-    
-    if (!projectData?.id) {
-      toast({
-        title: "Error",
-        description: "Project ID is required to save photos",
-        variant: "destructive"
-      });
-      return null;
+  // Migrate beforePhotos keys to normalized format if needed
+  const migrateBeforePhotosIfNeeded = useCallback(async () => {
+    if (!projectData?.id || !projectData?.design_preferences?.beforePhotos) {
+      return;
     }
     
-    // Use our new service function
-    const updatedPrefs = await selectBeforePhotos(
-      area, 
-      photos, 
-      projectData.id, 
-      projectData?.design_preferences || {}
-    );
+    console.log("EnhancedDesignActions: Checking if beforePhotos needs migration");
     
-    if (updatedPrefs) {
-      console.log("ProjectDesign: Before photos updated successfully, triggering UI refresh");
-      // Force a UI refresh after successful update
-      setRefreshTrigger(prev => prev + 1);
-      
-      // Also trigger a project data refresh to ensure we have the latest data
-      if (refreshProjectData) {
-        setTimeout(() => refreshProjectData(), 300);
+    // Create migrated copy
+    const migratedPrefs = migrateBeforePhotosKeys(projectData.design_preferences);
+    
+    // Check if anything changed during migration
+    const beforeJson = JSON.stringify(projectData.design_preferences.beforePhotos);
+    const afterJson = JSON.stringify(migratedPrefs.beforePhotos);
+    
+    if (beforeJson !== afterJson) {
+      console.log("EnhancedDesignActions: Migration needed, updating design preferences");
+      // Save the migrated preferences
+      const { data, error } = await supabase
+        .from('projects')
+        .update({ design_preferences: migratedPrefs })
+        .eq('id', projectData.id);
+        
+      if (error) {
+        console.error("Error migrating beforePhotos:", error);
+      } else {
+        console.log("EnhancedDesignActions: Migration successful");
+        // Force a refresh to get the updated data
+        refreshProjectData();
       }
-    }
-    
-    return updatedPrefs;
-  }, [projectData?.id, projectData?.design_preferences, refreshProjectData]);
-
-  // Enhanced upload before photos handler with improved error handling
-  const enhancedUploadBeforePhotos = useCallback(async (area: string, photos: string[]) => {
-    console.log(`ProjectDesign: Uploading ${photos.length} before photos for area ${area}`);
-    
-    if (!projectData?.id) {
-      toast({
-        title: "Error",
-        description: "Project ID is required to save photos",
-        variant: "destructive"
-      });
-      return null;
-    }
-    
-    // Use our new service functions
-    const updatedPrefs = addBeforePhotosToPreferences(
-      area, 
-      photos, 
-      projectData?.design_preferences || {}
-    );
-    
-    const success = await saveBeforePhotos(projectData.id, updatedPrefs);
-    
-    if (success) {
-      toast({
-        title: "Success",
-        description: `Photos added to ${area}`
-      });
-      
-      console.log("ProjectDesign: Before photos uploaded successfully, triggering UI refresh");
-      // Force a UI refresh after successful upload
-      setRefreshTrigger(prev => prev + 1);
-      
-      // Also trigger a project data refresh to ensure we have the latest data
-      if (refreshProjectData) {
-        setTimeout(() => refreshProjectData(), 300);
-      }
-      
-      return updatedPrefs;
     } else {
-      toast({
-        title: "Error",
-        description: "Failed to save uploaded photos",
-        variant: "destructive"
-      });
-      return null;
+      console.log("EnhancedDesignActions: No migration needed");
     }
-  }, [projectData?.id, projectData?.design_preferences, refreshProjectData]);
+  }, [projectData, refreshProjectData]);
 
-  // Enhanced tag update handler to trigger UI refresh
-  const enhancedUpdateAssetTags = useCallback(async (index: number, tags: string[]) => {
-    console.log("ProjectDesign: Updating tags for asset at index", index, "with tags", tags);
+  // Call migration on initial load
+  useEffect(() => {
+    migrateBeforePhotosIfNeeded();
+  }, [migrateBeforePhotosIfNeeded]);
+
+  // Enhanced room measurement handler
+  const handleRoomMeasurements = useCallback(async (area: string, measurements: any) => {
+    if (!projectData?.id) return;
     
-    if (!projectData?.id) {
-      toast({
-        title: "Error",
-        description: "Project ID is required to update tags",
-        variant: "destructive"
-      });
-      return null;
-    }
+    // Normalize area name for consistency
+    const normalizedArea = normalizeAreaName(area);
+    console.log(`EnhancedDesignActions: Saving measurements for normalized area ${normalizedArea} (from ${area})`);
     
-    // Call the original handler
-    const updatedPrefs = await handleUpdateAssetTags(index, tags, projectData?.design_preferences || {});
+    const updatedPrefs = await handleSaveMeasurements(
+      normalizedArea,
+      measurements,
+      projectData.design_preferences || {}
+    );
     
     if (updatedPrefs) {
-      console.log("ProjectDesign: Asset tags updated successfully, triggering UI refresh");
-      // Force a UI refresh after successful update
       setRefreshTrigger(prev => prev + 1);
-      
-      // Also trigger a project data refresh to ensure we have the latest data
-      if (refreshProjectData) {
-        setTimeout(() => refreshProjectData(), 300);
-      }
+      refreshProjectData();
+    }
+  }, [projectData, handleSaveMeasurements, refreshProjectData]);
+
+  // Enhanced before photos handlers
+  const getBeforePhotosForArea = useCallback((area: string) => {
+    if (!projectData?.design_preferences) {
+      console.log("EnhancedDesignActions: No design preferences found for getBeforePhotosForArea");
+      return [];
     }
     
-    return updatedPrefs;
-  }, [handleUpdateAssetTags, projectData?.id, projectData?.design_preferences, refreshProjectData]);
+    console.log(`EnhancedDesignActions: Getting photos for area ${area}`);
+    const photos = getBeforePhotos(area, projectData.design_preferences);
+    console.log(`EnhancedDesignActions: Got ${photos.length} photos for area ${area}`);
+    return photos;
+  }, [projectData]);
 
-  // Enhanced save measurements handler
-  const enhancedSaveMeasurements = useCallback(async (area: string, measurements: any) => {
-    console.log("ProjectDesign: Saving measurements for area", area);
+  const selectBeforePhotos = useCallback(async (area: string, photos: string[]) => {
+    console.log(`EnhancedDesignActions: selectBeforePhotos called for area ${area} with ${photos.length} photos`);
     
     if (!projectData?.id) {
-      toast({
-        title: "Error",
-        description: "Project ID is required to save measurements",
-        variant: "destructive"
-      });
-      return null;
+      console.error("EnhancedDesignActions: No project ID available for selectBeforePhotos");
+      return;
     }
     
-    // Call the original handler
-    const updatedPrefs = await handleSaveMeasurements(area, measurements, projectData?.design_preferences || {});
+    setIsUpdatingBeforePhotos(true);
     
-    if (updatedPrefs) {
-      console.log("ProjectDesign: Measurements saved successfully, triggering UI refresh");
-      // Force a UI refresh after successful update
-      setRefreshTrigger(prev => prev + 1);
+    try {
+      const updatedPrefs = await handleSelectBeforePhotos(
+        area, 
+        photos, 
+        projectData.design_preferences || {}
+      );
       
-      // Also trigger a project data refresh to ensure we have the latest data
-      if (refreshProjectData) {
-        setTimeout(() => refreshProjectData(), 300);
+      if (updatedPrefs) {
+        console.log(`EnhancedDesignActions: Successfully updated photos for ${area}`);
+        setRefreshTrigger(prev => prev + 1);
+        refreshProjectData();
       }
+    } finally {
+      setIsUpdatingBeforePhotos(false);
     }
-    
-    return updatedPrefs;
-  }, [handleSaveMeasurements, projectData?.id, projectData?.design_preferences, refreshProjectData]);
+  }, [projectData, handleSelectBeforePhotos, refreshProjectData]);
 
-  // Enhanced add project files handler
-  const enhancedAddProjectFiles = useCallback(async (area: string, files: string[]) => {
-    console.log(`ProjectDesign: Adding ${files.length} project files for area ${area}`);
+  const uploadBeforePhotos = useCallback(async (area: string, photos: string[]) => {
+    console.log(`EnhancedDesignActions: uploadBeforePhotos called for area ${area} with ${photos.length} photos`);
     
     if (!projectData?.id) {
-      toast({
-        title: "Error",
-        description: "Project ID is required to add files",
-        variant: "destructive"
-      });
-      return null;
+      console.error("EnhancedDesignActions: No project ID available for uploadBeforePhotos");
+      return;
     }
     
-    // Call the original handler
-    const updatedPrefs = await handleAddProjectFiles(area, files, projectData?.design_preferences || {});
+    setIsUpdatingBeforePhotos(true);
+    
+    try {
+      const updatedPrefs = await handleUploadBeforePhotos(
+        area, 
+        photos, 
+        projectData.design_preferences || {}
+      );
+      
+      if (updatedPrefs) {
+        console.log(`EnhancedDesignActions: Successfully uploaded photos for ${area}`);
+        setRefreshTrigger(prev => prev + 1);
+        refreshProjectData();
+      }
+    } finally {
+      setIsUpdatingBeforePhotos(false);
+    }
+  }, [projectData, handleUploadBeforePhotos, refreshProjectData]);
+
+  const removePhoto = useCallback(async (area: string, index: number) => {
+    console.log(`EnhancedDesignActions: removePhoto called for area ${area} at index ${index}`);
+    
+    if (!projectData?.id || !projectData?.design_preferences) {
+      console.error("EnhancedDesignActions: No project data available for removePhoto");
+      return;
+    }
+    
+    setIsUpdatingBeforePhotos(true);
+    
+    try {
+      // Use the BeforePhotosService utility to remove the photo
+      const updatedPrefs = removeBeforePhoto(
+        area,
+        index,
+        projectData.design_preferences
+      );
+      
+      // Save the updated preferences
+      const { data, error } = await supabase
+        .from('projects')
+        .update({ design_preferences: updatedPrefs })
+        .eq('id', projectData.id);
+      
+      if (error) {
+        console.error("Error removing photo:", error);
+        toast({
+          title: "Error",
+          description: "Failed to remove photo",
+          variant: "destructive"
+        });
+      } else {
+        console.log(`EnhancedDesignActions: Successfully removed photo at index ${index} for ${area}`);
+        toast({
+          title: "Success",
+          description: "Photo removed"
+        });
+        setRefreshTrigger(prev => prev + 1);
+        refreshProjectData();
+      }
+    } finally {
+      setIsUpdatingBeforePhotos(false);
+    }
+  }, [projectData, refreshProjectData]);
+
+  const reorderPhotos = useCallback(async (area: string, fromIndex: number, toIndex: number) => {
+    console.log(`EnhancedDesignActions: reorderPhotos called for area ${area} from ${fromIndex} to ${toIndex}`);
+    
+    if (!projectData?.id || !projectData?.design_preferences) {
+      console.error("EnhancedDesignActions: No project data available for reorderPhotos");
+      return;
+    }
+    
+    setIsUpdatingBeforePhotos(true);
+    
+    try {
+      // Use the BeforePhotosService utility to reorder the photos
+      const updatedPrefs = reorderBeforePhotos(
+        area,
+        fromIndex,
+        toIndex,
+        projectData.design_preferences
+      );
+      
+      // Save the updated preferences
+      const { data, error } = await supabase
+        .from('projects')
+        .update({ design_preferences: updatedPrefs })
+        .eq('id', projectData.id);
+      
+      if (error) {
+        console.error("Error reordering photos:", error);
+        toast({
+          title: "Error",
+          description: "Failed to reorder photos",
+          variant: "destructive"
+        });
+      } else {
+        console.log(`EnhancedDesignActions: Successfully reordered photos for ${area}`);
+        setRefreshTrigger(prev => prev + 1);
+        refreshProjectData();
+      }
+    } finally {
+      setIsUpdatingBeforePhotos(false);
+    }
+  }, [projectData, refreshProjectData]);
+
+  // Enhanced project files handler
+  const addProjectFiles = useCallback(async (roomId: string, area: string, files: string[]) => {
+    console.log(`EnhancedDesignActions: addProjectFiles called for area ${area} with ${files.length} files`);
+    
+    if (!projectData?.id) {
+      console.error("EnhancedDesignActions: No project ID available for addProjectFiles");
+      return;
+    }
+    
+    const updatedPrefs = await handleAddProjectFiles(area, files, projectData.design_preferences || {});
     
     if (updatedPrefs) {
-      console.log("ProjectDesign: Project files added successfully, triggering UI refresh");
-      // Force a UI refresh after successful update
+      console.log(`EnhancedDesignActions: Successfully added files for ${area}`);
       setRefreshTrigger(prev => prev + 1);
-      
-      // Also trigger a project data refresh to ensure we have the latest data
-      if (refreshProjectData) {
-        setTimeout(() => refreshProjectData(), 300);
-      }
+      refreshProjectData();
+    }
+  }, [projectData, handleAddProjectFiles, refreshProjectData]);
+
+  // Enhanced asset tags handler
+  const updateAssetTags = useCallback(async (assetIndex: number, tags: string[]) => {
+    console.log(`EnhancedDesignActions: updateAssetTags called for asset ${assetIndex} with ${tags.length} tags`);
+    
+    if (!projectData?.id) {
+      console.error("EnhancedDesignActions: No project ID available for updateAssetTags");
+      return;
     }
     
-    return updatedPrefs;
-  }, [handleAddProjectFiles, projectData?.id, projectData?.design_preferences, refreshProjectData]);
+    const updatedPrefs = await handleUpdateAssetTags(
+      assetIndex,
+      tags,
+      projectData.design_preferences || {}
+    );
+    
+    if (updatedPrefs) {
+      console.log(`EnhancedDesignActions: Successfully updated tags for asset ${assetIndex}`);
+      setRefreshTrigger(prev => prev + 1);
+      refreshProjectData();
+    }
+  }, [projectData, handleUpdateAssetTags, refreshProjectData]);
 
   return {
-    enhancedSelectBeforePhotos,
-    enhancedUploadBeforePhotos,
-    enhancedUpdateAssetTags,
-    enhancedSaveMeasurements,
-    enhancedAddProjectFiles,
-    refreshTrigger
+    handleRoomMeasurements,
+    getBeforePhotosForArea,
+    selectBeforePhotos,
+    uploadBeforePhotos,
+    removePhoto,
+    reorderPhotos,
+    addProjectFiles,
+    updateAssetTags,
+    refreshTrigger,
+    isUpdatingBeforePhotos
   };
 };

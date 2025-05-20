@@ -1,38 +1,34 @@
 
-import React, { useEffect } from 'react';
-import { SidebarProvider } from "@/components/ui/sidebar";
-import ProjectSidebar from "@/components/project/ProjectSidebar";
-import ProjectDesignTabs from "@/components/project/design/ProjectDesignTabs";
-import { useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FormattedTask, RenovationArea } from "@/hooks/useProjectData";
+import { PropertyDetails } from "@/hooks/usePropertyData";
+import { RoomPreference } from "@/hooks/useRoomDesign";
+import RoomTabContent from "./RoomTabContent";
+import ProjectOverviewTab from "./ProjectOverviewTab";
+import { normalizeAreaName } from '@/lib/utils';
 
 interface ProjectDesignContentProps {
   projectData: any;
-  propertyDetails: any;
+  propertyDetails: PropertyDetails | null;
   isMobile: boolean;
   defaultTab: string;
-  renovationAreas: any[];
+  renovationAreas: RenovationArea[];
+  roomPreferences: Record<string, RoomPreference | null>;
   designPreferences: any;
-  roomPreferences: any;
-  propertyPhotos: any[];
-  getRoomIdByName: (name: string) => string | undefined;
-  enhancedHandlers: {
-    enhancedSelectBeforePhotos: (area: string, photos: string[]) => Promise<any>;
-    enhancedUploadBeforePhotos: (area: string, photos: string[]) => Promise<any>;
-    enhancedUpdateAssetTags: (index: number, tags: string[]) => Promise<any>;
-    enhancedSaveMeasurements: (area: string, measurements: any) => Promise<any>;
-    enhancedAddProjectFiles: (area: string, files: string[]) => Promise<any>;
-    refreshTrigger: number;
-  };
+  propertyPhotos: string[];
+  getRoomIdByName: (roomName: string) => string | undefined;
+  enhancedHandlers: any;
   handlers: {
     handleAddDesigner: () => void;
     handleAddRenderings: () => void;
     handleAddDrawings: () => void;
     handleAddBlueprints: () => void;
-    handleRemoveDesignAsset: (index: number, designPreferences: any) => Promise<any>;
-    handleAddInspirationImages: (images: any, designPreferences: any) => Promise<any>;
-    handleAddPinterestBoards: (boards: any[], designPreferences: any) => Promise<any>;
-    handleAddRoomInspirationImages: (images: any, roomId?: string) => Promise<any>;
-    handleAddRoomPinterestBoards: (boards: any[], roomName: string, roomId?: string) => Promise<any>;
+    handleRemoveDesignAsset: (index: number) => void;
+    handleAddInspirationImages: (images: string[]) => void;
+    handleAddPinterestBoards: (boards: any[], room: string) => void;
+    handleAddRoomInspirationImages: (images: string[], roomId?: string) => void;
+    handleAddRoomPinterestBoards: (boards: any[], room: string, roomId?: string) => void;
   };
 }
 
@@ -42,106 +38,155 @@ const ProjectDesignContent: React.FC<ProjectDesignContentProps> = ({
   isMobile,
   defaultTab,
   renovationAreas,
-  designPreferences,
   roomPreferences,
+  designPreferences,
   propertyPhotos,
   getRoomIdByName,
   enhancedHandlers,
   handlers
 }) => {
-  const {
-    enhancedSelectBeforePhotos,
-    enhancedUploadBeforePhotos,
-    enhancedUpdateAssetTags,
-    enhancedSaveMeasurements,
-    enhancedAddProjectFiles,
-    refreshTrigger
-  } = enhancedHandlers;
-
-  const {
-    handleAddDesigner,
-    handleAddRenderings,
-    handleAddDrawings,
-    handleAddBlueprints,
-    handleRemoveDesignAsset,
-    handleAddInspirationImages,
-    handleAddPinterestBoards,
-    handleAddRoomInspirationImages,
-    handleAddRoomPinterestBoards,
-  } = handlers;
-
-  // Debug log to check for before photos in design preferences
+  const [activeTab, setActiveTab] = useState(defaultTab);
+  
   useEffect(() => {
-    console.log("ProjectDesign - Design preferences:", projectData.design_preferences);
-    if (projectData.design_preferences?.beforePhotos) {
-      console.log("ProjectDesign - Before photos in design preferences:", projectData.design_preferences.beforePhotos);
-    } else {
-      console.log("ProjectDesign - No before photos found in design preferences");
+    if (defaultTab) {
+      setActiveTab(defaultTab);
     }
-  }, [projectData.design_preferences]);
-
+  }, [defaultTab]);
+  
+  // Debugs to make sure we're getting the correct data
+  useEffect(() => {
+    if (projectData?.design_preferences?.beforePhotos) {
+      console.log("ProjectDesignContent - beforePhotos keys:", Object.keys(projectData.design_preferences.beforePhotos));
+      
+      // Debug existing photos for each area
+      renovationAreas.forEach(area => {
+        const normalizedArea = normalizeAreaName(area.area);
+        const beforePhotos = projectData.design_preferences.beforePhotos[normalizedArea] || [];
+        console.log(`ProjectDesignContent - Area: ${area.area}, Normalized: ${normalizedArea}, Photos: ${beforePhotos.length}`);
+      });
+    } else {
+      console.log("ProjectDesignContent - No beforePhotos found in design preferences");
+    }
+  }, [projectData, renovationAreas]);
+  
+  // Generate the tab items for each renovation area
+  const generateTabs = () => {
+    return renovationAreas.map((area) => {
+      const normalizedArea = normalizeAreaName(area.area); 
+      const beforePhotos = projectData?.design_preferences?.beforePhotos?.[normalizedArea] || [];
+      const roomId = getRoomIdByName(area.area);
+      
+      // Log room-specific data for debugging
+      console.log(`Tab ${area.area} - Normalized: ${normalizedArea}, Room ID: ${roomId || 'none'}, Before Photos: ${beforePhotos.length}`);
+      
+      return (
+        <TabsTrigger
+          key={area.area}
+          value={area.area.toLowerCase()}
+          className="capitalize px-4 py-2 text-lg"
+        >
+          {area.area}
+        </TabsTrigger>
+      );
+    });
+  };
+  
+  // Generate the tab content for each renovation area
+  const generateTabsContent = () => {
+    return renovationAreas.map((area) => {
+      const normalizedArea = normalizeAreaName(area.area);
+      
+      // Get measurements for this area
+      const measurements = designPreferences?.roomMeasurements?.[normalizedArea] || {};
+      
+      // Get before photos for this area
+      const beforePhotos = enhancedHandlers.getBeforePhotosForArea(area.area) || [];
+      
+      // Get room ID for this area
+      const roomId = getRoomIdByName(area.area);
+      const roomPreference = roomPreferences[roomId || ''] || null;
+      
+      console.log(`Content for ${area.area} - Room ID: ${roomId || 'none'}, Before Photos: ${beforePhotos.length}`);
+      
+      return (
+        <TabsContent
+          key={area.area}
+          value={area.area.toLowerCase()}
+          className="py-4"
+          forceMount
+        >
+          <RoomTabContent
+            area={area}
+            hasDesigns={designPreferences.hasDesigns || false}
+            hasRenderings={false}
+            designers={[]}
+            designAssets={designPreferences.designAssets || []}
+            renderingImages={[]}
+            beforePhotos={beforePhotos}
+            measurements={measurements}
+            roomId={roomId}
+            roomPreferences={roomPreference}
+            propertyPhotos={propertyPhotos}
+            propertyBlueprint={propertyDetails?.blueprint_url}
+            propertyId={propertyDetails?.id}
+            projectId={projectData.id}
+            onAddDesigner={handlers.handleAddDesigner}
+            onAddRenderings={handlers.handleAddRenderings}
+            onAddDrawings={handlers.handleAddDrawings}
+            onAddBlueprints={handlers.handleAddBlueprints}
+            onSaveMeasurements={(measurements) => enhancedHandlers.handleRoomMeasurements(area.area, measurements)}
+            onSelectBeforePhotos={(photos) => enhancedHandlers.selectBeforePhotos(area.area, photos)}
+            onUploadBeforePhotos={(photos) => enhancedHandlers.uploadBeforePhotos(area.area, photos)}
+            onAddProjectFiles={(files) => enhancedHandlers.addProjectFiles(roomId, area.area, files)}
+            onRemoveDesignAsset={handlers.handleRemoveDesignAsset}
+            onUpdateAssetTags={enhancedHandlers.updateAssetTags}
+            onAddInspirationImages={(images, roomId) => handlers.handleAddRoomInspirationImages(images, roomId)}
+            onAddPinterestBoards={(boards, room, roomId) => handlers.handleAddRoomPinterestBoards(boards, room, roomId)}
+          />
+        </TabsContent>
+      );
+    });
+  };
+  
   return (
-    <div className="flex flex-col bg-white min-h-screen">
-      <SidebarProvider defaultOpen={!isMobile}>
-        <div className="flex flex-1 h-[calc(100vh-64px)] w-full">
-          <ProjectSidebar projectId={projectData.id} projectTitle={projectData.title} activePage="design" />
+    <div className="max-w-[1400px] mx-auto pt-16 pb-12 px-4">
+      <div className="mb-8">
+        <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
+          {propertyDetails?.property_name || 'Loading...'}
+        </h1>
+        <p className="text-gray-500 mt-1">
+          {propertyDetails ? `${propertyDetails.address_line1}, ${propertyDetails.city}, ${propertyDetails.state} ${propertyDetails.zip_code}` : 'Loading...'}
+        </p>
+      </div>
+      
+      {renovationAreas.length > 0 ? (
+        <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-4 border border-gray-200 p-1 rounded-lg overflow-x-auto flex w-full bg-white">
+            <TabsTrigger
+              value="overview"
+              className="capitalize px-4 py-2 text-lg"
+            >
+              Overview
+            </TabsTrigger>
+            {generateTabs()}
+          </TabsList>
           
-          <div className="flex-1 overflow-y-auto">
-            <div className="p-4 sm:p-6 md:p-8 max-w-[1600px] mx-auto">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">
-                Project Design
-              </h1>
-              
-              <div className="mb-8">
-                <h2 className="text-lg font-medium mb-3">Select a room</h2>
-                
-                <ProjectDesignTabs 
-                  key={`design-tabs-${refreshTrigger}`} // Force re-render on updates
-                  defaultTab={defaultTab}
-                  renovationAreas={renovationAreas}
-                  designPreferences={designPreferences}
-                  roomPreferences={roomPreferences}
-                  propertyPhotos={propertyPhotos}
-                  propertyBlueprint={propertyDetails?.blueprint_url || null}
-                  propertyId={propertyDetails?.id}
-                  projectId={projectData.id}
-                  getRoomIdByName={getRoomIdByName}
-                  onAddDesigner={handleAddDesigner}
-                  onAddRenderings={handleAddRenderings}
-                  onAddDrawings={handleAddDrawings}
-                  onAddBlueprints={handleAddBlueprints}
-                  onSaveMeasurements={enhancedSaveMeasurements}
-                  onSelectBeforePhotos={(area, photos) => enhancedSelectBeforePhotos(area, photos)}
-                  onUploadBeforePhotos={(area, photos) => enhancedUploadBeforePhotos(area, photos)}
-                  onAddProjectFiles={(area, files) => enhancedAddProjectFiles(area, files)}
-                  onRemoveDesignAsset={(index) => handleRemoveDesignAsset(index, designPreferences)}
-                  onUpdateAssetTags={enhancedUpdateAssetTags}
-                  onAddInspirationImages={(images, roomId) => {
-                    console.log("Adding inspiration images with roomId:", roomId);
-                    if (roomId) {
-                      // Use the room-specific function if roomId is provided
-                      return handleAddRoomInspirationImages(images, roomId);
-                    } else {
-                      // Fallback to project-level if no roomId
-                      return handleAddInspirationImages(images, designPreferences);
-                    }
-                  }}
-                  onAddPinterestBoards={(boards, roomName, roomId) => {
-                    console.log("Adding Pinterest boards with roomId:", roomId);
-                    if (roomId) {
-                      // Use the room-specific function if roomId is provided
-                      return handleAddRoomPinterestBoards(boards, roomName, roomId);
-                    } else {
-                      // Fallback to project-level
-                      return handleAddPinterestBoards(boards, designPreferences);
-                    }
-                  }}
-                />
-              </div>
-            </div>
-          </div>
+          <TabsContent value="overview" className="py-4">
+            <ProjectOverviewTab 
+              projectData={projectData}
+              propertyDetails={propertyDetails}
+              isMobile={isMobile}
+              renovationAreas={renovationAreas}
+            />
+          </TabsContent>
+          
+          {generateTabsContent()}
+        </Tabs>
+      ) : (
+        <div className="text-center py-10">
+          <p className="text-lg text-gray-500">No renovation areas found. Please add areas to your project.</p>
         </div>
-      </SidebarProvider>
+      )}
     </div>
   );
 };

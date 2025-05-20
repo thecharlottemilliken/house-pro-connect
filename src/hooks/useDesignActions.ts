@@ -1,7 +1,9 @@
+
 import { useState, useCallback } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { FileWithPreview } from '@/components/ui/file-upload';
+import { normalizeAreaName } from '@/lib/utils';
 
 // Helper function to convert string URLs to FileWithPreview objects
 const convertUrlsToFileObjects = (urls: string[]): FileWithPreview[] => {
@@ -15,11 +17,6 @@ const convertUrlsToFileObjects = (urls: string[]): FileWithPreview[] => {
     tags: [],
     status: 'complete'
   }));
-};
-
-// Helper function to normalize area names for consistent key formatting
-const normalizeAreaName = (area: string): string => {
-  return area.toLowerCase().replace(/\s+/g, '_');
 };
 
 // Helper function to filter out invalid URLs
@@ -121,6 +118,10 @@ export const useDesignActions = (projectId?: string) => {
     setIsSaving(true);
     
     try {
+      // Normalize the area name for consistent key formatting
+      const normalizedArea = normalizeAreaName(area);
+      console.log(`handleSelectBeforePhotos: Using normalized area key: ${normalizedArea} (from ${area})`);
+      
       // Filter out any invalid URLs or blob URLs
       const validPhotos = filterValidUrls(photos);
       
@@ -142,13 +143,19 @@ export const useDesignActions = (projectId?: string) => {
       }
       
       // Add the selected photos to this area
-      updatedPrefs.beforePhotos[area] = [
-        ...(filterValidUrls(updatedPrefs.beforePhotos[area]) || []),
+      if (!updatedPrefs.beforePhotos[normalizedArea]) {
+        updatedPrefs.beforePhotos[normalizedArea] = [];
+      }
+      
+      updatedPrefs.beforePhotos[normalizedArea] = [
+        ...(filterValidUrls(updatedPrefs.beforePhotos[normalizedArea]) || []),
         ...validPhotos
       ];
       
       // Remove duplicates
-      updatedPrefs.beforePhotos[area] = [...new Set(updatedPrefs.beforePhotos[area])];
+      updatedPrefs.beforePhotos[normalizedArea] = [...new Set(updatedPrefs.beforePhotos[normalizedArea])];
+      
+      console.log(`handleSelectBeforePhotos: Saving ${updatedPrefs.beforePhotos[normalizedArea].length} photos for ${normalizedArea}`);
       
       // Update the project in Supabase
       const { error } = await supabase
@@ -195,6 +202,10 @@ export const useDesignActions = (projectId?: string) => {
     setIsSaving(true);
     
     try {
+      // Normalize the area name for consistent key formatting
+      const normalizedArea = normalizeAreaName(area);
+      console.log(`handleUploadBeforePhotos: Using normalized area key: ${normalizedArea} (from ${area})`);
+      
       // Get urls from uploaded photos - handle both string[] and FileWithPreview[]
       let photoUrls: string[];
       
@@ -228,17 +239,24 @@ export const useDesignActions = (projectId?: string) => {
         updatedPrefs.beforePhotos = {};
       }
       
+      // Make sure the array for this area exists
+      if (!updatedPrefs.beforePhotos[normalizedArea]) {
+        updatedPrefs.beforePhotos[normalizedArea] = [];
+      }
+      
       // Filter existing photos to remove any blob URLs
-      const existingPhotos = filterValidUrls(updatedPrefs.beforePhotos[area]);
+      const existingPhotos = filterValidUrls(updatedPrefs.beforePhotos[normalizedArea]);
       
       // Add the uploaded photos to this area
-      updatedPrefs.beforePhotos[area] = [
+      updatedPrefs.beforePhotos[normalizedArea] = [
         ...(existingPhotos || []),
         ...photoUrls
       ];
       
       // Remove duplicates
-      updatedPrefs.beforePhotos[area] = [...new Set(updatedPrefs.beforePhotos[area])];
+      updatedPrefs.beforePhotos[normalizedArea] = [...new Set(updatedPrefs.beforePhotos[normalizedArea])];
+      
+      console.log(`handleUploadBeforePhotos: Saving ${updatedPrefs.beforePhotos[normalizedArea].length} photos for ${normalizedArea}`);
       
       // Update the project in Supabase
       const { error } = await supabase

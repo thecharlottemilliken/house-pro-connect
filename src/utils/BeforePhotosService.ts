@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { normalizeAreaName } from "@/lib/utils";
 
 // Types for the BeforePhotos functionality
 export interface BeforePhoto {
@@ -56,18 +57,23 @@ export const addBeforePhotosToPreferences = (
     updatedPrefs.beforePhotos = {};
   }
   
+  // Normalize the area name for consistent key formatting
+  const normalizedArea = normalizeAreaName(area);
+  console.log(`BeforePhotosService: Using normalized area key: ${normalizedArea} (from ${area})`);
+  
   // Initialize the array for this area if it doesn't exist
-  if (!updatedPrefs.beforePhotos[area] || !Array.isArray(updatedPrefs.beforePhotos[area])) {
-    updatedPrefs.beforePhotos[area] = [];
+  if (!updatedPrefs.beforePhotos[normalizedArea] || !Array.isArray(updatedPrefs.beforePhotos[normalizedArea])) {
+    updatedPrefs.beforePhotos[normalizedArea] = [];
   }
   
   // Get current valid photos and append new ones
-  const currentValidPhotos = filterValidPhotoUrls(updatedPrefs.beforePhotos[area]);
+  const currentValidPhotos = filterValidPhotoUrls(updatedPrefs.beforePhotos[normalizedArea]);
   
   // Combine photos and remove duplicates
-  updatedPrefs.beforePhotos[area] = [...new Set([...currentValidPhotos, ...validPhotos])];
+  updatedPrefs.beforePhotos[normalizedArea] = [...new Set([...currentValidPhotos, ...validPhotos])];
   
-  console.log(`BeforePhotosService: Updated area ${area} with ${validPhotos.length} new photos`);
+  console.log(`BeforePhotosService: Updated area ${normalizedArea} with ${validPhotos.length} new photos`);
+  console.log(`BeforePhotosService: Total photos for area: ${updatedPrefs.beforePhotos[normalizedArea].length}`);
   return updatedPrefs;
 };
 
@@ -83,10 +89,14 @@ export const removeBeforePhoto = (
   index: number,
   designPreferences: any = {}
 ): any => {
-  if (!designPreferences?.beforePhotos?.[area] || 
-      !Array.isArray(designPreferences.beforePhotos[area]) || 
+  // Normalize the area name for consistent key formatting
+  const normalizedArea = normalizeAreaName(area);
+  console.log(`BeforePhotosService: Using normalized area key: ${normalizedArea} (from ${area}) for removal`);
+  
+  if (!designPreferences?.beforePhotos?.[normalizedArea] || 
+      !Array.isArray(designPreferences.beforePhotos[normalizedArea]) || 
       index < 0 || 
-      index >= designPreferences.beforePhotos[area].length) {
+      index >= designPreferences.beforePhotos[normalizedArea].length) {
     return designPreferences;
   }
   
@@ -94,7 +104,7 @@ export const removeBeforePhoto = (
   const updatedPrefs = JSON.parse(JSON.stringify(designPreferences));
   
   // Remove the photo at the specified index
-  updatedPrefs.beforePhotos[area].splice(index, 1);
+  updatedPrefs.beforePhotos[normalizedArea].splice(index, 1);
   
   return updatedPrefs;
 };
@@ -113,12 +123,16 @@ export const reorderBeforePhotos = (
   toIndex: number,
   designPreferences: any = {}
 ): any => {
-  if (!designPreferences?.beforePhotos?.[area] || 
-      !Array.isArray(designPreferences.beforePhotos[area]) || 
+  // Normalize the area name for consistent key formatting
+  const normalizedArea = normalizeAreaName(area);
+  console.log(`BeforePhotosService: Using normalized area key: ${normalizedArea} (from ${area}) for reordering`);
+  
+  if (!designPreferences?.beforePhotos?.[normalizedArea] || 
+      !Array.isArray(designPreferences.beforePhotos[normalizedArea]) || 
       fromIndex < 0 || 
       toIndex < 0 || 
-      fromIndex >= designPreferences.beforePhotos[area].length || 
-      toIndex >= designPreferences.beforePhotos[area].length) {
+      fromIndex >= designPreferences.beforePhotos[normalizedArea].length || 
+      toIndex >= designPreferences.beforePhotos[normalizedArea].length) {
     return designPreferences;
   }
   
@@ -126,8 +140,8 @@ export const reorderBeforePhotos = (
   const updatedPrefs = JSON.parse(JSON.stringify(designPreferences));
   
   // Remove the item from its original position and insert at the new position
-  const [movedItem] = updatedPrefs.beforePhotos[area].splice(fromIndex, 1);
-  updatedPrefs.beforePhotos[area].splice(toIndex, 0, movedItem);
+  const [movedItem] = updatedPrefs.beforePhotos[normalizedArea].splice(fromIndex, 1);
+  updatedPrefs.beforePhotos[normalizedArea].splice(toIndex, 0, movedItem);
   
   return updatedPrefs;
 };
@@ -139,11 +153,32 @@ export const reorderBeforePhotos = (
  * @returns Array of valid photo URLs
  */
 export const getBeforePhotos = (area: string, designPreferences: any): string[] => {
-  if (!designPreferences?.beforePhotos?.[area]) {
+  if (!designPreferences?.beforePhotos) {
+    console.log(`BeforePhotosService: No beforePhotos object found in design preferences for ${area}`);
     return [];
   }
   
-  return filterValidPhotoUrls(designPreferences.beforePhotos[area]);
+  // Normalize the area name for consistent key formatting
+  const normalizedArea = normalizeAreaName(area);
+  console.log(`BeforePhotosService: Looking for photos with key ${normalizedArea} (from ${area})`);
+  
+  if (!designPreferences.beforePhotos[normalizedArea]) {
+    // Check for old non-normalized format as fallback
+    if (designPreferences.beforePhotos[area]) {
+      console.log(`BeforePhotosService: Found photos under non-normalized key ${area}`);
+      return filterValidPhotoUrls(designPreferences.beforePhotos[area]);
+    }
+    
+    // Log all available keys for debugging
+    const availableKeys = Object.keys(designPreferences.beforePhotos);
+    console.log(`BeforePhotosService: No photos found for ${normalizedArea}. Available keys: ${availableKeys.join(', ')}`);
+    
+    return [];
+  }
+  
+  const photos = filterValidPhotoUrls(designPreferences.beforePhotos[normalizedArea]);
+  console.log(`BeforePhotosService: Found ${photos.length} photos for ${normalizedArea}`);
+  return photos;
 };
 
 /**
@@ -189,6 +224,8 @@ export const selectBeforePhotos = async (
   designPreferences: any
 ): Promise<any | null> => {
   try {
+    console.log(`BeforePhotosService: selectBeforePhotos called for area ${area} with ${photos.length} photos`);
+    
     // Add the selected photos to the design preferences
     const updatedPrefs = addBeforePhotosToPreferences(area, photos, designPreferences);
     
@@ -280,4 +317,49 @@ export const loadPropertyPhotos = async (propertyId?: string): Promise<string[]>
     console.error("Error loading property photos:", error);
     return [];
   }
+};
+
+/**
+ * Migrate existing beforePhotos to use normalized area keys
+ * @param designPreferences Current design preferences object
+ * @returns Updated design preferences with normalized keys
+ */
+export const migrateBeforePhotosKeys = (designPreferences: any): any => {
+  if (!designPreferences?.beforePhotos) {
+    return designPreferences; // Nothing to migrate
+  }
+  
+  console.log("BeforePhotosService: Starting migration of beforePhotos keys");
+  
+  // Create a deep copy to prevent mutations
+  const updatedPrefs = JSON.parse(JSON.stringify(designPreferences));
+  const oldKeys = Object.keys(updatedPrefs.beforePhotos);
+  
+  // New object to hold migrated data
+  const migratedBeforePhotos: Record<string, string[]> = {};
+  
+  // Migrate each key to normalized version
+  oldKeys.forEach(oldKey => {
+    const normalizedKey = normalizeAreaName(oldKey);
+    console.log(`BeforePhotosService: Migrating key ${oldKey} to ${normalizedKey}`);
+    
+    // Get the photos for this key
+    const photos = filterValidPhotoUrls(updatedPrefs.beforePhotos[oldKey]);
+    
+    // Add to existing normalized key or create new array
+    if (migratedBeforePhotos[normalizedKey]) {
+      // Merge and deduplicate
+      migratedBeforePhotos[normalizedKey] = [
+        ...new Set([...migratedBeforePhotos[normalizedKey], ...photos])
+      ];
+    } else {
+      migratedBeforePhotos[normalizedKey] = photos;
+    }
+  });
+  
+  // Replace the old beforePhotos with the migrated one
+  updatedPrefs.beforePhotos = migratedBeforePhotos;
+  
+  console.log("BeforePhotosService: Migration complete", updatedPrefs.beforePhotos);
+  return updatedPrefs;
 };
