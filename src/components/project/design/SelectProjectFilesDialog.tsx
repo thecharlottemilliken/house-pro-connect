@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,7 @@ interface SelectProjectFilesDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   projectId: string;
+  propertyId?: string; // Added propertyId prop
   onSelect: (files: string[]) => void;
 }
 
@@ -17,6 +17,7 @@ const SelectProjectFilesDialog = ({
   open,
   onOpenChange,
   projectId,
+  propertyId, // Added propertyId parameter
   onSelect,
 }: SelectProjectFilesDialogProps) => {
   const [loading, setLoading] = useState(false);

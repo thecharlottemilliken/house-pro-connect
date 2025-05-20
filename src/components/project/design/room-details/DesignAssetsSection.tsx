@@ -40,7 +40,7 @@ const DesignAssetsSection: React.FC<DesignAssetsProps> = ({
     openFileSelector,
     openTagDialog,
     handleViewAsset
-  } = useDesignAssets(onSelectProjectFiles, propertyId); // Pass propertyId to hook
+  } = useDesignAssets(onSelectProjectFiles); // Fixed: removed extra propertyId argument
 
   const handleSaveTags = (tags: string[]) => {
     if (onUpdateAssetTags && selectedAssetIndex >= 0) {
