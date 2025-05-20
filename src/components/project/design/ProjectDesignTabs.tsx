@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RenovationArea, DesignPreferences } from "@/hooks/useProjectData";
 import RoomTabContent from "./RoomTabContent";
 import { RoomPreference } from "@/hooks/useRoomDesign";
+import { normalizeAreaName } from '@/lib/utils';
 
 interface ProjectDesignTabsProps {
   defaultTab: string;
@@ -52,11 +53,7 @@ const ProjectDesignTabs: React.FC<ProjectDesignTabsProps> = ({
   onAddInspirationImages,
   onAddPinterestBoards
 }) => {
-  // Helper function to normalize area names for consistent key formatting
-  const normalizeAreaName = (area: string): string => {
-    return area.toLowerCase().replace(/\s+/g, '_');
-  };
-
+  // Check for empty state
   if (renovationAreas.length === 0) {
     return (
       <div className="p-8 text-center bg-gray-50 rounded-lg">
@@ -65,23 +62,29 @@ const ProjectDesignTabs: React.FC<ProjectDesignTabsProps> = ({
     );
   }
 
+  // Ensure the defaultTab is normalized
+  const normalizedDefaultTab = defaultTab ? normalizeAreaName(defaultTab) : normalizeAreaName(renovationAreas[0].area);
+
   return (
-    <Tabs defaultValue={defaultTab} className="w-full">
+    <Tabs defaultValue={normalizedDefaultTab} className="w-full">
       <TabsList className="mb-6 bg-gray-100 p-1 rounded-lg h-auto flex overflow-x-auto">
-        {renovationAreas.map((area, index) => (
-          <TabsTrigger 
-            key={area.area} 
-            value={area.area.toLowerCase()} 
-            className="flex items-center gap-2 px-3 py-1 data-[state=active]:bg-[#174c65] data-[state=active]:text-white rounded"
-          >
-            <span className="inline-block">{area.area}</span>
-          </TabsTrigger>
-        ))}
+        {renovationAreas.map((area) => {
+          const normalizedArea = normalizeAreaName(area.area);
+          return (
+            <TabsTrigger 
+              key={area.area} 
+              value={normalizedArea} 
+              className="flex items-center gap-2 px-3 py-1 data-[state=active]:bg-[#174c65] data-[state=active]:text-white rounded"
+            >
+              <span className="inline-block">{area.area}</span>
+            </TabsTrigger>
+          );
+        })}
       </TabsList>
 
       {renovationAreas.map(area => {
-        const areaKey = normalizeAreaName(area.area);
-        console.log(`ProjectDesignTabs - Looking for measurements with normalized area key: "${areaKey}"`);
+        const normalizedArea = normalizeAreaName(area.area);
+        console.log(`ProjectDesignTabs - Looking for measurements with normalized area key: "${normalizedArea}"`);
         
         // Debug measurements object
         console.log("ProjectDesignTabs - Available roomMeasurements:", 
@@ -89,21 +92,21 @@ const ProjectDesignTabs: React.FC<ProjectDesignTabsProps> = ({
           Object.keys(designPreferences.roomMeasurements) : 
           "No measurements found");
         
-        const beforePhotos = designPreferences.beforePhotos?.[areaKey] || [];
-        const measurements = designPreferences.roomMeasurements?.[areaKey];
+        const beforePhotos = designPreferences.beforePhotos?.[normalizedArea] || [];
+        const measurements = designPreferences.roomMeasurements?.[normalizedArea];
         
         // Debug measurements for this area
         if (measurements) {
           console.log(`ProjectDesignTabs - Found measurements for ${area.area}:`, JSON.stringify(measurements, null, 2));
         } else {
-          console.log(`ProjectDesignTabs - No measurements found for ${area.area} with key ${areaKey}`);
+          console.log(`ProjectDesignTabs - No measurements found for ${area.area} with key ${normalizedArea}`);
         }
         
         const roomId = getRoomIdByName(area.area);
         const roomPrefs = roomId ? roomPreferences[roomId] : null;
         
         return (
-          <TabsContent key={area.area} value={area.area.toLowerCase()} className="w-full">
+          <TabsContent key={area.area} value={normalizedArea} className="w-full">
             <RoomTabContent
               area={area}
               hasDesigns={designPreferences.hasDesigns}
