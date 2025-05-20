@@ -24,24 +24,47 @@ const BeforePhotosSection: React.FC<BeforePhotosSectionProps> = ({
   onReorderPhotos
 }) => {
   const hasBeforePhotos = useMemo(() => {
-    // Additional check to ensure we don't have empty strings or null/undefined values
-    const validPhotos = beforePhotos?.filter(photo => photo && typeof photo === 'string') || [];
+    // Filter out invalid URLs (blob: URLs and empty/null values)
+    const validPhotos = beforePhotos?.filter(photo => 
+      photo && 
+      typeof photo === 'string' && 
+      !photo.startsWith('blob:')
+    ) || [];
+    
     return validPhotos.length > 0;
+  }, [beforePhotos]);
+
+  // Get valid photos for display
+  const validPhotos = useMemo(() => {
+    return (beforePhotos || []).filter(photo => 
+      photo && 
+      typeof photo === 'string' && 
+      !photo.startsWith('blob:')
+    );
   }, [beforePhotos]);
 
   // Debug logging for beforePhotos
   useEffect(() => {
     console.log('BeforePhotosSection - area:', area); 
     console.log('BeforePhotosSection - beforePhotos:', beforePhotos);
+    console.log('BeforePhotosSection - valid photos count:', validPhotos.length);
     console.log('BeforePhotosSection - hasBeforePhotos:', hasBeforePhotos);
     
     // Detailed analysis of photos
     if (beforePhotos && beforePhotos.length > 0) {
+      const validCount = beforePhotos.filter(url => url && typeof url === 'string' && !url.startsWith('blob:')).length;
+      const blobCount = beforePhotos.filter(url => url && typeof url === 'string' && url.startsWith('blob:')).length;
+      const invalidCount = beforePhotos.filter(url => !url || typeof url !== 'string').length;
+      
+      console.log(`Photo analysis: Valid: ${validCount}, Blob URLs: ${blobCount}, Invalid: ${invalidCount}`);
+      
       beforePhotos.forEach((url, index) => {
-        console.log(`Photo ${index}: ${url} (${typeof url}, valid: ${Boolean(url && typeof url === 'string')})`);
+        const isValid = url && typeof url === 'string' && !url.startsWith('blob:');
+        const isBlob = url && typeof url === 'string' && url.startsWith('blob:');
+        console.log(`Photo ${index}: ${isValid ? 'VALID' : isBlob ? 'BLOB URL' : 'INVALID'} - ${url}`);
       });
     }
-  }, [area, beforePhotos, hasBeforePhotos]);
+  }, [area, beforePhotos, validPhotos, hasBeforePhotos]);
 
   if (!hasBeforePhotos) {
     return (
@@ -57,7 +80,7 @@ const BeforePhotosSection: React.FC<BeforePhotosSectionProps> = ({
   return (
     <div className="space-y-6">
       <PhotoGrid 
-        photos={beforePhotos.filter(url => url && typeof url === 'string')} 
+        photos={validPhotos} 
         onRemovePhoto={onRemovePhoto} 
         onReorderPhotos={onReorderPhotos} 
       />

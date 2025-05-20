@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import FileSelectionDialog from "./SelectProjectFilesDialog";
+import FileSelectionDialog from "./FileSelectionDialog";
 import AssetPreviewDialog from "./AssetPreviewDialog";
 import AssetsList from "./AssetsList";
 import AssetUploadButtons from "./AssetUploadButtons";
@@ -14,6 +14,7 @@ interface DesignAssetsProps {
   onRemoveDesignAsset?: (index: number) => void;
   onUpdateAssetTags?: (assetIndex: number, tags: string[]) => void;
   projectId?: string;
+  propertyId?: string; // Added propertyId prop
   onSelectProjectFiles?: (files: string[]) => void;
 }
 
@@ -22,6 +23,7 @@ const DesignAssetsSection: React.FC<DesignAssetsProps> = ({
   onRemoveDesignAsset,
   onUpdateAssetTags,
   projectId,
+  propertyId,
   onSelectProjectFiles
 }) => {
   const {
@@ -105,6 +107,7 @@ const DesignAssetsSection: React.FC<DesignAssetsProps> = ({
           open={showProjectFilesDialog}
           onOpenChange={setShowProjectFilesDialog}
           projectId={projectId}
+          propertyId={propertyId}
           onSelect={(files) => {
             if (onSelectProjectFiles) {
               onSelectProjectFiles(files);

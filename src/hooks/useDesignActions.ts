@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,6 +20,12 @@ const convertUrlsToFileObjects = (urls: string[]): FileWithPreview[] => {
 // Helper function to normalize area names for consistent key formatting
 const normalizeAreaName = (area: string): string => {
   return area.toLowerCase().replace(/\s+/g, '_');
+};
+
+// Helper function to filter out invalid URLs
+const filterValidUrls = (urls: string[] | undefined): string[] => {
+  if (!urls || !Array.isArray(urls)) return [];
+  return urls.filter(url => url && typeof url === 'string' && !url.startsWith('blob:'));
 };
 
 export const useDesignActions = (projectId?: string) => {
@@ -116,6 +121,18 @@ export const useDesignActions = (projectId?: string) => {
     setIsSaving(true);
     
     try {
+      // Filter out any invalid URLs or blob URLs
+      const validPhotos = filterValidUrls(photos);
+      
+      if (validPhotos.length === 0) {
+        toast({
+          title: "Warning",
+          description: "No valid photos to add",
+          variant: "destructive"
+        });
+        return null;
+      }
+      
       // Update the designPreferences object with the selected photos
       const updatedPrefs = { ...designPreferences };
       
@@ -126,8 +143,8 @@ export const useDesignActions = (projectId?: string) => {
       
       // Add the selected photos to this area
       updatedPrefs.beforePhotos[area] = [
-        ...(updatedPrefs.beforePhotos[area] || []),
-        ...photos
+        ...(filterValidUrls(updatedPrefs.beforePhotos[area]) || []),
+        ...validPhotos
       ];
       
       // Remove duplicates
@@ -182,12 +199,12 @@ export const useDesignActions = (projectId?: string) => {
       let photoUrls: string[];
       
       if (photos.length > 0 && typeof photos[0] === 'string') {
-        // If we received string[] directly, use them as URLs
-        photoUrls = photos as string[];
+        // If we received string[] directly, filter out invalid URLs
+        photoUrls = filterValidUrls(photos as string[]);
       } else {
-        // If we received FileWithPreview[], extract URLs
+        // If we received FileWithPreview[], extract valid permanent URLs
         photoUrls = (photos as FileWithPreview[])
-          .filter(p => p.status === 'complete' && p.url)
+          .filter(p => p.status === 'complete' && p.url && !p.url.toString().startsWith('blob:'))
           .map(p => p.url as string);
       }
       
@@ -198,7 +215,7 @@ export const useDesignActions = (projectId?: string) => {
           description: "No valid photos to add",
           variant: "destructive"
         });
-        return;
+        return null;
       }
       
       console.log("Photo URLs to be saved:", photoUrls);
@@ -211,9 +228,12 @@ export const useDesignActions = (projectId?: string) => {
         updatedPrefs.beforePhotos = {};
       }
       
+      // Filter existing photos to remove any blob URLs
+      const existingPhotos = filterValidUrls(updatedPrefs.beforePhotos[area]);
+      
       // Add the uploaded photos to this area
       updatedPrefs.beforePhotos[area] = [
-        ...(updatedPrefs.beforePhotos[area] || []),
+        ...(existingPhotos || []),
         ...photoUrls
       ];
       

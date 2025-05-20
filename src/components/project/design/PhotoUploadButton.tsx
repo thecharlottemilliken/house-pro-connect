@@ -18,17 +18,29 @@ const PhotoUploadButton: React.FC<PhotoUploadButtonProps> = ({
   label = "Upload"
 }) => {
   const [uploadedFiles, setUploadedFiles] = useState<FileWithPreview[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleUploadComplete = (files: FileWithPreview[]) => {
     // Debug logging for uploaded files
     console.log("PhotoUploadButton - Files uploaded:", files);
     
+    // Make sure we're only working with successfully uploaded files with permanent URLs
+    const validFiles = files.filter(file => file.status === 'complete' && file.url && !file.url.startsWith('blob:'));
+    
+    if (validFiles.length === 0) {
+      console.warn("PhotoUploadButton - No valid permanent URLs found in uploaded files");
+      return;
+    }
+    
     // Extract URLs from valid files
-    const urls = extractUrls(files);
-    console.log("PhotoUploadButton - Extracted URLs:", urls);
+    const urls = validFiles.map(file => file.url as string);
+    console.log("PhotoUploadButton - Extracted permanent URLs:", urls);
     
     if (urls.length > 0) {
       onUploadComplete(urls);
+      
+      // Clear uploaded files after successful upload
+      setUploadedFiles([]);
     }
   };
 

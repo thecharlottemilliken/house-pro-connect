@@ -9,6 +9,8 @@ import { useRoomDesign } from "@/hooks/useRoomDesign";
 import { useDesignActions } from "@/hooks/useDesignActions";
 import ProjectDesignTabs from "@/components/project/design/ProjectDesignTabs";
 import { FileWithPreview } from "@/components/ui/file-upload";
+import { normalizeAreaName } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 // Helper function to normalize area names for consistent key formatting
 const normalizeAreaName = (area: string): string => {
