@@ -20,11 +20,16 @@ const PhotoUploadButton: React.FC<PhotoUploadButtonProps> = ({
   const [uploadedFiles, setUploadedFiles] = useState<FileWithPreview[]>([]);
 
   const handleUploadComplete = (files: FileWithPreview[]) => {
+    // Debug logging for uploaded files
+    console.log("PhotoUploadButton - Files uploaded:", files);
+    
     // Extract URLs from valid files
     const validFiles = files.filter(file => file.status === 'complete' && file.url);
+    console.log("PhotoUploadButton - Valid files:", validFiles);
     
     if (validFiles.length > 0) {
       const urls = validFiles.map(file => file.url as string);
+      console.log("PhotoUploadButton - Extracted URLs:", urls);
       onUploadComplete(urls);
     }
   };
@@ -51,4 +56,4 @@ const PhotoUploadButton: React.FC<PhotoUploadButtonProps> = ({
   );
 };
 
-export default PhotoUploadButton;
+export default React.memo(PhotoUploadButton);

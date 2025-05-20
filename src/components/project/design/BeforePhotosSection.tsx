@@ -23,7 +23,15 @@ const BeforePhotosSection: React.FC<BeforePhotosSectionProps> = ({
   onRemovePhoto,
   onReorderPhotos
 }) => {
-  const hasBeforePhotos = useMemo(() => beforePhotos.length > 0, [beforePhotos.length]);
+  const hasBeforePhotos = useMemo(() => {
+    // Additional check to ensure we don't have empty strings or null/undefined values
+    const validPhotos = beforePhotos?.filter(photo => photo && typeof photo === 'string') || [];
+    return validPhotos.length > 0;
+  }, [beforePhotos]);
+
+  console.log('BeforePhotosSection - area:', area); 
+  console.log('BeforePhotosSection - beforePhotos:', beforePhotos);
+  console.log('BeforePhotosSection - hasBeforePhotos:', hasBeforePhotos);
 
   if (!hasBeforePhotos) {
     return (

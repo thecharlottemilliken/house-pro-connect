@@ -62,9 +62,14 @@ const ProjectDesign = () => {
   // Enhanced select before photos handler with improved debugging and refresh mechanism
   const enhancedSelectBeforePhotos = useCallback(async (area: string, photos: string[]) => {
     console.log(`ProjectDesign: Selecting ${photos.length} before photos for area ${area}`);
+    console.log("Photos being selected:", photos);
+    
+    // Filter out any invalid photo URLs
+    const validPhotos = photos.filter(url => url && typeof url === 'string');
+    console.log("Valid photos being selected:", validPhotos);
     
     // Call the original handler
-    const updatedPrefs = await handleSelectBeforePhotos(area, photos, projectData?.design_preferences || {});
+    const updatedPrefs = await handleSelectBeforePhotos(area, validPhotos, projectData?.design_preferences || {});
     
     if (updatedPrefs) {
       console.log("ProjectDesign: Before photos updated successfully, triggering UI refresh");
@@ -83,10 +88,19 @@ const ProjectDesign = () => {
   // Enhanced upload before photos handler with improved debugging and refresh mechanism
   const enhancedUploadBeforePhotos = useCallback(async (area: string, photos: string[]) => {
     console.log(`ProjectDesign: Uploading ${photos.length} before photos for area ${area}`);
-    console.log("Photo URLs:", photos);
+    console.log("Photo URLs to upload:", photos);
+    
+    // Filter out any invalid photo URLs
+    const validPhotos = photos.filter(url => url && typeof url === 'string');
+    console.log("Valid photos being uploaded:", validPhotos);
+    
+    if (validPhotos.length === 0) {
+      console.warn("No valid photos to upload");
+      return null;
+    }
     
     // Call the original handler
-    const updatedPrefs = await handleUploadBeforePhotos(area, photos, projectData?.design_preferences || {});
+    const updatedPrefs = await handleUploadBeforePhotos(area, validPhotos, projectData?.design_preferences || {});
     
     if (updatedPrefs) {
       console.log("ProjectDesign: Before photos uploaded successfully, triggering UI refresh");

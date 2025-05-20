@@ -11,6 +11,9 @@ interface PhotoItemProps {
 }
 
 const PhotoItem = ({ photo, index, onRemove, onReorder }: PhotoItemProps) => {
+  // Debug logging for photo URL
+  console.log(`PhotoItem rendering photo at index ${index}:`, photo);
+
   return (
     <div 
       className="relative group rounded-lg overflow-hidden aspect-[4/3]"
@@ -31,6 +34,11 @@ const PhotoItem = ({ photo, index, onRemove, onReorder }: PhotoItemProps) => {
         src={photo} 
         alt={`Before photo ${index + 1}`}
         className="w-full h-full object-cover"
+        onError={(e) => {
+          console.error(`Failed to load image: ${photo}`);
+          // Set a fallback image or add a placeholder class
+          e.currentTarget.src = 'https://via.placeholder.com/400x300?text=Image+Error';
+        }}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-200">
         <div className="absolute bottom-2 right-2 flex items-center gap-2">
@@ -55,4 +63,4 @@ const PhotoItem = ({ photo, index, onRemove, onReorder }: PhotoItemProps) => {
   );
 };
 
-export default PhotoItem;
+export default React.memo(PhotoItem);

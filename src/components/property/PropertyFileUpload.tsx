@@ -117,7 +117,8 @@ export function PropertyFileUpload({
         label={label}
         description={description}
         initialTags={initialTags}
+        roomTagOptions={roomTagOptions}
       />
     </div>
   );
-}
+};

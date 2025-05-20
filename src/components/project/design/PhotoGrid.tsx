@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { cn } from "@/lib/utils";
 import PhotoItem from './PhotoItem';
 
@@ -16,22 +16,33 @@ const PhotoGrid: React.FC<PhotoGridProps> = ({
   onReorderPhotos,
   className
 }) => {
-  if (photos.length === 0) return null;
+  // Filter out any invalid photo URLs
+  const validPhotos = useMemo(() => {
+    return photos.filter(photo => photo && typeof photo === 'string');
+  }, [photos]);
+
+  // Debug logging for photos array
+  console.log('PhotoGrid - validPhotos:', validPhotos);
   
+  if (!validPhotos || validPhotos.length === 0) {
+    console.log('PhotoGrid - No valid photos to display');
+    return null;
+  }
+
   // Different layouts based on photo count
   const getGridLayout = () => {
-    if (photos.length === 1) {
+    if (validPhotos.length === 1) {
       return "grid-cols-1";
-    } else if (photos.length <= 3) {
+    } else if (validPhotos.length <= 3) {
       return "grid-cols-2";
     } else {
-      return "grid-cols-2";
+      return "grid-cols-2 md:grid-cols-3";
     }
   };
   
   return (
     <div className={cn(`grid gap-4 ${getGridLayout()}`, className)}>
-      {photos.map((photo, index) => (
+      {validPhotos.map((photo, index) => (
         <PhotoItem 
           key={`${photo}-${index}`}
           photo={photo} 

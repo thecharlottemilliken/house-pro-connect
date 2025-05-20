@@ -116,16 +116,36 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
   // Create enhanced handlers for before photo management
   const handleSelectBeforePhotos = (photos: string[]) => {
     console.log(`RoomTabContent - handleSelectBeforePhotos called with ${photos.length} photos`);
-    onSelectBeforePhotos(photos);
+    
+    // Filter out any invalid or empty photo URLs
+    const validPhotos = photos.filter(url => url && typeof url === 'string');
+    console.log("Valid photos being selected:", validPhotos);
+    
+    if (validPhotos.length === 0 && photos.length > 0) {
+      console.warn("All provided photos were invalid");
+      return;
+    }
+    
+    onSelectBeforePhotos(validPhotos);
     // Update local state for immediate UI feedback
-    setLocalBeforePhotos(photos);
+    setLocalBeforePhotos(validPhotos);
   };
 
   const handleUploadBeforePhotos = (photos: string[]) => {
     console.log(`RoomTabContent - handleUploadBeforePhotos called with ${photos.length} photos`);
-    onUploadBeforePhotos(photos);
+    
+    // Filter out any invalid or empty photo URLs
+    const validPhotos = photos.filter(url => url && typeof url === 'string');
+    console.log("Valid photos being uploaded:", validPhotos);
+    
+    if (validPhotos.length === 0) {
+      console.warn("No valid photos to upload");
+      return;
+    }
+    
+    onUploadBeforePhotos(validPhotos);
     // Update local state for immediate UI feedback - combine with existing photos
-    setLocalBeforePhotos(prevPhotos => [...prevPhotos, ...photos]);
+    setLocalBeforePhotos(prevPhotos => [...prevPhotos, ...validPhotos]);
   };
 
   // Filter design assets for the current room
