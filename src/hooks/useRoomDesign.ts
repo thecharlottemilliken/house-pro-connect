@@ -18,23 +18,47 @@ export const useRoomDesign = (propertyId?: string) => {
   }[]>([]);
   const [roomPreferences, setRoomPreferences] = useState<Record<string, RoomPreference>>({});
   const [defaultTab, setDefaultTab] = useState<string>("");
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
   const fetchRoomDesignPreferences = useCallback(async (roomId: string) => {
     try {
+      console.log(`Fetching room design preferences for room ID: ${roomId}`);
+      
       const {
         data,
         error
       } = await supabase.from('room_design_preferences').select('pinterest_boards, inspiration_images').eq('room_id', roomId).single();
+      
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching room design preferences:', error);
         return;
       }
+      
       if (data) {
+        console.log(`Found room design preferences for room ID: ${roomId}`, data);
+        
+        // Ensure data properties are correctly formatted
+        const inspirationImages = Array.isArray(data.inspiration_images) ? data.inspiration_images : [];
+        const pinterestBoards = Array.isArray(data.pinterest_boards) ? data.pinterest_boards : [];
+        
+        console.log(`Room ${roomId} has ${inspirationImages.length} inspiration images and ${pinterestBoards.length} Pinterest boards`);
+        
         setRoomPreferences(prev => ({
           ...prev,
           [roomId]: {
-            inspirationImages: data.inspiration_images || [],
-            pinterestBoards: data.pinterest_boards as unknown as PinterestBoard[] || []
+            inspirationImages: inspirationImages,
+            pinterestBoards: pinterestBoards
+          }
+        }));
+      } else {
+        console.log(`No room design preferences found for room ID: ${roomId}`);
+        
+        // Set empty arrays as defaults
+        setRoomPreferences(prev => ({
+          ...prev,
+          [roomId]: {
+            inspirationImages: [],
+            pinterestBoards: []
           }
         }));
       }
@@ -75,29 +99,55 @@ export const useRoomDesign = (propertyId?: string) => {
 
   const fetchPropertyRooms = useCallback(async (propertyId: string) => {
     try {
+      console.log(`Fetching property rooms for property ID: ${propertyId}`);
+      
       const {
         data: rooms,
         error
       } = await supabase.from('property_rooms').select('id, name').eq('property_id', propertyId);
+      
       if (error) throw error;
-      if (rooms) {
+      
+      if (rooms && rooms.length > 0) {
+        console.log(`Found ${rooms.length} rooms for property ID: ${propertyId}`);
         setPropertyRooms(rooms);
+        
+        // Fetch preferences for each room
         for (const room of rooms) {
-          fetchRoomDesignPreferences(room.id);
+          await fetchRoomDesignPreferences(room.id);
         }
+      } else {
+        console.log(`No rooms found for property ID: ${propertyId}`);
       }
     } catch (error) {
       console.error('Error fetching property rooms:', error);
     }
   }, [fetchRoomDesignPreferences]);
 
+  const refreshRoomPreferences = useCallback(async (roomId?: string) => {
+    if (!roomId) return;
+    
+    setIsRefreshing(true);
+    try {
+      await fetchRoomDesignPreferences(roomId);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [fetchRoomDesignPreferences]);
+
   const setupRooms = useCallback(async (propertyId: string, renovationAreas: any[]) => {
     if (!propertyId || !renovationAreas) return;
     if (renovationAreas.length === 0) return;
+    
+    console.log(`Setting up rooms for property ID: ${propertyId} with ${renovationAreas.length} renovation areas`);
+    
     for (const area of renovationAreas) {
       await createRoomIfNeeded(propertyId, area.area);
     }
-  }, [createRoomIfNeeded]);
+    
+    // Refresh rooms after setup
+    await fetchPropertyRooms(propertyId);
+  }, [createRoomIfNeeded, fetchPropertyRooms]);
 
   const getRoomIdByName = useCallback((roomName: string) => {
     if (!roomName) return undefined;
@@ -123,6 +173,8 @@ export const useRoomDesign = (propertyId?: string) => {
     fetchPropertyRooms,
     setupRooms,
     getRoomIdByName,
-    createRoomIfNeeded
+    createRoomIfNeeded,
+    refreshRoomPreferences,
+    isRefreshing
   };
 };

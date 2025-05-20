@@ -1,21 +1,26 @@
+
 import { useParams, useLocation } from "react-router-dom";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useProjectData } from "@/hooks/useProjectData";
 import { useRoomDesign } from "@/hooks/useRoomDesign";
 import { useDesignActions } from "@/hooks/useDesignActions";
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { useEnhancedDesignActions } from "@/hooks/useEnhancedDesignActions";
 import ProjectDesignLoading from "@/components/project/design/ProjectDesignLoading";
 import ProjectDesignContent from "@/components/project/design/ProjectDesignContent";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import ProjectSidebar from "@/components/project/ProjectSidebar";
 import { normalizeAreaName } from '@/lib/utils';
+import { toast } from "@/hooks/use-toast";
 
 const ProjectDesign = () => {
   const location = useLocation();
   const params = useParams();
   const isMobile = useIsMobile();
+  
+  // State to track active room ID for refreshing purposes
+  const [activeRoomId, setActiveRoomId] = useState<string | undefined>(undefined);
   
   const {
     projectData,
@@ -31,7 +36,8 @@ const ProjectDesign = () => {
     setDefaultTab,
     fetchPropertyRooms,
     setupRooms,
-    getRoomIdByName
+    getRoomIdByName,
+    refreshRoomPreferences
   } = useRoomDesign(propertyDetails?.id);
   
   const {
@@ -68,6 +74,48 @@ const ProjectDesign = () => {
     return originalHandleAddPinterestBoards(boards, projectData?.design_preferences || {});
   }, [originalHandleAddPinterestBoards, projectData?.design_preferences]);
 
+  // Enhanced wrapper for handleAddRoomInspirationImages with refreshing
+  const handleAddRoomInspirationImagesWithRefresh = useCallback(async (images: string[], roomId?: string) => {
+    if (!roomId) {
+      toast({
+        title: "Error",
+        description: "Unable to add inspiration images. Room ID is missing.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    console.log(`Adding ${images.length} inspiration images to room ID: ${roomId}`);
+    
+    try {
+      await handleAddRoomInspirationImages(images, roomId);
+      await refreshRoomPreferences(roomId);
+    } catch (error) {
+      console.error("Error adding inspiration images:", error);
+    }
+  }, [handleAddRoomInspirationImages, refreshRoomPreferences]);
+
+  // Enhanced wrapper for handleAddRoomPinterestBoards with refreshing
+  const handleAddRoomPinterestBoardsWithRefresh = useCallback(async (boards: any[], room: string, roomId?: string) => {
+    if (!roomId) {
+      toast({
+        title: "Error",
+        description: "Unable to add Pinterest boards. Room ID is missing.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    console.log(`Adding ${boards.length} Pinterest boards to room: ${room}, ID: ${roomId}`);
+    
+    try {
+      await handleAddRoomPinterestBoards(boards, room, roomId);
+      await refreshRoomPreferences(roomId);
+    } catch (error) {
+      console.error("Error adding Pinterest boards:", error);
+    }
+  }, [handleAddRoomPinterestBoards, refreshRoomPreferences]);
+
   // Use the enhanced actions hook
   const enhancedActions = useEnhancedDesignActions(
     handleSaveMeasurements,
@@ -88,9 +136,15 @@ const ProjectDesign = () => {
         const normalizedArea = normalizeAreaName(firstArea.area);
         console.log(`Setting default tab to normalized value: ${normalizedArea} (from ${firstArea.area})`);
         setDefaultTab(normalizedArea);
+        
+        // Set active room ID based on the first area
+        const roomId = getRoomIdByName(firstArea.area);
+        if (roomId) {
+          setActiveRoomId(roomId);
+        }
       }
     }
-  }, [projectData?.renovation_areas, setDefaultTab]);
+  }, [projectData?.renovation_areas, setDefaultTab, getRoomIdByName]);
 
   // Fetch property rooms
   useEffect(() => {
@@ -131,8 +185,8 @@ const ProjectDesign = () => {
     handleRemoveDesignAsset,
     handleAddInspirationImages,
     handleAddPinterestBoards,
-    handleAddRoomInspirationImages,
-    handleAddRoomPinterestBoards
+    handleAddRoomInspirationImages: handleAddRoomInspirationImagesWithRefresh,
+    handleAddRoomPinterestBoards: handleAddRoomPinterestBoardsWithRefresh
   };
 
   return (

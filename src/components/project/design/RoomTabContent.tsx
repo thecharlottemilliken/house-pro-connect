@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { DesignPreferences, RenovationArea } from "@/hooks/useProjectData";
 import EmptyDesignState from "./EmptyDesignState";
@@ -73,6 +74,16 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
   const handleAddDesignPlans = () => console.log("Add design plans clicked");
   const [showMeasuringDialog, setShowMeasuringDialog] = useState(false);
   const [measurementsState, setMeasurementsState] = useState(measurements);
+
+  // Debug when roomId or roomPreferences change
+  useEffect(() => {
+    console.log(`RoomTabContent - Area: ${area.area}, RoomId: ${roomId || 'undefined'}`);
+    if (roomPreferences) {
+      console.log(`RoomTabContent - Room has ${roomPreferences.inspirationImages?.length || 0} inspiration images and ${roomPreferences.pinterestBoards?.length || 0} Pinterest boards`);
+    } else {
+      console.log(`RoomTabContent - No room preferences found for area: ${area.area}`);
+    }
+  }, [area.area, roomId, roomPreferences]);
 
   // Enhanced handlers for before photo management
   const handleSelectBeforePhotos = (photos: string[]) => {
@@ -220,12 +231,12 @@ const RoomTabContent: React.FC<RoomTabContentProps> = ({
           <PinterestInspirationSection 
             inspirationImages={roomPreferences?.inspirationImages || []}
             pinterestBoards={roomPreferences?.pinterestBoards || []}
-            onAddInspiration={(images, roomId) => {
-              console.log("RoomTabContent onAddInspiration called with roomId:", roomId || "undefined");
+            onAddInspiration={(images) => {
+              console.log(`RoomTabContent onAddInspiration called with roomId: ${roomId}`);
               onAddInspirationImages(images, roomId);
             }}
-            onAddPinterestBoards={(boards, roomName, roomId) => {
-              console.log("RoomTabContent onAddPinterestBoards called with roomId:", roomId || "undefined");
+            onAddPinterestBoards={(boards, roomName) => {
+              console.log(`RoomTabContent onAddPinterestBoards called with roomId: ${roomId}`);
               onAddPinterestBoards(boards, roomName, roomId);
             }}
             currentRoom={area.area}

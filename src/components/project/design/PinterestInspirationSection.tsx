@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PinterestConnector from './PinterestConnector';
 import PinterestBoardCard from './PinterestBoardCard';
 import { Button } from '@/components/ui/button';
@@ -28,9 +28,17 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [expandedBoard, setExpandedBoard] = useState<string | null>(null);
 
+  // Debug when props change
+  useEffect(() => {
+    console.log(`PinterestInspirationSection - Room: ${currentRoom}, RoomId: ${roomId}`);
+    console.log(`PinterestInspirationSection - Inspiration images count: ${inspirationImages?.length || 0}`);
+    console.log(`PinterestInspirationSection - Pinterest boards count: ${pinterestBoards?.length || 0}`);
+  }, [currentRoom, roomId, inspirationImages, pinterestBoards]);
+
   const handleUploadComplete = (urls: string[]) => {
     if (urls.length > 0) {
-      console.log("Uploading inspiration images:", urls);
+      console.log(`Uploading inspiration images for room: ${currentRoom}, roomId: ${roomId || 'undefined'}`);
+      console.log(`Number of images being uploaded: ${urls.length}`);
       onAddInspiration(urls, roomId);
     }
   };
@@ -39,6 +47,7 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
     // Filter out the deleted image
     const updatedImages = inspirationImages.filter(url => url !== imageUrl);
     // Update with the new list (equivalent to adding the filtered list)
+    console.log(`Deleting image for room: ${currentRoom}, roomId: ${roomId || 'undefined'}`);
     onAddInspiration(updatedImages, roomId);
   };
 
@@ -58,6 +67,7 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
           </Button>
           <PinterestConnector 
             onBoardsSelected={(boards) => {
+              console.log(`Adding Pinterest boards for room: ${currentRoom}, roomId: ${roomId || 'undefined'}`);
               onAddPinterestBoards(boards, currentRoom, roomId);
             }}
           />
@@ -91,6 +101,7 @@ const PinterestInspirationSection: React.FC<PinterestInspirationSectionProps> = 
                   onOpenBoard={(url) => window.open(url, '_blank')}
                   onRequestDelete={(board) => {
                     const updatedBoards = pinterestBoards.filter(b => b.id !== board.id);
+                    console.log(`Removing Pinterest board for room: ${currentRoom}, roomId: ${roomId || 'undefined'}`);
                     onAddPinterestBoards(updatedBoards, currentRoom, roomId);
                   }}
                 />

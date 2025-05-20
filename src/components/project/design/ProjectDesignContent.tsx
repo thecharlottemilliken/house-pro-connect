@@ -118,7 +118,9 @@ const ProjectDesignContent: React.FC<ProjectDesignContentProps> = ({
       const roomId = getRoomIdByName(area.area);
       const roomPreference = roomPreferences[roomId || ''] || null;
       
-      console.log(`TabsContent ${area.area} - value: ${normalizedArea}, forceMount: true`);
+      console.log(`TabsContent ${area.area} - value: ${normalizedArea}`);
+      console.log(`Room ID for area ${area.area}: ${roomId}`);
+      console.log(`Room preferences for ${area.area}:`, roomPreference);
       
       return (
         <TabsContent
@@ -151,8 +153,8 @@ const ProjectDesignContent: React.FC<ProjectDesignContentProps> = ({
             onAddProjectFiles={(files) => enhancedHandlers.addProjectFiles(roomId, area.area, files)}
             onRemoveDesignAsset={handlers.handleRemoveDesignAsset}
             onUpdateAssetTags={enhancedHandlers.updateAssetTags}
-            onAddInspirationImages={(images, roomId) => handlers.handleAddRoomInspirationImages(images, roomId)}
-            onAddPinterestBoards={(boards, room, roomId) => handlers.handleAddRoomPinterestBoards(boards, room, roomId)}
+            onAddInspirationImages={(images) => handlers.handleAddRoomInspirationImages(images, roomId)}
+            onAddPinterestBoards={(boards, room) => handlers.handleAddRoomPinterestBoards(boards, room, roomId)}
           />
         </TabsContent>
       );
