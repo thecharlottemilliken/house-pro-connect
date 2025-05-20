@@ -36,9 +36,13 @@ serve(async (req) => {
       })
     }
 
-    // Initialize Supabase client
+    // Initialize standard Supabase client (with user's JWT)
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+    
+    // Initialize admin client with service role key - this bypasses RLS
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey);
     
     console.log(`Initializing Supabase client with URL: ${supabaseUrl}`);
     
@@ -74,7 +78,7 @@ serve(async (req) => {
     console.log(`Generating action items for project ${projectId} by user ${user.id}`)
     
     // Generate action items based on project state and SOW status
-    const actionItems = await generateActionItems(supabaseClient, projectId, user.id)
+    const actionItems = await generateActionItems(supabaseClient, adminClient, projectId, user.id)
     
     return new Response(
       JSON.stringify({ success: true, actionItems }),
@@ -92,7 +96,7 @@ serve(async (req) => {
   }
 })
 
-async function generateActionItems(supabase, projectId: string, userId: string) {
+async function generateActionItems(supabase, adminClient, projectId: string, userId: string) {
   try {
     console.log(`Starting action items generation for project ${projectId}`)
     
@@ -175,9 +179,9 @@ async function generateActionItems(supabase, projectId: string, userId: string) 
     
     try {
       console.log("Cleaning up previous SOW action items")
-      // Delete action items by title
+      // Delete action items by title using admin client to bypass RLS
       for (const title of taskTitlesToClean) {
-        const { error: deleteError } = await supabase
+        const { error: deleteError } = await adminClient
           .from('project_action_items')
           .delete()
           .eq('project_id', projectId)
@@ -341,19 +345,15 @@ async function generateActionItems(supabase, projectId: string, userId: string) 
     
     console.log(`Created ${actionItems.length} action items to insert`)
     
-    // Insert the new action items one by one to better handle permissions
+    // Insert the new action items using the admin client to bypass RLS
     const createdItems = [];
     for (const item of actionItems) {
       try {
-        // Filter items that match the user's role
-        if (item.for_role && item.for_role !== userRole && userRole !== "coach") {
-          console.log(`Skipping action item "${item.title}" - role mismatch (item: ${item.for_role}, user: ${userRole})`)
-          continue;
-        }
-        
+        // No need to filter by user role when using admin client
+        // We'll insert all items regardless of role
         console.log(`Inserting action item: ${item.title}`)
         
-        const { data, error } = await supabase
+        const { data, error } = await adminClient
           .from('project_action_items')
           .insert(item)
           .select();
